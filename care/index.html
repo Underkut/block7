@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -231,14 +231,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .opt.lift{transform:scale(1.08);box-shadow:var(--shadow);background:var(--paper);border-color:var(--ac);position:relative;z-index:2;transition:transform .12s var(--ease)}
 body.dragging{cursor:grabbing}
 .pills .inp.optadd{width:auto;flex:0 1 150px;min-width:90px;padding:6px 12px;border-radius:999px;margin:0}
-.recent{position:relative;display:flex;gap:6px;overflow:hidden;white-space:nowrap;margin-top:8px;padding-right:34px}
-.recent.all{flex-wrap:wrap;white-space:normal}
-.recent .rn.cellbtn{color:var(--ac);border-color:var(--ac);font-weight:600}
-.cgrp{display:flex;width:100%;gap:8px;align-items:center;padding:13px 2px;border-bottom:1px solid var(--line);text-align:left}.cgrp b{font-weight:600}.cgrp .muted{flex:1;font-size:13px}.cgrp .v{color:var(--tx3)}
-.cmem{padding:10px 0 14px}
+.recent{display:flex;align-items:flex-start;gap:8px;margin-top:8px}
+.recent .rlist{flex:1;min-width:0;display:flex;gap:6px;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.recent.all .rlist{flex-wrap:wrap;white-space:normal;-webkit-mask-image:none;mask-image:none}
 .recent .rn{flex:none;font-size:12px;line-height:1.2;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--tx2);background:transparent}
-.recent .rmore{position:absolute;right:0;top:0;bottom:0;width:34px;font-size:18px;color:var(--tx3);background:linear-gradient(90deg,transparent,var(--paper) 45%)}
-.recent.all .rmore{top:auto;height:28px}
+.recent .rmore{flex:none;width:26px;height:26px;display:grid;place-items:center;color:var(--tx3)}
+.recent .rmore svg,.cellbtn svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.7;fill:none}
+.cellbtn{flex:none;display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 6px 0 8px;border-radius:8px;background:var(--s2);color:var(--tx2);font-size:12px;font-weight:600}
+.cellbtn .cv svg{width:12px;height:12px}
+.cgrp{display:flex;width:100%;gap:8px;align-items:baseline;padding:16px 2px 4px;text-align:left}.cgrp b{font-weight:600}.cgrp .muted{font-size:12px}
+.cmem{padding:6px 0 12px;border-bottom:1px solid var(--line)}
+.cmem .opt.lead{border-color:var(--line2);font-weight:600}.cmem .opt.lead small{font-size:10px;font-weight:500;color:var(--tx3);margin-right:5px}
 .calbtn{position:relative;overflow:hidden}.dsel-row{align-items:center}.dsel{margin-left:6px;font-size:15px;color:var(--ac);white-space:nowrap}.calbtn svg{width:15px;height:15px}
 .calbtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;border:0;padding:0;-webkit-appearance:none;appearance:none}
 .omenu-bg{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:40}
@@ -528,7 +531,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-8';
+const APP_VERSION = 'v. 26-1109-9';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -557,7 +560,7 @@ const Q = {
 // 띄어쓰기를 뺀 제목으로 본다. 위 Q 의 정확한 이름이 먼저다.
 const Q_LIKE = { place: k => /^장소/.test(k), pay: k => /사주심|사드림|^pay$/i.test(k) };   // HB 폼 실제 제목은 'PAY'
 const PAY_DEFAULT = ['사주심', '사드림'];
-// 버전 'v. 26-1109-8' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
+// 버전 'v. 26-1109-9' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
 function verNum(v) { const m = String(v || '').match(/(\d{2})-(\d{4})-(\d+)/); return m ? (+(m[1] + m[2])) * 1000 + (+m[3]) : 0; }
 function isNewer(latest, mine) { return verNum(latest) > verNum(mine); }
 const DEV_EMAIL = 'denartist@gmail.com';   // BLOCK7 _isDevAccount 와 같은 판정
@@ -1348,7 +1351,11 @@ function cellToken(raw, nowMs) {
 function cellGroups(rows, members) {
   const by = {};
   (members || []).forEach(m => { if (!m || m.active === false || m.left_at || !norm(m.name)) return; (by[m.cell_id] = by[m.cell_id] || []).push(norm(m.name)); });
-  return (rows || []).map(r => ({ id: r.cell_id, name: norm(r.cell_name), leader: norm(r.leader_names), lead: !!r.i_am_leader, members: [...new Set(by[r.cell_id] || [])].sort((a, b) => a.localeCompare(b)) }))
+  return (rows || []).map(r => {
+    const leaders = [...new Set(String(r.leader_names || '').split(/\s*[,，·\/]\s*/).map(norm).filter(Boolean))], lk = new Set(leaders.map(nameKey));
+    return { id: r.cell_id, name: norm(r.cell_name), leader: norm(r.leader_names), leaders, lead: !!r.i_am_leader,
+      members: [...new Set(by[r.cell_id] || [])].filter(n => !lk.has(nameKey(n))).sort((a, b) => a.localeCompare(b)) };
+  })
     .sort((a, b) => (b.lead - a.lead) || a.name.localeCompare(b.name));
 }
 function attDays(today) { return [[ymdAdd(today, -2), '그제'], [ymdAdd(today, -1), '어제'], [today, '오늘']]; }
@@ -1509,7 +1516,7 @@ function toast(msg, ms, act) {
 function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('불러오기 실패: ' + src)); document.head.appendChild(s); }); }
 // ── 셀 명단 (1109-E3) — 셀 케어 읽기만. 명단은 화면 메모리에만 ──
 const CC_URL = 'https://mcbbhsvvzqvtrxlbdcks.supabase.co', CC_KEY = 'sb_publishable_hs84BPU44TEcr2wM6boXIw_Saktd9p3';
-const CELLS = { state: 'idle', err: '', groups: null, open: null };
+const CELLS = { state: 'idle', err: '', groups: null };
 async function ccFetch(path, tok, body) {
   const r = await fetch(CC_URL + '/rest/v1/' + path, body === undefined ? { headers: { apikey: CC_KEY, Authorization: 'Bearer ' + tok } }
     : { method: 'POST', headers: { apikey: CC_KEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -1549,12 +1556,12 @@ function lCellPick(L) {
   if (CELLS.state === 'noacct') return h + '<p class="empty">셀 케어에서 이 계정의 셀을 찾지 못했습니다.</p></div>';
   if (CELLS.state === 'err') return h + '<p class="empty">셀 명단을 읽지 못했습니다<br>' + esc(CELLS.err) + '</p><button class="btn" data-act="cellreload">다시 읽기</button></div>';
   const G = CELLS.groups || []; if (!G.length) return h + '<p class="empty">이번 주 내 분파셀이 없습니다.</p></div>';
-  h += '<p class="muted">셀을 누르면 셀원이 보입니다. 이름을 누르면 \'누구를\' 에 들어갑니다.</p>';
+  h += '<p class="muted">이름을 누르면 \'누구를\' 에 들어갑니다. 글자색은 기도노트 표시색입니다.</p>';
   G.forEach(g => {
-    const open = CELLS.open === g.id || G.length === 1;
-    h += '<button class="cgrp" data-act="cellopen" data-v="' + esc(g.id) + '" aria-expanded="' + open + '"><b>' + esc(g.name) + '</b>' + (g.lead ? ' <small class="ak k2">내 셀</small>' : '') +
-      '<span class="muted">' + esc(g.leader) + ' · ' + g.members.length + '명</span><span class="v">' + (open ? '⌃' : '⌄') + '</span></button>';
-    if (open) h += '<div class="opts cmem">' + (g.members.length ? g.members.map(n => '<button class="opt" data-act="cellname" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') : '<span class="muted">셀원 명단이 없습니다</span>') + '</div>';
+    h += '<div class="cgrp"><b>' + esc(g.name) + '</b>' + (g.lead ? ' <small class="ak k2">내 셀</small>' : '') + '<span class="muted">' + (g.leaders.length + g.members.length) + '명</span></div>';
+    h += '<div class="opts cmem">' + g.leaders.map(n => '<button class="opt lead" data-act="cellname" data-v="' + esc(n) + '"><small>리더</small>' + nm(n) + '</button>').join('') +
+      g.members.map(n => '<button class="opt" data-act="cellname" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') +
+      (g.leaders.length || g.members.length ? '' : '<span class="muted">셀원 명단이 없습니다</span>') + '</div>';
   });
   return h + '</div>';
 }
@@ -2257,6 +2264,7 @@ function fcount() { let n = 0; for (const k in S.filt) n += S.filt[k].length; re
 
 // ── 그림 ──
 const IC = {
+  people: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.6.7 2.7 2.4 3 4.7"/></svg>',
   x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   menu: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
   filt: '<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
@@ -2889,8 +2897,9 @@ function chip(label, on, act, k, v, kk) { return '<button class="opt' + (kk ? ' 
 function recentHtml(L) {
   const names = recentNames(M() ? M().visits : [], AT());
   const all = !!L.recentAll, show = names.slice(0, all ? 60 : 24);
-  return '<div class="recent' + (all ? ' all' : '') + '"><button class="rn cellbtn" data-act="cellpick">셀</button>' + show.map(n => '<button class="rn" data-act="pickname" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') +
-    '<button class="rmore" data-act="recentmore" aria-label="' + (all ? '접기' : '더 보기') + '">' + (all ? '‹' : '›') + '</button></div>';
+  return '<div class="recent' + (all ? ' all' : '') + '"><button class="cellbtn" data-act="cellpick" aria-label="셀 명단에서 고르기">' + IC.people + '셀<span class="cv">' + IC.r + '</span></button>' +
+    '<div class="rlist">' + show.map(n => '<button class="rn" data-act="pickname" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + '</div>' +
+    (names.length ? '<button class="rmore" data-act="recentmore" aria-label="' + (all ? '접기' : '더 보기') + '">' + (all ? IC.l : IC.r) + '</button>' : '') + '</div>';
 }
 function suggHtml(L) {
   const q = norm(L.form.name); if (!q) return '';
@@ -3360,7 +3369,6 @@ document.addEventListener('click', e => {
   if (a === 'aetc') { const L = topLayer(); if (optCtx(L)) { L.open = L.open || {}; L.open[k] = !L.open[k]; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child .pills[data-k="' + k + '"] ~ input.etc'); if (i) i.focus(); } } return; }
   if (a === 'cellpick') { openLayer('cellpick'); if (CELLS.state !== 'ok') loadCells(); return; }
   if (a === 'cellreload') { loadCells(); return; }
-  if (a === 'cellopen') { CELLS.open = CELLS.open === v ? null : v; render(); return; }
   if (a === 'cellname') {
     const E = S.layers[S.layers.length - 2]; if (!E || E.type !== 'edit') return;
     S.layers.pop(); E.form.name = v; E.dirty = true; render(); return;
