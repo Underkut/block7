@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1108-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1109-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1108-3';
+const APP_VERSION = 'v. 26-1109-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4691,6 +4691,18 @@ function keepEntries(w) {
   return [...m.values()];
 }
 const KEEP_SORTS = [['recent', '최신순'], ['alpha', 'ㄱㄴㄷ순'], ['count', '많은순'], ['manual', '내순서']];
+// ㄱㄴㄷ순 ⇄ ZYX순, 많은순 ⇄ 적은순 — 칩 하나가 두 몫 (BLOCK7 v26-1109-1 과 같은 방식, HB 2026-11-09)
+//   켜진 칩을 다시 누르면 반대 차례로, 꺼진 칩을 누르면 마지막에 보던 쪽으로.
+const KEEP_FLIP = { alpha: ['alpha', 'zyx'], count: ['count', 'few'] };
+const KEEP_NAME = { zyx: 'ZYX순', few: '적은순' };
+const KEEP_MODES = ['recent', 'alpha', 'zyx', 'count', 'few', 'manual'];
+function keepChipOf(md) { return Object.keys(KEEP_FLIP).find(g => KEEP_FLIP[g].includes(md)) || md; }
+// 칩 k 를 눌렀을 때 갈 차례 — last = 칩마다 마지막에 보던 쪽 { alpha: 'zyx', … }
+function keepTap(k, md, last) {
+  const p = KEEP_FLIP[k]; if (!p) return k;
+  if (p.includes(md)) return p[1 - p.indexOf(md)];
+  return p.includes(last && last[k]) ? last[k] : p[0];
+}
 function keepLists(w, mode) {
   const m = new Map();
   keepEntries(w).forEach(x => { const g = m.get(x.list) || m.set(x.list, { n: x.list, cnt: 0, when: '', first: '' }).get(x.list); g.cnt++; if (x.when > g.when) g.when = x.when; if (!g.first || x.first < g.first) g.first = x.first; });
@@ -4698,7 +4710,9 @@ function keepLists(w, mode) {
   const nm = n => n.replace(/[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}️‍]/gu, '').trim();
   const byName = (a, b) => { const an = nm(a.n), bn = nm(b.n), ak = /^[가-힣ㄱ-ㅎ]/.test(an) ? 0 : 1, bk = /^[가-힣ㄱ-ㅎ]/.test(bn) ? 0 : 1; return ak - bk || an.localeCompare(bn, 'ko'); };
   if (mode === 'alpha') return arr.sort(byName);
+  if (mode === 'zyx') return arr.sort((a, b) => byName(b, a));
   if (mode === 'count') return arr.sort((a, b) => b.cnt - a.cnt || byName(a, b));
+  if (mode === 'few') return arr.sort((a, b) => a.cnt - b.cnt || byName(a, b));
   if (mode === 'manual') { const at = n => { const i = w.order.indexOf(n); return i < 0 ? 1e9 : i; }; return arr.sort((a, b) => at(a.n) - at(b.n) || recent(a, b)); }
   return arr.sort(recent);
 }
@@ -4731,12 +4745,19 @@ function keepEmptyMsg() { return SY.user ? '저장한 말씀이 아직 없어요
 function planEmptyMsg() { return SY.user ? '읽기 계획이 아직 없어요.\nSweeter 성경에서 + 로 읽기 계획을 만들면 여기 보여요.' : WORD_EMPTY_OUT; }
 function keepMenu(anchor) {
   let w = wordData();
-  let mode = devPref('keepSort', 'recent'); if (!KEEP_SORTS.some(k => k[0] === mode)) mode = 'recent';
-  const head = md => '<div class="gpop-h gpop-sort">' + KEEP_SORTS.map(k => '<button data-ks="' + k[0] + '" class="' + (k[0] === md ? 'on' : '') + '">' + k[1] + '</button>').join('') + '</div>';
+  let mode = devPref('keepSort', 'recent'); if (!KEEP_MODES.includes(mode)) mode = 'recent';
+  const last = devPref('keepSortFlip', {}) || {};
+  if (KEEP_FLIP[keepChipOf(mode)]) last[keepChipOf(mode)] = mode;
+  const shown = k => (KEEP_FLIP[k] ? (KEEP_FLIP[k].includes(mode) ? mode : (KEEP_FLIP[k].includes(last[k]) ? last[k] : k)) : k);
+  const head = md => '<div class="gpop-h gpop-sort">' + KEEP_SORTS.map(k => { const s = shown(k[0]); return '<button data-ks="' + k[0] + '" class="' + (keepChipOf(md) === k[0] ? 'on' : '') + '">' + (KEEP_NAME[s] || k[1]) + '</button>'; }).join('') + '</div>';
   const rows = md => keepLists(w, md).map(L => ({ label: L.n, sub: L.cnt, fn: () => embedOpen('keepgrid', 0, 0, L.n) }));   // 그 목록의 타일뷰 (HB 2026-10-28)
   const m = glassPop(anchor, head(mode), rows(mode), 'keep', keepEmptyMsg());
   if (!m) return;
-  m._sort = md => { mode = md; setDevPref('keepSort', md); m._draw(head(md), rows(md)); };
+  m._sort = k => {
+    const md = keepTap(k, mode, last); mode = md;
+    if (KEEP_FLIP[k]) { last[k] = md; setDevPref('keepSortFlip', last); }
+    setDevPref('keepSort', md); m._draw(head(md), rows(md));
+  };
   wordFresh(() => { if (m.isConnected) { w = wordData(); m._draw(head(mode), rows(mode)); } });
 }
 // 성경 — 미리 켜 두기

@@ -552,6 +552,22 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
         SRC_DEV.includes("box._keepHide=setTimeout(()=>{ if(!box.classList.contains('on'))box.style.display='none'; },280);"), true);
 }
 
+console.log('\n시나리오 19-2 — 줄 움직임: 조금 차분하게 · 열람 목록에도 (v26-1109-2, HB)');
+{
+  sc.eq('저장 목록 전용 시간 · 곡선', SRC_DEV.includes('const _KEEP_SLIDE=460;') && SRC_DEV.includes("const _KEEP_EASE='cubic-bezier(.42,-0.02,.28,1.1)';"), true);
+  const flip = sliceDev('function _keepFlipRender(', 'function keepPickToggle(');
+  sc.eq('줄 재배치는 전용 값을 쓴다', flip.includes('_KEEP_SLIDE') && flip.includes('_KEEP_EASE') && !flip.includes('_SW_EASE'), true);
+  const drag = sliceDev('function _keepBindDrag(', 'function _renderKeepSwitch(');
+  sc.eq('끌기도 같은 값', drag.includes('_KEEP_EASE') && !drag.includes('_SW_EASE'), true);
+  sc.eq('타일판 값은 그대로', SRC_DEV.includes("const _SW_EASE='cubic-bezier(.45,-0.05,.3,1.22)';"), true);
+  sc.eq('좌상단 메뉴 저장 목록도 미끄러진다', SRC_DEV.includes('_keepFlipRender(b,_renderKeepSubMenu)'), true);
+  sc.eq('목록 바꾸기 창도', SRC_DEV.includes('_keepFlipRender(b,_renderKeepSwitch)'), true);
+  sc.eq('말씀 전체화면 좌상단 저장 목록도', SRC_DEV.includes('_keepFlipRender(box,()=>_vfRenderKeepSwitch(box))'), true);
+  sc.eq('그 줄들도 이름표(data-keepname)를 단다',
+        sliceDev('function _vfRenderKeepSwitch(', 'function toggleVfKeepSwitch(').includes('data-keepname=')
+        && sliceDev('function _renderKeepSwitch(', 'function _renderKeepSubMenu(').includes('data-keepname='), true);
+}
+
 console.log('\n시나리오 20 — 많은순 · 고르기 개수 · 전체화면 저장 개수 (HB 7·8)');
 {
   // v26-1109-1 — 칩이 두 몫(ㄱㄴㄷ⇄ZYX · 많은⇄적은)이 되어 글자 표 대신 그려진 차례로 본다
