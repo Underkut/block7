@@ -34,7 +34,7 @@ console.log('시나리오 1 — 다시 그릴 때 옛 자리에서 미끄러져 
   // ⚠️ 끝나면 흔적(transform·transition)을 지운다. 남겨 두면 다음에 손으로
   //    끌 때(_keepBindDrag) 그 값을 물고 줄이 어긋난 자리에서 시작한다.
   sc.eq('끝나면 흔적을 지운다',
-        /setTimeout\(\(\)=>\{r\.style\.transition='';r\.style\.transform='';\},_SW_SLIDE\+80\)/.test(fn), true);
+        /setTimeout\(\(\)=>\{r\.style\.transition='';r\.style\.transform='';\},_KEEP_SLIDE\+80\)/.test(fn), true);
 
   // 새로 생긴 목록은 옛 자리가 없다 — 그냥 나타난다 (0 에서 튀어나오면 어지럽다)
   sc.eq('옛 자리가 없으면 건드리지 않는다', fn.includes('if(o==null)return;'), true);
@@ -44,10 +44,12 @@ console.log('\n시나리오 2 — 끌어 옮길 때와 같은 시간·곡선');
 {
   const flip = slice('function _keepFlipRender(box,render){', 'function keepPickToggle(');
   const drag = slice('function _keepBindDrag(box){', 'function openKeepPicker(');
-  const tr = /r\.style\.transition='transform '\+\(_SW_SLIDE\/1000\)\+'s '\+_SW_EASE;/;
+  // v26-1109-2, HB — "좋은데 약간 경박스러워. 아주 조금만 차분하게": 저장 목록 줄만 전용 값(_KEEP_*)을 쓴다
+  const tr = /r\.style\.transition='transform '\+\(_KEEP_SLIDE\/1000\)\+'s '\+_KEEP_EASE;/;
   sc.eq('고를 때', tr.test(flip), true);
   sc.eq('끌 때', tr.test(drag), true);
-  // 스위터 타일판에서 HB 가 고른 값 그대로다 — 여기서 따로 정하지 않는다
+  // 스위터 타일판 값은 그대로, 저장 목록은 그보다 조금 차분하게 (v26-1109-2)
+  sc.eq('저장 목록 값', SRC.includes('const _KEEP_SLIDE=460;') && SRC.includes("const _KEEP_EASE='cubic-bezier(.42,-0.02,.28,1.1)';"), true);
   sc.eq('시간은 한 곳에서 온다', SRC.includes('const _SW_SLIDE=420;'), true);
   sc.eq('곡선도 한 곳에서 온다', SRC.includes("const _SW_EASE='cubic-bezier(.45,-0.05,.3,1.22)';"), true);
 }

@@ -1088,4 +1088,30 @@ const MAPCSV = [
   sc.eq('A4 사람 상세에만 붙는다 (기도 항목 · 묶음은 아님)', /function careBlock\(t\) \{\n  if \(!t \|\| t\.kind !== 'person'/.test(HTML) && /b \+= careBlock\(t\);/.test(HTML), true);
 }
 
+console.log('\n시나리오 ㉙ — 저장 목록 정렬: ㄱㄴㄷ순 ⇄ ZYX순, 많은순 ⇄ 적은순 (pray v. 26-1109-1, HB)');
+{
+  // 화면 쪽 덩어리라 KEEP_* · keepTap · keepLists 만 떼어 돌린다
+  const a = HTML.indexOf('const KEEP_SORTS = '), b = HTML.indexOf('// 떠 있는 유리 메뉴', a);
+  const k = vm.createContext({});
+  vm.runInContext(HTML.slice(HTML.indexOf('function keepEntries(w)'), a) + HTML.slice(a, b) + ';this.K={KEEP_FLIP,keepTap,keepChipOf,keepLists};', k);
+  const { keepTap, keepChipOf, keepLists } = k.K;
+  sc.eq('꺼진 ㄱㄴㄷ 칩 → ㄱㄴㄷ순', keepTap('alpha', 'recent', {}), 'alpha');
+  sc.eq('켜진 ㄱㄴㄷ 칩 → ZYX순', keepTap('alpha', 'alpha', {}), 'zyx');
+  sc.eq('켜진 ZYX 칩 → ㄱㄴㄷ순', keepTap('alpha', 'zyx', {}), 'alpha');
+  sc.eq('켜진 많은 칩 → 적은순', keepTap('count', 'count', {}), 'few');
+  sc.eq('꺼진 칩은 마지막에 보던 쪽으로', keepTap('count', 'manual', { count: 'few' }), 'few');
+  sc.eq('최신순 · 내순서는 그대로', [keepTap('recent', 'alpha', {}), keepTap('manual', 'zyx', {})], ['recent', 'manual']);
+  sc.eq('ZYX 는 ㄱㄴㄷ 칩에 불이 들어온다', keepChipOf('zyx'), 'alpha');
+  const w = { keep: { '2026-11-01': [
+    { ref: 'r1', time: '09:00', lst: 'Zebra' }, { ref: 'r2', time: '09:01', lst: 'Zebra' }, { ref: 'r3', time: '09:02', lst: 'Zebra' },
+    { ref: 'r1', time: '09:03', lst: '가나다' },
+    { ref: 'r1', time: '09:04', lst: 'Apple' }, { ref: 'r2', time: '09:05', lst: 'Apple' },
+    { ref: 'r1', time: '09:06', lst: '나다라' }, { ref: 'r2', time: '09:07', lst: '나다라' }] }, order: [] };
+  const names = md => keepLists(w, md).map(x => x.n);
+  sc.eq('ㄱㄴㄷ순', names('alpha'), ['가나다', '나다라', 'Apple', 'Zebra']);
+  sc.eq('ZYX순 = 통째로 뒤집기', names('zyx'), ['Zebra', 'Apple', '나다라', '가나다']);
+  sc.eq('많은순', names('count'), ['Zebra', '나다라', 'Apple', '가나다']);
+  sc.eq('적은순 (같은 수는 ㄱㄴㄷ)', names('few'), ['가나다', '나다라', 'Apple', 'Zebra']);
+}
+
 sc.done();
