@@ -27,6 +27,7 @@
 //  ㉒ (1108-B4) 달력 — 심방 · 출석 켜고 끄기 (둘 다 끌 수 없음 · 기억)
 //  ㉓ (1108-C1) 보기 조건 시트 끌어내려 닫기 · (C2 출석 탭 · C3 이름 글자색은 ⑮ ⑯ ⑰ 에)
 //  ㉔ (1109) HB 가 폼에 '장소' · '사주심/사드림' 질문을 더함 → 시트 끝에 열 → 입력 · 고치기 화면에 칸 · 알약 → 그 열에 쓴다
+//  ㉚ (1109-J D) 다시 그려도 튀지 않기(바뀐 곳만 고침) · 끌어 옮기기 밀려나기 · '완료' 단추 숨은 채 남지 않기 · 알약 더하기 칸 자판 위 · 최근 이름 줄 옆으로
 //  ㉘ (1109-T) 나눈 이야기 주제 칸 — 입력줄 Enter · 성도 ↔ 나 번갈아 · 이름표 바꾸기 · 줄 고치기 · 새 칸 · 칸 태그 · 붙여 넣기 · 칸 옮기기 · 합치기 · 지우기 → 시트 한 칸 글 · 다시 열면 그대로 · 안 바꾸면 안 쓴다
 //  ㉙ (1109-T4 · T5) 열람 대본 · 말풍선 · 접기 · 제목만 / 설정 탭 넷(보기 · BLOCK7 · 연결 · 그 밖에) · 마지막 탭 기억 / 성도 화면 칸 태그로 모아 보기
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
@@ -682,6 +683,46 @@ async function route(r) {
     g = await grab();
     await swipe(g[0] + 80, g[1] + 120, g[0] + 80, g[1] - 40, 400);
     eq('㉓ 안쪽을 위로 굴리는 것은 닫기가 아니다', await mp.evaluate(() => S.sheet), true);
+    // ㉚ (1109-J D) 다시 그려도 튀지 않기 · 끌어 옮기기 밀려나기 · '완료' 단추가 숨은 채 남지 않기 · 알약 더하기 칸은 자판 바로 위 · 최근 이름 줄 옆으로
+    await mp.evaluate(() => { S.sheet = false; S.layers = []; render(); openAttEdit(null); }); await mp.waitForTimeout(500);
+    const AL = '.layer:last-child';
+    const m1 = await mp.evaluate(l => { const L = document.querySelector(l); L.scrollTop = 200; const st = L.scrollTop, memo = L.querySelector('[data-f="memo"]'), pill = L.querySelector('.pills .opt'); render(); return [st > 0, L.scrollTop === st, L.querySelector('[data-f="memo"]') === memo, L.querySelector('.pills .opt') === pill]; }, AL);
+    eq('㉚ 다시 그려도 스크롤 그대로 · 칸 · 알약은 새로 만들지 않고 그 자리에서 고친다', m1, [true, true, true, true]);
+    const m2 = await mp.evaluate(l => { const L = document.querySelector(l), memo = L.querySelector('[data-f="memo"]'); memo.focus(); memo.value = '쓰는 중'; render(); return [document.activeElement === memo, memo.value]; }, AL);
+    eq('㉚ 쓰고 있는 칸은 다시 그려도 포커스 · 글 그대로', m2, [true, '쓰는 중']);
+    await mp.evaluate(() => { document.activeElement.blur(); topLayer().form.memo = ''; render(); });
+    // 끌어 옮기기 — 아래쪽('어떻게' 의 첫 칸) 알약을 끌어도 화면이 맨 위로 가지 않는다
+    const k0 = await mp.evaluate(() => Object.keys(ATTO()).find(k => k !== 'svc' && (ATTO()[k] || []).length > 1 && document.querySelector('.layer:last-child .pills[data-k="' + k + '"]')));
+    const pre = await mp.evaluate(([l, k]) => { const L = document.querySelector(l), p = L.querySelector('.pills[data-k="' + k + '"]'); L.scrollTop = 0; L.scrollTop = p.getBoundingClientRect().top - 220; const o = [...p.querySelectorAll('.opt[data-act="aone"]')].map(e => { const r = e.getBoundingClientRect(); return [e.dataset.v, r.x + r.width / 2, r.y + r.height / 2]; }); return { st: L.scrollTop, o }; }, [AL, k0]);
+    await mp.mouse.move(pre.o[1][1], pre.o[1][2]); await mp.mouse.down(); await mp.mouse.move(pre.o[1][1] - 8, pre.o[1][2], { steps: 3 }); await mp.mouse.move(pre.o[0][1] - 4, pre.o[0][2], { steps: 10 }); await mp.mouse.up(); await mp.waitForTimeout(900);
+    eq('㉚ 끌어 옮긴 뒤에도 스크롤 그대로(맨 위로 튀지 않음) · 순서는 바뀜', [pre.st > 0, await mp.evaluate(l => document.querySelector(l).scrollTop, AL) === pre.st, await mp.evaluate(k => ATTO()[k][0], k0)], [true, true, pre.o[1][0]]);
+    eq('㉚ 밀려나는 알약은 제자리에서 새 자리로 미끄러진다(움직임 켜짐일 때)', await mp.evaluate(k => { RM.matches = false; const box = document.querySelector('.layer:last-child .pills[data-k="' + k + '"]'), a = box.children[0], b = box.children[1]; flipMove(box, () => box.insertBefore(b, a)); const n = [a, b].filter(x => x.getAnimations().length).length; RM.matches = true; document.getAnimations().forEach(x => x.finish()); return n; }, k0), 2);
+    await mp.evaluate(() => render());
+    // '완료' 단추 — 알약 더하기 칸을 쓰다가 그 칸이 다시 그리기로 사라져도(아이폰은 focusout 이 없음) 단추가 돌아온다
+    await mp.evaluate(k => document.querySelector('.layer:last-child [data-act="aoptadd"][data-k="' + k + '"]').click(), k0); await mp.waitForTimeout(400);
+    eq('㉚ 알약 더하기 칸을 쓰는 동안은 단추를 감춘다', await mp.evaluate(() => [document.activeElement.dataset.optadd != null, document.body.classList.contains('typing')]), [true, true]);
+    await mp.evaluate(() => { const i = document.activeElement; i.addEventListener('blur', e => e.stopImmediatePropagation(), true); document.addEventListener('focusout', e => { if (e.target === i) e.stopImmediatePropagation(); }, { capture: true, once: true }); topLayer().adding = null; render(); }); await mp.waitForTimeout(300);
+    eq("㉚ 그 칸이 사라지면 '완료' 단추가 돌아온다 (typing 이 남지 않음)", await mp.evaluate(l => [document.body.classList.contains('typing'), getComputedStyle(document.querySelector(l + ' .ph-foot')).display], AL), [false, 'block']);
+    // 알약 더하기 칸은 자판 바로 위로 (자판 = 가짜 visualViewport 높이 260)
+    const pin = await mp.evaluate(async k => {
+      const vv = { offsetTop: 0, height: 260, addEventListener() {} }; Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
+      document.querySelector('.layer:last-child [data-act="aoptadd"][data-k="' + k + '"]').click(); await new Promise(r => setTimeout(r, 900));
+      const i = document.activeElement; keepInView(i); await new Promise(r => setTimeout(r, 100));
+      const b1 = Math.round(i.getBoundingClientRect().bottom);
+      document.querySelector('.layer:last-child').scrollTop -= 120; keepInView(i); await new Promise(r => setTimeout(r, 100));
+      return [b1, Math.round(i.getBoundingClientRect().bottom)];
+    }, k0);
+    eq('㉚ 알약 더하기 칸은 가려졌든 위에 있든 늘 자판 바로 위(240px 언저리)', pin.map(b => Math.abs(b - 240) <= 3), [true, true]);
+    await mp.evaluate(() => { document.activeElement.blur(); delete window.visualViewport; topLayer().adding = null; topLayer().dirty = false; S.layers = []; render(); });
+    // 최근 이름 줄 — 접혀 있어도 옆으로 민다 · 넘친 쪽만 흐림 · 다시 그려도 민 자리 그대로
+    await mp.evaluate(() => { for (let i = 0; i < 30; i++) DATA.attend.push({ name: '지은이름' + i, date: today() }); openEdit(null); }); await mp.waitForTimeout(500);
+    const rl = await mp.evaluate(async () => {
+      const r = document.querySelector('.layer:last-child .recent .rlist'), a = [getComputedStyle(r).overflowX, r.scrollWidth > r.clientWidth, r.classList.contains('fl'), r.classList.contains('fr')];
+      r.scrollLeft = 80; r.dispatchEvent(new Event('scroll')); await new Promise(x => setTimeout(x, 50)); render(); await new Promise(x => setTimeout(x, 50));
+      const r2 = document.querySelector('.layer:last-child .recent .rlist'); return a.concat([r2 === r, r2.scrollLeft, r2.classList.contains('fl')]);
+    });
+    eq('㉚ 최근 이름 줄 — 옆으로 굴림 · 처음엔 오른쪽만 흐림 · 민 뒤 왼쪽도 · 다시 그려도 그 자리', rl, ['auto', true, false, true, true, 80, true]);
+    await mp.evaluate(() => { DATA.attend.splice(-30, 30); S.layers = []; render(); });
     await mc.close();
   }
 
