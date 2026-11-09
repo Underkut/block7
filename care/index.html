@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -238,7 +238,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 body.dragging{cursor:grabbing}
 .pills .inp.optadd{width:auto;flex:0 1 150px;min-width:90px;padding:6px 12px;border-radius:999px;margin:0}
 .recent{display:flex;align-items:flex-start;gap:8px;margin-top:8px}
-.recent .rlist{flex:1;min-width:0;display:flex;gap:6px;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+/* 1109-J 10-2 접힌 줄도 손가락으로 옆으로 민다 — 왼쪽 끝은 '셀' 단추 밑으로, 오른쪽 끝은 › 밑으로 흐려지며 들어간다(넘친 쪽만 흐림) */
+.recent .rlist{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y;--fl:0px;--fr:0px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent)}
+.recent .rlist::-webkit-scrollbar{display:none}
+.recent .rlist.fl{--fl:22px}.recent .rlist.fr{--fr:28px}
 .recent.all .rlist{flex-wrap:wrap;white-space:normal;-webkit-mask-image:none;mask-image:none}
 .recent .rn{flex:none;font-size:12px;line-height:1.2;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--tx2);background:transparent}
 .recent .rmore{flex:none;width:26px;height:26px;display:grid;place-items:center;color:var(--tx3)}
@@ -618,7 +621,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-11';
+const APP_VERSION = 'v. 26-1109-12';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2869,8 +2872,23 @@ document.addEventListener('pointermove', e => {
   if (DR.fixed) return;   // 구분 · 태그 · 할 일은 옮기지 않는다
   if (d > 6) DR.moved = true;
   const t = document.elementFromPoint(e.clientX, e.clientY), over = t && t.closest && t.closest('.pills[data-k="' + DR.k + '"] .opt[data-act="aone"]');
-  if (over && over !== DR.el) { const box = over.parentElement, kids = [...box.children], a = kids.indexOf(DR.el), b = kids.indexOf(over); box.insertBefore(DR.el, a < b ? over.nextSibling : over); }
+  if (over && over !== DR.el && !over.getAnimations().length) {   // 밀려 움직이는 중인 알약 위에서는 기다린다(왔다 갔다 떨림 막기)
+    const box = over.parentElement, kids = [...box.children], a = kids.indexOf(DR.el), b = kids.indexOf(over);
+    flipMove(box, () => box.insertBefore(DR.el, a < b ? over.nextSibling : over));
+  }
 });
+// 1109-J 3-5 서로 밀려나기 — 옮기기 전 자리를 재고, 옮긴 뒤 그 자리에서 새 자리로 미끄러지게(FLIP)
+function flipMove(box, change) {
+  const kids = [...box.children], before = new Map(kids.map(k => [k, k.getBoundingClientRect()]));
+  change();
+  if (RM.matches) return;
+  kids.forEach(k => {
+    const o = before.get(k), n = k.getBoundingClientRect(), dx = o.left - n.left, dy = o.top - n.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    const sc = k.classList.contains('lift') ? ' scale(1.08)' : '';   // 들린 알약은 커진 채로
+    k.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' + sc }, { transform: 'translate(0,0)' + sc }], { duration: 200, easing: 'cubic-bezier(.22,.8,.24,1)' });
+  });
+}
 document.addEventListener('pointerup', () => {
   if (!DR.el) return;
   const { el, k, lifted, moved } = DR; drReset();
@@ -3138,11 +3156,19 @@ function vCollect() {
 function chip(label, on, act, k, v, kk) { return '<button class="opt' + (kk ? ' kk' : '') + '"' + (kk ? ' style="--k:var(--' + kk + ')"' : '') + ' data-act="' + act + '" data-k="' + k + '" data-v="' + esc(v) + '" aria-pressed="' + !!on + '">' + label + '</button>'; }
 function recentHtml(L) {
   const names = recentNames(M() ? M().visits : [], AT(), prefs().cutoff);
-  const all = !!L.recentAll, show = names.slice(0, all ? 60 : 24);
+  const all = !!L.recentAll, show = names.slice(0, 60);   // 접혀 있어도 옆으로 밀어 다 본다(1109-J 10-2)
   return '<div class="recent' + (all ? ' all' : '') + '"><button class="cellbtn" data-act="cellpick" aria-label="셀 명단에서 고르기">' + IC.people + '셀<span class="cv">' + IC.r + '</span></button>' +
     '<div class="rlist">' + show.map(n => '<button class="rn" data-act="pickname" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + '</div>' +
     (names.length ? '<button class="rmore" data-act="recentmore" aria-label="' + (all ? '접기' : '더 보기') + '">' + (all ? IC.l : IC.r) + '</button>' : '') + '</div>';
 }
+// 넘친 쪽만 흐리게 — 처음엔 오른쪽만, 밀면 왼쪽도
+function recentFade(el) { const m = el.scrollWidth - el.clientWidth; el.classList.toggle('fl', !el.closest('.all') && el.scrollLeft > 2); el.classList.toggle('fr', !el.closest('.all') && el.scrollLeft < m - 2); }
+function recentFadeAll() { document.querySelectorAll('.layer .recent .rlist').forEach(recentFade); }
+document.addEventListener('scroll', e => { if (e.target.classList && e.target.classList.contains('rlist')) recentFade(e.target); }, true);
+document.addEventListener('wheel', e => {   // PC: 마우스 휠(세로)로도 옆으로
+  const r = e.target.closest && e.target.closest('.recent:not(.all) .rlist'); if (!r || Math.abs(e.deltaX) > Math.abs(e.deltaY) || r.scrollWidth <= r.clientWidth) return;
+  e.preventDefault(); r.scrollLeft += e.deltaY;
+}, { passive: false });
 function suggHtml(L) {
   const q = norm(L.form.name); if (!q) return '';
   const names = Object.keys(M().people).filter(n => n !== q && n.includes(q)).slice(0, 6);
@@ -3603,19 +3629,48 @@ function render() {
   const have = [...lay.children];
   S.layers.forEach((L, i) => {
     let el = have[i];
-    if (!el || el.dataset.id !== L.id) { if (el) el.remove(); el = document.createElement('div'); el.className = 'layer'; el.dataset.id = L.id; el.style.zIndex = 20 + i; lay.appendChild(el); if (!RM.matches && !L.noAnim) el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); L.noAnim = true; }
+    if (!el || el.dataset.k !== L._k) { if (el) el.remove(); el = document.createElement('div'); el.className = 'layer'; el.dataset.k = L._k; el.style.zIndex = 20 + i; lay.appendChild(el); if (!RM.matches && !L.noAnim) el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); L.noAnim = true; }
     const b = el.querySelector('.ph-body'), st = b ? b.scrollTop : 0, lt = el.scrollTop;   // 겹 화면에선 .layer 자신이 스크롤한다 (1108-B)
     const ae = document.activeElement, keep = ae && el.contains(ae) && ae.dataset && ae.dataset.f ? { f: ae.dataset.f, etc: ae.dataset.etc, s: ae.selectionStart, e: ae.selectionEnd } : null;
-    el.innerHTML = LAYERS[L.type](L);
-    const nb = el.querySelector('.ph-body'); if (nb) nb.scrollTop = st;
-    el.scrollTop = lt;
+    if (el.firstChild) morphKids(el, LAYERS[L.type](L)); else el.innerHTML = LAYERS[L.type](L);   // 1109-J 3-5 바뀐 곳만 고친다 — 통째로 갈아 끼우면 아이폰이 굴리던 자리를 놓쳐 맨 위로 튄다
+    const nb = el.querySelector('.ph-body'); if (nb && nb.scrollTop !== st) nb.scrollTop = st;
+    if (el.scrollTop !== lt) el.scrollTop = lt;
     if (keep) { const ni = el.querySelector('[data-f="' + keep.f + '"]' + (keep.etc ? '[data-etc]' : '')); if (ni) { try { ni.focus({ preventScroll: true }); if (keep.s != null) ni.setSelectionRange(keep.s, keep.e); } catch (e) { } } el.scrollTop = lt; }
   });
   [...lay.children].slice(S.layers.length).forEach(el => el.remove());
   document.body.classList.toggle('locked', S.layers.length > 0 || S.sheet);
+  setTimeout(typingSync, 0);   // 1109-J 3-6 (다시 그린 바로 뒤 단추가 칸에 포커스를 주는 경우가 있어 한 박자 뒤에)
+  recentFadeAll();
+}
+// 1109-J 3-5 겹 화면 다시 그리기 = 새 글(html)과 다른 곳만 고친다. 같은 자리 같은 꼴의 요소는 그대로 두므로
+//   스크롤 · 쓰던 칸(포커스 · 자판) · 옆으로 굴린 자리가 남는다. 움직이는 중인(animate) 요소는 통째로 바꾼다 — 'forwards' 로 멈춘 모양이 남지 않게.
+function morphKids(a, html) { const t = document.createElement('div'); t.innerHTML = html; morphChildren(a, t); }
+function morphChildren(a, b) {
+  const ac = [...a.childNodes], bc = [...b.childNodes];
+  bc.forEach((n, i) => { if (i < ac.length) morphNode(ac[i], n); else a.appendChild(n); });
+  for (let i = bc.length; i < ac.length; i++) ac[i].remove();
+}
+function morphNode(a, b) {
+  if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) { a.replaceWith(b); return; }
+  if (a.nodeType !== 1) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  if (a.getAnimations && a.getAnimations().length) { a.replaceWith(b); return; }
+  const tag = a.nodeName, field = tag === 'INPUT' || tag === 'TEXTAREA';
+  if (!field && a.isEqualNode(b)) return;
+  // 쓰고 있는 칸은 그리는 쪽이 값을 바꾸려 할 때만(지난번 그린 값 ≠ 이번 값) 고친다 — 아니면 손대지 않아 글자 자리 · 조합이 그대로
+  const want = field && (a !== document.activeElement || a.defaultValue !== b.defaultValue);
+  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+  if (field) {
+    if (tag === 'TEXTAREA' && a.defaultValue !== b.defaultValue) a.defaultValue = b.defaultValue;
+    if (tag === 'INPUT' && (a.type === 'checkbox' || a.type === 'radio')) a.checked = b.checked;
+    else if (want && a.value !== b.value) a.value = b.value;
+    return;
+  }
+  morphChildren(a, b);
 }
 let lid = 0;
-function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type, id: type + (++lid) }, extra || {})); render(); }
+// 겹 화면 열쇠는 _k — 예전엔 id 였는데 출석 고치기가 id(출석ID, 새로 적기면 null)로 덮어써서 다시 그릴 때마다 겹 화면을 새로 만들었다 → 맨 위로 튐 (1109-J 3-5)
+function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type }, extra || {}, { _k: type + (++lid) })); render(); }
 function closeLayer(force) {
   const lay = $('layers'), el = lay.lastElementChild; if (!S.layers.length) return;
   const top = topLayer(); if (!force && ['edit', 'planedit', 'attedit', 'attpaste'].includes(top.type) && top.dirty && !confirm('적던 내용을 버릴까요?')) return;
@@ -3923,11 +3978,15 @@ document.addEventListener('click', e => {
 function chipsSync(k, v, act) { document.querySelectorAll('.layer:last-child [data-act="' + (act || 'fone') + '"][data-k="' + k + '"]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); }
 // 1108-B 자판이 쓰는 칸을 가리지 않게 — 쓰는 동안 아래 단추를 감추고, 그 칸이 보이는 자리(자판 위)에 오도록 겹 화면을 굴린다
 function isField(el) { return !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(button|checkbox|radio|range|file|date|time)$/i.test(el.type))); }
+// 1109-J 3-4 알약 더하기 칸(· 직접 적기 칸)은 가려졌든 아니든 늘 자판 바로 위에 맞춘다 — 쓴 것을 바로 옆 알약들과 함께 보게
+function pinField(el) { return !!(el && el.dataset && (el.dataset.optadd || el.dataset.etc)); }
 function keepInView(el) {
   const L = el && el.closest && el.closest('.layer'); if (!L || document.activeElement !== el) return;
   const vv = window.visualViewport, top = (vv ? vv.offsetTop : 0) + 64, bot = (vv ? vv.offsetTop + vv.height : innerHeight) - 16, r = el.getBoundingClientRect();
   let d = 0;
-  if (r.height > bot - top) d = r.top - top; else if (r.bottom > bot) d = r.bottom - bot; else if (r.top < top) d = r.top - top;
+  if (r.height > bot - top) d = r.top - top;
+  else if (pinField(el) && vv && vv.height < innerHeight - 80) d = r.bottom - bot + 4;   // 자판이 올라와 있을 때만(PC · 자판 없을 땐 굴리지 않는다)
+  else if (r.bottom > bot) d = r.bottom - bot; else if (r.top < top) d = r.top - top;
   if (Math.abs(d) > 2) L.scrollBy({ top: d, behavior: RM.matches ? 'auto' : 'smooth' });
 }
 let typingT = 0;
@@ -3935,12 +3994,17 @@ document.addEventListener('focusin', e => {
   if (!isField(e.target) || !e.target.closest('.layer')) return;
   clearTimeout(typingT); document.body.classList.add('typing');
   setTimeout(() => keepInView(e.target), 350);   // 자판이 다 올라온 뒤에
+  setTimeout(() => keepInView(e.target), 750);   // 아이폰은 자판이 늦게 다 올라올 때가 있다(그 사이 굴림이 다시 밀림)
 });
+// 1109-J 3-6 쓰던 칸이 다시 그리기로 사라지면 아이폰은 focusout 을 안 보낸다 → 'typing' 이 남아 아래 '완료' 단추가 계속 숨었다.
+//   다시 그린 뒤 · 자판 높이가 바뀔 때 · 화면을 누를 때마다 '지금 정말 쓰는 중인가' 를 다시 본다.
+function typingSync() { if (!isField(document.activeElement) || !document.activeElement.closest('.layer')) { clearTimeout(typingT); document.body.classList.remove('typing'); } }
+document.addEventListener('pointerdown', () => setTimeout(typingSync, 0), true);
 document.addEventListener('focusout', () => {
   clearTimeout(typingT);
   typingT = setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 150);   // 칸에서 칸으로 옮길 땐 깜빡이지 않게
 });
-if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (isField(document.activeElement)) keepInView(document.activeElement); });
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (isField(document.activeElement)) keepInView(document.activeElement); else typingSync(); });
 // 1108-B4 겹 화면 닫기 손짓 — ① 왼쪽 가장자리(24px)에서 오른쪽으로 밀기 ② 맨 위에서 머리줄을 아래로 끌기.
 //   손가락을 따라 움직이고, 폭(높이)의 ¼ 넘게 또는 빠르게 튕기면 닫히고, 못 미치면 제자리로. 쓰던 글이 있으면 먼저 묻는다.
 const SW = { el: null, mode: '', x0: 0, y0: 0, t0: 0, d: 0 };
@@ -3954,7 +4018,7 @@ function swEnd(el, close, mode) {
 }
 document.addEventListener('touchstart', e => {
   const el = e.target.closest && e.target.closest('#layers > .layer'); if (!el || el !== $('layers').lastElementChild || e.touches.length !== 1) return;
-  if (e.target.closest('input,textarea,.pills,.omenu')) return;
+  if (e.target.closest('input,textarea,.pills,.omenu,.rlist')) return;
   const t = e.touches[0], head = e.target.closest('.ph-head');
   const mode = t.clientX <= 24 ? 'x' : head && el.scrollTop <= 0 ? 'y' : '';
   if (!mode) return;
