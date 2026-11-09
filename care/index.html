@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -78,10 +78,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .vercheck{display:block;margin-top:22px;padding:6px 0;font-size:13px;color:var(--tx2);text-align:left}.vercheck span{color:var(--ac)}.vercheck.new span::after{content:' · 새 버전 있음'}
 .ph-head .acts{display:flex;justify-content:flex-end}
 .ph-head.acts-only{grid-template-columns:1fr auto}
+.ph-head.acts-only .ic svg{stroke-width:1.2}
+.sheetlnk{display:inline-grid;place-items:center;width:36px;height:36px;margin:2px 0 0 -8px;color:var(--tx3)}
+.sheetlnk svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.2;fill:none}
+.sheetlnk:hover{color:var(--tx)}
 .ph-head a.ic{text-decoration:none}
 .ph-head h3{margin:0;text-align:center;font-size:16px;font-weight:600}
 .ph-head .ic{width:44px;height:44px;display:grid;place-items:center;color:var(--tx2)}
 .ph-head .ic svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.7;fill:none}
+@media (hover:hover) and (pointer:fine){.ph-head .ic,.ph-head .verbadge:not(.new){opacity:.4;transition:opacity .2s}.ph-head .ic:hover,.ph-head .ic:focus-visible,.ph-head .verbadge:hover{opacity:1}}
 #app{max-width:720px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative}
 .ph-body{padding:0 max(18px,env(safe-area-inset-right,0px)) calc(120px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .ph-nav{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:720px;bottom:0;display:grid;grid-template-columns:repeat(6,1fr);padding:8px 4px calc(10px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--paper) 94%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--line);z-index:3}
@@ -90,6 +95,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .ph-nav button[aria-current="true"]{color:var(--ac)}
 .fab{position:fixed;right:max(18px,calc(50vw - 342px));bottom:calc(80px + env(safe-area-inset-bottom,0px));height:50px;padding:0 18px 0 14px;border-radius:25px;background:var(--ac);color:var(--on-ac);display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);font-size:14px;font-weight:500;z-index:3}
 .fab svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}
+.fab.round{width:50px;padding:0;justify-content:center}
 .h-sec{font-size:13px;font-weight:600;color:var(--tx);margin:24px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
 .h-sec small{font-weight:400;color:var(--tx3);font-size:12px}
 .h-sec button{color:var(--ac);font-weight:500;font-size:12.5px}
@@ -285,7 +291,7 @@ body.dragging{cursor:grabbing}
 .brow .bar{height:6px;border-radius:3px;background:var(--s2);overflow:hidden}
 .brow .bar i{display:block;height:100%;background:var(--deep);opacity:.8;border-radius:3px}
 .brow .in{margin-top:8px}
-.lrow{display:grid;grid-template-columns:44px 1fr;gap:8px;font-size:13px;padding:5px 0;width:100%}
+.lrow{display:grid;grid-template-columns:58px 1fr;gap:8px;font-size:13px;padding:5px 0;width:100%}
 .lrow .d{font-family:var(--mono);font-size:11.5px;color:var(--tx3)}
 
 /* 대시보드 */
@@ -612,7 +618,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-10';
+const APP_VERSION = 'v. 26-1109-11';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1490,12 +1496,12 @@ function attOptMove(o, k, from, to) { const L = o[k] || []; if (from < 0 || from
 function splitNames(s) { const seen = new Set(), out = []; String(s || '').split(/[,，、]/).map(norm).filter(Boolean).forEach(n => { const k = nameKey(n); if (!seen.has(k)) { seen.add(k); out.push(n); } }); return out; }
 // 날짜 단추 — 그제 · 어제 · 오늘 (그 밖의 날은 달력 단추)
 // 1109-E2 '누구를' 아래 최근 이름 — 심방 기록 · 출석을 합쳐 마지막 날이 최근인 차례. 띄어쓰기만 다른 이름은 하나(처음 본 꼴)
-function recentNames(visits, attends) {
+function recentNames(visits, attends, cutoff) {   // cutoff(보관 기준 날짜)보다 옛 마지막 날짜면 알약에서 뺀다 — 이름 칸에 직접 치면 그대로 찾아진다(1109-J 10-1)
   const m = new Map();
   const add = (name, day) => { const n = norm(name), k = nameKey(n); if (!k) return; const o = m.get(k); if (!o) m.set(k, { name: n, last: day || '' }); else if ((day || '') > o.last) o.last = day; };
   (visits || []).forEach(v => add(v.name, v.ymd));
   (attends || []).forEach(a => add(a.name, a.date));
-  return [...m.values()].sort((a, b) => (b.last > a.last ? 1 : b.last < a.last ? -1 : a.name.localeCompare(b.name))).map(o => o.name);
+  return [...m.values()].filter(o => !(cutoff && o.last && o.last < cutoff)).sort((a, b) => (b.last > a.last ? 1 : b.last < a.last ? -1 : a.name.localeCompare(b.name))).map(o => o.name);
 }
 // 1109-E3 '셀' 단추 — 셀 한눈에(같은 sweeter.my)가 이 브라우저에 둔 셀 케어 로그인을 **읽기만** 한다.
 // 갱신 열쇠(refresh_token)는 쓰지 않는다 — 두 앱이 같은 열쇠를 돌려 쓰면 셀 케어가 둘 다 끊는다. 만료면 셀 한눈에를 한 번 열게 한다.
@@ -1671,7 +1677,11 @@ function toast(msg, ms, act) {
   const close = () => t.remove();
   if (act) { const b = document.createElement('button'); b.className = 'toast-act'; b.textContent = act.label; b.addEventListener('click', e => { e.stopPropagation(); close(); act.fn(); }); t.appendChild(b); }
   t.addEventListener('click', close);
-  setTimeout(close, ms || Math.min(9000, Math.max(act ? 6000 : 3000, msg.length * 200)));
+  // 유지 시간은 BLOCK7 · Sweeter 와 같은 글자 수 규칙(글자 × 200ms, 3~9초 · 되돌리기 줄이 있으면 6초부터) — 부르는 쪽이 따로 정한 시간(ms)은 쓰지 않는다 (1109-J 9)
+  const tid = setTimeout(close, Math.min(9000, Math.max(act ? 6000 : 3000, String(msg).length * 200)));
+  // 아무 데나 누르면 닫힌다 — 토스트 안 단추는 빼고
+  const off = e => { if (e.target && e.target.closest && e.target.closest('.toast-act')) return; document.removeEventListener('pointerdown', off, true); clearTimeout(tid); close(); };
+  setTimeout(() => document.addEventListener('pointerdown', off, true), 0);
 }
 function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('불러오기 실패: ' + src)); document.head.appendChild(s); }); }
 // ── 셀 명단 (1109-E3) — 셀 케어 읽기만. 명단은 화면 메모리에만 ──
@@ -2455,11 +2465,13 @@ const MI = {
   '카톡, 문자': '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
   '기타': '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>'
 };
-const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+const DOW = ['주', '월', '화', '수', '목', '금', '토'];   // 일요일은 '주일' (HB 11/9)
+function mdw(y) { return /^\d{4}-\d{2}-\d{2}$/.test(y || '') ? md(y) + ' ' + DOW[dowOf(y)] : md(y); }   // 11/7 토 — 한눈에 날짜 옆 요일(주월화수목금토)
+function dowName(y) { const i = dowOf(y); return i === 0 ? '주일' : DOW[i] + '요일'; }
 function md(y) { if (!y) return '—'; const p = y.split('-'); return (+p[1]) + '/' + (+p[2]); }
 function dayLabel(y) {
   if (!y) return '날짜 모름';
-  const p = y.split('-'), base = (+p[1]) + '월 ' + (+p[2]) + '일 ' + DOW[dowOf(y)] + '요일', n = daysBetween(y, today());
+  const p = y.split('-'), base = (+p[1]) + '월 ' + (+p[2]) + '일 ' + dowName(y), n = daysBetween(y, today());
   const yr = p[0] !== today().slice(0, 4) ? p[0] + '년 ' : '';
   return n === 0 ? '오늘 · ' + base : n === 1 ? '어제 · ' + base : yr + base;
 }
@@ -2479,7 +2491,7 @@ function head(title, left, right) {
   return '<div class="ph-head r2">' + vb + '<h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
-  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'attend' ? '<button class="fab" data-act="attadd">' + IC.plus + '출석</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
+  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'attend' ? '<button class="fab round" data-act="attadd" aria-label="출석했어요">' + IC.plus + '</button>' : '<button class="fab round" data-act="addrec" aria-label="심방했어요">' + IC.plus + '</button>';
   return f + '<nav class="ph-nav">' + TABS_NAV.map(t => { const on = S.view === t[0] || (t[0] === 'week' && S.view === 'month');
     return '<button data-act="tab" data-v="' + t[0] + '"' + (on ? ' aria-current="true"' : '') + '>' + IC[t[2]] + t[1] + '</button>'; }).join('') + '</nav>';
 }
@@ -2588,8 +2600,7 @@ function lDetail(L) {
   const v = byKey(L.key); if (!v) return lhead('', L) + '<div class="ph-body"><p class="empty">이 기록을 찾지 못했습니다.</p></div>';
   const dv = esc(v.key), url = sheetRowUrl(v);
   let h = '<div class="ph-head acts-only"><span></span><span class="acts"><button class="ic" data-act="edit" data-v="' + dv + '" aria-label="고치기">' + IC.pen + '</button>' +
-    '<a class="ic" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="시트에서 이 줄 열기">' + IC.sheet + '</a>' +
-    '<button class="ic" data-act="delrec" data-v="' + dv + '" aria-label="휴지통으로">' + IC.trash + '</button>' +
+        '<button class="ic" data-act="delrec" data-v="' + dv + '" aria-label="휴지통으로">' + IC.trash + '</button>' +
     '<button class="ic" data-act="close" aria-label="닫기">' + IC.x + '</button></span></div><div class="ph-body">';
   if (v.review) h += '<div class="review"><b>확인 필요</b> · 자동으로 들어온 기록입니다. 확인 단추는 C2 에서 열립니다.</div>';
   if (v.archived) h += '<div class="review" style="background:var(--s2)">보관된 기록입니다. 시트에는 그대로 있습니다.</div>';
@@ -2604,16 +2615,17 @@ function lDetail(L) {
   (v.addn || []).forEach(a => { h += '<div class="addn"><small>덧붙임 · ' + esc(a.at) + '</small>' + esc(a.x) + '</div>'; });
   if (S.addn === v.key) h += '<div class="addbox"><textarea id="addnText" class="inp" rows="3" placeholder="나중에 알게 된 것을 적습니다. 원래 이야기는 그대로 둡니다."></textarea><div class="row"><button class="btn pri" data-act="addnsave" data-v="' + esc(v.key) + '">덧붙이기</button><button class="btn" data-act="addnopen" data-v="">그만두기</button></div></div>';
   else h += '<button class="send" data-act="addnopen" data-v="' + esc(v.key) + '" style="margin-top:12px;display:block">+ 덧붙이기</button>';
-  h += '<div class="h-sec">할 일<small>' + (v.actions.length ? v.actions.filter(a => a.done).length + ' / ' + v.actions.length + ' 마침' : '') + '</small></div>' + (v.actions.length ? v.actions.map((a, i) => todoRow(v, a, i)).join('') : '<p class="empty">없습니다. 고치기에서 더할 수 있습니다.</p>');
+  h += '<div class="h-sec"><span>할 일<small style="margin-left:6px">' + (v.actions.length ? v.actions.filter(a => a.done).length + ' / ' + v.actions.length + ' 마침' : '') + '</small></span>' + (v.actions.length ? '' : '<button class="send" data-act="edit" data-v="' + esc(v.key) + '" aria-label="할 일 더하기(고치기)" style="padding-top:0;font-size:12.5px">+</button>') + '</div>' + (v.actions.length ? v.actions.map((a, i) => todoRow(v, a, i)).join('') : '');
   const past = M().visits.filter(x => x.name === v.name && x.key !== v.key);
   if (past.length) h += '<div class="h-sec">' + esc(v.name) + ' 님 다른 심방<small>' + past.length + '번</small></div><div class="tl">' + past.map(tlRow).join('') + '</div>';
-  h += '<p class="muted" style="margin-top:22px">시트 ' + v.row + '번째 줄 · ' + esc(v.src === '폼' ? '구글폼' : v.src) + '</p>';
+  h += '<p class="muted" style="margin-top:22px">시트 ' + v.row + '번째 줄 · ' + esc(v.src === '폼' ? '구글폼' : v.src) + '</p>' +
+    '<a class="sheetlnk" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="시트에서 이 줄 열기">' + IC.sheet + '</a>';
   return h + '</div>';
 }
 function todoRow(v, a, i, sub) {
   const lab = a.t === '기타' && a.x ? a.x : a.t + (a.x ? ' · ' + a.x : '');
   return '<div class="todo' + (a.done ? ' done' : '') + '"><button class="ck' + (a.done ? ' on' : '') + '" style="--k:var(--' + a.k + ')" data-act="tick" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-label="' + (a.done ? '다시 할 일로' : '마침 표시') + '"></button>' +
-    '<div class="lab"><b>' + esc(sub ? v.name : lab) + '</b>' + (sub ? ' · ' + esc(lab) : '') + '<small>' + (a.done ? (a.doneAt ? md(a.doneAt) + ' 마침 · ' : '마침 · ') : '') + md(v.ymd) + ' 심방' + (sub ? ' · ' + esc(talkPreview(v.text)).slice(0, 30) : '') + '</small></div>' +
+    '<div class="lab"><b>' + esc(sub ? v.name : lab) + '</b>' + (sub ? ' · ' + esc(lab) : '') + '<small>' + (a.done ? (a.doneAt ? mdw(a.doneAt) + ' 마침 · ' : '마침 · ') : '') + mdw(v.ymd) + ' 심방' + (sub ? ' · ' + esc(talkPreview(v.text)).slice(0, 30) : '') + '</small></div>' +
     '<div class="tacts">' + (v.id && (!a.done || a.b7) ? '<button class="b7b' + (a.b7 ? ' sent' : '') + '" data-act="b7open" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-label="BLOCK7 할일로 보내기">' + (a.b7 ? 'BLOCK7 ' + md(a.b7) : 'BLOCK7 →') + '</button>' : '') +
     (sub ? '<button class="send" data-act="open" data-v="' + esc(v.key) + '">›</button>' : '') + '</div></div>';
 }
@@ -2680,7 +2692,7 @@ function lPerson(L) {
   const att = attendOf(AT(), n);
   h += '<div class="h-sec">출석<small>' + (att.length ? att.length + '번 · 마지막 ' + relDay(att[0].date, t) : '기록 없음') + '</small></div>';
   if (att.length) h += '<div class="tl">' + att.slice(0, L.attAll ? 999 : 5).map(a => attRowHtml(a, false)).join('') + '</div>' + (att.length > 5 && !L.attAll ? '<button class="send" data-act="attall" style="margin-top:8px">출석 ' + att.length + '번 모두 보기</button>' : '');
-  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="send" data-act="attadd" data-v="' + esc(n) + '">+ 출석 적기</button><button class="send" data-act="b7person" data-v="' + esc(n) + '">BLOCK7 할일로</button></div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="send" data-act="attadd" data-v="' + esc(n) + '">+ 출석했어요</button><button class="send" data-act="b7person" data-v="' + esc(n) + '">BLOCK7 할일로</button></div>';
   const up = calItems().filter(e => e.ymd >= t && (e.planId ? e.title === n : e.title.includes(n)));
   h += '<div class="h-sec">흐름<small>' + vs.length + '번' + (all.length > vs.length ? ' · 보관 ' + (all.length - vs.length) : '') + '</small></div><div class="tl">';
   up.forEach(e => { h += e.planId ? '<button class="tlx" data-act="planopen" data-v="' + esc(e.planId) + '"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(((DATA.plans || []).find(p => p.id === e.planId) || {}).why || '물어볼 것 없음').split('\n')[0] + '</span></span></button>' : '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
@@ -2716,7 +2728,7 @@ function vAttend() {
   let h = head('출석', null, ['attpaste', '붙여 넣기', 'paste']) + '<div class="ph-body">';
   const quiet = attQuiet(all, today());
   if (quiet.length) h += '<div class="h-sec" style="margin-top:6px">요즘 안 보이는 분<small>' + ATT_QUIET_DAYS / 7 + '주 넘게 · 늘 오던 분</small></div>' + quiet.map(o => '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(o.name) + '">' + nm(o.name) + '<small>마지막 ' + md(o.last) + (o.svc ? ' ' + esc(o.svc) : '') + ' · ' + Math.floor(o.days / 7) + '주째 · 출석 ' + o.n + '번</small></button><button class="send" data-act="b7person" data-v="' + esc(o.name) + '">BLOCK7</button></div>').join('');
-  if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+ 출석" 으로 한 분씩 적거나, 오른쪽 위 붙여 넣기로 메모를 그대로 넣어 보세요.<br>예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
+  if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+" 로 한 분씩 적거나, 오른쪽 위 붙여 넣기로 메모를 그대로 넣어 보세요.<br>예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
   let last = null;
   list.forEach(a => {
     if (a.date !== last) { if (last !== null) h += '</div>'; h += '<div class="dhead"><b>' + dayLabel(a.date) + '</b><span>' + all.filter(x => x.date === a.date).length + '명</span></div><div class="tl">'; last = a.date; }
@@ -2774,7 +2786,7 @@ function attFieldHtml(L, k, noEtc) {
   if (open) h += '<input class="inp etc" data-f="' + k + '" data-etc="1" value="' + esc(opts.includes(cur) ? '' : cur) + '" placeholder="직접 적기" aria-label="' + esc(C.label(k)) + ' 직접 적기">';
   return h + '</div>';
 }
-function dayName(ymd) { return /^\d{4}-\d{2}-\d{2}$/.test(ymd || '') ? md(ymd) + ' ' + DOW[dowOf(ymd)] + '요일' : ''; }
+function dayName(ymd) { return /^\d{4}-\d{2}-\d{2}$/.test(ymd || '') ? md(ymd) + ' ' + dowName(ymd) : ''; }
 function attDateHtml(f, k) {
   k = k || 'date';
   const t = today(), days = attDays(t), cur = f[k], custom = !days.some(d => d[0] === cur);
@@ -2784,7 +2796,7 @@ function attDateHtml(f, k) {
 }
 function lAttEdit(L) {
   const f = L.form, names = splitNames(f.name), known = names.length === 1 && attNames().some(n => nameKey(n) === nameKey(names[0]));
-  let h = lhead(L.id ? '출석 고치기' : '출석 적기', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  let h = lhead(L.id ? '출석 고치기' : '출석했어요', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<div class="fsec">누가</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="' + (L.id ? '성도 이름' : '성도 이름 (여럿은 쉼표로)') + '" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + attSuggHtml(L) + '</div>' +
     '<div class="hint" id="nameHint">' + attNameHint(L) + '</div></div>';
   h += '<div class="fsec">언제 · 어디</div>' + attDateHtml(f) + attFieldHtml(L, 'svc');
@@ -2793,7 +2805,7 @@ function lAttEdit(L) {
   h += '<p class="hint">알약을 길게 누르면 이름 바꾸기 · 지우기, 길게 누른 채 끌면 순서를 바꿉니다(PC 는 오른쪽 단추 · 끌기).</p>';
   if (L.id) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn danger" data-act="attdel" data-v="' + esc(L.id) + '">이 출석 지우기</button></div>';
   h += omenuHtml(L);
-  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attsave">' + (L.id ? '고친 것 저장' : '시트에 적기') + '</button></div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attsave">' + (L.id ? '고친 것 저장' : '완료') + '</button></div>';
 }
 function omenuHtml(L) {
   const C = optCtx(L); if (!L.omenu || !C) return '';
@@ -2896,7 +2908,7 @@ function lAttPaste(L) {
   h += '<p class="muted">메모장에 적던 꼴 그대로 붙여 넣으세요. 사람 사이는 빈 줄로 띄웁니다.<br>첫 줄 = 이름, 그다음 날짜(11/8) · 예배 · 모임 · 처음부터/헌금부터 · 끝까지/나감 · 자리 · ○○와 함께 — 나머지는 메모가 됩니다.</p>';
   h += '<div class="fld"><textarea class="inp" data-f="paste" rows="9" placeholder="김하늘&#10;11/8&#10;주일 3부&#10;처음부터 참석&#10;맨 앞 자리&#10;끝까지 참석" aria-label="붙여 넣을 메모">' + esc(L.form.paste) + '</textarea></div>';
   h += '<div id="attPrev">' + attPreviewHtml(L) + '</div>';
-  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attpastesave">시트에 적기</button></div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attpastesave">완료</button></div>';
 }
 function openAttEdit(id, name) {
   if (id) { const a = AT().find(x => x.id === id); if (!a) return; openLayer('attedit', { id, form: { name: a.name, date: a.date, svc: a.svc, from: a.from, seen: a.seen || '', to: a.to, seat: a.seat, with: a.with, memo: a.memo }, open: {} }); return; }
@@ -3116,7 +3128,7 @@ function vCollect() {
     const key = ak2 + ':' + r.val, op = !!S.gopen[key], ppl = new Set(r.vs.map(v => v.name));
     const name = ak2 === 'depth' ? '<span style="display:inline-flex;gap:6px;align-items:center">' + dm(r.val) + DEPTH_NAME[r.val] + '</span>' : ak2 === 'tag' ? '#' + esc(r.val) : ak2 === 'method' ? '<span class="meth" style="font-size:14px;color:var(--tx)">' + (MI[r.val] || MI['기타']) + esc(r.val) + '</span>' : esc(r.val);
     h += '<div class="brow"><button style="width:100%" data-act="gopen" data-v="' + esc(key) + '"><div class="t"><span>' + name + '</span><em>' + r.vs.length + '번 · ' + ppl.size + '명 ' + (op ? '⌃' : '⌄') + '</em></div><div class="bar"><i style="width:' + (r.vs.length / mx * 100) + '%"></i></div></button>';
-    if (op) h += '<div class="in">' + r.vs.map(v => '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + md(v.ymd) + '</span><span><b style="font-weight:500">' + nm(v.name) + '</b> · ' + esc(talkPreview(v.text) || '(내용 없음)') + '</span></button>').join('') + '</div>';
+    if (op) h += '<div class="in">' + r.vs.map(v => '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + mdw(v.ymd) + '</span><span><b style="font-weight:500">' + nm(v.name) + '</b> · ' + esc(talkPreview(v.text) || '(내용 없음)') + '</span></button>').join('') + '</div>';
     h += '</div>';
   });
   return h + '</div>' + nav();
@@ -3125,7 +3137,7 @@ function vCollect() {
 // ───────────────────────────── 새 기록 · 고치기 (겹 화면) ─────────────────────────────
 function chip(label, on, act, k, v, kk) { return '<button class="opt' + (kk ? ' kk' : '') + '"' + (kk ? ' style="--k:var(--' + kk + ')"' : '') + ' data-act="' + act + '" data-k="' + k + '" data-v="' + esc(v) + '" aria-pressed="' + !!on + '">' + label + '</button>'; }
 function recentHtml(L) {
-  const names = recentNames(M() ? M().visits : [], AT());
+  const names = recentNames(M() ? M().visits : [], AT(), prefs().cutoff);
   const all = !!L.recentAll, show = names.slice(0, all ? 60 : 24);
   return '<div class="recent' + (all ? ' all' : '') + '"><button class="cellbtn" data-act="cellpick" aria-label="셀 명단에서 고르기">' + IC.people + '셀<span class="cv">' + IC.r + '</span></button>' +
     '<div class="rlist">' + show.map(n => '<button class="rn" data-act="pickname" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + '</div>' +
@@ -3265,14 +3277,14 @@ function talkPasteIn(L, text) {
 }
 function lEdit(L) {
   const f = L.form, FO = filterOptions(M().visits, DATA.opts), known = n => !!M().people[norm(n)];
-  let h = lhead(L.key ? '기록 고치기' : '새 기록', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  let h = lhead(L.key ? '기록 고치기' : '심방했어요', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<div class="fsec">누구를</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="성도 이름" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + suggHtml(L) + '</div>' + recentHtml(L) +
     (norm(f.name) && !known(f.name) ? '<div class="hint">처음 적는 이름입니다. 이름이 맞는지 한 번 봐 주세요.</div>' : '') + '</div>';
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
   const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
   h += multiHtml(L, 'roles', '구분', offer('roles', FO.role, []), 'rolesEtc', '직접 적기 (쉼표로 여럿)');
-  h += '<div class="fsec">언제 · 어디서</div>' + attDateHtml(f, 'ymd');
-  h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
+  h += '<div class="fsec">언제 · 어디서 · 어떻게</div>' + attDateHtml(f, 'ymd');
+  h += '<div class="fld"><span class="lb">어떻게</span><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
   // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
   h += DATA.hasPlace ? attFieldHtml(L, 'place') : '<p class="hint">장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.</p>';
   if (DATA.hasPay) h += attFieldHtml(L, 'pay', true);
@@ -3287,7 +3299,7 @@ function lEdit(L) {
   h += '<p class="hint">알약을 길게 누르면(PC 는 오른쪽 단추) 이름 바꾸기 · 지우기. 구분 · 태그 · 할 일은 구글폼 선택지도 함께 바뀝니다.</p>';
   if (L.key) h += '<p class="muted">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
   h += omenuHtml(L);
-  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '시트에 적기') + '</button></div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '완료') + '</button></div>';
 }
 function topLayer() { return S.layers[S.layers.length - 1]; }
 function lAttrs(L) {
@@ -3723,7 +3735,7 @@ document.addEventListener('click', e => {
     return;
   }
   const a = b.dataset.act, v = b.dataset.v, k = b.dataset.k;
-  if (a === 'tab') { goTab(v); return; }
+  if (a === 'tab') { goTab(v === 'week' && S.view === 'week' && b.closest('.ph-nav') ? 'month' : v); return; }   // 아래 달력 단추를 한 번 더 누르면 주간 ⇄ 월간 (1109-J 5)
   if (a === 'open') { openLayer('detail', { key: v }); return; }
   if (a === 'person') { openLayer('person', { name: v }); return; }
   if (a === 'layer') { openLayer(v); return; }
