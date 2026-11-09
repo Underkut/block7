@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1108-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1109-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -383,7 +383,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1108-7';
+const APP_VERSION = 'v. 26-1109-1';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -764,6 +764,18 @@ function aiSync(local, cloud, migrated, localKey) {
   const sum = {}; for (const k of Object.keys(local || {})) if (!c[k]) sum[k] = local[k];
   const push = {}; if (Object.keys(sum).length) push.sum = sum; if (!ck && localKey) push.key = localKey;
   return { store: Object.assign({}, c, sum), key: ck || localKey || '', push: Object.keys(push).length ? push : null };
+}
+// 1109-K1 이름표(저장 키)는 '표시를 뗀 본문' 으로 — 같은 글이 화면마다 '기도' 알약 · 🙏 · '이번 주:' 를 달리 달아도 같은 요약을 찾게.
+function aiBodyKey(text, mark) {
+  let t = String(text || '').normalize('NFC').replace(/^\s+/, ''); const m = String(mark || '').trim();
+  if (m && t.startsWith(m)) t = t.slice(m.length);
+  return textKey(t);
+}
+// 옛 이름표(표시 포함)로 저장된 것을 새 이름표로 옮길 칸들 — 길이 꼬리(#1 · #3)까지. 새 이름표에 이미 있으면 그대로 둔다.
+function aiAlias(store, oldK, newK) {
+  const out = {}; if (!store || !oldK || !newK || oldK === newK) return out;
+  for (const s of ['', '#1', '#3']) { const o = store[oldK + s]; if (o && !store[newK + s]) out[newK + s] = o; }
+  return out;
 }
 // 빠르게 (HB 11/7 '너무 오래 걸린다'): ①생각(thinking) 없는 가벼운 모델부터 ②글이 오는 대로 흘려 보여 줌(스트리밍) ③답 길이 상한.
 // 된 모델은 이 기기에 기억해 다음부터 그 모델로 바로 (없는 모델을 두드리는 왕복을 줄인다).
@@ -1841,7 +1853,7 @@ function applyClamp(root) {
   for (const el of (root || document).querySelectorAll('.clamp:not([data-ck])')) {
     if (!el.offsetParent) continue;
     el.dataset.ck = '1';
-    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); const k = textKey(el.textContent); el.dataset.aik = k;
+    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); const k = aiKeyOf(el); el.dataset.aik = k; aiMigrateKey(textKey(el.textContent), k);
       el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>' + aiBtn(k)); }
     aiApplyModes(el);
   }
@@ -1873,7 +1885,7 @@ function aiGet(k) { k = k && aiK(k); return k && aiStore()[k] ? aiStore()[k].s :
 function aiPut(k, sum) {
   const kk = aiK(k), st = aiStore(); st[kk] = { s: sum, at: Date.now() }; AI.store = aiTrim(st, AI_MAX); lsSet(AI_STORE, AI.store);
   const patch = { [kk]: st[kk] }; for (const x of Object.keys(st)) if (!AI.store[x]) patch[x] = firebase.firestore.FieldValue.delete();   // 상한 넘친 옛 것은 계정에서도
-  aiCloud({ sum: patch });
+  aiCloud({ sum: patch }); aiLocalNote();
 }
 // 계정에 못 올리면 조용히 넘기지 않는다 (HB 11/8: PC 에서 만든 요약이 폰에 없던 일 — 어디서 끊겼는지 보이게)
 function aiCloud(patch) { if (DEMO || !FB.user || !FB.db) return; FB.db.collection('cellbook').doc(FB.user.uid).set({ ai: patch, at: Date.now() }, { merge: true }).then(() => { if (AI.cloudErr) { AI.cloudErr = ''; aiAcctUi(); } }).catch(e => {
@@ -1902,9 +1914,31 @@ function aiFromCloud(ai) {   // cellbook 문서가 바뀔 때마다 (다른 기�
   if (r.push) aiCloud(r.push);
   const rk = aiSync(kwStore(), { sum: (ai && ai.kw) || {} }, mig, '');   // 핵심(C2)도 같은 규칙
   AI.kw = rk.store; lsSet(AI_KW, AI.kw); if (rk.push && rk.push.sum) aiCloud({ kw: rk.push.sum });
-  lsSet('cell_ai_mig', FB.user.uid);
+  lsSet('cell_ai_mig', FB.user.uid); AI.loaded = true;
+  if (!(ai && AI_LENS[ai.len]) && aiLen() !== 2) aiCloud({ len: aiLen() });   // 길이를 바꾼 기기가 먼저면 계정에도 (길이가 다르면 이름표 꼬리가 달라 서로 못 찾는다)
   for (const b of document.querySelectorAll('.aibtn')) { let el = b.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling; if (el) b.classList.toggle('has', !!aiGet(el.dataset.aik)); }
-  aiAcctUi();
+  aiRefreshShown(); aiAcctUi();
+}
+// 1109-K1 다른 기기에서 온 요약 · 핵심을 지금 화면에 바로 입힌다 — 보이는 요약이 계정 것과 다르면 바꾸고, '모두 요약' · '핵심 보기' 가 켜진 탭은 새로 온 것을 펼친다.
+function aiRefreshShown() {
+  for (const el of document.querySelectorAll('.clamp[data-ck]')) {
+    if (!el.isConnected) continue; const b = starOf(el); if (b && b.classList.contains('busy')) continue;
+    if (el.classList.contains('aikw')) { const k = kwGet(elKey(el)); if (k && k !== el.dataset.kwv) kwShow(el, k, true); continue; }
+    const s = el.dataset.aik ? aiGet(el.dataset.aik) : '';
+    if (el.classList.contains('aisum')) { if (s && s !== el.dataset.aiv) aiShow(el, b, s, true); }
+    else if (s && allOn() && b) aiShow(el, b, s, true);
+    if (kwOn() && !el.classList.contains('aikw')) { const k = kwGet(elKey(el)); if (k) kwShow(el, k, true); }
+  }
+}
+// 계정 내용이 아직 안 왔으면 잠깐(최대 5초) 기다린다 — 앱을 열자마자 별을 누르면 다른 기기에서 이미 만든 것을 못 보고 새로 만들던 것 (1109-K1)
+async function aiReady() {
+  if (DEMO) return; const t0 = Date.now();
+  while (Date.now() - t0 < 5000 && ((lsGet('cell_fb', 0) && !FB.ready) || (FB.user && !AI.loaded))) await new Promise(r => setTimeout(r, 120));
+}
+// 계정에 로그인하지 않은 기기에서 만들면 한 번 알린다 (아이폰 홈 화면 앱은 사파리와 로그인이 따로라 놓치기 쉽다)
+function aiLocalNote() {
+  if (DEMO || FB.user || AI.warnedLocal) return; AI.warnedLocal = true;
+  setTimeout(() => { toast('이 기기에만 저장했습니다\n다른 기기에서도 보려면\n⋯ › AI 요약에서 계정에 로그인해 주세요'); toast.at = Date.now(); }, 1200);
 }
 function aiBtn(k) { return `<button class="aibtn${aiGet(k) ? ' has' : ''}" data-act="ai" aria-label="AI 요약" title="AI 요약">${SPARK}</button>`; }
 function aiNames() {
@@ -1917,7 +1951,7 @@ function aiShow(el, btn, sum, still) {
   if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
   const h0 = el.clientHeight;
   if (!el.classList.contains('open')) { el.classList.add('open'); AI.opened.add(el); const mb = el.nextElementSibling; if (mb && mb.classList.contains('morebtn')) { mb.setAttribute('aria-label', '접기'); const i = mb.querySelector('i'); if (i) i.classList.add('up'); } }   // 접혀 있었어도 요약을 누르면 펼친다
-  el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(sum)}`; el.classList.add('aisum'); if (btn) btn.classList.add('has', 'on');
+  el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(sum)}`; el.dataset.aiv = sum; el.classList.add('aisum'); if (btn) btn.classList.add('has', 'on');
   if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 function aiHide(el, btn, still) {
@@ -1960,13 +1994,14 @@ async function aiClick(btn) {
   let el = btn.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling;
   if (!el || btn.classList.contains('busy')) return;
   if (el.classList.contains('aisum')) return aiHide(el, btn);
-  const k = el.dataset.aik || textKey(el.textContent);
+  const k = el.dataset.aik || aiKeyOf(el);
+  if (!aiGet(k) && !DEMO) { btn.classList.add('busy'); try { await aiReady(); } finally { btn.classList.remove('busy'); } }
   const have = aiGet(k); if (have) return aiShow(el, btn, have);
   if (!DEMO && !lsGet(AI_KEY, '')) return openAiCfg();
   btn.classList.add('busy');
   const orig = bodyOf(el); let shown = false;
   const part = (t) => { if (!el.isConnected) return; if (!shown) { aiShow(el, btn, t); shown = true; } else el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(t)}`; };   // 오는 대로 흘려 보여 준다
-  try { const sum = await aiCall(orig, part, subjOf(el)); aiPut(k, sum); if (el.isConnected) { if (shown) el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(sum)}`; else aiShow(el, btn, sum); } }
+  try { const sum = await aiCall(orig, part, subjOf(el)); aiPut(k, sum); if (el.isConnected) { if (shown) { el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(sum)}`; el.dataset.aiv = sum; } else aiShow(el, btn, sum); } }
   catch (e) { if (shown && el.isConnected) aiHide(el, btn); toast(e.message || String(e)); toast.at = Date.now(); }
   finally { btn.classList.remove('busy'); }
 }
@@ -1981,12 +2016,12 @@ function kwGet(k) { return k && kwStore()[k] ? kwStore()[k].s : ''; }
 function kwPutMany(pairs) {
   const st = kwStore(), patch = {}; for (const [k, v] of pairs) { st[k] = { s: v, at: Date.now() }; patch[k] = st[k]; }
   AI.kw = aiTrim(st, AI_MAX * 2); for (const x of Object.keys(st)) if (!AI.kw[x]) patch[x] = DEMO ? null : firebase.firestore.FieldValue.delete();
-  lsSet(AI_KW, AI.kw); aiCloud({ kw: patch });
+  lsSet(AI_KW, AI.kw); aiCloud({ kw: patch }); aiLocalNote();
 }
 // 글의 주인공: 사람 카드(살필 분)의 이름 · 근황 줄의 이름(who). 셀 전체 카드는 주인공 없음
 function subjOf(el) { const box = el.closest('.note, .pcard'); if (!box || box.dataset.act === 'open-cell') return ''; const w = box.querySelector('.who, .nm'); return w ? w.textContent.trim() : ''; }
 // 글 앞 표시(🙏 · '이번 주:' · '•')는 요약 · 핵심으로 바꿔도 남긴다 (HB 11/7: 이슈 탭에서 기도 표시가 사라지던 것)
-function bodyOf(el) { return elText(el).slice(markOf(el).length); }   // AI 에는 표시를 떼고 보낸다(되돌아와 두 번 붙지 않게)
+function bodyOf(el) { const m = markOf(el); const t = elBody(el); return m === '기도' ? t : t.replace(/^\s*/, '').slice(m.trim().length).replace(/^\s+/, ''); }   // AI 에는 표시를 떼고 보낸다(되돌아와 두 번 붙지 않게)
 // 기도 표시 = 작은 '기도' 알약 (HB 11/7 시안 B — 🙏 이모지가 튀어서)
 const PRAYTAG = '<span class="praytag">기도</span>';
 function markOf(el) { if (/^\s*<span class="praytag">/.test(AI.orig.get(el) || el.innerHTML)) return '기도'; const m = elText(el).match(/^\s*(🙏\s*|이번 주:\s*|•\s*)/); return m ? m[1] : ''; }
@@ -1995,14 +2030,28 @@ const NOLBL_TABS = ['issue', 'prayer', 'comment'];   // 본문만 있는 탭은 
 const allOn = () => !!(PREF.aiAllT && PREF.aiAllT[PREF.tab]);   // 모두 요약 · 핵심 보기는 탭마다 따로 (HB 11/7)
 const kwOn = () => !!(PREF.aiKwT && PREF.aiKwT[PREF.tab]);
 function setMode(which, on) { const k = which === 'kw' ? 'aiKwT' : 'aiAllT'; PREF[k] = Object.assign({}, PREF[k] || {}, { [PREF.tab]: on }); savePref(); }
-function elKey(el) { return el.dataset.aik || (el.dataset.aik0 || (el.dataset.aik0 = textKey(AI.orig.has(el) ? (() => { const d = document.createElement('div'); d.innerHTML = AI.orig.get(el); return d.textContent; })() : el.textContent))); }
+function elKey(el) {
+  if (el.dataset.aik) return el.dataset.aik;
+  if (!el.dataset.aik0) { const k = aiKeyOf(el); el.dataset.aik0 = k; aiMigrateKey(textKey(elText(el)), k); }
+  return el.dataset.aik0;
+}
+// 1109-K1 본문만(표시 · 기도제목 탭의 주 표시 .pmeta 를 뗌) → 이름표. 옛 이름표(보이는 글 전체)로 저장된 것은 처음 볼 때 옮긴다.
+function elBody(el) { const d = document.createElement('div'); d.innerHTML = AI.orig.has(el) ? AI.orig.get(el) : el.innerHTML; for (const x of d.querySelectorAll('.pmeta, .praytag')) x.remove(); return d.textContent; }
+function aiKeyOf(el) { const m = markOf(el); return aiBodyKey(elBody(el), m === '기도' ? '' : m); }
+function aiMigrateKey(oldK, newK) {
+  const a = aiAlias(aiStore(), oldK, newK), q = AI.migQ || (AI.migQ = { sum: {}, kw: {} });
+  if (Object.keys(a).length) { Object.assign(AI.store, a); lsSet(AI_STORE, AI.store); Object.assign(q.sum, a); }
+  const st = kwStore(), o = st[oldK]; if (o && oldK !== newK && !st[newK]) { st[newK] = o; lsSet(AI_KW, st); q.kw[newK] = o; }
+  if ((Object.keys(q.sum).length || Object.keys(q.kw).length) && !AI.migT) AI.migT = setTimeout(() => {   // 한 화면 몫을 한 번에 올린다
+    const x = AI.migQ; AI.migQ = null; AI.migT = 0; const patch = {}; if (Object.keys(x.sum).length) patch.sum = x.sum; if (Object.keys(x.kw).length) patch.kw = x.kw; aiCloud(patch); }, 400);
+}
 function elText(el) { if (!AI.orig.has(el)) return el.textContent; const d = document.createElement('div'); d.innerHTML = AI.orig.get(el); return d.textContent; }
 function starOf(el) { let b = el.nextElementSibling; if (b && b.dataset.act === 'more') b = b.nextElementSibling; return b && b.dataset.act === 'ai' ? b : null; }
 function kwShow(el, kw, still) {
   if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
   if (!el.classList.contains('aikw')) { AI.pre = AI.pre || new WeakMap(); AI.pre.set(el, { html: el.innerHTML, sum: el.classList.contains('aisum') }); }
   const h0 = el.clientHeight;
-  el.innerHTML = `${markHtml(el)}${NOLBL_TABS.includes(PREF.tab) ? '' : '<span class="ailbl kw">핵심</span>'}${esc(kw)}`; el.classList.add('aikw', 'aisum');
+  el.innerHTML = `${markHtml(el)}${NOLBL_TABS.includes(PREF.tab) ? '' : '<span class="ailbl kw">핵심</span>'}${esc(kw)}`; el.dataset.kwv = kw; el.classList.add('aikw', 'aisum');
   if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 function kwHide(el, still) {
@@ -2063,6 +2112,7 @@ async function aiRunBatch(kind, els, keyOf, put) {   // 묶음마다 보내고, 
 }
 async function aiAllClick() {
   if (AI.bulk) return;
+  if (!DEMO && FB.user && !AI.loaded) { AI.bulk = 'sum'; drawAiBar(); try { await aiReady(); } finally { AI.bulk = ''; drawAiBar(); } }
   const els = panelTexts(false); const miss = els.filter(el => !aiGet(el.dataset.aik));
   if (!miss.length) {   // 다 있으면 '모두 요약 ↔ 모두 원본' 바꾸기
     if (!els.length) { toast('이 화면에는\n요약할 긴 글이 없습니다'); toast.at = Date.now(); return; }
@@ -2079,6 +2129,7 @@ async function aiAllClick() {
 }
 async function aiKwClick() {
   if (AI.bulk) return;
+  if (!DEMO && FB.user && !AI.loaded) { AI.bulk = 'kw'; drawAiBar(); try { await aiReady(); } finally { AI.bulk = ''; drawAiBar(); } }
   const els = panelTexts(true); const miss = els.filter(el => !kwGet(elKey(el)));
   if (!miss.length || (kwOn() && !confirmMore(miss.length))) {   // 다 있으면(또는 새 글을 만들지 않기로 하면) 켜고 끄기
     if (!els.length) { toast('이 화면에는\n본문이 없습니다'); toast.at = Date.now(); return; }
@@ -2270,8 +2321,8 @@ async function fbInit() {
       FB.user = u; FB.ready = true;
       if (FB.unsub) { FB.unsub(); FB.unsub = null; }
       if (u) { setTimeout(() => careLoad(), 300); lsSet('cell_fb', 1); FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => { try { aiFromCloud(d.exists ? d.data().ai : null); } catch (_) { } BOOK.phones = (d.exists && d.data().phones) || {}; BOOK.loaded = true; BOOK.err = ''; phoneUi(); },
-        e => { BOOK.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 주세요 (docs/cell/firestore-rules.md).' : '번호를 불러오지 못했습니다. ' + (e && e.message || ''); phoneUi(); }); }
-      else { BOOK.phones = {}; BOOK.loaded = false; AI.cloud = null; AI.cloudErr = ''; }
+        e => { AI.loaded = true; AI.cloudErr = (e && e.code === 'permission-denied') ? '서버 권한이 없습니다' : ((e && (e.code || e.message)) || '계정을 읽지 못했습니다'); aiAcctUi(); BOOK.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 주세요 (docs/cell/firestore-rules.md).' : '번호를 불러오지 못했습니다. ' + (e && e.message || ''); phoneUi(); }); }
+      else { BOOK.phones = {}; BOOK.loaded = false; AI.cloud = null; AI.cloudErr = ''; AI.loaded = false; }
       phoneUi(); aiAcctUi();
     });
   })();

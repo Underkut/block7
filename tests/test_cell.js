@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiBodyKey, aiAlias, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -390,6 +390,17 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   // HB 11/8: PC 에서 만든 요약 · 열쇠가 폰에 없었다 — 셀 케어 로그인과 계정 로그인이 따로라, 계정에 로그인 안 한 기기는 조용히 이 기기에만 남겼다
   sc.eq('⑱ 계정에 못 올리면 조용히 넘기지 않는다 (catch 가 비어 있지 않음 · 토스트)', !/\{ ai: patch, at: Date\.now\(\) \}, \{ merge: true \}\)\.catch\(\(\) => \{\}\)/.test(HTML) && /AI 요약을 계정에 올리지 못했습니다/.test(HTML), true);
   sc.eq('⑱ AI 설정창이 계정 상태를 보여 준다 (이메일 · 계정에 있는 열쇠 · 요약 · 핵심 수 · 로그인 단추)', /<span id="aiacct">\$\{aiAcctHtml\(\)\}<\/span>/.test(HTML) && /data-act="ai-login"/.test(HTML) && /case 'ai-login': closeThr\(\); return openBook\(null\);/.test(HTML) && /AI\.cloud = \{ key: !!\(ai && ai\.key\)/.test(HTML), true);
+  // 1109-K1 (HB 11/9: PC 와 폰에서 같은 글의 요약이 따로 만들어져 달랐다)
+  const body = '모친과의 관계 회복을 시도하는 한편\n두려움이 다시 올라왔습니다.';
+  sc.eq('⑱ K1 이름표는 표시를 뗀 본문 — 기도 알약 · 🙏 · 이번 주: 가 달라도 같은 이름표', new Set([A.aiBodyKey(body, ''), A.aiBodyKey('🙏 ' + body, '🙏 '), A.aiBodyKey('이번 주: ' + body, '이번 주: '), A.aiBodyKey('  ' + body.replace('\n', '  '), '')]).size, 1);
+  sc.eq('⑱ K1 다른 글은 다른 이름표', A.aiBodyKey(body, '') !== A.aiBodyKey(body + '!', ''), true);
+  sc.eq('⑱ K1 NFD(맥에서 온 글자)도 같은 이름표', A.aiBodyKey(body.normalize('NFD'), ''), A.aiBodyKey(body, ''));
+  const old = { o: { s: '옛 두 문장', at: 1 }, 'o#3': { s: '옛 세 문장', at: 1 }, 'n#1': { s: '새 한 문장', at: 2 } };
+  sc.eq('⑱ K1 옛 이름표 것을 새 이름표로 옮김 (길이 꼬리까지 · 새 쪽에 있으면 안 덮음)', J(A.aiAlias(old, 'o', 'n')), { n: { s: '옛 두 문장', at: 1 }, 'n#3': { s: '옛 세 문장', at: 1 } });
+  sc.eq('⑱ K1 이름표가 같으면 옮길 것 없음', A.aiAlias(old, 'o', 'o'), {});
+  sc.eq('⑱ K1 별을 누르면 계정 내용이 올 때까지 기다린 뒤 없을 때만 AI 를 부른다', /if \(!aiGet\(k\) && !DEMO\) \{ btn\.classList\.add\('busy'\); try \{ await aiReady\(\); \}/.test(HTML) && /AI\.loaded = true;/.test(HTML), true);
+  sc.eq('⑱ K1 다른 기기에서 온 요약을 지금 화면에 입힌다', /aiRefreshShown\(\); aiAcctUi\(\);/.test(HTML) && /if \(s && s !== el\.dataset\.aiv\) aiShow\(el, b, s, true\)/.test(HTML), true);
+  sc.eq('⑱ K1 로그인 안 한 기기에서 만들면 한 번 알린다', /aiCloud\(\{ sum: patch \}\); aiLocalNote\(\);/.test(HTML) && /aiCloud\(\{ kw: patch \}\); aiLocalNote\(\);/.test(HTML), true);
   sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\), subject\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
 }
 
