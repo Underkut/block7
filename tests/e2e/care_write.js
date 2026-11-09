@@ -33,6 +33,7 @@ const path = require('path');
 const FILE = 'file://' + path.join(__dirname, '..', '..', 'care', 'index.html');
 
 let pass = 0, fail = 0;
+const J0 = v => JSON.stringify(v);
 const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.stringify(want); if (a === b) { pass++; console.log('  ✓', name); } else { fail++; console.log('  ✗', name, '\n    결과:', a, '\n    기대:', b); } };
 
 // ── 가짜 시트 ──
@@ -734,22 +735,49 @@ async function route(r) {
   { const RT = tab('Form Responses 1'); RT.rows[0].push('장소', '사주심/사드림'); const cP = RT.rows[0].length - 2, cY = cP + 1;
     await page.evaluate(() => loadData(true)); await page.waitForTimeout(800);
     await page.evaluate(() => openEdit(null)); await tidy();
-    eq('㉔ 입력 화면에 장소 칸 · 사주심 / 사드림 알약', [await page.$$eval('.layer:last-child [data-f="place"]', x => x.length), await page.$$eval('.layer:last-child [data-act="fone"][data-k="pay"]', x => x.map(e => e.dataset.v))], [1, ['사주심', '사드림']]);
+    eq('㉔ 입력 화면에 장소 알약 칸 · 사주심 / 사드림 알약', [await page.$$eval('.layer:last-child .pills[data-k="place"]', x => x.length), await page.$$eval('.layer:last-child [data-act="aone"][data-k="pay"]', x => x.map(e => e.dataset.v))], [1, ['사주심', '사드림']]);
     await page.fill('.layer:last-child [data-f="name"]', '장소사람');
     await page.fill('.layer:last-child [data-f="text"]', '카페에서 만남');
+    eq('㉔ 장소는 알약 + 직접 적기(접힘)', [await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]', x => x.length), await page.$$eval('.layer:last-child [data-f="place"]', x => x.length)], [1, 0]);
+    await page.click('.layer:last-child [data-act="aetc"][data-k="place"]'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-f="place"]', '역 앞 카페');
-    await page.click('.layer:last-child [data-act="fone"][data-k="pay"][data-v="사드림"]');
+    await page.click('.layer:last-child [data-act="aone"][data-k="pay"][data-v="사드림"]');
     await page.click('.layer:last-child [data-act="saverec"]'); await page.waitForTimeout(1500);
     const row = () => RT.rows.find(r => r[2] === '장소사람') || [];
     eq('㉔ 새 기록 — 장소 · 사드림이 그 열에', [row()[cP], row()[cY]], ['역 앞 카페', '사드림']);
     await page.evaluate(() => openEdit(M().visits.find(v => v.name === '장소사람').key)); await tidy();
-    eq('㉔ 고치기 화면 — 사드림이 눌려 있고 장소도 그대로', [await page.$eval('.layer:last-child [data-act="fone"][data-k="pay"][aria-pressed="true"]', e => e.dataset.v), await page.$eval('.layer:last-child [data-f="place"]', e => e.value)], ['사드림', '역 앞 카페']);
-    await page.click('.layer:last-child [data-act="fone"][data-k="pay"][data-v="사주심"]');
+    eq('㉔ 고치기 화면 — 사드림 · 장소 알약이 눌려 있다', [await page.$eval('.layer:last-child [data-act="aone"][data-k="pay"][aria-pressed="true"]', e => e.dataset.v), await page.$eval('.layer:last-child .pills[data-k="place"] [aria-pressed="true"]', e => e.dataset.v)], ['사드림', '역 앞 카페']);
+    await page.click('.layer:last-child [data-act="aone"][data-k="pay"][data-v="사주심"]');
     const n9 = LOG.length;
     await page.click('.layer:last-child [data-act="saverec"]'); await page.waitForTimeout(1500);
     eq('㉔ 고치기 — 사주심 칸 + 수정 시각만', [row()[cY], LOG.slice(n9).filter(x => x[0] === 'set').length], ['사주심', 2]);
-    if (process.env.SHOT) { await page.evaluate(() => openEdit(M().visits.find(v => v.name === '장소사람').key)); await tidy(); await page.screenshot({ path: process.env.SHOT + '/pay.png' }); await page.keyboard.press('Escape'); }
+    // 1109-D2 장소 알약 — 입력 화면에서 더하기 → '심방 선택지' 탭 · 길게 눌러 이름 바꾸기 · 지우기(지난 기록은 그대로)
+    await page.evaluate(() => openEdit(M().visits.find(v => v.name === '장소사람').key)); await tidy();
+    eq('㉔ 탭이 비면 지난 기록에 쓴 장소가 알약으로', await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aone"]', x => x.map(e => e.dataset.v).includes('역 앞 카페')), true);
+    await page.click('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
+    await page.fill('.layer:last-child [data-optadd="place"]', '교회 카페'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200);
+    const vt = () => (tab('심방 선택지') || { rows: [] }).rows;
+    eq("㉔ 알약 더하기 → '심방 선택지' 탭에 장소 줄 · 고른 것이 됨", [J0(vt().filter(r => r[0] === '장소').map(r => r[1])).includes('교회 카페'), await page.$eval('.layer:last-child .pills[data-k="place"] [aria-pressed="true"]', e => e.dataset.v)], [true, '교회 카페']);
+    await page.click('.layer:last-child .pills[data-k="place"] [data-v="교회 카페"]', { button: 'right' }); await page.waitForTimeout(300);
+    eq('㉔ 우클릭 → 메뉴(이름 바꾸기 · 지우기)', await page.$$eval('.layer:last-child .omenu button', x => x.map(e => e.textContent)), ['이름 바꾸기', '지우기', '취소']);
+    await page.evaluate(() => { window.prompt = () => '교회 1층 카페'; });
+    await page.click('.layer:last-child .omenu [data-act="aoptren"]'); await page.waitForTimeout(1200);
+    eq('㉔ 이름 바꾸기 → 탭 · 고른 값도 따라감', [vt().some(r => r[1] === '교회 1층 카페'), vt().some(r => r[1] === '교회 카페'), await page.evaluate(() => topLayer().form.place)], [true, false, '교회 1층 카페']);
+    await page.click('.layer:last-child .pills[data-k="place"] [data-v="교회 1층 카페"]', { button: 'right' }); await page.waitForTimeout(300);
+    await page.click('.layer:last-child .omenu [data-act="aoptdel"]'); await page.waitForTimeout(1200);
+    eq('㉔ 지우기 → 탭에서 빠짐 · 지난 기록 글자는 그대로', [vt().some(r => r[1] === '교회 1층 카페'), row()[cP]], [false, '역 앞 카페']);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/pay.png' });
+    await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
+
+  // 1109-D1 버전 — 설정 맨 아래 버전은 단추, 좌상단 배지는 개발자 계정에만
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  eq('㉕ 다른 사용자에게는 좌상단 버전 배지가 없다', await page.$$eval('.verbadge', x => x.length), 0);
+  await page.evaluate(() => { USER.email = 'denartist@gmail.com'; render(); }); await page.waitForTimeout(200);
+  eq('㉕ 개발자 계정이면 좌상단에 버전', await page.$eval('.ph-head .verbadge', e => e.textContent), await page.evaluate(() => APP_VERSION.replace(/^v\.\s*/, 'v')));
+  await page.evaluate(() => { USER.email = 'test@example.com'; render(); openLayer('settings'); }); await page.waitForTimeout(400);
+  eq('㉕ 설정 맨 아래 버전은 누르는 단추', await page.$$eval('.layer:last-child button[data-act="vercheck"]', x => x.length), 1);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();

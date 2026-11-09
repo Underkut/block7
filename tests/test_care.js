@@ -43,7 +43,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT };`, ctx);
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -574,6 +574,26 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('㉔ 폼 질문에서 선택지를 읽는다', J(A.formQOf(FS, 'pay').options), ['사주심', '사드림', '각자']);
   sc.eq("㉔ 폼에 '장소' 가 있으면 '장소 · 메모' 를 또 더하자고 하지 않는다", A.placeQuestionRequest({ items: [{ title: '장소', questionItem: { question: { textQuestion: {} } } }] }), null);
   sc.eq('㉔ 사주심 칸은 앱 열로 잡히지 않는다(기록ID 등과 섞이지 않음)', A.headerMap(['성도 이름', '내용', '기록ID']).map.pay, undefined);
+}
+
+// ㉕ (1109-D) 새 버전 받기 · 개발자 배지 · 장소 · 사주심 알약 목록
+{
+  sc.eq('㉕ 버전 견주기 — 같은 날 빌드 번호 · 날짜 · 해', [A.isNewer('v. 26-1109-5', 'v. 26-1109-4'), A.isNewer('v. 26-1109-10', 'v. 26-1109-9'), A.isNewer('v. 26-1110-1', 'v. 26-1109-12'), A.isNewer('v. 27-0101-1', 'v. 26-1231-9')], [true, true, true, true]);
+  sc.eq('㉕ 같거나 옛것 · 꼴이 이상하면 새 버전이 아니다(다시 열기 되풀이 막기)', [A.isNewer('v. 26-1109-4', 'v. 26-1109-4'), A.isNewer('v. 26-1109-3', 'v. 26-1109-4'), A.isNewer('', 'v. 26-1109-4'), A.isNewer('<html>', 'v. 26-1109-4')], [false, false, false, false]);
+  sc.eq('㉕ 지금 앱 버전도 그 꼴이다', A.verNum(A.APP_VERSION) > 0, true);
+  sc.eq('㉕ 개발자 배지는 HB 계정에만(대소문자 무시)', [A.isDevEmail('denartist@gmail.com'), A.isDevEmail('DenArtist@Gmail.com'), A.isDevEmail('test@example.com'), A.isDevEmail(undefined)], [true, true, false, false]);
+  sc.eq("㉕ 탭 이름 '심방 선택지' · 칸 장소 · 사주심", [A.VIS_OPT_TAB, J(A.VIS_OPT_FIELDS.map(f => f[0]))], ['심방 선택지', ['place', 'pay']]);
+  const vis = [{ place: '역 앞 카페' }, { place: '역 앞 카페' }, { place: '교회 카페' }, { place: '' }];
+  const d0 = A.visOptDefaults(vis, {});
+  sc.eq('㉕ 탭이 비면 — 장소는 자주 쓴 것, 사주심은 사주심 · 사드림', J([d0.place, d0.pay]), [['역 앞 카페', '교회 카페'], ['사주심', '사드림']]);
+  const d1 = A.visOptDefaults(vis, { places: ['교회', '집'], pays: ['사주심', '사드림', '각자'] });
+  sc.eq('㉕ 폼 질문에 선택지가 있으면 그것을 처음 목록으로', J([d1.place, d1.pay]), [['교회', '집'], ['사주심', '사드림', '각자']]);
+  const P = A.optsParse([['칸', '값'], ['장소', '스타벅스'], ['장소', '집'], ['출석 칸', 'x'], ['사주심 / 사드림', '사드림']], A.VIS_OPT_FIELDS);
+  sc.eq('㉕ 탭 읽기 — 칸 이름으로 · 모르는 칸은 버림', J([P.place, P.pay]), [['스타벅스', '집'], ['사드림']]);
+  const U = A.visOptsUse(A.optsParse([['칸', '값'], ['장소', '스타벅스']], A.VIS_OPT_FIELDS), vis, {});
+  sc.eq('㉕ 탭에 없는 칸(사주심)은 기본값으로', J([U.place, U.pay]), [['스타벅스'], ['사주심', '사드림']]);
+  sc.eq('㉕ 탭에 쓸 줄', J(A.optsRows({ place: ['집'], pay: ['사주심'] }, A.VIS_OPT_FIELDS)), [['칸', '값'], ['장소', '집'], ['사주심 / 사드림', '사주심']]);
+  sc.eq('㉕ 출석 선택지 읽기 · 쓰기는 예전 그대로', J(A.attOptsRows(A.attOptsParse([['칸', '값'], ['자리', '맨 앞']]))), [['칸', '값'], ['자리', '맨 앞']]);
 }
 
 sc.done();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -72,6 +72,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 /* 폰 안 — 공통 */
 .ph-head{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));min-height:58px;position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--paper) 94%,transparent);backdrop-filter:blur(8px)}
 .ph-head.r2{grid-template-columns:88px 1fr 88px}
+.verbadge{justify-self:start;padding:6px 8px;font-size:10px;line-height:1.2;color:var(--tx3);letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.verbadge.new{color:var(--ac);font-weight:600}.verbadge.new::after{content:'';display:inline-block;width:5px;height:5px;margin-left:4px;border-radius:50%;background:var(--ac);vertical-align:middle}
+.verbadge.busy,.vercheck.busy{opacity:.4}
+.vercheck{display:block;margin-top:22px;padding:6px 0;font-size:13px;color:var(--tx2);text-align:left}.vercheck span{color:var(--ac)}.vercheck.new span::after{content:' · 새 버전 있음'}
 .ph-head .acts{display:flex;justify-content:flex-end}
 .ph-head.acts-only{grid-template-columns:1fr auto}
 .ph-head a.ic{text-decoration:none}
@@ -516,7 +520,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-4';
+const APP_VERSION = 'v. 26-1109-5';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -545,6 +549,11 @@ const Q = {
 // 띄어쓰기를 뺀 제목으로 본다. 위 Q 의 정확한 이름이 먼저다.
 const Q_LIKE = { place: k => /^장소/.test(k), pay: k => /사주심|사드림/.test(k) };
 const PAY_DEFAULT = ['사주심', '사드림'];
+// 버전 'v. 26-1109-5' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
+function verNum(v) { const m = String(v || '').match(/(\d{2})-(\d{4})-(\d+)/); return m ? (+(m[1] + m[2])) * 1000 + (+m[3]) : 0; }
+function isNewer(latest, mine) { return verNum(latest) > verNum(mine); }
+const DEV_EMAIL = 'denartist@gmail.com';   // BLOCK7 _isDevAccount 와 같은 판정
+function isDevEmail(e) { return String(e || '').toLowerCase() === DEV_EMAIL; }
 function qLike(key, title) { const t = norm(title); return (Q[key] || []).includes(t) || (!!Q_LIKE[key] && Q_LIKE[key](t.replace(/\s+/g, ''))); }
 // 폼 질문 목록에서 그 칸의 질문 (없으면 null)
 function formQOf(summary, key) { return (summary || []).find(q => (Q[key] || []).includes(q.title)) || (summary || []).find(q => qLike(key, q.title)) || null; }
@@ -1270,20 +1279,38 @@ function attOptDefaults(list) {
   return { svc: ATT_SVC.slice(), from: ATT_FROM.slice(), seen: ATT_SEEN.slice(), to: ATT_TO.slice(), seat: top('seat'), with: top('with') };
 }
 // 탭 → { svc: [...], ... }. 탭이 없거나 비면 null (기본값을 쓰라는 뜻). 모르는 칸 이름 · 빈 값 · 겹친 값은 버린다.
-function attOptsParse(values) {
+function optsParse(values, fields) {
   const rows = (values || []).slice(1).filter(r => r && norm(r[0]) && norm(r[1])); if (!rows.length) return null;
-  const byLabel = {}; ATT_OPT_FIELDS.forEach(f => { byLabel[f[1]] = f[0]; });
-  const o = {}; ATT_OPT_FIELDS.forEach(f => { o[f[0]] = []; });
+  const byLabel = {}; fields.forEach(f => { byLabel[f[1]] = f[0]; });
+  const o = {}; fields.forEach(f => { o[f[0]] = []; });
   rows.forEach(r => { const k = byLabel[norm(r[0])], v = norm(r[1]); if (k && !o[k].includes(v) && o[k].length < ATT_OPT_MAX) o[k].push(v); });
   return o;
 }
+function attOptsParse(values) { return optsParse(values, ATT_OPT_FIELDS); }
 // 쓸 목록 — 탭에 있는 칸은 탭 것, 탭에 없는 칸(나중에 생긴 '언제 보였나' 같은)은 기본값
 function attOptsUse(parsed, list) {
   const d = attOptDefaults(list); if (!parsed) return d;
   const o = {}; ATT_OPT_FIELDS.forEach(f => { o[f[0]] = parsed[f[0]] && parsed[f[0]].length ? parsed[f[0]].slice() : d[f[0]]; });
   return o;
 }
-function attOptsRows(o) { const rows = [['칸', '값']]; ATT_OPT_FIELDS.forEach(f => (o[f[0]] || []).forEach(v => rows.push([f[1], v]))); return rows; }
+function optsRows(o, fields) { const rows = [['칸', '값']]; fields.forEach(f => (o[f[0]] || []).forEach(v => rows.push([f[1], v]))); return rows; }
+function attOptsRows(o) { return optsRows(o, ATT_OPT_FIELDS); }
+// ── 심방 입력 알약 (1109-D2) — 장소 · 사주심/사드림. 출석 선택지와 같은 꼴(칸 · 값 두 열)로 시트 '심방 선택지' 탭에.
+// 탭에 그 칸이 비어 있으면: 폼 질문의 선택지(있으면) → 장소는 지난 기록에 자주 쓴 것 · 사주심은 '사주심 · 사드림'.
+// 폼 선택지와 저절로 맞추지는 않는다(폼은 그대로). 이름 바꾸기 · 지우기는 알약 목록만 — 지난 기록 글자는 그대로.
+const VIS_OPT_TAB = '심방 선택지';
+const VIS_OPT_FIELDS = [['place', '장소'], ['pay', '사주심 / 사드림']];
+function visOptDefaults(visits, formOpts) {
+  const c = {}, fo = formOpts || {};
+  (visits || []).forEach(v => { const x = norm(v.place); if (x) c[x] = (c[x] || 0) + 1; });
+  const top = Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b)).slice(0, 8);
+  return { place: fo.places && fo.places.length ? fo.places.slice() : top, pay: fo.pays && fo.pays.length ? fo.pays.slice() : PAY_DEFAULT.slice() };
+}
+function visOptsUse(parsed, visits, formOpts) {
+  const d = visOptDefaults(visits, formOpts); if (!parsed) return d;
+  const o = {}; VIS_OPT_FIELDS.forEach(f => { o[f[0]] = parsed[f[0]] && parsed[f[0]].length ? parsed[f[0]].slice() : d[f[0]]; });
+  return o;
+}
 function attOptAdd(o, k, v) { v = norm(v); const L = o[k] || (o[k] = []); if (!v || L.includes(v) || L.length >= ATT_OPT_MAX) return false; L.push(v); return true; }
 function attOptRemove(o, k, v) { const L = o[k] || [], i = L.indexOf(v); if (i < 0) return false; L.splice(i, 1); return true; }
 function attOptRename(o, k, v, nv) { const L = o[k] || [], i = L.indexOf(v); nv = norm(nv); if (i < 0 || !nv || (nv !== v && L.includes(nv))) return false; L[i] = nv; return true; }
@@ -1447,6 +1474,37 @@ function toast(msg, ms, act) {
   setTimeout(close, ms || Math.min(9000, Math.max(act ? 6000 : 3000, msg.length * 200)));
 }
 function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('불러오기 실패: ' + src)); document.head.appendChild(s); }); }
+// ── 새 버전 받기 (1109-D1) ──
+// 앱을 열 때 · 돌아올 때 서버의 index.html 을 다시 받아(cache:'reload' — 브라우저에 담아 둔 것도 새것으로 간다) 버전을 본다.
+// 새 버전이면 저절로 다시 연다. 쓰던 글이 있으면 끊지 않고 '받기' 단추만 띄운다.
+// ⚠️ 다시 열어도 옛 판이 뜨면(담아 둔 것이 안 갈림) 같은 버전으로는 저절로 한 번만 — 계속 다시 여는 일이 없게.
+const VER = { latest: '', asked: 0, busy: false };
+function isDev() { return !!USER && isDevEmail(USER.email); }
+async function latestVersion() {
+  const r = await fetch(location.pathname, { cache: 'reload', credentials: 'same-origin' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
+  return m ? m[1] : '';
+}
+function hasDraft() { return S.layers.some(L => L.dirty); }
+function verBadgeSync() { document.querySelectorAll('[data-verbadge]').forEach(b => { b.classList.toggle('new', isNewer(VER.latest, APP_VERSION)); b.classList.toggle('busy', VER.busy); }); }
+async function checkVersion(manual) {
+  if (VER.busy) return;
+  if (!manual && (Date.now() - VER.asked < 60000 || location.protocol !== 'https:')) return;
+  VER.busy = true; VER.asked = Date.now(); verBadgeSync();
+  try {
+    const v = await latestVersion(); VER.latest = v;
+    if (isNewer(v, APP_VERSION)) {
+      let tried = ''; try { tried = sessionStorage.getItem('care_ver_try') || ''; } catch (e) { }
+      if (manual) { if (!hasDraft() || confirm('쓰던 글이 있습니다.\n새 버전을 받으면 그 글은 사라집니다. 받을까요?')) { toast('새 버전 ' + v + ' 을 받습니다'); setTimeout(() => location.reload(), 500); } }
+      else if (!hasDraft() && tried !== v) { try { sessionStorage.setItem('care_ver_try', v); } catch (e) { } toast('새 버전 ' + v + ' 을 받습니다'); setTimeout(() => location.reload(), 900); }
+      else toast('새 버전 ' + v + ' 이 있습니다' + (hasDraft() ? '\n쓰던 글을 저장한 뒤 받으세요' : ''), 0, { label: '받기', fn: () => location.reload() });
+    } else if (manual) toast('지금이 최신 버전입니다\n' + APP_VERSION);
+  } catch (e) { if (manual) toast('새 버전을 찾지 못했습니다\n인터넷 연결을 봐 주세요'); }
+  VER.busy = false; verBadgeSync();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(false); });
+setTimeout(() => checkVersion(false), 2500);
 // 이 기기 저장 — 고른 파일 id · 화면 취향뿐. 심방 내용은 담지 않는다
 function saved() { try { return JSON.parse(localStorage.getItem(CARE_KEY) || '{}') || {}; } catch (e) { return {}; } }
 function save(patch) { try { localStorage.setItem(CARE_KEY, JSON.stringify(Object.assign(saved(), patch))); } catch (e) {} }
@@ -1593,9 +1651,10 @@ async function loadData(quiet) {
     DATA.plans = parsePlans(V(PLAN_TAB));
     DATA.attend = parseAttend(V(ATT_TAB));
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
+    DATA.visOpts = optsParse(V(VIS_OPT_TAB), VIS_OPT_FIELDS);
     let form = DATA.form;
     if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
-    const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [] } : {};
+    const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [], places: (formQOf(form, 'place') || {}).options || [] } : {};
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
     DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda);
@@ -2164,7 +2223,8 @@ function firstLine(t) { return String(t || '').split('\n').find(x => x.trim()) |
 function head(title, left, right) {
   // 설정(톱니)은 늘 우상단 맨 오른쪽, 찾기(돋보기)는 그 바로 왼쪽. left 는 옛 호출 모양 그대로 받되 쓰지 않는다.
   const b = x => '<button class="ic" data-act="' + x[0] + '" data-v="' + (x[3] || '') + '" aria-label="' + x[1] + '">' + IC[x[2]] + '</button>';
-  return '<div class="ph-head r2"><span></span><h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
+  const vb = isDev() ? '<button class="verbadge' + (isNewer(VER.latest, APP_VERSION) ? ' new' : '') + '" data-act="vercheck" data-verbadge aria-label="새 버전 찾기">' + APP_VERSION.replace(/^v\.\s*/, 'v') + '</button>' : '<span></span>';
+  return '<div class="ph-head r2">' + vb + '<h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
   const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'attend' ? '<button class="fab" data-act="attadd">' + IC.plus + '출석</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
@@ -2357,14 +2417,26 @@ function vAttend() {
 }
 // ── 1108-B3 출석 입력 — 칸마다 알약 + 직접 적기(접어 둠) · 알약은 여기서 더하고, 끌어 옮기고, 길게 눌러 고치고 지운다 ──
 function ATTO() { return attOptsUse(DATA.attOpts, AT()); }
-function attFieldHtml(L, k) {
-  const f = L.form, opts = ATTO()[k] || [], cur = f[k] || '', open = (L.open && L.open[k]) || (cur && !opts.includes(cur));
-  let h = '<div class="fld"><span class="lb">' + esc(attOptLabel(k)) + '</span><div class="opts pills" data-k="' + k + '">';
+function VISO() { return visOptsUse(DATA.visOpts, M() ? M().visits : [], DATA.opts); }
+function visOptLabel(k) { return k === 'pay' ? (DATA.payTitle || '사주심 / 사드림') : k === 'place' ? '장소' : k; }
+// 겹 화면마다 알약 목록 · 이름 · 시트에 쓰기 (1109-D2: 심방 입력도 출석과 같은 알약)
+function optCtx(L) {
+  if (!L) return null;
+  if (L.type === 'attedit') return { opts: ATTO, label: attOptLabel, change: attOptChange, note: '지난 출석 기록은 그대로입니다.' };
+  if (L.type === 'edit') return { opts: VISO, label: visOptLabel, change: visOptChange, note: '지난 심방 기록은 그대로입니다.' };
+  return null;
+}
+function attFieldHtml(L, k, noEtc) {
+  const C = optCtx(L), f = L.form, cur = f[k] || '';
+  let opts = C.opts()[k] || []; if (noEtc && cur && !opts.includes(cur)) opts = opts.concat([cur]);
+  const open = !noEtc && ((L.open && L.open[k]) || (cur && !opts.includes(cur)));
+  let h = '<div class="fld"><span class="lb">' + esc(C.label(k)) + '</span><div class="opts pills" data-k="' + k + '">';
   h += opts.map(v => '<button class="opt" data-act="aone" data-k="' + k + '" data-v="' + esc(v) + '" aria-pressed="' + (cur === v) + '">' + esc(v) + '</button>').join('');
-  h += L.adding === k ? '<input class="inp optadd" data-optadd="' + k + '" placeholder="새 알약" enterkeyhint="done" autocomplete="off" aria-label="' + esc(attOptLabel(k)) + ' 알약 더하기">'
+  h += L.adding === k ? '<input class="inp optadd" data-optadd="' + k + '" placeholder="새 알약" enterkeyhint="done" autocomplete="off" aria-label="' + esc(C.label(k)) + ' 알약 더하기">'
     : '<button class="opt etc" data-act="aoptadd" data-k="' + k + '" aria-label="알약 더하기">' + IC.plus + '</button>';
-  h += '<button class="opt etc" data-act="aetc" data-k="' + k + '" aria-pressed="' + !!open + '">직접 적기</button></div>';
-  if (open) h += '<input class="inp etc" data-f="' + k + '" data-etc="1" value="' + esc(opts.includes(cur) ? '' : cur) + '" placeholder="직접 적기" aria-label="' + esc(attOptLabel(k)) + ' 직접 적기">';
+  if (!noEtc) h += '<button class="opt etc" data-act="aetc" data-k="' + k + '" aria-pressed="' + !!open + '">직접 적기</button>';
+  h += '</div>';
+  if (open) h += '<input class="inp etc" data-f="' + k + '" data-etc="1" value="' + esc(opts.includes(cur) ? '' : cur) + '" placeholder="직접 적기" aria-label="' + esc(C.label(k)) + ' 직접 적기">';
   return h + '</div>';
 }
 function attDateHtml(f) {
@@ -2382,8 +2454,12 @@ function lAttEdit(L) {
   h += '<div class="fsec">메모</div><div class="fld"><textarea class="inp" data-f="memo" rows="3" placeholder="본 것 · 들은 것" aria-label="메모">' + esc(f.memo) + '</textarea></div>';
   h += '<p class="hint">알약을 길게 누르면 이름 바꾸기 · 지우기, 길게 누른 채 끌면 순서를 바꿉니다(PC 는 오른쪽 단추 · 끌기).</p>';
   if (L.id) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn danger" data-act="attdel" data-v="' + esc(L.id) + '">이 출석 지우기</button></div>';
-  if (L.omenu) h += '<div class="omenu-bg" data-act="aoptx"></div><div class="omenu" role="dialog"><div class="t">' + esc(attOptLabel(L.omenu.k)) + ' · <b>' + esc(L.omenu.v) + '</b></div><button data-act="aoptren">이름 바꾸기</button><button class="danger" data-act="aoptdel">지우기</button><button data-act="aoptx">취소</button></div>';
+  h += omenuHtml(L);
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attsave">' + (L.id ? '고친 것 저장' : '시트에 적기') + '</button></div>';
+}
+function omenuHtml(L) {
+  const C = optCtx(L); if (!L.omenu || !C) return '';
+  return '<div class="omenu-bg" data-act="aoptx"></div><div class="omenu" role="dialog"><div class="t">' + esc(C.label(L.omenu.k)) + ' · <b>' + esc(L.omenu.v) + '</b></div><button data-act="aoptren">이름 바꾸기</button><button class="danger" data-act="aoptdel">지우기</button><button data-act="aoptx">취소</button></div>';
 }
 function attNameHint(L) {
   const names = splitNames(L.form.name);
@@ -2392,12 +2468,19 @@ function attNameHint(L) {
   return '';
 }
 // 알약 목록 저장 — 탭을 통째로 지금 목록으로 덮어쓰고, 남는 아랫줄만 지운다 (쓰기가 실패해도 예전 목록이 반쯤 지워지지 않게: 쓰기 먼저, 지우기 나중)
-async function saveAttOpts(o) {
+async function saveOptTab(tab, rows) {
   const s = saved().sheet, m = await sheetMeta(s.id);
-  if (!(m.sheets || []).some(x => x.properties.title === ATT_OPT_TAB)) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: ATT_OPT_TAB } } }] } });
-  const rows = attOptsRows(o);
-  await batchValues(s.id, [{ range: "'" + ATT_OPT_TAB + "'!A1", values: rows }]);
-  await gapi(SH + s.id + '/values/' + rng(ATT_OPT_TAB, 'A' + (rows.length + 1) + ':B') + ':clear', { method: 'POST', body: {} });
+  if (!(m.sheets || []).some(x => x.properties.title === tab)) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: tab } } }] } });
+  await batchValues(s.id, [{ range: "'" + tab + "'!A1", values: rows }]);
+  await gapi(SH + s.id + '/values/' + rng(tab, 'A' + (rows.length + 1) + ':B') + ':clear', { method: 'POST', body: {} });
+}
+function saveAttOpts(o) { return saveOptTab(ATT_OPT_TAB, attOptsRows(o)); }
+function visOptChange(fnc, msg) {   // 출석과 같은 길 — 화면 먼저, 실패하면 예전 목록으로
+  const before = JSON.stringify(DATA.visOpts || null), o = JSON.parse(JSON.stringify(VISO()));
+  if (!fnc(o)) return false;
+  DATA.visOpts = o; render();
+  saveOptTab(VIS_OPT_TAB, optsRows(o, VIS_OPT_FIELDS)).then(() => { if (msg) toast(msg, 2000); }).catch(e => { DATA.visOpts = JSON.parse(before); render(); toast('알약 목록을 시트에 쓰지 못했습니다\n' + e.message); });
+  return true;
 }
 function attOptChange(fnc, msg) {   // 화면 먼저 바꾸고 시트에 쓴다. 실패하면 예전 목록으로
   const before = JSON.stringify(DATA.attOpts || null), o = JSON.parse(JSON.stringify(ATTO()));
@@ -2407,16 +2490,16 @@ function attOptChange(fnc, msg) {   // 화면 먼저 바꾸고 시트에 쓴다.
   return true;
 }
 function attOptCommit(inp) {
-  const L = topLayer(), k = inp.dataset.optadd, v = norm(inp.value); if (!L || L.type !== 'attedit') return;
+  const L = topLayer(), k = inp.dataset.optadd, v = norm(inp.value), C = optCtx(L); if (!C) return;
   L.adding = null;
-  if (v && attOptChange(o => attOptAdd(o, k, v), '알약을 더했습니다\n' + v)) { L.form[k] = v; if (L.open) L.open[k] = false; L.dirty = true; render(); }
+  if (v && C.change(o => attOptAdd(o, k, v), '알약을 더했습니다\n' + v)) { L.form[k] = v; if (L.open) L.open[k] = false; L.dirty = true; render(); }
   else render();
 }
 // 끌어 옮기기 · 길게 누르기 (손가락: 0.45초 누르면 들림 → 끌면 옮기기, 그대로 떼면 메뉴 / 마우스: 바로 끌기, 오른쪽 단추 = 메뉴)
 const DR = { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, x: 0, y: 0, eat: false };
 function drReset() { clearTimeout(DR.t); if (DR.el) DR.el.classList.remove('lift'); Object.assign(DR, { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false }); document.body.classList.remove('dragging'); }
 function drLift() { if (!DR.el) return; DR.lifted = true; DR.el.classList.add('lift'); document.body.classList.add('dragging'); try { navigator.vibrate && navigator.vibrate(8); } catch (e) { } }
-function attOptMenu(k, v) { const L = topLayer(); if (!L || L.type !== 'attedit') return; L.omenu = { k, v }; render(); }
+function attOptMenu(k, v) { const L = topLayer(); if (!optCtx(L)) return; L.omenu = { k, v }; render(); }
 document.addEventListener('pointerdown', e => {
   const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"]'); if (!el || e.button === 2) return;
   drReset(); Object.assign(DR, { el, k: el.dataset.k, x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse' });
@@ -2437,7 +2520,7 @@ document.addEventListener('pointerup', () => {
   DR.eat = true; setTimeout(() => { DR.eat = false; }, 400);   // 뒤따르는 '누름' 은 먹는다
   if (moved) {
     const order = [...el.parentElement.querySelectorAll('.opt[data-act="aone"]')].map(x => x.dataset.v);
-    attOptChange(o => { if (JSON.stringify(o[k]) === JSON.stringify(order)) return false; o[k] = order; return true; }, '알약 순서를 바꿨습니다');
+    const C = optCtx(topLayer()); if (C) C.change(o => { if (JSON.stringify(o[k]) === JSON.stringify(order)) return false; o[k] = order; return true; }, '알약 순서를 바꿨습니다');
   } else attOptMenu(k, el.dataset.v);
 });
 document.addEventListener('pointercancel', drReset);
@@ -2699,19 +2782,18 @@ function lEdit(L) {
   h += '<div class="fld"><span class="lb">구분 <small>여럿</small></span><div class="opts">' + offer('roles', FO.role, f.roles).map(x => chip(esc(x), f.roles.includes(x), 'ftog', 'roles', x)).join('') + '</div><input class="inp etc" data-f="rolesEtc" value="' + esc(f.rolesEtc) + '" placeholder="기타 (쉼표로 여럿)" aria-label="구분 기타"></div>';
   h += '<div class="fsec">언제 · 어떻게</div><div class="fld"><input class="inp" type="date" data-f="ymd" value="' + esc(f.ymd) + '" aria-label="심방 날짜"></div>';
   h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
-  h += DATA.hasPlace ? '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 · 메모 (예: 수요예배 후 카페)" aria-label="장소 · 메모"></div>'
-    : '<p class="hint">장소 · 메모 칸은 시트에 아직 없습니다. 폼에 \'장소 · 메모\' 질문을 더하면 생깁니다.</p>';
-  // 사주심 · 사드림 — 폼에 그 질문이 있을 때만(시트에 열이 있어야 적을 수 있다). 하나만, 다시 누르면 풀린다
-  if (DATA.hasPay) {
-    const po = (DATA.opts && DATA.opts.pays && DATA.opts.pays.length ? DATA.opts.pays : PAY_DEFAULT).slice(); if (f.pay && !po.includes(f.pay)) po.push(f.pay);
-    h += '<div class="fld"><span class="lb">' + esc(DATA.payTitle || '사주심 / 사드림') + '</span><div class="opts">' + po.map(x => chip(esc(x), f.pay === x, 'fone', 'pay', x)).join('') + '</div></div>';
-  }
+  // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
+  h += DATA.hasPlace ? attFieldHtml(L, 'place') : '<p class="hint">장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.</p>';
+  if (DATA.hasPay) h += attFieldHtml(L, 'pay', true);
+  else if (formQOf(DATA.form, 'pay')) h += '<p class="hint">폼에는 \'' + esc(formQOf(DATA.form, 'pay').title) + '\' 질문이 있는데 시트에 아직 그 열이 없습니다. 시트 응답 탭 머리글을 봐 주세요.</p>';
+  if (DATA.hasPlace || DATA.hasPay) h += '<p class="hint">알약을 길게 누르면 이름 바꾸기 · 지우기, 누른 채 끌면 순서를 바꿉니다(PC 는 오른쪽 단추 · 끌기).</p>';
   if (L.planWhy) h += '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>';
   h += '<div class="fsec">나눈 이야기</div><div class="fld"><textarea class="inp" data-f="text" rows="6" placeholder="여러 줄 그대로 저장됩니다." aria-label="나눈 이야기">' + esc(f.text) + '</textarea><button class="btn" data-act="addtalk" style="margin-top:8px">+ 이야기 나누기</button><div class="hint">맥락이 달라질 때 누르면 \'나눈 이야기 1 · 2 …\' 제목 줄이 생깁니다.</div></div>';
   h += '<div class="fsec">정리</div><div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
   h += '<div class="fld"><span class="lb">태그 <small>여럿</small></span><div class="opts">' + offer('tags', FO.tag, f.tags).map(x => chip('#' + esc(x), f.tags.includes(x), 'ftog', 'tags', x)).join('') + '</div><input class="inp etc" data-f="tagsEtc" value="' + esc(f.tagsEtc) + '" placeholder="기타 태그 (쉼표로 여럿)" aria-label="태그 기타"></div>';
   h += '<div class="fld"><span class="lb">할 일 <small>여럿</small></span><div class="opts">' + offer('acts', FO.act.filter(x => x !== '기타'), f.acts).map(x => chip(esc(x), f.acts.includes(x), 'ftog', 'acts', x, ACT_KIND[x] || 'k4')).join('') + '</div><input class="inp etc" data-f="actsEtc" value="' + esc(f.actsEtc) + '" placeholder="기타 할 일 (예: 병문안 일정 잡기)" aria-label="할 일 기타"></div>';
   if (L.key) h += '<p class="muted">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
+  h += omenuHtml(L);
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '시트에 적기') + '</button></div>';
 }
 function topLayer() { return S.layers[S.layers.length - 1]; }
@@ -2802,7 +2884,8 @@ function lSettings(L) {
     '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button>' +
     '<button class="srow" data-act="trash"><span class="t">휴지통</span><span class="v">›</span><div class="d" style="text-align:left">지운 기록 되살리기</div></button>' +
     '<button class="srow" data-act="layer" data-v="c0"><span class="t">연결 시험 (C0)</span><span class="v">›</span><div class="d" style="text-align:left">시트 · 폼 · 캘린더가 앱과 맞물리는지 다시 확인합니다</div></button></div>';
-  h += '<p class="muted" style="margin-top:22px">심방 노트 ' + APP_VERSION + ' · 심방 내용은 구글 시트에만 있고, 이 앱은 화면에 띄우기만 합니다. 고른 시트 · 폼과 위 기준은 계정에 저장되어 다른 기기에서도 같게 열립니다.</p>';
+  h += '<button class="vercheck" data-act="vercheck" data-verbadge>심방 노트 ' + APP_VERSION + ' <span>· 새 버전 찾기</span></button>';
+  h += '<p class="muted" style="margin-top:6px">심방 내용은 구글 시트에만 있고, 이 앱은 화면에 띄우기만 합니다. 고른 시트 · 폼과 위 기준은 계정에 저장되어 다른 기기에서도 같게 열립니다.</p>';
   return h + '</div>';
 }
 
@@ -3072,6 +3155,7 @@ document.addEventListener('input', e => {
   }
   if (L.type === 'b7send') { L.form[f] = e.target.value; if (f === 'date') document.querySelectorAll('.layer:last-child [data-act="b7date"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value))); return; }
   L.form[f] = e.target.value; L.dirty = true;
+  if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
   if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); const pv = document.querySelector('.layer:last-child .evp'); if (pv) pv.textContent = calTitle(L.form.name || '성도 이름', saved().calPre, saved().calSuf); }
   if (f === 'methodEtc' && e.target.value) { L.form.method = ''; document.querySelectorAll('#methodChips .opt').forEach(b => b.setAttribute('aria-pressed', 'false')); }
 });
@@ -3137,7 +3221,7 @@ document.addEventListener('click', e => {
   if (a === 'attmore') { S.attN = (S.attN || 60) + 60; render(); return; }
   if (a === 'attall') { const L = topLayer(); if (L && L.type === 'person') { L.attAll = true; render(); } return; }
   if (a === 'aone' || a === 'attpick') {
-    const L = topLayer(); if (!L || L.type !== 'attedit') return; L.dirty = true;
+    const L = topLayer(); if (!optCtx(L) || (a === 'attpick' && L.type !== 'attedit')) return; L.dirty = true;
     if (a === 'aone') { L.form[k] = L.form[k] === v ? '' : v; chipsSync(k, L.form[k], 'aone'); const ei = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (ei) ei.value = ''; return; }
     else {
       const parts = String(L.form.name || '').split(/[,，、]/); parts[parts.length - 1] = (parts.length > 1 ? ' ' : '') + v; L.form.name = parts.join(',');
@@ -3146,14 +3230,14 @@ document.addEventListener('click', e => {
     render(); return;
   }
   if (a === 'adate') { const L = topLayer(); if (L && L.type === 'attedit') { L.form.date = v; L.dirty = true; render(); } return; }
-  if (a === 'aetc') { const L = topLayer(); if (L && L.type === 'attedit') { L.open = L.open || {}; L.open[k] = !L.open[k]; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (i) i.focus(); } } return; }
-  if (a === 'aoptadd') { const L = topLayer(); if (L && L.type === 'attedit') { L.adding = k; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
-  if (a === 'aoptx') { const L = topLayer(); if (L && L.type === 'attedit') { L.omenu = null; render(); } return; }
+  if (a === 'aetc') { const L = topLayer(); if (optCtx(L)) { L.open = L.open || {}; L.open[k] = !L.open[k]; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (i) i.focus(); } } return; }
+  if (a === 'aoptadd') { const L = topLayer(); if (optCtx(L)) { L.adding = k; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
+  if (a === 'aoptx') { const L = topLayer(); if (optCtx(L)) { L.omenu = null; render(); } return; }
   if (a === 'aoptren' || a === 'aoptdel') {
-    const L = topLayer(); if (!L || L.type !== 'attedit' || !L.omenu) return; const { k: kk, v: vv } = L.omenu; L.omenu = null;
-    if (a === 'aoptdel') { if (!confirm("'" + vv + "' 알약을 지울까요?\n지난 출석 기록은 그대로입니다.")) { render(); return; } if (attOptChange(o => attOptRemove(o, kk, vv), '알약을 지웠습니다\n' + vv) && L.form[kk] === vv) L.form[kk] = ''; render(); return; }
+    const L = topLayer(), C = optCtx(L); if (!C || !L.omenu) return; const { k: kk, v: vv } = L.omenu; L.omenu = null;
+    if (a === 'aoptdel') { if (!confirm("'" + vv + "' 알약을 지울까요?\n" + C.note)) { render(); return; } if (C.change(o => attOptRemove(o, kk, vv), '알약을 지웠습니다\n' + vv) && L.form[kk] === vv) L.form[kk] = ''; render(); return; }
     const nv = prompt('새 이름', vv); if (nv == null || norm(nv) === vv) { render(); return; }
-    if (!attOptChange(o => attOptRename(o, kk, vv, nv), '이름을 바꿨습니다\n' + vv + ' → ' + norm(nv))) { toast('바꾸지 못했습니다\n비었거나 같은 이름이 있습니다'); render(); return; }
+    if (!C.change(o => attOptRename(o, kk, vv, nv), '이름을 바꿨습니다\n' + vv + ' → ' + norm(nv))) { toast('바꾸지 못했습니다\n비었거나 같은 이름이 있습니다'); render(); return; }
     if (L.form[kk] === vv) L.form[kk] = norm(nv); render(); return;
   }
   if (a === 'attsave') { const L = topLayer(); if (L && L.type === 'attedit') busy(async () => { try { await saveAttend(L); } catch (e) { toast('출석을 저장하지 못했습니다\n' + e.message); } }); return; }
@@ -3186,6 +3270,7 @@ document.addEventListener('click', e => {
   }
   if (a === 'calimport') { busy(async () => { try { await importCalEvent(v); } catch (e) { toast('가져오지 못했습니다\n' + e.message); } }); return; }
   if (a === 'attrsync') { busy(async () => { try { const p = await syncAttrs(); toast(attrSyncMsg(p) || '폼과 선택지가 모두 같습니다'); await loadData(true); } catch (e) { toast('맞추지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'vercheck') { checkVersion(true); return; }
   if (a === 'addplace') { busy(async () => { try { await addPlaceQuestion(); } catch (e) { toast('폼에 더하지 못했습니다\n' + e.message); } }); return; }
   if (a === 'attradd' || a === 'etcpromote') {
     const val = a === 'attradd' ? (($(v) || {}).value || '') : v;
