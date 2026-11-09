@@ -999,7 +999,7 @@ async function route(r) {
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
 
   // ㉛ (1109-G1) 목록 '자세히 / 간략히' — 필터 줄 오른쪽 끝 글자 단추 · 자세히 = 왼쪽 날짜 기둥 · 간략히 = 한 줄씩 · 이 기기에 기억
-  { const lays = await page.$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
   await page.evaluate(() => { S.view = 'list'; S.searching = false; S.q = ''; for (const x in S.filt) S.filt[x] = []; S.quick = ''; save({ lmode: undefined }); render(); }); await page.waitForTimeout(300);
   {
     const want = await page.evaluate(() => { const L = V(); return { n: L.length, days: [...new Set(L.map(v => v.ymd))].length, first: L[0].ymd, dup: L.findIndex((v, i) => i && L[i - 1].ymd === v.ymd) }; });
@@ -1026,9 +1026,9 @@ async function route(r) {
       [true, ['누구를', '언제 · 어디서 · 어떻게', '나눈 이야기', '정리'], 0]);
     await page.click(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]'); await page.waitForTimeout(150);
     eq('㉜ 고른 알약은 꽉 채운 초록', await page.$eval(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]', e => getComputedStyle(e).backgroundColor === getComputedStyle(document.querySelector('.layer:last-child .btn.pri')).backgroundColor), true);
-    const inf0 = await page.$eval(LE + ' .einfo-b', x => x.length);
+    const inf0 = await page.$$eval(LE + ' .einfo-b', x => x.length);
     await page.click(LE + ' [data-act="einfo"][data-k="sum"]'); await page.waitForTimeout(150);
-    eq('㉜ 긴 안내는 처음엔 감춤 → i 를 누르면 보임', [inf0, await page.$eval(LE + ' .einfo-b', x => x.length)], [0, 1]);
+    eq('㉜ 긴 안내는 처음엔 감춤 → i 를 누르면 보임', [inf0, await page.$$eval(LE + ' .einfo-b', x => x.length)], [0, 1]);
     await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
   {
@@ -1041,8 +1041,8 @@ async function route(r) {
     await pp.waitForSelector('.card');
     await pp.click('[data-act="addrec"]'); await pp.waitForTimeout(500);
     const LE = '.layer:last-child';
-    const keys = await pp.$eval(LE + ' .crow', x => x.map(e => e.dataset.crow));
-    eq('㉜ 폰 — 누구 · 언제 · 이야기는 펴 있고, 고르는 칸은 접힌 줄(구분 · 어떻게 · … · 깊이 · 태그 · 할 일)', [await pp.$eval(LE + ' .edf.e-narrow', x => x.length), keys[0], keys[1], keys.slice(-3), await pp.$eval(LE + ' .crow.open', x => x.length), await pp.isVisible(LE + ' [data-f="name"]'), await pp.isVisible(LE + ' [data-f="tk:in"]')],
+    const keys = await pp.$$eval(LE + ' .crow', x => x.map(e => e.dataset.crow));
+    eq('㉜ 폰 — 누구 · 언제 · 이야기는 펴 있고, 고르는 칸은 접힌 줄(구분 · 어떻게 · … · 깊이 · 태그 · 할 일)', [await pp.$$eval(LE + ' .edf.e-narrow', x => x.length), keys[0], keys[1], keys.slice(-3), await pp.$$eval(LE + ' .crow.open', x => x.length), await pp.isVisible(LE + ' [data-f="name"]'), await pp.isVisible(LE + ' [data-f="tk:in"]')],
       [1, 'roles', 'method', ['depth', 'tags', 'acts'], 0, true, true]);
     eq('㉜ 접힌 줄의 알약은 보이지 않는다', await pp.isVisible(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]'), false);
     await pp.click(LE + ' [data-act="crow"][data-k="tags"]'); await pp.waitForTimeout(450);
@@ -1050,7 +1050,7 @@ async function route(r) {
     eq('㉜ 줄을 누르면 펴지고 · 고른 값이 줄에 한 줄로', [await pp.$eval(LE + ' .crow[data-crow="tags"] .crow-h', e => e.getAttribute('aria-expanded')), await pp.$eval(LE + ' .crow[data-crow="tags"] .crow-h .v', e => e.textContent)], ['true', '#학교']);
     await pp.click(LE + ' [data-act="crow"][data-k="depth"]'); await pp.waitForTimeout(450);
     await pp.click(LE + ' [data-act="fone"][data-k="depth"][data-v="깊음"]'); await pp.waitForTimeout(150);
-    eq('㉜ 다른 줄을 펴면 앞 줄은 접힌다(하나씩)', [await pp.$eval(LE + ' .crow.open', x => x.map(e => e.dataset.crow)), await pp.$eval(LE + ' .crow[data-crow="depth"] .crow-h .v', e => e.textContent)], [['depth'], '깊음']);
+    eq('㉜ 다른 줄을 펴면 앞 줄은 접힌다(하나씩)', [await pp.$$eval(LE + ' .crow.open', x => x.map(e => e.dataset.crow)), await pp.$eval(LE + ' .crow[data-crow="depth"] .crow-h .v', e => e.textContent)], [['depth'], '깊음']);
     await pp.fill(LE + ' [data-f="name"]', '폰사람');
     await talk(pp, [['s', '폰에서 적은 이야기']]);
     await pp.setViewportSize({ width: 820, height: 700 }); await pp.waitForTimeout(400);
