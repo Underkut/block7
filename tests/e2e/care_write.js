@@ -164,6 +164,7 @@ async function route(r) {
   await page.click('.layer [data-act="fone"][data-k="depth"][data-v="깊음"]');
   await page.click('.layer [data-act="ftog"][data-k="tags"][data-v="학교"]');
   await page.click('.layer [data-act="ftog"][data-k="acts"][data-v="중보"]');
+  await page.click('.layer [data-act="aetc"][data-k="acts"]'); await page.waitForTimeout(150);   // 1109-E1 직접 적기는 접혀 있다
   await page.fill('[data-f="actsEtc"]', '병문안 가기');
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/edit.png', fullPage: false });
   await page.click('[data-act="saverec"]'); await page.waitForTimeout(1200);
@@ -609,12 +610,13 @@ async function route(r) {
     eq('⑱ 날짜 칸이 칸 폭을 넘지 않는다 · 화면이 옆으로 넓어지지 않는다', await mp.evaluate(() => { const d = document.querySelector('.layer:last-child input[type=date]'), p = d.parentElement.getBoundingClientRect(), r = d.getBoundingClientRect(); return r.right <= p.right + 1 && document.documentElement.scrollWidth <= innerWidth; }), true);
     // 알약을 눌러도 화면을 다시 그리지 않는다 — 스크롤 · 쓰던 칸 그대로
     const lay = '.layer:last-child';
+    await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="aetc"][data-k="roles"]'); await mp.waitForTimeout(200);
     await mp.evaluate(l => { document.querySelector(l).scrollTop = 260; }, lay);
     await mp.focus(lay + ' [data-f="rolesEtc"]'); await mp.waitForTimeout(500);
     const before = await mp.evaluate(l => { const L = document.querySelector(l); window.__inp = document.activeElement; return L.scrollTop; }, lay);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="ftog"][data-k="tags"][data-v="학교"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="fone"][data-k="depth"][data-v="깊음"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
-    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"])')].map(x => x.dataset.v) }; }, lay);
+    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"]):not([data-act="aetc"])')].map(x => x.dataset.v) }; }, lay);
     eq('⑱ 알약을 눌러도 스크롤이 그대로 · 쓰던 칸이 새로 만들어지지 않는다', [after.st === before, after.same], [true, true]);
     eq('⑱ 알약 값은 그대로 들어가고 눌린 모양도 맞다', [after.form, after.pressed.sort()], [[['학교'], '깊음'], ['깊음', '학교']]);
     // 이름 후보를 고르는 것처럼 다시 그려야 할 때도 스크롤 자리는 그대로
@@ -772,6 +774,30 @@ async function route(r) {
     await page.click('.layer:last-child .omenu [data-act="aoptdel"]'); await page.waitForTimeout(1200);
     eq('㉔ 지우기 → 탭에서 빠짐 · 지난 기록 글자는 그대로', [vt().some(r => r[1] === '교회 1층 카페'), row()[cP]], [false, '역 앞 카페']);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/pay.png' });
+    await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  }
+
+  // 1109-E1 · E2 — 구분 · 태그 · 할 일 알약(+ · 직접 적기 접힘 · 우클릭 메뉴) · 최근 이름 한 줄
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.evaluate(() => openEdit(null)); await page.waitForTimeout(500);
+  { const LE = '.layer:last-child';
+    eq('㉖ 구분 · 태그 · 할 일 — 끝에 + · 직접 적기, 직접 적기 칸은 접혀 있다', await page.evaluate(L => ['roles', 'tags', 'acts'].map(k => [!!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aoptadd"]'), !!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aetc"]'), !!document.querySelector(L + ' [data-f="' + k + 'Etc"]')]), LE), [[true, true, false], [true, true, false], [true, true, false]]);
+    const rn = await page.$$eval(LE + ' .recent .rn', x => x.map(e => e.textContent));
+    eq('㉖ 최근 이름 한 줄 — 심방 · 출석 합쳐 최근 순(앱 규칙과 같게) · 한 줄 · 끝에 ›', [J0(rn) === J0(await page.evaluate(() => recentNames(M().visits, AT()).slice(0, 24))), await page.$eval(LE + ' .recent', e => getComputedStyle(e).flexWrap), await page.$eval(LE + ' .recent .rmore', e => e.textContent)], [true, 'nowrap', '›']);
+    await page.click(LE + ' .recent .rmore'); await page.waitForTimeout(200);
+    eq('㉖ › 누르면 펼침', await page.$eval(LE + ' .recent', e => getComputedStyle(e).flexWrap), 'wrap');
+    await page.click(LE + ' .recent .rn'); await page.waitForTimeout(200);
+    eq('㉖ 최근 이름을 누르면 이름 칸에', await page.evaluate(() => topLayer().form.name), rn[0]);
+    const n0 = (tab('속성').rows || []).length;
+    await page.click(LE + ' .pills[data-k="tags"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
+    await page.fill(LE + ' [data-optadd="tags"]', '봉사'); await page.keyboard.press('Enter'); await page.waitForTimeout(2500);
+    eq("㉖ 태그 + → 바로 골라지고 '속성' 탭 · 폼에 더해진다", [await page.evaluate(() => topLayer().form.tags.includes('봉사')), tab('속성').rows.some(r => r[0] === '태그' && r[1] === '봉사'), FORM.items.some(it => it.title === '태그' && JSON.stringify(it).includes('봉사'))], [true, true, true]);
+    await page.click(LE + ' .pills[data-k="tags"] [data-v="봉사"]', { button: 'right' }); await page.waitForTimeout(300);
+    eq('㉖ 태그 알약 우클릭 → 메뉴', await page.$$eval(LE + ' .omenu button', x => x.map(e => e.textContent)), ['이름 바꾸기', '지우기', '취소']);
+    await page.evaluate(() => { window.prompt = () => '섬김'; });
+    await page.click(LE + ' .omenu [data-act="aoptren"]'); await page.waitForTimeout(3000);
+    const tagRow = v => tab('속성').rows.find(r => r[0] === '태그' && r[1] === v) || [];
+    eq('㉖ 이름 바꾸기 → 새 이름 더하고 옛 이름 숨김 · 고른 값도 따라감', [!!tagRow('섬김').length, tagRow('봉사')[4], await page.evaluate(() => topLayer().form.tags.includes('섬김'))], [true, '숨김', true]);
     await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
