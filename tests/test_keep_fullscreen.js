@@ -237,7 +237,7 @@ console.log('\n시나리오 5 — 저장 폴더 메뉴는 차분히 열리고 �
   const action = slice('function closeVfKeepSwitch(){', 'function _vfKeepNav');
   sc.eq('메뉴 버튼 재탭은 열린 클래스를 닫는다', action.includes("box.classList.remove('open')"), true);
   sc.eq('메뉴와 버튼 밖 pointerdown은 메뉴를 닫는다', action.includes("!box.contains(e.target)&&!(btn&&btn.contains(e.target))"), true);
-  sc.eq('설명 헤더 없이 정렬 탭 네 개를 바로 그린다', !action.includes('저장 목록 정렬')&&action.includes("tab('alpha'")&&action.includes("tab('count'")&&action.includes("tab('manual'"), true);
+  sc.eq('설명 헤더 없이 정렬 탭 네 개를 바로 그린다', !action.includes('저장 목록 정렬')&&action.includes("['alpha','count'].map(g=>{const c=_keepFlipChip(g)")&&action.includes("keepFlipSort('${g}')")&&action.includes("tab('manual'"), true);  // v26-1109-1: ㄱㄴㄷ⇄ZYX · 많은⇄적은 두 몫 칩
   sc.eq('정렬할 때 열린 메뉴를 닫고 다시 열지 않는다', action.includes('function _vfRenderKeepSwitch')&&!action.includes("classList.remove('open');requestAnimationFrame(()=>toggleVfKeepSwitch())"), true);
   const lock = slice('function _menuLockScroll(el){', 'function openLogoMenu');
   sc.eq('메뉴 터치와 휠이 뒤 전체화면으로 전파되지 않는다', lock.includes('e.stopPropagation();')&&lock.includes("addEventListener('wheel',e=>e.stopPropagation()"), true);

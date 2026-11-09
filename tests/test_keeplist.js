@@ -27,6 +27,8 @@ function _keepRepaintLists(){}   // 화면 다시 그리기는 이 시험의 관
 eval(asVar(sliceDev('function getKeepLog(', 'function _swRepaintKeepTiles(')));
 // 판의 기간 도구 (v26-1005-4) — 켜진 모음이 없으면 기간도 없다(null) → 전부 보인다
 eval(asVar(sliceDev('const _SW_WIN_WORD=', 'function _swEmptyText(')));
+// 고르기 창의 정렬 칩 줄 (v26-1109-1) — ZYX순 · 적은순 글자가 실제로 그려지는지 본다
+eval(asVar(sliceDev('function _keepSortRowHTML(', '// 차례가 바뀌면 지금 떠 있는 자리를')));
 
 const R1 = '요한복음 3:16';
 const R2 = '로마서 8:28';
@@ -153,6 +155,53 @@ console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
   sc.eq('설정에 담는다', typeof ST.settings.keepListSort, 'string');
   keepSetSort('manual'); _keepSetOrder(['가']);
   sc.eq('내순서도 설정에', ST.settings.keepListOrder, ['가']);
+  ST.settings={};
+}
+
+console.log('\n시나리오 4-2 — ㄱㄴㄷ순 ⇄ ZYX순, 많은순 ⇄ 적은순 (v26-1109-1, HB)');
+{
+  ST.settings={};
+  ST.verseKeepLog = {
+    '2026-08-20':[
+      {ref:R1,time:'09:00',lst:'Zebra'}, {ref:R2,time:'09:01',lst:'Zebra'}, {ref:P1,time:'09:02',lst:'Zebra'},
+      {ref:R1,time:'09:03',lst:'🙏 가나다'},
+      {ref:R1,time:'09:04',lst:'Apple'}, {ref:R2,time:'09:05',lst:'Apple'},
+      {ref:R1,time:'09:06',lst:'나다라'}, {ref:R2,time:'09:07',lst:'나다라'}
+    ]
+  };
+  keepFlipSort('alpha');
+  sc.eq('꺼진 ㄱㄴㄷ 칩을 누르면 ㄱㄴㄷ순', _keepSort(), 'alpha');
+  sc.eq('ㄱㄴㄷ순 차례', _keepLists().map(x=>x.n), ['🙏 가나다','나다라','Apple','Zebra']);
+  keepFlipSort('alpha');
+  sc.eq('켜진 ㄱㄴㄷ 칩을 다시 누르면 ZYX순', _keepSort(), 'zyx');
+  sc.eq('ZYX순은 ㄱㄴㄷ순을 통째로 뒤집는다', _keepLists().map(x=>x.n), ['Zebra','Apple','나다라','🙏 가나다']);
+  sc.eq('칩 글자도 ZYX순', _keepFlipChip('alpha').label, 'ZYX순');
+  sc.eq('칩 줄에 ZYX순이 보인다 (ㄱㄴㄷ순 글자 대신)', />ZYX순</.test(_keepSortRowHTML()) && !/>ㄱㄴㄷ순</.test(_keepSortRowHTML()), true);
+  keepFlipSort('alpha');
+  sc.eq('한 번 더 누르면 ㄱㄴㄷ순', _keepSort(), 'alpha');
+
+  keepFlipSort('count');
+  sc.eq('많은 칩을 누르면 많은순', _keepSort(), 'count');
+  sc.eq('많은순 차례', _keepLists().map(x=>x.n), ['Zebra','나다라','Apple','🙏 가나다']);
+  keepFlipSort('count');
+  sc.eq('켜진 많은 칩을 다시 누르면 적은순', _keepSort(), 'few');
+  sc.eq('적은순 — 같은 수는 그대로 ㄱㄴㄷ', _keepLists().map(x=>x.n), ['🙏 가나다','나다라','Apple','Zebra']);
+  sc.eq('칩 글자도 적은순', _keepFlipChip('count').label, '적은순');
+
+  // 다른 칩으로 갔다 와도 마지막에 보던 쪽을 기억한다 (최신순 ⇄ 등록순 칩과 같은 방식)
+  keepSetSort('manual');
+  sc.eq('꺼져도 적은순 글자를 기억', _keepFlipChip('count').label, '적은순');
+  sc.eq('꺼진 칩은 켜짐이 아니다', _keepFlipChip('count').on, false);
+  keepFlipSort('count');
+  sc.eq('꺼진 적은 칩을 누르면 보이던 적은순으로', _keepSort(), 'few');
+  keepFlipSort('alpha'); keepFlipSort('alpha');
+  sc.eq('ZYX순으로 갔다가', _keepSort(), 'zyx');
+  keepTogglePairSort(); keepFlipSort('alpha');
+  sc.eq('최신순을 들렀다 와도 ZYX순', _keepSort(), 'zyx');
+  ST.settings={keepListSort:'zyx'};
+  sc.eq('다른 기기에서 받아온 ZYX순도 그대로 읽는다', _keepSort(), 'zyx');
+  ST.settings={keepListSort:'이상한값'};
+  sc.eq('모르는 값은 최신순', _keepSort(), 'recent');
   ST.settings={};
 }
 
@@ -505,8 +554,11 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
 
 console.log('\n시나리오 20 — 많은순 · 고르기 개수 · 전체화면 저장 개수 (HB 7·8)');
 {
-  sc.eq('많은순이 ㄱㄴㄷ순 다음',
-        SRC_DEV.includes("['alpha','ㄱㄴㄷ순'],['count','많은순'],['manual','내순서']"), true);
+  // v26-1109-1 — 칩이 두 몫(ㄱㄴㄷ⇄ZYX · 많은⇄적은)이 되어 글자 표 대신 그려진 차례로 본다
+  { const s0=ST.settings; ST.settings={};
+    const lab=(_keepSortRowHTML().match(/>[^<>]+<\/button>/g)||[]).map(x=>x.slice(1,-9));
+    sc.eq('많은순이 ㄱㄴㄷ순 다음', lab, ['최신순','ㄱㄴㄷ순','많은순','내순서']);
+    ST.settings=s0; }
   sc.eq('고르기 목록에도 개수', SRC_DEV.includes('class="keep-pick-cnt"'), true);
   sc.eq('책갈피 아래는 저장 목록 수', SRC_DEV.includes('const n=_keepListsOf(ref).size;'), true);
 }

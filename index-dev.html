@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1108-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1109-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7044,7 +7044,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1108-9";
+const APP_VERSION = "v. 26-1109-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -21973,8 +21973,7 @@ function _vfKeepSortHead(){
   const tab=(key,label,fn)=>`<button class="${(key===cur||(key==='pair'&&pairOn))?'on':''}" onclick="event.stopPropagation();${fn}">${label}</button>`;
   return`<div class="vf-keep-head"><div class="vf-keep-sort">
     ${tab('pair',pair==='reg'?'등록순':'최신순','keepTogglePairSort()')}
-    ${tab('alpha','ㄱㄴㄷ순',"keepSetSort('alpha')")}
-    ${tab('count','많은순',"keepSetSort('count')")}
+    ${['alpha','count'].map(g=>{const c=_keepFlipChip(g);return`<button class="${c.on?'on':''}" onclick="event.stopPropagation();keepFlipSort('${g}')">${c.label}</button>`;}).join('')}
     ${tab('manual','내순서',"keepSetSort('manual')")}
   </div></div>`;
 }
@@ -28742,8 +28741,9 @@ function _keepSortRowHTML(){
   const flip=pairKey==='recent'?'등록순':'최신순';
   let h=`<button class="keep-sort${pairOn?' on':''}" title="누르면 ${flip}으로 바뀌어요"`
        +` onclick="event.stopPropagation();keepTogglePairSort()">${pairLabel}</button>`;
-  h+=_KEEP_SORT_EXTRA.map(([k,l])=>
-    `<button class="keep-sort${cur===k?' on':''}" onclick="event.stopPropagation();keepSetSort('${k}')">${l}</button>`).join('');
+  h+=Object.keys(_KEEP_SORT_FLIP).map(g=>{const c=_keepFlipChip(g);
+    return `<button class="keep-sort${c.on?' on':''}"${c.tip?` title="${c.tip}"`:''} onclick="event.stopPropagation();keepFlipSort('${g}')">${c.label}</button>`;}).join('');
+  h+=`<button class="keep-sort${cur==='manual'?' on':''}" onclick="event.stopPropagation();keepSetSort('manual')">내순서</button>`;
   return '<div class="keep-sortrow">'+h+'</div>';
 }
 // 차례가 바뀌면 지금 떠 있는 자리를 모두 다시 그린다
@@ -34459,8 +34459,7 @@ function _vwKeepSortHTML(){
   const chip=(isOn,label,fn)=>`<button class="${isOn?'on':''}" onclick="event.stopPropagation();${fn}">${label}</button>`;
   return`<div class="vs-sec"><span>저장 폴더</span><span class="vs-sorts">
     ${chip(pairOn,pair==='reg'?'등록순':'최신순','keepTogglePairSort()')}
-    ${chip(cur==='alpha','ㄱㄴㄷ순',"keepSetSort('alpha')")}
-    ${chip(cur==='count','많은순',"keepSetSort('count')")}
+    ${['alpha','count'].map(g=>{const c=_keepFlipChip(g);return chip(c.on,c.label,`keepFlipSort('${g}')`);}).join('')}
     ${chip(cur==='manual','내순서',"keepSetSort('manual')")}
   </span></div>`;
 }
@@ -54799,8 +54798,12 @@ function _keepLists(){
 // ⚠️ 두 값은 **설정 안**에 둔다. 설정은 키마다 따로 병합되므로 새 키를 더해도
 //    기록 다섯 자리에 등록할 일이 없다 (26-0831 사고와 무관한 자리다).
 const _KEEP_SORT_PAIR=[['recent','최신순'],['reg','등록순']];
-const _KEEP_SORT_EXTRA=[['alpha','ㄱㄴㄷ순'],['count','많은순'],['manual','내순서']];
-const _KEEP_SORT_ALL=['recent','reg','alpha','count','manual'];
+// ㄱㄴㄷ순 ⇄ ZYX순, 많은순 ⇄ 적은순도 칩 하나가 두 몫 (v26-1109-1, HB) — 최신순 ⇄ 등록순과 같은 방식.
+//   켜진 칩을 다시 누르면 반대 차례로, 꺼진 칩을 누르면 마지막에 보던 쪽으로.
+const _KEEP_SORT_FLIP={alpha:['alpha','zyx'],count:['count','few']};
+const _KEEP_SORT_NAME={recent:'최신순',reg:'등록순',alpha:'ㄱㄴㄷ순',zyx:'ZYX순',count:'많은순',few:'적은순',manual:'내순서'};
+const _KEEP_SORT_MEMO={alpha:'keepListAlphaSort',count:'keepListCountSort'};
+const _KEEP_SORT_ALL=['recent','reg','alpha','zyx','count','few','manual'];
 function _keepSort(){
   const v=(ST.settings||{}).keepListSort;
   return _KEEP_SORT_ALL.includes(v)?v:'recent';
@@ -54811,10 +54814,28 @@ function _keepPairSort(){
   const cur=_keepSort();
   return (cur==='recent'||cur==='reg')?cur:'recent';
 }
+// 칩 g('alpha'|'count')가 지금 보여 줄 쪽 — 켜져 있으면 지금 차례, 꺼져 있으면 마지막에 보던 쪽
+function _keepFlipSort(g){
+  const p=_KEEP_SORT_FLIP[g],cur=_keepSort();
+  if(p.includes(cur))return cur;
+  const v=(ST.settings||{})[_KEEP_SORT_MEMO[g]];
+  return p.includes(v)?v:p[0];
+}
+function keepFlipSort(g){
+  const p=_KEEP_SORT_FLIP[g];if(!p)return;
+  const cur=_keepSort();
+  keepSetSort(p.includes(cur)?p[1-p.indexOf(cur)]:_keepFlipSort(g));
+}
+// 칩 하나의 글자·켜짐·풀이 — 세 자리(고르기 창 · 전체화면 · '무엇을 볼까요')가 함께 쓴다
+function _keepFlipChip(g){
+  const k=_keepFlipSort(g),p=_KEEP_SORT_FLIP[g],on=p.includes(_keepSort());
+  return {on,label:_KEEP_SORT_NAME[k],tip:on?'누르면 '+_KEEP_SORT_NAME[p[1-p.indexOf(k)]]+'으로 바뀌어요':''};
+}
 function keepSetSort(m){
   if(!ST.settings)ST.settings={};
   ST.settings.keepListSort=_KEEP_SORT_ALL.includes(m)?m:'recent';
   if(m==='recent'||m==='reg')ST.settings.keepListPairSort=m;
+  Object.keys(_KEEP_SORT_FLIP).forEach(g=>{ if(_KEEP_SORT_FLIP[g].includes(m))ST.settings[_KEEP_SORT_MEMO[g]]=m; });
   save();_keepRepaintLists();
   const box=typeof document!=='undefined'?document.getElementById('vfKeepSwitchBox'):null;
   if(box&&box.classList.contains('open'))_vfRenderKeepSwitch(box);
@@ -54850,7 +54871,9 @@ function _keepSortLists(arr){
     return ak-bk||an.localeCompare(bn,'ko',{sensitivity:'base'})||String(a.n||'').localeCompare(String(b.n||''),'ko',{sensitivity:'base'});
   };
   if(m==='alpha')return arr.sort(byName);
+  if(m==='zyx')return arr.sort((a,b)=>byName(b,a));       // ㄱㄴㄷ순을 통째로 뒤집은 차례
   if(m==='count')return arr.sort((a,b)=>b.cnt-a.cnt||byName(a,b));
+  if(m==='few')return arr.sort((a,b)=>a.cnt-b.cnt||byName(a,b));   // 같은 수는 그대로 ㄱㄴㄷ
   if(m==='reg')return arr.sort((a,b)=>String(a.first||'').localeCompare(String(b.first||''))||recent(a,b));
   if(m==='manual'){
     // 손으로 정한 차례. 그 표에 없는 목록(새로 생긴 것)은 뒤에 최근순으로 붙는다.
