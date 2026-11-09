@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -231,7 +231,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .opt.lift{transform:scale(1.08);box-shadow:var(--shadow);background:var(--paper);border-color:var(--ac);position:relative;z-index:2;transition:transform .12s var(--ease)}
 body.dragging{cursor:grabbing}
 .pills .inp.optadd{width:auto;flex:0 1 150px;min-width:90px;padding:6px 12px;border-radius:999px;margin:0}
-.calbtn{position:relative;overflow:hidden}.calbtn svg{width:15px;height:15px}
+.calbtn{position:relative;overflow:hidden}.dsel-row{align-items:center}.dsel{margin-left:6px;font-size:15px;color:var(--ac);white-space:nowrap}.calbtn svg{width:15px;height:15px}
 .calbtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;border:0;padding:0;-webkit-appearance:none;appearance:none}
 .omenu-bg{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:40}
 .omenu{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));width:min(92vw,380px);background:var(--paper);border-radius:16px;box-shadow:var(--shadow);z-index:41;padding:8px;display:flex;flex-direction:column}
@@ -520,7 +520,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-5';
+const APP_VERSION = 'v. 26-1109-6';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -543,13 +543,13 @@ const TABS = {
 const Q = {
   ts: ['타임스탬프', 'Timestamp'], date: ['심방 날짜'], name: ['성도 이름'], depth: ['대화 깊이'],
   roles: ['구분'], method: ['전화 / 만남'], text: ['내용'], tags: ['태그'], acts: ['액션'], place: ['장소 · 메모', '장소'],
-  pay: ['사주심 / 사드림', '사주심/사드림'],
+  pay: ['사주심 / 사드림', '사주심/사드림', 'PAY'],
 };
 // 이름이 조금 달라도 알아보는 칸 — HB 가 폼에서 직접 더한 질문(2026-11-09 '장소' · '사주심/사드림')은 제목 꼴을 정해 둘 수 없다.
 // 띄어쓰기를 뺀 제목으로 본다. 위 Q 의 정확한 이름이 먼저다.
-const Q_LIKE = { place: k => /^장소/.test(k), pay: k => /사주심|사드림/.test(k) };
+const Q_LIKE = { place: k => /^장소/.test(k), pay: k => /사주심|사드림|^pay$/i.test(k) };   // HB 폼 실제 제목은 'PAY'
 const PAY_DEFAULT = ['사주심', '사드림'];
-// 버전 'v. 26-1109-5' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
+// 버전 'v. 26-1109-6' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
 function verNum(v) { const m = String(v || '').match(/(\d{2})-(\d{4})-(\d+)/); return m ? (+(m[1] + m[2])) * 1000 + (+m[3]) : 0; }
 function isNewer(latest, mine) { return verNum(latest) > verNum(mine); }
 const DEV_EMAIL = 'denartist@gmail.com';   // BLOCK7 _isDevAccount 와 같은 판정
@@ -2439,10 +2439,13 @@ function attFieldHtml(L, k, noEtc) {
   if (open) h += '<input class="inp etc" data-f="' + k + '" data-etc="1" value="' + esc(opts.includes(cur) ? '' : cur) + '" placeholder="직접 적기" aria-label="' + esc(C.label(k)) + ' 직접 적기">';
   return h + '</div>';
 }
-function attDateHtml(f) {
-  const t = today(), days = attDays(t), custom = !days.some(d => d[0] === f.date);
-  return '<div class="fld"><div class="opts">' + days.map(d => '<button class="opt" data-act="adate" data-v="' + d[0] + '" aria-pressed="' + (f.date === d[0]) + '">' + d[1] + '</button>').join('') +
-    '<label class="opt calbtn" aria-pressed="' + custom + '">' + IC.cal + (custom && f.date ? md(f.date) : '') + '<input type="date" data-f="date" value="' + esc(f.date) + '" aria-label="다른 날 고르기"></label></div></div>';
+function dayName(ymd) { return /^\d{4}-\d{2}-\d{2}$/.test(ymd || '') ? md(ymd) + ' ' + DOW[dowOf(ymd)] + '요일' : ''; }
+function attDateHtml(f, k) {
+  k = k || 'date';
+  const t = today(), days = attDays(t), cur = f[k], custom = !days.some(d => d[0] === cur);
+  return '<div class="fld"><div class="opts dsel-row">' + days.map(d => '<button class="opt" data-act="adate" data-k="' + k + '" data-v="' + d[0] + '" aria-pressed="' + (cur === d[0]) + '">' + d[1] + '</button>').join('') +
+    '<label class="opt calbtn" aria-pressed="' + custom + '">' + IC.cal + '<input type="date" data-f="' + k + '" value="' + esc(cur) + '" aria-label="다른 날 고르기"></label>' +
+    '<span class="dsel">' + esc(dayName(cur)) + '</span></div></div>';
 }
 function lAttEdit(L) {
   const f = L.form, names = splitNames(f.name), known = names.length === 1 && attNames().some(n => nameKey(n) === nameKey(names[0]));
@@ -2780,7 +2783,7 @@ function lEdit(L) {
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
   const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
   h += '<div class="fld"><span class="lb">구분 <small>여럿</small></span><div class="opts">' + offer('roles', FO.role, f.roles).map(x => chip(esc(x), f.roles.includes(x), 'ftog', 'roles', x)).join('') + '</div><input class="inp etc" data-f="rolesEtc" value="' + esc(f.rolesEtc) + '" placeholder="기타 (쉼표로 여럿)" aria-label="구분 기타"></div>';
-  h += '<div class="fsec">언제 · 어떻게</div><div class="fld"><input class="inp" type="date" data-f="ymd" value="' + esc(f.ymd) + '" aria-label="심방 날짜"></div>';
+  h += '<div class="fsec">언제 · 어디서</div>' + attDateHtml(f, 'ymd');
   h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
   // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
   h += DATA.hasPlace ? attFieldHtml(L, 'place') : '<p class="hint">장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.</p>';
@@ -3155,6 +3158,7 @@ document.addEventListener('input', e => {
   }
   if (L.type === 'b7send') { L.form[f] = e.target.value; if (f === 'date') document.querySelectorAll('.layer:last-child [data-act="b7date"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value))); return; }
   L.form[f] = e.target.value; L.dirty = true;
+  if (f === 'ymd' && L.type === 'edit') { render(); return; }
   if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
   if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); const pv = document.querySelector('.layer:last-child .evp'); if (pv) pv.textContent = calTitle(L.form.name || '성도 이름', saved().calPre, saved().calSuf); }
   if (f === 'methodEtc' && e.target.value) { L.form.method = ''; document.querySelectorAll('#methodChips .opt').forEach(b => b.setAttribute('aria-pressed', 'false')); }
@@ -3229,7 +3233,7 @@ document.addEventListener('click', e => {
     }
     render(); return;
   }
-  if (a === 'adate') { const L = topLayer(); if (L && L.type === 'attedit') { L.form.date = v; L.dirty = true; render(); } return; }
+  if (a === 'adate') { const L = topLayer(); if (L && (L.type === 'attedit' || L.type === 'edit')) { L.form[k || 'date'] = v; L.dirty = true; render(); } return; }
   if (a === 'aetc') { const L = topLayer(); if (optCtx(L)) { L.open = L.open || {}; L.open[k] = !L.open[k]; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (i) i.focus(); } } return; }
   if (a === 'aoptadd') { const L = topLayer(); if (optCtx(L)) { L.adding = k; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
   if (a === 'aoptx') { const L = topLayer(); if (optCtx(L)) { L.omenu = null; render(); } return; }
