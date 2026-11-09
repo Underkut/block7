@@ -792,9 +792,9 @@ async function route(r) {
   { const LE = '.layer:last-child';
     eq('㉖ 구분 · 태그 · 할 일 — 끝에 + · 직접 적기, 직접 적기 칸은 접혀 있다', await page.evaluate(L => ['roles', 'tags', 'acts'].map(k => [!!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aoptadd"]'), !!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aetc"]'), !!document.querySelector(L + ' [data-f="' + k + 'Etc"]')]), LE), [[true, true, false], [true, true, false], [true, true, false]]);
     const rn = await page.$$eval(LE + ' .recent .rn:not(.cellbtn)', x => x.map(e => e.textContent));
-    eq('㉖ 최근 이름 한 줄 — 심방 · 출석 합쳐 최근 순(앱 규칙과 같게) · 한 줄 · 끝에 ›', [J0(rn) === J0(await page.evaluate(() => recentNames(M().visits, AT()).slice(0, 24))), await page.$eval(LE + ' .recent', e => getComputedStyle(e).flexWrap), await page.$eval(LE + ' .recent .rmore', e => e.textContent)], [true, 'nowrap', '›']);
+    eq('㉖ 최근 이름 한 줄 — 심방 · 출석 합쳐 최근 순(앱 규칙과 같게) · 한 줄 · 끝에 ›', [J0(rn) === J0(await page.evaluate(() => recentNames(M().visits, AT()).slice(0, 24))), await page.$eval(LE + ' .recent .rlist', e => getComputedStyle(e).flexWrap), await page.$eval(LE + ' .recent .rmore', e => e.getAttribute('aria-label'))], [true, 'nowrap', '더 보기']);
     await page.click(LE + ' .recent .rmore'); await page.waitForTimeout(200);
-    eq('㉖ › 누르면 펼침', await page.$eval(LE + ' .recent', e => getComputedStyle(e).flexWrap), 'wrap');
+    eq('㉖ › 누르면 펼침', await page.$eval(LE + ' .recent .rlist', e => getComputedStyle(e).flexWrap), 'wrap');
     await page.click(LE + ' .recent .rn:not(.cellbtn)'); await page.waitForTimeout(200);
     eq('㉖ 최근 이름을 누르면 이름 칸에', await page.evaluate(() => topLayer().form.name), rn[0]);
     const n0 = (tab('속성').rows || []).length;
@@ -816,18 +816,20 @@ async function route(r) {
     await page.evaluate(src => { cellCore.c = new Function(src + '\n;return { pickMine };')(); }, cellCoreSrc);   // file:// 에선 ../cell/ 을 못 받아 미리 넣는다
     await page.evaluate(() => { try { localStorage.removeItem(CELL_SB_KEY); } catch (e) { } CELLS.state = 'idle'; openEdit(null); }); await page.waitForTimeout(400);
     const LE = '.layer:last-child';
-    eq("㉗ '누구를' 최근 이름 줄 맨 앞에 '셀' 단추", await page.$eval('.layer .recent .rn', e => e.textContent), '셀');
+    eq("㉗ '누구를' 최근 이름 줄 맨 앞에 '셀' 단추 — 이름 알약과 다른 모양(목록 아이콘 · ›)", [await page.$eval('.layer .recent > :first-child', e => e.className + '|' + e.textContent + '|' + !!e.querySelector('svg')), await page.$eval('.layer .recent .cellbtn', e => getComputedStyle(e).borderRadius !== getComputedStyle(document.querySelector('.layer .recent .rn')).borderRadius)], ['cellbtn|셀|true', true]);
+    eq('㉗ › 는 이름 칸 밖 제자리(이름과 겹치지 않음)', await page.evaluate(() => { const m = document.querySelector('.layer .recent .rmore').getBoundingClientRect(), l = document.querySelector('.layer .recent .rlist').getBoundingClientRect(); return m.left >= l.right - 0.5; }), true);
     await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(400);
     eq('㉗ 셀 한눈에 로그인이 없으면 안내 · 셀 한눈에 열기', [await page.$eval(LE + ' .empty', e => e.textContent.includes('로그인이 없습니다')), await page.$$eval(LE + ' a[href="../cell/"]', x => x.length)], [true, 1]);
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     await page.evaluate(() => localStorage.setItem(CELL_SB_KEY, JSON.stringify({ access_token: 'tok', refresh_token: 'rt', expires_at: Math.floor(Date.now() / 1000) + 3600 })));
     const nCc = LOG.length;
     await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(800);
-    eq('㉗ 내 분파셀만(내 셀 먼저) · 셀원 수(쉬는 분 뺌)', await page.$$eval(LE + ' .cgrp', x => x.map(e => e.querySelector('b').textContent + ' ' + e.querySelector('.muted').textContent)), ['나무셀 나리더 · 1명', '하늘셀 가리더 · 2명']);
+    eq('㉗ 내 분파셀만(내 셀 먼저) · 리더 포함 사람 수(쉬는 분 뺌)', await page.$$eval(LE + ' .cgrp', x => x.map(e => e.querySelector('b').textContent + ' ' + e.querySelector('.muted').textContent)), ['나무셀 2명', '하늘셀 3명']);
     eq('㉗ 셀 케어엔 읽기만 · 로그인 열쇠는 그대로', [LOG.slice(nCc).filter(x => x[0] === 'cc-write').length, await page.evaluate(() => JSON.parse(localStorage.getItem(CELL_SB_KEY)).refresh_token)], [0, 'rt']);
-    await page.click(LE + ' .cgrp:has-text("하늘셀")'); await page.waitForTimeout(200);
-    eq('㉗ 셀을 누르면 셀원', await page.$$eval(LE + ' .cmem [data-act="cellname"]', x => x.map(e => e.textContent)), ['셀원둘', '셀원하나']);
+    eq('㉗ 셀마다 한 행 — 첫 알약은 셀리더, 그다음 셀원', await page.$$eval(LE + ' .cmem', x => x.map(r => [...r.querySelectorAll('[data-act="cellname"]')].map(e => (e.classList.contains('lead') ? '리더:' : '') + e.dataset.v))), [['리더:나리더', '셀원셋'], ['리더:가리더', '셀원둘', '셀원하나']]);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/cells.png' });
     await page.click(LE + ' .cmem [data-v="셀원하나"]'); await page.waitForTimeout(300);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/recent.png', clip: { x: 0, y: 0, width: 420, height: 260 } });
     eq('㉗ 셀원을 누르면 팝업이 닫히고 이름 칸에', [await page.evaluate(() => topLayer().type), await page.inputValue('.layer:last-child [data-f="name"]')], ['edit', '셀원하나']);
     await page.evaluate(() => { topLayer().dirty = false; localStorage.removeItem(CELL_SB_KEY); }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }

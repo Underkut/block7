@@ -615,8 +615,9 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
     ['none', 'none', 'expired', { state: 'ok', tok: 'a' }, 'b']);
   sc.eq('㉗ 열쇠 이름 = 셀 한눈에(supabase 기본 이름)', A.CELL_SB_KEY, 'sb-mcbbhsvvzqvtrxlbdcks-auth-token');
   const G = A.cellGroups([{ cell_id: 'c2', cell_name: '나무셀', leader_names: '가리더' }, { cell_id: 'c1', cell_name: '하늘셀', leader_names: '나리더', i_am_leader: true }],
-    [{ cell_id: 'c2', name: '다다', active: true }, { cell_id: 'c2', name: '가가' }, { cell_id: 'c2', name: '빠짐', active: false }, { cell_id: 'c2', name: '떠남', left_at: '2026-01-01' }, { cell_id: 'c1', name: '라라' }, { cell_id: 'c2', name: '가가' }]);
-  sc.eq('㉗ 내가 인도하는 셀 먼저 · 셀원은 가나다 순 · 쉬는 분 · 떠난 분 · 겹침 뺌', J(G.map(g => [g.name, g.lead, g.members])), [['하늘셀', true, ['라라']], ['나무셀', false, ['가가', '다다']]]);
+    [{ cell_id: 'c2', name: '가 리더' }, { cell_id: 'c2', name: '다다', active: true }, { cell_id: 'c2', name: '가가' }, { cell_id: 'c2', name: '빠짐', active: false }, { cell_id: 'c2', name: '떠남', left_at: '2026-01-01' }, { cell_id: 'c1', name: '라라' }, { cell_id: 'c2', name: '가가' }]);
+  sc.eq('㉗ 내가 인도하는 셀 먼저 · 셀리더 따로(셀원 명단에선 뺌, 띄어쓰기 무시) · 셀원은 가나다 순 · 쉬는 분 · 떠난 분 · 겹침 뺌', J(G.map(g => [g.name, g.lead, g.leaders, g.members])), [['하늘셀', true, ['나리더'], ['라라']], ['나무셀', false, ['가리더'], ['가가', '다다']]]);
+  sc.eq('㉗ 셀리더가 둘이면 둘 다 (쉼표 · 가운뎃점)', J(A.cellGroups([{ cell_id: 'x', cell_name: 'x', leader_names: '가가, 나나 · 다다' }], []).map(g => g.leaders)), [['가가', '나나', '다다']]);
   const code = HTML.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\/[^\n]*/g, '');
   const calls = [...code.matchAll(/ccFetch\('([a-z_\/]+)/g)].map(x => x[1]).sort();
   sc.eq('㉗ 셀 케어에 부르는 것은 읽기 넷뿐', J([...new Set(calls)]), ['cell_members', 'leadership_assignments', 'rpc/get_my_context', 'rpc/get_week_status']);
