@@ -43,7 +43,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays };`, ctx);
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -548,6 +548,32 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('㉓ 한 칸 알약은 30개까지', many.with.length, A.ATT_OPT_MAX);
   sc.eq('㉓ 이름 여럿 — 쉼표 · 전각 쉼표 · 、 · 빈칸 정리 · 띄어쓰기만 다른 같은 이름은 하나', J(A.splitNames(' 가나다, 라마바，사 아자、 사아자 ,, ')), ['가나다', '라마바', '사 아자']);
   sc.eq('㉓ 날짜 단추 — 그제 · 어제 · 오늘 (달이 바뀌어도)', J(A.attDays('2026-11-01')), [['2026-10-30', '그제'], ['2026-10-31', '어제'], ['2026-11-01', '오늘']]);
+}
+
+// ㉔ HB 가 폼에 직접 더한 '장소' · '사주심/사드림' (2026-11-09) — 제목 꼴이 달라도 알아보고, 입력 · 고치기에서 쓴다
+{
+  const H = HEAD.concat(['장소', '사주심/사드림', '기록ID', '출처', '심방일', '수정']);
+  const m = A.headerMap(H).map;
+  sc.eq("㉔ '장소' · '사주심/사드림' 머리글을 알아본다", J([m.place, m.pay, m['@기록ID']]), [9, 10, 11]);
+  sc.eq('㉔ 띄어쓰기 · 꼴이 달라도 (사주심 / 사드림 · 사드림 여부)', J([A.headerMap(['성도 이름', '내용', '사주심 / 사드림']).map.pay, A.headerMap(['성도 이름', '내용', '사드림 여부']).map.pay, A.headerMap(['성도 이름', '내용', '장소(카페 등)']).map.place]), [2, 2, 2]);
+  sc.eq("㉔ '장소 · 메모' 가 있으면 그것이 먼저", A.headerMap(['장소', '장소 · 메모', '성도 이름', '내용']).map.place, 1);
+  sc.eq('㉔ 없으면 칸도 없다(예전 시트 그대로)', [A.headerMap(HEAD).map.place, A.headerMap(HEAD).map.pay], [undefined, undefined]);
+  const row = ['11/6/2026 10:40:51', '11/6', '가나다', '셀원', '티타임', '이야기', '', '', '중간', '역 앞 카페', '사주심', 'R1', '앱', '2026-11-06', ''];
+  const v = A.rowToVisit(row, m, OPT);
+  sc.eq('㉔ 읽기 — 장소 · 사주심', J([v.place, v.pay]), ['역 앞 카페', '사주심']);
+  const r = A.recordFromVisit(Object.assign({}, v, { roles: v.roles, rolesEtc: v.rolesEtc, tagsEtc: v.tagsEtc, actsEtc: v.actsEtc }));
+  sc.eq('㉔ 그대로 다시 쓰면 바뀐 칸 없음', A.editPatch(H, m, row, r, 1).cells.length, 0);
+  r.pay = '사드림'; r.place = '교회 카페';
+  const pt = A.editPatch(H, m, row, r, Date.parse('2026-11-09T00:00:00Z')).cells.filter(c => c.k !== '@수정');
+  sc.eq('㉔ 고치기 — 바꾼 두 칸만 그 열에', J(pt.map(c => [c.k, c.col, c.value])), [['place', 9, '교회 카페'], ['pay', 10, '사드림']]);
+  const b = Object.assign(A.blankRecord('2026-11-09'), { name: '라마바', text: '첫 만남', place: '집 앞', pay: '사드림' });
+  const nr = A.newRowValues(H, m, b, 'R2', Date.parse('2026-11-09T00:00:00Z'));
+  sc.eq('㉔ 새 기록 — 장소 · 사드림을 제 열에', J([nr.row[9], nr.row[10], nr.lost]), ['집 앞', '사드림', []]);
+  sc.eq('㉔ 시트에 사주심 칸이 없으면 쓰지 않고 알린다', J(A.newRowValues(HEAD, A.headerMap(HEAD).map, b, 'R3', 1).lost.filter(k => k[0] !== '@')), ['place', 'pay']);
+  const FS = A.formSummary({ items: [{ itemId: 'i9', title: '사주심/사드림', questionItem: { question: { questionId: 'q9', choiceQuestion: { type: 'RADIO', options: [{ value: '사주심' }, { value: '사드림' }, { value: '각자' }] } } } }] });
+  sc.eq('㉔ 폼 질문에서 선택지를 읽는다', J(A.formQOf(FS, 'pay').options), ['사주심', '사드림', '각자']);
+  sc.eq("㉔ 폼에 '장소' 가 있으면 '장소 · 메모' 를 또 더하자고 하지 않는다", A.placeQuestionRequest({ items: [{ title: '장소', questionItem: { question: { textQuestion: {} } } }] }), null);
+  sc.eq('㉔ 사주심 칸은 앱 열로 잡히지 않는다(기록ID 등과 섞이지 않음)', A.headerMap(['성도 이름', '내용', '기록ID']).map.pay, undefined);
 }
 
 sc.done();
