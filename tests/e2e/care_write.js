@@ -1066,4 +1066,4 @@ async function route(r) {
   await b.close();
   console.log('\n결과: 통과', pass, '/ 실패', fail);
   process.exit(fail ? 1 : 0);
-})().catch(e => { console.log('FAIL', e.message); process.exit(1); });
+})().catch(e => { console.log('FAIL', e.message, String(e.stack).split('\n').slice(0, 4).join(' | ')); process.exit(1); });
