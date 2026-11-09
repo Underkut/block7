@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1109-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1109-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -311,6 +311,10 @@ h3 .lnk{font-weight:500}
 .aibtn{display:flex;align-items:center;justify-content:center;width:32px;height:24px;margin:-24px 0 0 auto;position:relative;z-index:1;color:var(--tx3);opacity:.75}
 .aibtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
 .aibtn.has{color:var(--ac);opacity:1}
+/* 1109-K3 보내기 줄: A 보내기 뜻 아이콘(단추 아님) · B 기도제목 · C 메모 — B · C 는 K4 · K5 에서 단다 */
+.sendrow{display:flex;align-items:center;justify-content:flex-end;gap:2px;margin:2px 0 0 auto;height:28px}
+.sendico{display:flex;align-items:center;justify-content:center;width:26px;height:28px;color:var(--tx3);opacity:.6}
+.sendico svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .aibtn.on svg{fill:currentColor}
 .aibtn.busy svg{animation:aispin 1.1s linear infinite}
 @keyframes aispin{to{transform:rotate(360deg)}}
@@ -321,7 +325,7 @@ h3 .lnk{font-weight:500}
 .aibar .in{flex-direction:column;align-items:flex-end}
 .aibar .stars{display:flex}
 .aibar .praytg{width:auto;height:auto;padding:0 6px;font-size:12px;color:var(--tx2);opacity:1}
-.hidepray .pray,.hidepray .pray+.morebtn,.hidepray .pray+.morebtn+.aibtn{display:none!important}
+.hidepray .pray,.hidepray .pray+.morebtn,.hidepray .pray+.morebtn+.aibtn,.hidepray .pray+.morebtn+.aibtn+.sendrow{display:none!important}
 .aibar button{display:flex;align-items:center;justify-content:center;width:32px;height:24px;color:var(--tx3);opacity:.8}
 .aibar button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
 .aibar button.on{color:var(--ac);opacity:1}
@@ -383,7 +387,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1109-1';
+const APP_VERSION = 'v. 26-1109-2';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1854,7 +1858,7 @@ function applyClamp(root) {
     if (!el.offsetParent) continue;
     el.dataset.ck = '1';
     if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); const k = aiKeyOf(el); el.dataset.aik = k; aiMigrateKey(textKey(el.textContent), k);
-      el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>' + aiBtn(k)); }
+      el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>' + aiBtn(k) + (DEMO && subjOf(el) ? sendRowHtml() : '')); }
     aiApplyModes(el);
   }
 }
@@ -1869,12 +1873,15 @@ function toggleClamp(btn) {
 }
 let _ckq = 0;
 new MutationObserver(() => { if (_ckq) return; _ckq = requestAnimationFrame(() => { _ckq = 0; applyClamp(document); }); }).observe(document.documentElement, { childList: true, subtree: true });
-addEventListener('resize', () => { for (const el of document.querySelectorAll('.clamp[data-ck]:not(.open)')) { el.removeAttribute('data-ck'); el.classList.remove('cut'); if (el.classList.contains('aisum')) continue; const b = el.nextElementSibling; if (b && b.dataset.act === 'more') { const a = b.nextElementSibling; if (a && a.dataset.act === 'ai') a.remove(); b.remove(); } } applyClamp(document); });
+addEventListener('resize', () => { for (const el of document.querySelectorAll('.clamp[data-ck]:not(.open)')) { el.removeAttribute('data-ck'); el.classList.remove('cut'); if (el.classList.contains('aisum')) continue; const b = el.nextElementSibling; if (b && b.dataset.act === 'more') { const a = b.nextElementSibling; if (a && a.dataset.act === 'ai') { const r = a.nextElementSibling; if (r && r.classList.contains('sendrow')) r.remove(); a.remove(); } b.remove(); } } applyClamp(document); });
 
 /* ---------- L17 AI 요약 (HB 11/7) ----------
    접힌 긴 글의 오른쪽 끝 별(✦)을 누르면 제미나이(무료 단계)가 설정한 길이(처음값 두 문장)로 요약한다. 보내기 전에 아는 이름은 '셀원 A' 로 바꾼다(anonText).
    열쇠와 한 번 만든 요약은 HB 계정 cellbook/{uid} 의 ai 칸에 두고(HB 결정 11/7 — 기기끼리 맞춤) 이 기기에도 사본을 둔다.
    ⚠️ 셀 한눈에의 '성도 내용은 화면 메모리에만' 규칙의 예외다 — 저장소 · users/{uid} 에는 두지 말 것. */
+// 1109-K3 '보내기' 뜻 아이콘: 네모의 오른쪽 위가 열리고 그 틈으로 화살표가 나간다 (HB 참고 그림)
+const SENDOUT = '<svg viewBox="0 0 24 24"><path d="M11 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V13"/><path d="M10.5 13.5L20 4"/><path d="M14 4h6v6"/></svg>';
+function sendRowHtml() { return `<div class="sendrow"><span class="sendico" aria-hidden="true" title="기도노트로 보내기">${SENDOUT}</span></div>`; }
 const SPARK = '<svg viewBox="0 0 24 24"><path d="M12 2c.7 5.3 4.7 9.3 10 10-5.3.7-9.3 4.7-10 10-.7-5.3-4.7-9.3-10-10 5.3-.7 9.3-4.7 10-10z"/></svg>';
 const AI = { orig: new WeakMap(), opened: new WeakSet(), store: null };
 function aiStore() { if (!AI.store) AI.store = lsGet(AI_STORE, {}) || {}; return AI.store; }

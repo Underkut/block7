@@ -1114,4 +1114,12 @@ console.log('\n시나리오 ㉙ — 저장 목록 정렬: ㄱㄴㄷ순 ⇄ ZYX�
   sc.eq('적은순 (같은 수는 ㄱㄴㄷ)', names('few'), ['가나다', '나다라', 'Apple', 'Zebra']);
 }
 
+// 1109-K2 메모 칸: 저절로 늘어남(화면 절반까지) · 우하단 손잡이 · 정한 높이는 이 기기에 · 두 번 누르면 다시 저절로
+{
+  sc.eq('K2 사람 · 그룹 상세의 메모 칸 둘 다 손잡이 상자에', (HTML.match(/<div class="notebox"><textarea class="field" rows="3" data-f="note"/g) || []).length, 2);
+  sc.eq('K2 저절로 늘어남은 화면 절반에서 멈춤', /window\.innerHeight \* 0\.5/.test(HTML) && /Math\.min\(max, ta\.scrollHeight \+ 2\)/.test(HTML), true);
+  sc.eq('K2 정한 높이는 이 기기에만(pray.noteh) — 클라우드 DB 에 안 넣음', /const NOTE_H = 'pray\.noteh'/.test(HTML) && !/DB\.set\.noteH/.test(HTML), true);
+  sc.eq('K2 손잡이 손짓은 아래 화면(시트 끌기)이 가져가지 않음', /touch-action:none;cursor:ns-resize/.test(HTML), true);
+}
+
 sc.done();
