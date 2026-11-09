@@ -70,6 +70,15 @@ const FORM = { revisionId: 'rev1', responderUri: 'https://example.invalid/form',
 async function route(r) {
   const u = new URL(r.request().url()), m = r.request().method(), body = r.request().postData() ? JSON.parse(r.request().postData()) : null;
   const json = (o) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
+  if (u.host.endsWith('supabase.co')) {   // 1109-E3 가짜 셀 케어 — 지어낸 이름 · 읽기만 받는다
+    if (m !== 'GET' && !u.pathname.startsWith('/rest/v1/rpc/')) { LOG.push(['cc-write', u.pathname]); return r.fulfill({ status: 403, body: '{}' }); }
+    LOG.push(['cc', u.pathname.replace('/rest/v1/', '')]);
+    if (u.pathname.endsWith('/rpc/get_my_context')) return json({ profile: { id: 'me' }, this_week: '2026-11-08', today: '2026-11-09' });
+    if (u.pathname.endsWith('/rpc/get_week_status')) return json([{ cell_id: 'c1', cell_name: '하늘셀', leader_names: '가리더', review_mode: 'leadership', responsible_leadership_id: 'me' }, { cell_id: 'c2', cell_name: '나무셀', leader_names: '나리더', i_am_leader: true }, { cell_id: 'c9', cell_name: '남의셀', review_mode: 'leadership' }]);
+    if (u.pathname.endsWith('/leadership_assignments')) return json([]);
+    if (u.pathname.endsWith('/cell_members')) return json([{ cell_id: 'c1', name: '셀원하나', active: true }, { cell_id: 'c1', name: '셀원둘' }, { cell_id: 'c2', name: '셀원셋' }, { cell_id: 'c1', name: '쉬는분', active: false }]);
+    return r.fulfill({ status: 404, body: '[]' });
+  }
   if (u.host.includes('cloudfunctions')) return json(u.pathname.endsWith('/status') ? { connected: true, email: 'test@example.com' } : { access_token: 'fake', expires_in: 3600 });
   if (u.host === 'forms.googleapis.com') {
     if (m === 'POST' && HOOK.failForm) { HOOK.failForm = false; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
@@ -782,11 +791,11 @@ async function route(r) {
   await page.evaluate(() => openEdit(null)); await page.waitForTimeout(500);
   { const LE = '.layer:last-child';
     eq('㉖ 구분 · 태그 · 할 일 — 끝에 + · 직접 적기, 직접 적기 칸은 접혀 있다', await page.evaluate(L => ['roles', 'tags', 'acts'].map(k => [!!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aoptadd"]'), !!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aetc"]'), !!document.querySelector(L + ' [data-f="' + k + 'Etc"]')]), LE), [[true, true, false], [true, true, false], [true, true, false]]);
-    const rn = await page.$$eval(LE + ' .recent .rn', x => x.map(e => e.textContent));
+    const rn = await page.$$eval(LE + ' .recent .rn:not(.cellbtn)', x => x.map(e => e.textContent));
     eq('㉖ 최근 이름 한 줄 — 심방 · 출석 합쳐 최근 순(앱 규칙과 같게) · 한 줄 · 끝에 ›', [J0(rn) === J0(await page.evaluate(() => recentNames(M().visits, AT()).slice(0, 24))), await page.$eval(LE + ' .recent', e => getComputedStyle(e).flexWrap), await page.$eval(LE + ' .recent .rmore', e => e.textContent)], [true, 'nowrap', '›']);
     await page.click(LE + ' .recent .rmore'); await page.waitForTimeout(200);
     eq('㉖ › 누르면 펼침', await page.$eval(LE + ' .recent', e => getComputedStyle(e).flexWrap), 'wrap');
-    await page.click(LE + ' .recent .rn'); await page.waitForTimeout(200);
+    await page.click(LE + ' .recent .rn:not(.cellbtn)'); await page.waitForTimeout(200);
     eq('㉖ 최근 이름을 누르면 이름 칸에', await page.evaluate(() => topLayer().form.name), rn[0]);
     const n0 = (tab('속성').rows || []).length;
     await page.click(LE + ' .pills[data-k="tags"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
@@ -799,6 +808,28 @@ async function route(r) {
     const tagRow = v => tab('속성').rows.find(r => r[0] === '태그' && r[1] === v) || [];
     eq('㉖ 이름 바꾸기 → 새 이름 더하고 옛 이름 숨김 · 고른 값도 따라감', [!!tagRow('섬김').length, tagRow('봉사')[4], await page.evaluate(() => topLayer().form.tags.includes('섬김'))], [true, '숨김', true]);
     await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  }
+
+  // 1109-E3 '셀' 단추 — 셀 한눈에 로그인을 읽기만 · 내 분파셀 · 셀원 골라 넣기
+  {
+    const cellCoreSrc = require('fs').readFileSync(path.join(__dirname, '..', '..', 'cell', 'index.html'), 'utf8').match(/<script id="cell-core">([\s\S]*?)<\/script>/)[1];
+    await page.evaluate(src => { cellCore.c = new Function(src + '\n;return { pickMine };')(); }, cellCoreSrc);   // file:// 에선 ../cell/ 을 못 받아 미리 넣는다
+    await page.evaluate(() => { try { localStorage.removeItem(CELL_SB_KEY); } catch (e) { } CELLS.state = 'idle'; openEdit(null); }); await page.waitForTimeout(400);
+    const LE = '.layer:last-child';
+    eq("㉗ '누구를' 최근 이름 줄 맨 앞에 '셀' 단추", await page.$eval('.layer .recent .rn', e => e.textContent), '셀');
+    await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(400);
+    eq('㉗ 셀 한눈에 로그인이 없으면 안내 · 셀 한눈에 열기', [await page.$eval(LE + ' .empty', e => e.textContent.includes('로그인이 없습니다')), await page.$$eval(LE + ' a[href="../cell/"]', x => x.length)], [true, 1]);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    await page.evaluate(() => localStorage.setItem(CELL_SB_KEY, JSON.stringify({ access_token: 'tok', refresh_token: 'rt', expires_at: Math.floor(Date.now() / 1000) + 3600 })));
+    const nCc = LOG.length;
+    await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(800);
+    eq('㉗ 내 분파셀만(내 셀 먼저) · 셀원 수(쉬는 분 뺌)', await page.$$eval(LE + ' .cgrp', x => x.map(e => e.querySelector('b').textContent + ' ' + e.querySelector('.muted').textContent)), ['나무셀 나리더 · 1명', '하늘셀 가리더 · 2명']);
+    eq('㉗ 셀 케어엔 읽기만 · 로그인 열쇠는 그대로', [LOG.slice(nCc).filter(x => x[0] === 'cc-write').length, await page.evaluate(() => JSON.parse(localStorage.getItem(CELL_SB_KEY)).refresh_token)], [0, 'rt']);
+    await page.click(LE + ' .cgrp:has-text("하늘셀")'); await page.waitForTimeout(200);
+    eq('㉗ 셀을 누르면 셀원', await page.$$eval(LE + ' .cmem [data-act="cellname"]', x => x.map(e => e.textContent)), ['셀원둘', '셀원하나']);
+    await page.click(LE + ' .cmem [data-v="셀원하나"]'); await page.waitForTimeout(300);
+    eq('㉗ 셀원을 누르면 팝업이 닫히고 이름 칸에', [await page.evaluate(() => topLayer().type), await page.inputValue('.layer:last-child [data-f="name"]')], ['edit', '셀원하나']);
+    await page.evaluate(() => { topLayer().dirty = false; localStorage.removeItem(CELL_SB_KEY); }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
   // 1109-D1 버전 — 설정 맨 아래 버전은 단추, 좌상단 배지는 개발자 계정에만
