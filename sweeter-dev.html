@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1110-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1110-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5898,6 +5898,34 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd #brFScope button{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3;}
 #bibleRd #brFScope button small{font-size:10px;color:var(--tx3);font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;font-weight:400;}
 #bibleRd #brFScope button.on small{color:var(--tx2);}
+#bibleRd .br-fsg{display:flex;align-items:center;gap:6px;}
+#bibleRd .br-fgb{width:30px;height:30px;display:grid;place-items:center;color:var(--tx3);}
+#bibleRd .br-fgb svg{width:20px;height:20px;}
+#bibleRd .br-fgb.on{color:var(--ac-tx);}
+/* 책별 분포 띠 — 66칸, 많이 나온 책일수록 진하다. 누르면 책별 개수 시트 */
+#bibleRd .br-fsw{position:relative;}
+#bibleRd .br-fsw:not(.has){display:none;}
+#bibleRd .br-fstrip{display:grid;grid-template-columns:repeat(66,1fr);gap:1.5px;width:100%;height:16px;padding:0;align-items:stretch;}
+#bibleRd .br-fstrip i{display:block;border-radius:2px;background:color-mix(in srgb,var(--ac) var(--a,0%),var(--s2));}
+#bibleRd .br-fstrip i:nth-child(40){margin-left:5px;}
+#bibleRd .br-fstrip i.sel{outline:1.5px solid var(--tx);outline-offset:1px;}
+#bibleRd .br-fstip{position:absolute;top:-28px;left:0;z-index:5;padding:4px 10px;border-radius:8px;background:var(--tx);color:var(--bg);font-size:12px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;}
+#bibleRd .br-fstip.on{opacity:.92;}
+#bibleRd .br-fbk{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px;padding:5px 8px 5px 12px;border-radius:999px;background:var(--s2);color:var(--tx);font-size:13px;font-weight:600;}
+#bibleRd .br-fbk svg{width:11px;height:11px;color:var(--tx3);}
+#bibleRd .br-fg{display:flex;justify-content:space-between;align-items:center;width:100%;margin:8px 0 2px;padding:8px 12px;border-radius:9px;background:var(--s2);color:var(--tx2);font-size:13.5px;font-weight:600;}
+#bibleRd .br-fg span+span{display:flex;align-items:center;gap:6px;font-weight:500;font-size:12.5px;}
+#bibleRd .br-fg svg{width:12px;height:12px;transition:transform .2s ease;}
+#bibleRd .br-fg.on svg{transform:rotate(180deg);}
+#bibleRd #brFBk{z-index:40;}
+#bibleRd .br-fsc{position:absolute;inset:0;z-index:35;background:var(--br-scrim);opacity:0;pointer-events:none;transition:opacity .2s;}
+#bibleRd .br-sheet.on+.br-fsc{opacity:1;pointer-events:auto;}
+#bibleRd .br-fbr{display:grid;grid-template-columns:86px 1fr 40px;align-items:center;gap:10px;width:100%;padding:7px 0;font-size:13.5px;color:var(--tx2);text-align:left;}
+#bibleRd .br-fbr .bar{height:9px;border-radius:5px;background:var(--s2);overflow:hidden;}
+#bibleRd .br-fbr .bar i{display:block;height:100%;border-radius:5px;background:var(--ac);}
+#bibleRd .br-fbr b{text-align:right;font-weight:500;font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;color:var(--tx2);}
+#bibleRd .br-fbr.cur{color:var(--tx);font-weight:600;}
+#bibleRd .br-fsort{display:flex;justify-content:center;padding:2px 0 8px;flex:0 0 auto;}
 #bibleRd .br-trbar{position:absolute;right:0;top:100%;max-width:100%;display:flex;flex-direction:row-reverse;gap:0;overflow-x:auto;scrollbar-width:none;
   padding:0 8px 6px;pointer-events:auto;overscroll-behavior-x:contain;}
 #bibleRd .br-trbar::-webkit-scrollbar{display:none;}
@@ -7083,7 +7111,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1110-6";
+const APP_VERSION = "v. 26-1110-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9954,10 +9982,18 @@ try{
     <div class="br-fbar">
       <input id="brFq" type="search" enterkeyhint="search" autocomplete="off" placeholder="낱말 또는 장절 (예: 의롭다 하심 · 요 3:16)">
       <div class="br-fhist" id="brFHist"></div>
-      <div class="br-frow"><div class="br-seg" id="brFScope"><button data-v="all">전체</button><button data-v="ot">구약</button><button data-v="nt">신약</button><button data-v="book">이 책</button></div>
+      <div class="br-frow"><div class="br-fsg"><div class="br-seg" id="brFScope"><button data-v="all">전체</button><button data-v="ot">구약</button><button data-v="nt">신약</button><button data-v="book">이 책</button></div>
+        <button class="br-fgb" id="brFGrp" aria-label="책별로 묶어 보기" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="3.6" height="12" rx=".8"/><rect x="7.4" y="4" width="3.6" height="12" rx=".8"/><path d="M12.6 5.4l3.4-.9 2.5 10.6-3.4.9z"/></svg></button></div>
         <label class="br-chk"><input type="checkbox" id="brFree"><span>검색어 순서 자유</span></label></div>
+      <div class="br-fsw" id="brFSw"><button class="br-fstrip" id="brFStrip" aria-label="책별 개수 보기"></button><span class="br-fstip" id="brFStip"></span></div>
     </div>
     <div class="br-pbody" id="brFBody"></div>
+    <div class="br-sheet" id="brFBk" aria-label="책별 개수">
+      <div class="br-grab"></div>
+      <div class="br-shead"><span></span><h3>책별 개수</h3><button class="br-ic br-x" data-brclose aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>
+      <div class="br-fsort"><div class="br-seg" id="brFBkSort"><button data-v="cnt">많은 순</button><button data-v="bib">성경 순</button></div></div>
+      <div class="br-sbody" id="brFBkBody"></div>
+    </div><div class="br-fsc" id="brFSc"></div>
   </div>
 
   <!-- 성경 읽기 대시보드 (v26-1007-9, B-9 — 시안 그대로). 그리는 일은 _brDashRender() -->
@@ -17381,7 +17417,7 @@ function _brFHAdd(q){q=(q||'').trim().slice(0,60);if(!q)return;
 function _brFHRender(){const el=_brEl('brFHist');if(!el)return;
   el.innerHTML=_brFHGet().map(x=>'<button class="br-fh" data-fh="'+esc(x)+'">'+esc(x)+'</button>').join('');}
 // ── 검색 ──
-let _brFs={q:'',scope:'all',lim:100},_brFcnt=null;
+let _brFs={q:'',scope:'all',lim:100,bk:null,open:null,sort:'cnt'},_brFcnt=null,_brFLast=null;
 async function _brRunFind(){
   const body=_brEl('brFBody'),q=_brFs.q,books=_brBooks();
   if(!q){_brFcnt=null;_brSyncScope();body.innerHTML='<div class="br-empty">찾을 낱말을 넣어 주세요.<br>띄어쓰기·쉼표는 없는 셈 치고 찾아요.<br>‘검색어 순서 자유’를 켜면 낱말이 떨어져 있어도 찾아요.<br>장절(요 3:16)을 넣으면 그 자리로 바로 가요.</div>';return;}
@@ -17392,11 +17428,17 @@ async function _brRunFind(){
   if(!words.length){_brFcnt=null;_brSyncScope();body.innerHTML=h;return;}
   const a=0,z=66;   // 갈래와 상관없이 성경 전체에서 찾아 갈래별 개수를 함께 센다 (v. 26-1110-6)
   if(!body.querySelector('.br-mi'))body.innerHTML=h+'<div class="br-empty">찾는 중…</div>';
-  const hits=[];
-  for(let b=a;b<z;b++){
-    let d;try{d=await _brBook(b);}catch(e){body.innerHTML=h+'<div class="br-empty">본문을 아직 다 받지 못했어요. 인터넷에 연결된 뒤 다시 찾아 주세요.</div>';return;}
-    if(_brFs.q!==myQ)return;                   // 그 사이에 검색어가 바뀌었다
-    d.c.forEach((ch,ci)=>ch.forEach((t,vi)=>{if(_brMatch(t,words))hits.push([b,ci+1,vi+1,t]);}));
+  const free=!!_brS('bibleFindFree',false);
+  let hits;
+  if(_brFLast&&_brFLast.q===q&&_brFLast.free===free)hits=_brFLast.hits;   // 갈래·묶기만 바뀌면 다시 찾지 않는다
+  else{
+    hits=[];
+    for(let b=a;b<z;b++){
+      let d;try{d=await _brBook(b);}catch(e){body.innerHTML=h+'<div class="br-empty">본문을 아직 다 받지 못했어요. 인터넷에 연결된 뒤 다시 찾아 주세요.</div>';return;}
+      if(_brFs.q!==myQ)return;                   // 그 사이에 검색어가 바뀌었다
+      d.c.forEach((ch,ci)=>ch.forEach((t,vi)=>{if(_brMatch(t,words))hits.push([b,ci+1,vi+1,t]);}));
+    }
+    _brFLast={q,free,hits};
   }
   // 형광 표시: 고른 글자 자리를 원문 자리로 되돌려 칠한다 (사이의 공백·쉼표까지 함께)
   const paint=t=>{
@@ -17406,24 +17448,55 @@ async function _brRunFind(){
     let o='',m=false;for(let i=0;i<t.length;i++){if(on[i]!==m){o+=on[i]?'<mark>':'</mark>';m=on[i];}o+=esc(t[i]);}
     return o+(m?'</mark>':'');
   };
-  const cnt={all:hits.length,ot:0,nt:0,book:0};
-  hits.forEach(x=>{if(x[0]<_BR_OT)cnt.ot++;else cnt.nt++;if(x[0]===_brCur.b)cnt.book++;});
+  const cnt={all:hits.length,ot:0,nt:0,book:0,bk:new Array(66).fill(0)};
+  hits.forEach(x=>{cnt.bk[x[0]]++;if(x[0]<_BR_OT)cnt.ot++;else cnt.nt++;if(x[0]===_brCur.b)cnt.book++;});
   _brFcnt=cnt;_brSyncScope();
-  const scp=_brFs.scope,vis=scp==='all'?hits:hits.filter(x=>scp==='ot'?x[0]<_BR_OT:scp==='nt'?x[0]>=_BR_OT:x[0]===_brCur.b);
+  const scp=_brFs.scope,bk=_brFs.bk;
+  const vis=bk!=null?hits.filter(x=>x[0]===bk):scp==='all'?hits:hits.filter(x=>scp==='ot'?x[0]<_BR_OT:scp==='nt'?x[0]>=_BR_OT:x[0]===_brCur.b);
+  const row=([b,c,v,t])=>'<button class="br-mi" data-go="'+b+'.'+c+'.'+v+'"><div><div class="br-r">'+books[b]+' '+c+':'+v+'</div><div class="br-q" style="-webkit-line-clamp:3">'+paint(t)+'</div></div></button>';
+  const more=n=>'<button class="br-more">'+n.toLocaleString()+'개 더 보기</button>';
   // 위 갈래 단추에 개수가 있으므로 '몇 절' 줄은 두지 않는다 (HB 2026-11-10)
+  if(bk!=null)h+='<button class="br-fbk" id="brFBkX" aria-label="책 고르기 풀기">'+esc(books[bk])+' · '+cnt.bk[bk].toLocaleString()+'개'+_BR_X+'</button>';
   if(!vis.length)h+='<div class="br-fcount">찾은 구절이 없어요</div>';
-  vis.slice(0,_brFs.lim).forEach(([b,c,v,t])=>{h+='<button class="br-mi" data-go="'+b+'.'+c+'.'+v+'"><div><div class="br-r">'+books[b]+' '+c+':'+v+'</div><div class="br-q" style="-webkit-line-clamp:3">'+paint(t)+'</div></div></button>';});
-  if(vis.length>_brFs.lim)h+='<button class="br-more" id="brFMore">'+(vis.length-_brFs.lim).toLocaleString()+'개 더 보기</button>';
+  if(_brS('bibleFindGroup',false)&&vis.length){
+    const m=new Map();vis.forEach(x=>{if(!m.has(x[0]))m.set(x[0],[]);m.get(x[0]).push(x);});
+    const keys=[...m.keys()],open=_brFs.open||new Set(keys.slice(0,1));_brFs.openCur=open;
+    keys.forEach(b=>{const L=m.get(b),on=open.has(b);
+      h+='<button class="br-fg'+(on?' on':'')+'" data-fg="'+b+'"><span>'+esc(books[b])+'</span><span>'+L.length.toLocaleString()+'개<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></span></button>';
+      if(on){L.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});if(L.length>_brFs.lim)h+=more(L.length-_brFs.lim);}
+    });
+  }else{
+    vis.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});
+    if(vis.length>_brFs.lim)h+=more(vis.length-_brFs.lim);
+  }
   body.innerHTML=h;
-  const mb=_brEl('brFMore');if(mb)mb.onclick=()=>{_brFs.lim+=200;const y=body.scrollTop;_brRunFind().then(()=>{body.scrollTop=y;});};
+  body.querySelectorAll('.br-more').forEach(mb=>mb.onclick=()=>{_brFs.lim+=200;const y=body.scrollTop;_brRunFind().then(()=>{body.scrollTop=y;});});
 }
 function _brSyncScope(){
   const nm={all:'전체',ot:'구약',nt:'신약',book:_brBooks()[_brCur.b]};
   document.querySelectorAll('#brFScope button').forEach(b=>{
     const k=b.dataset.v;
-    b.classList.toggle('on',k===_brFs.scope);
+    b.classList.toggle('on',k===_brFs.scope&&_brFs.bk==null);
     b.innerHTML=esc(nm[k])+(_brFcnt?'<small>'+_brFcnt[k].toLocaleString()+'</small>':'');
   });
+  _brFStripSync();
+  const gb=_brEl('brFGrp');if(gb){const on=!!_brS('bibleFindGroup',false);gb.classList.toggle('on',on);gb.setAttribute('aria-pressed',on?'true':'false');}
+}
+// 책별 분포 띠 + 책별 개수 시트 (v. 26-1110-7, HB)
+function _brFStripSync(){
+  const el=_brEl('brFStrip'),w=_brEl('brFSw');if(!el||!w)return;
+  if(!_brFcnt||!_brFcnt.bk||!_brFcnt.all){el.innerHTML='';w.classList.remove('has');return;}
+  const bk=_brFcnt.bk,mx=Math.max(1,...bk);
+  el.innerHTML=bk.map((n,b)=>'<i data-b="'+b+'" style="'+(n?'--a:'+Math.round(16+84*Math.sqrt(n/mx))+'%':'')+'"'+(b===_brFs.bk?' class="sel"':'')+'></i>').join('');
+  w.classList.add('has');
+}
+function _brFBkRender(){
+  const body=_brEl('brFBkBody');if(!body||!_brFcnt||!_brFcnt.bk)return;
+  const books=_brBooks(),bk=_brFcnt.bk,mx=Math.max(1,...bk);
+  let L=bk.map((n,b)=>[b,n]).filter(x=>x[1]>0);
+  if(_brFs.sort==='cnt')L.sort((x,y)=>y[1]-x[1]||x[0]-y[0]);
+  body.innerHTML=L.map(([b,n])=>'<button class="br-fbr'+(b===_brFs.bk?' cur':'')+'" data-fbr="'+b+'"><span>'+esc(books[b])+'</span><span class="bar"><i style="width:'+Math.max(2,Math.round(n/mx*100))+'%"></i></span><b>'+n.toLocaleString()+'</b></button>').join('');
+  document.querySelectorAll('#brFBkSort button').forEach(b=>b.classList.toggle('on',b.dataset.v===_brFs.sort));
 }
 // ── 묶기 (한 번만) ──
 function _brBind(){
@@ -17829,15 +17902,33 @@ function _brBind(){
   _brFHRender();
   {let ht=null,hold=false;const fh=$('brFHist');
     fh.addEventListener('click',e=>{const b=e.target.closest('[data-fh]');if(!b||hold){hold=false;return;}
-      const q=b.dataset.fh;$('brFq').value=q;_brFs.q=q;_brFs.lim=100;_brRunFind();});
+      const q=b.dataset.fh;$('brFq').value=q;_brFs.q=q;_brFs.bk=null;_brFs.open=null;_brFs.lim=100;_brRunFind();});
     const del=b=>{const q=b.dataset.fh;_brFHSet(_brFHGet().filter(x=>x!==q));_brFHRender();showToast('‘'+q+'’ 검색어를 지웠어요');};
     fh.addEventListener('contextmenu',e=>{const b=e.target.closest('[data-fh]');if(!b)return;e.preventDefault();del(b);});
     fh.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-fh]');if(!b||e.pointerType==='mouse')return;ht=setTimeout(()=>{hold=true;del(b);},650);},{passive:true});
     ['pointerup','pointercancel','pointermove'].forEach(t=>fh.addEventListener(t,()=>clearTimeout(ht),{passive:true}));}
-  $('brFScope').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brFs.scope=b.dataset.v;_brFs.lim=100;_brSyncScope();_brRunFind();};
+  $('brFScope').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brFs.scope=b.dataset.v;_brFs.bk=null;_brFs.open=null;_brFs.lim=100;_brSyncScope();_brRunFind();};
+  // 책 모양 단추 — 결과를 책별로 묶었다 풀었다 (켜고 끄기)
+  $('brFGrp').onclick=()=>{ST.settings.bibleFindGroup=!_brS('bibleFindGroup',false);save();_brFs.open=null;_brFs.lim=100;_brSyncScope();_brRunFind();
+    showToast(ST.settings.bibleFindGroup?'책별로 묶어서 보여 드려요':'묶지 않고 모두 보여 드려요');};
+  // 분포 띠: 마우스를 올리면 책 이름·개수, 누르면 책별 개수 시트
+  {const st=$('brFStrip'),tp=$('brFStip');
+    st.addEventListener('mousemove',e=>{const i=e.target.closest('i');if(!i||!_brFcnt||!_brFcnt.bk)return;const b=+i.dataset.b;
+      tp.textContent=_brBooks()[b]+' · '+_brFcnt.bk[b].toLocaleString()+'개';tp.classList.add('on');
+      const r=st.getBoundingClientRect(),ir=i.getBoundingClientRect();
+      tp.style.left=Math.max(0,Math.min(r.width-tp.offsetWidth,ir.left-r.left+ir.width/2-tp.offsetWidth/2))+'px';});
+    st.addEventListener('mouseleave',()=>tp.classList.remove('on'));
+    st.onclick=()=>{if(!_brFcnt||!_brFcnt.bk)return;tp.classList.remove('on');_brFBkRender();_brOpenSheet('brFBk',false);};}
+  $('brFSc').onclick=_brCloseSheets;
+  $('brFBkSort').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brFs.sort=b.dataset.v;_brFBkRender();};
+  $('brFBkBody').onclick=e=>{const r=e.target.closest('[data-fbr]');if(!r)return;_brFs.bk=+r.dataset.fbr;_brFs.open=null;_brFs.lim=100;_brCloseSheets();_brSyncScope();_brRunFind();};
+  $('brFBody').addEventListener('click',e=>{
+    if(e.target.closest('#brFBkX')){_brFs.bk=null;_brFs.open=null;_brFs.lim=100;_brSyncScope();_brRunFind();return;}
+    const g=e.target.closest('[data-fg]');if(!g)return;const b=+g.dataset.fg,o=new Set(_brFs.openCur||[]);
+    if(o.has(b))o.delete(b);else o.add(b);_brFs.open=o;const y=$('brFBody').scrollTop;_brRunFind().then(()=>{$('brFBody').scrollTop=y;});});
   $('brFree').onchange=e=>{ST.settings.bibleFindFree=e.target.checked;save();_brFs.lim=100;_brRunFind();};
   let ft=null;
-  $('brFq').addEventListener('input',()=>{clearTimeout(ft);ft=setTimeout(()=>{_brFs.q=$('brFq').value.trim();_brFs.lim=100;_brRunFind();},220);});
+  $('brFq').addEventListener('input',()=>{clearTimeout(ft);ft=setTimeout(()=>{_brFs.q=$('brFq').value.trim();_brFs.bk=null;_brFs.open=null;_brFs.lim=100;_brRunFind();},220);});
   $('brFq').addEventListener('keydown',e=>{if(e.key==='Enter'){if(_brFs.q&&(!_brFcnt||_brFcnt.all>0))_brFHAdd(_brFs.q);const j=$('brFBody').querySelector('.br-fjump');if(j)j.click();else $('brFq').blur();}});
   $('brFBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const [b,c,v]=g.dataset.go.split('.').map(Number);$('brFindP').classList.remove('on');_brFHAdd(_brFs.q);_brNextSrc='search';_brShow(b,c,v);});
   // ESC — 앱의 공용 ESC 는 입력 칸을 비켜선다(There 와 같은 사정). 메모·검색 칸에서도
