@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1110-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1110-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5863,6 +5863,8 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
   #bibleRd .br-top .br-ic,#bibleRd .br-top .br-ttl,#bibleRd .br-nav .br-nv,#bibleRd .br-nav .br-lts{opacity:.42;transition:opacity .2s ease;}
   #bibleRd .br-top .br-ic:hover,#bibleRd .br-top .br-ttl:hover,#bibleRd .br-nav .br-nv:hover,#bibleRd .br-nav .br-lts:hover{opacity:1;}
   #bibleRd .br-nav .br-nv[disabled]{opacity:.2;}
+  #bibleRd .br-hist .br-hi:first-child{opacity:.42;transition:opacity .2s ease;}
+  #bibleRd .br-hist:hover .br-hi:first-child{opacity:1;}
   /* 읽기 계획 탭(헤더 아래 매달린 줄) — 평소엔 9px 위로 말려 올라가 글자만 또렷이 보이고, 마우스를 올리면 스르륵 내려와 펴진다 */
   #bibleRd .br-trbar:not(.drag) .br-trt{transform:translateY(-9px);clip-path:inset(9px 0 0 0);padding-top:9px;opacity:.5;
     transition:transform .3s cubic-bezier(.22,.8,.24,1),clip-path .3s cubic-bezier(.22,.8,.24,1),padding-top .3s cubic-bezier(.22,.8,.24,1),opacity .2s ease,color .2s ease;}
@@ -5871,6 +5873,31 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
   #bibleRd .br-trbar:not(.drag):hover .br-trt:not(.cur):not(.br-trplus),#bibleRd .br-trbar:not(.drag):focus-within .br-trt:not(.cur):not(.br-trplus){color:var(--tx);}
 }
 #bibleRd #brHead{border-bottom:0;}
+/* 이동 기록 (v. 26-1110-6, HB) — 하단 < > 위의 알약. 평소엔 ‥ 하나, 마우스를 올리면 장절 이름으로 바뀌고 그 위로 이전 기록이 점점 옅게 쌓인다 */
+#bibleRd .br-hist{position:absolute;bottom:calc(12px + 44px + 2px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column-reverse;pointer-events:none;}
+#bibleRd .br-hl{left:14px;align-items:flex-start;}#bibleRd .br-hr{right:14px;align-items:flex-end;}
+#bibleRd .br-hi{pointer-events:auto;padding:3px 0;}
+#bibleRd .br-nav .br-hi button{width:auto;min-width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:22px;font-size:13px;font-weight:600;white-space:nowrap;}
+#bibleRd .br-nav .br-hi button{background:color-mix(in srgb,var(--s1) calc(55% + var(--o,1) * 45%),transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  color:color-mix(in srgb,var(--tx2) calc(var(--o,1) * 100%),transparent);}   /* 글자 뒤 본문이 비쳐 어지럽지 않게: 바탕은 거의 채우고 글자색으로 옅어진다 */
+#bibleRd .br-hi .l{display:none;padding:0 16px;}
+#bibleRd .br-hi:first-child .d{display:block;}
+#bibleRd .br-hi+.br-hi .d{display:none;}
+#bibleRd .br-hi .d svg{width:20px;height:20px;}
+#bibleRd .br-hi+.br-hi{max-height:0;opacity:0;overflow:hidden;padding:0;pointer-events:none;
+  transition:max-height .3s cubic-bezier(.22,.8,.24,1),opacity .25s ease,padding .3s cubic-bezier(.22,.8,.24,1);}
+#bibleRd .br-hist:hover .br-hi+.br-hi,#bibleRd .br-hist.open .br-hi+.br-hi{max-height:56px;opacity:1;padding:3px 0;pointer-events:auto;}
+#bibleRd .br-hist:hover .br-hi .l,#bibleRd .br-hist.open .br-hi .l{display:block;}
+#bibleRd .br-hist:hover .br-hi:first-child .d,#bibleRd .br-hist.open .br-hi:first-child .d{display:none;}
+/* 검색 — 지난 검색어 줄 · 갈래별 개수 */
+#bibleRd .br-fhist{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;margin:-2px -16px 0;padding:2px 16px;}
+#bibleRd .br-fhist::-webkit-scrollbar{display:none;}
+#bibleRd .br-fhist:empty{display:none;}
+#bibleRd .br-fh{flex:0 0 auto;padding:4px 11px;border-radius:999px;background:var(--s2);color:var(--tx2);font-size:12.5px;white-space:nowrap;}
+@media (hover:hover) and (pointer:fine){#bibleRd .br-fh:hover{background:var(--s1);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.08);}}
+#bibleRd #brFScope button{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3;}
+#bibleRd #brFScope button small{font-size:10px;color:var(--tx3);font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;font-weight:400;}
+#bibleRd #brFScope button.on small{color:var(--tx2);}
 #bibleRd .br-trbar{position:absolute;right:0;top:100%;max-width:100%;display:flex;flex-direction:row-reverse;gap:0;overflow-x:auto;scrollbar-width:none;
   padding:0 8px 6px;pointer-events:auto;overscroll-behavior-x:contain;}
 #bibleRd .br-trbar::-webkit-scrollbar{display:none;}
@@ -7056,7 +7083,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1110-5";
+const APP_VERSION = "v. 26-1110-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9902,6 +9929,7 @@ try{
   <div class="br-edge" id="brEdge" aria-hidden="true"></div><div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
   <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
   <div class="br-nav" id="brNav">
+    <div class="br-hist br-hl" id="brHistL"></div><div class="br-hist br-hr" id="brHistR"></div>
     <button class="br-nv" id="brPrev" aria-label="이전 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg></button>
     <div class="br-lts"><button class="br-lt" data-lt="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5" fill="currentColor"/></svg><span>책갈피</span></button><button class="br-lt" data-lt="hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L10 19H5v-5z"/><path d="M12.5 6.5l5 5"/><path d="M4 21h16"/></svg><span>표시</span></button><button class="br-lt" data-lt="memo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8.5 12.5h7M8.5 16h7"/></svg><span>메모</span></button><button class="br-lt" data-lt="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><span>읽은 곳</span></button><button class="br-lt even-only" data-lt="orig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.2c1.4.2 2.2 1.3 3 2.8l6.6 12.4"/><path d="M14.6 2.8c.7 1.8.2 3.9-2.1 5.6"/><path d="M8.4 10.6c-2 1.4-3 3.6-3 6.4v1.6"/><path d="M4 18.6h3"/><path d="M11.6 21h3.2v-1.6a4.4 4.4 0 1 1 3.4 0V21h3.2"/></svg><span>원어</span></button></div>
     <button class="br-nv" id="brNext" aria-label="다음 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5L13 10l-5.5 5.5"/></svg></button>
@@ -9925,6 +9953,7 @@ try{
     </div>
     <div class="br-fbar">
       <input id="brFq" type="search" enterkeyhint="search" autocomplete="off" placeholder="낱말 또는 장절 (예: 의롭다 하심 · 요 3:16)">
+      <div class="br-fhist" id="brFHist"></div>
       <div class="br-frow"><div class="br-seg" id="brFScope"><button data-v="all">전체</button><button data-v="ot">구약</button><button data-v="nt">신약</button><button data-v="book">이 책</button></div>
         <label class="br-chk"><input type="checkbox" id="brFree"><span>검색어 순서 자유</span></label></div>
     </div>
@@ -10013,6 +10042,7 @@ try{
       <div class="br-row"><span class="br-lb">줄 간격</span><div class="br-seg" id="brSegLh"><button data-v="1.6">좁게</button><button data-v="1.85">보통</button><button data-v="2.15">넓게</button></div></div>
       <div class="br-row"><span class="br-lb">글씨체</span><div class="br-seg" id="brSegFont"><button data-v="serif">명조</button><button data-v="sans">고딕</button></div></div>
       <div class="br-row"><span class="br-lb">긋기 돋보기</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brLz" min="1" max="3" step="0.25" value="2" aria-label="긋기 돋보기 크기"><span id="brLzV">2배</span></div></div>
+      <div class="br-row"><span class="br-lb">이동 기록 개수</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brHn" min="1" max="7" step="1" value="3" aria-label="이동 기록 개수"><span id="brHnV">3개</span></div></div>
       <div class="br-row"><span class="br-lb">절 나누기</span><div class="br-seg" id="brSegFlow"><button data-v="verse">절마다 줄</button><button data-v="flow">이어 읽기</button></div></div>
       <div class="br-row" style="align-items:flex-start"><span class="br-lb" style="padding-top:9px">화면</span><div class="br-themes" id="brThemes"><button class="br-th" data-t="auto"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10.5 18h3"/></svg></i>앱과 같게</button><button class="br-th" data-t="light"><i>가</i>밝게</button><button class="br-th" data-t="paper"><i>가</i>종이</button><button class="br-th" data-t="night"><i>가</i>어둡게</button></div></div>
       <div class="br-sub">복사할 때 장절 형식 <small>말씀 설정 › 공유 › 공유 텍스트와 같은 설정이에요</small></div>
@@ -16427,7 +16457,7 @@ let _brSwBusy=false;
 function _brStepAnim(dd,fromSwipe,to){
   const el=_brSwPage();
   if(!el||_brSwQuiet()){if(el){el.style.transition='';el.style.transform='';el.style.opacity='';}return _brStep(dd,to);}
-  if(!_brSwCan(dd)){_brSwBack();return;}
+  if(typeof to!=='function'&&!_brSwCan(dd)){_brSwBack();return;}
   if(_brSwBusy)return;_brSwBusy=true;
   const W=document.documentElement.clientWidth;
   el.style.transition='transform .15s ease-in,opacity .15s ease-in';
@@ -16723,7 +16753,7 @@ function bibleOpen(b,c,v,v2){
   _brShow(b,c,v,v2);
 }
 function bibleClose(){
-  _brSessEnd();
+  _brSessEnd();_brNavLive=false;
   _brCloseSheets();
   ['brPick','brFindP','brDashP'].forEach(id=>_brEl(id).classList.remove('on'));
   _brEl('bibleRd').classList.remove('on');_brOpen=false;_brCover(false);
@@ -16748,6 +16778,7 @@ function _brEsc(){
 }
 // keep: 열린 시트를 그대로 두고 본문만 다시 그린다 (내 표시에서 지울 때 — HB 2026-10-06)
 async function _brShow(b,c,focus,focus2,keep){
+  if(!keep)_brNavNote(b,c,focus);
   _brCur={b,c};
   if(!keep){_brSel.clear();_brCloseSheets();}
   const books=_brBooks();
@@ -16781,7 +16812,7 @@ async function _brShow(b,c,focus,focus2,keep){
   h+='</div>';
   const last=b===65&&c===_bibleChapters(books[b]);
   h+='<div class="br-endnote">'+(last?'요한계시록 끝 · 성경 전체를 마쳤어요':'옆으로 밀거나 좌우 화살표로 '+_brUnit(b)+'을 넘겨요')+'</div>';
-  box.innerHTML=h;
+  box.innerHTML=h;box.dataset.bc=b+'.'+c;_brNavLive=true;
   _brApplyLook();
   const sc=_brEl('brScroll');
   if(focus){
@@ -16797,10 +16828,12 @@ async function _brShow(b,c,focus,focus2,keep){
   _brChrome(true);_brProgSync();_brInkPaint();_brTRRender();
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(_brCur.b===b&&_brCur.c===c)_brInkPaint();});
   _brPosSet({b,c,v:focus||0});setTimeout(_brPosSave,600);
+  _brNavSync();
   _brSessStart();
 }
 function _brStep(dd,to){   // to: 그 책의 이 장으로 곧장 (⌘/Ctrl+좌우 — 첫 장·마지막 장)
   _brNextSrc='nav';
+  if(typeof to==='function')return to();   // 이동 기록으로 돌아가기 (_brNavDo)
   if(to)return _brShow(_brCur.b,to);
   let {b,c}=_brCur;const books=_brBooks();c+=dd;
   if(c<1){if(b===0)return;b--;c=_bibleChapters(books[b]);}
@@ -17119,7 +17152,7 @@ function _brLzPaint(v){const sl=_brEl('brLz'),lb=_brEl('brLzV');if(!sl)return;sl
   const f=(v-1)/2*100;sl.style.setProperty('--sl-fill','linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)');
   if(lb)lb.textContent=(Math.round(v*100)/100)+'배';}
 function _brSyncAa(){
-  _brEl('brFsV').textContent=_brS('bibleFs',18);_brLzPaint(_brLzGet());
+  _brEl('brFsV').textContent=_brS('bibleFs',18);_brLzPaint(_brLzGet());_brHnPaint(_brHnGet());
   {const r=_brEl('brDiagRow');if(r){let dev=false;try{dev=(typeof DEV_MODE!=='undefined'&&DEV_MODE)||(typeof _isDevAccount==='function'&&_isDevAccount());}catch(e){}
     r.style.display=dev?'':'none';_brDiagSync();}}   // 스크롤 기록 — 개발자만 (v26-1010-11)
   const segs=[['brSegLh','bibleLh','1.85'],['brSegFont','bibleFont','serif'],['brSegFlow','bibleFlow','verse'],
@@ -17272,17 +17305,92 @@ function _brSwipeBind(box,after){
     const mi=s2.r.querySelector('.br-mi');
     if(s2.dx<-90)_brRowGone(s2.r,after);else{mi.style.transition='transform .2s ease';mi.style.transform='';s2.r.classList.remove('arm');}});
 }
+
+// ── 이동 기록 (v. 26-1110-6, HB) ──
+// 점프(책·장 고르기 · 검색 · 대시보드 · 읽은 곳 · 읽기 계획 · 책갈피)로 옮길 때 떠나는 자리(장 + 맨 위에 걸친 절 + 떨어진 거리)를
+// back 에 쌓고, 돌아가면 지나온 자리가 fwd 에 쌓인다 (브라우저 뒤로/앞으로와 같은 모양).
+// 이전/다음 장 · 스와이프는 쌓지 않는다 — 한 장씩 넘길 때마다 쌓으면 금방 쓸모없어진다.
+// 이 기기에만 저장한다 (_lsk). 각 60개 상한.
+let _brNavLive=false,_brNavGoing=false,_brNavSt=null;
+function _brNavGet(){
+  if(!_brNavSt){let j=null;try{j=JSON.parse(localStorage.getItem(_lsk('brNav'))||'null');}catch(e){}
+    const ok=a=>Array.isArray(a)?a.filter(x=>x&&x.b>=0&&x.b<66&&x.c>=1).slice(-60):[];
+    _brNavSt={back:ok(j&&j.back),fwd:ok(j&&j.fwd)};}
+  return _brNavSt;
+}
+function _brNavSet(){try{localStorage.setItem(_lsk('brNav'),JSON.stringify(_brNavSt));}catch(e){}}
+function _brPosLive(){
+  const sc=_brEl('brScroll'),ch=_brEl('brChap');
+  if(!sc||!ch||!_brNavLive||ch.dataset.bc!==_brCur.b+'.'+_brCur.c)return null;
+  const sr=sc.getBoundingClientRect(),hd=_brEl('brHead'),T=sr.top+(hd?hd.getBoundingClientRect().bottom-sr.top:0);
+  let v=0,off=0;
+  for(const el of sc.querySelectorAll('.br-v')){const r=el.getBoundingClientRect();if(r.bottom>T){v=+el.dataset.v;off=Math.round(r.top-sr.top);break;}}
+  return {b:_brCur.b,c:_brCur.c,v,off};
+}
+function _brPosNow(){
+  const l=_brPosLive();if(l)return l;
+  const p=_brPosGet();return p&&p.b>=0&&p.c>=1?{b:p.b,c:p.c,v:p.sv||p.v||0,off:p.off||0}:null;
+}
+function _brNavNote(b,c,focus){
+  if(_brNavGoing||_brNextSrc==='nav')return;
+  const p=_brPosNow();if(!p)return;
+  if(p.b===b&&p.c===c&&!(focus&&Math.abs(focus-(p.v||0))>5))return;   // 같은 장 안의 작은 움직임은 기록하지 않는다
+  const st=_brNavGet(),top=st.back[st.back.length-1];
+  if(!(top&&top.b===p.b&&top.c===p.c&&top.v===p.v)){st.back.push(p);if(st.back.length>60)st.back.shift();}
+  st.fwd=[];_brNavSet();_brNavSync();
+}
+// side: 'back'|'fwd', k: 0=가장 가까운 기록
+function _brNavDo(side,k){
+  const st=_brNavGet(),from=st[side],other=side==='back'?st.fwd:st.back;
+  if(k<0||k>=from.length)return;
+  const list=from.splice(from.length-1-k),t=list[0],cur=_brPosNow();
+  if(cur)other.push(cur);
+  for(let i=list.length-1;i>=1;i--)other.push(list[i]);   // 건너뛴 자리도 반대편에 차례로 남긴다
+  while(other.length>60)other.shift();
+  _brNavSet();
+  _brNavGoing=true;_brNextSrc='nav';
+  _brRestore=t.v?{b:t.b,c:t.c,sv:t.v,off:t.off||0}:null;
+  const done=()=>{_brNavGoing=false;_brNavSync();};
+  return _brShow(t.b,t.c).then(done,e=>{done();throw e;});
+}
+function _brNavGoAnim(side,k){
+  const st=_brNavGet();if(k<0||k>=st[side].length)return;
+  _brStepAnim(side==='back'?-1:1,false,()=>_brNavDo(side,k));
+}
+const _BR_HO=[1,.78,.6,.46,.34,.25,.18];
+function _brHnGet(){return Math.max(1,Math.min(7,Math.round(+_brS('bibleHistN',3))||3));}   // 처음 쓰는 사람은 3개
+function _brNavLabel(x){const bk=_brBooks()[x.b];return (bk?_bibleShort(bk):'')+' '+x.c+(x.v?':'+x.v:'');}
+const _BR_DOTS='<svg viewBox="0 0 20 20" fill="currentColor"><circle cx="4.5" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="15.5" cy="10" r="1.5"/></svg>';
+function _brNavSync(){
+  const st=_brNavGet(),N=_brHnGet();
+  [['brHistL','back','이전 자리로 돌아가기'],['brHistR','fwd','다음 자리로 다시 가기']].forEach(([id,side,al])=>{
+    const el=_brEl(id);if(!el)return;
+    const arr=st[side].slice(-N).reverse();
+    el.innerHTML=arr.map((x,i)=>'<div class="br-hi" style="--o:'+_BR_HO[i]+'"><button data-hk="'+side+'.'+i+'" aria-label="'+al+' · '+esc(_brNavLabel(x))+'"><span class="d">'+_BR_DOTS+'</span><span class="l">'+esc(_brNavLabel(x))+'</span></button></div>').join('');
+    if(!arr.length)el.classList.remove('open');
+  });
+}
+function _brHnPaint(v){const sl=_brEl('brHn'),lb=_brEl('brHnV');if(!sl)return;sl.value=String(v);
+  const f=(v-1)/6*100;sl.style.setProperty('--sl-fill','linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)');
+  if(lb)lb.textContent=v+'개';}
+// ── 지난 검색어 (이 기기에만 · 50개) ──
+function _brFHGet(){try{const j=JSON.parse(localStorage.getItem(_lsk('brFHist'))||'[]');return Array.isArray(j)?j.filter(x=>typeof x==='string'&&x).slice(0,50):[];}catch(e){return [];}}
+function _brFHSet(a){try{localStorage.setItem(_lsk('brFHist'),JSON.stringify(a.slice(0,50)));}catch(e){}}
+function _brFHAdd(q){q=(q||'').trim().slice(0,60);if(!q)return;
+  _brFHSet([q,..._brFHGet().filter(x=>x!==q)]);_brFHRender();}
+function _brFHRender(){const el=_brEl('brFHist');if(!el)return;
+  el.innerHTML=_brFHGet().map(x=>'<button class="br-fh" data-fh="'+esc(x)+'">'+esc(x)+'</button>').join('');}
 // ── 검색 ──
-let _brFs={q:'',scope:'all',lim:100};
+let _brFs={q:'',scope:'all',lim:100},_brFcnt=null;
 async function _brRunFind(){
   const body=_brEl('brFBody'),q=_brFs.q,books=_brBooks();
-  if(!q){body.innerHTML='<div class="br-empty">찾을 낱말을 넣어 주세요.<br>띄어쓰기·쉼표는 없는 셈 치고 찾아요.<br>‘검색어 순서 자유’를 켜면 낱말이 떨어져 있어도 찾아요.<br>장절(요 3:16)을 넣으면 그 자리로 바로 가요.</div>';return;}
+  if(!q){_brFcnt=null;_brSyncScope();body.innerHTML='<div class="br-empty">찾을 낱말을 넣어 주세요.<br>띄어쓰기·쉼표는 없는 셈 치고 찾아요.<br>‘검색어 순서 자유’를 켜면 낱말이 떨어져 있어도 찾아요.<br>장절(요 3:16)을 넣으면 그 자리로 바로 가요.</div>';return;}
   const myQ=q;
   let h='';const r=_brParseRef(q);
   if(r)h+='<button class="br-fjump" data-go="'+r.b+'.'+r.c+'.'+(r.v||0)+'">'+books[r.b]+' '+r.c+_brUnit(r.b)+(r.v?' '+r.v+'절':'')+'(으)로 가기 ›</button>';
   const words=_brFindWords(q,!!_brS('bibleFindFree',false));
-  if(!words.length){body.innerHTML=h;return;}
-  const [a,z]=_brFs.scope==='ot'?[0,_BR_OT]:_brFs.scope==='nt'?[_BR_OT,66]:_brFs.scope==='book'?[_brCur.b,_brCur.b+1]:[0,66];
+  if(!words.length){_brFcnt=null;_brSyncScope();body.innerHTML=h;return;}
+  const a=0,z=66;   // 갈래와 상관없이 성경 전체에서 찾아 갈래별 개수를 함께 센다 (v. 26-1110-6)
   if(!body.querySelector('.br-mi'))body.innerHTML=h+'<div class="br-empty">찾는 중…</div>';
   const hits=[];
   for(let b=a;b<z;b++){
@@ -17298,16 +17406,23 @@ async function _brRunFind(){
     let o='',m=false;for(let i=0;i<t.length;i++){if(on[i]!==m){o+=on[i]?'<mark>':'</mark>';m=on[i];}o+=esc(t[i]);}
     return o+(m?'</mark>':'');
   };
-  h+='<div class="br-fcount">'+(hits.length?hits.length.toLocaleString()+'절':'찾은 절이 없어요')+'</div>';
-  hits.slice(0,_brFs.lim).forEach(([b,c,v,t])=>{h+='<button class="br-mi" data-go="'+b+'.'+c+'.'+v+'"><div><div class="br-r">'+books[b]+' '+c+':'+v+'</div><div class="br-q" style="-webkit-line-clamp:3">'+paint(t)+'</div></div></button>';});
-  if(hits.length>_brFs.lim)h+='<button class="br-more" id="brFMore">'+(hits.length-_brFs.lim).toLocaleString()+'절 더 보기</button>';
+  const cnt={all:hits.length,ot:0,nt:0,book:0};
+  hits.forEach(x=>{if(x[0]<_BR_OT)cnt.ot++;else cnt.nt++;if(x[0]===_brCur.b)cnt.book++;});
+  _brFcnt=cnt;_brSyncScope();
+  const scp=_brFs.scope,vis=scp==='all'?hits:hits.filter(x=>scp==='ot'?x[0]<_BR_OT:scp==='nt'?x[0]>=_BR_OT:x[0]===_brCur.b);
+  // 위 갈래 단추에 개수가 있으므로 '몇 절' 줄은 두지 않는다 (HB 2026-11-10)
+  if(!vis.length)h+='<div class="br-fcount">찾은 구절이 없어요</div>';
+  vis.slice(0,_brFs.lim).forEach(([b,c,v,t])=>{h+='<button class="br-mi" data-go="'+b+'.'+c+'.'+v+'"><div><div class="br-r">'+books[b]+' '+c+':'+v+'</div><div class="br-q" style="-webkit-line-clamp:3">'+paint(t)+'</div></div></button>';});
+  if(vis.length>_brFs.lim)h+='<button class="br-more" id="brFMore">'+(vis.length-_brFs.lim).toLocaleString()+'개 더 보기</button>';
   body.innerHTML=h;
   const mb=_brEl('brFMore');if(mb)mb.onclick=()=>{_brFs.lim+=200;const y=body.scrollTop;_brRunFind().then(()=>{body.scrollTop=y;});};
 }
 function _brSyncScope(){
+  const nm={all:'전체',ot:'구약',nt:'신약',book:_brBooks()[_brCur.b]};
   document.querySelectorAll('#brFScope button').forEach(b=>{
-    b.classList.toggle('on',b.dataset.v===_brFs.scope);
-    if(b.dataset.v==='book')b.textContent=_brBooks()[_brCur.b];
+    const k=b.dataset.v;
+    b.classList.toggle('on',k===_brFs.scope);
+    b.innerHTML=esc(nm[k])+(_brFcnt?'<small>'+_brFcnt[k].toLocaleString()+'</small>':'');
   });
 }
 // ── 묶기 (한 번만) ──
@@ -17315,6 +17430,13 @@ function _brBind(){
   const $=_brEl;
   $('brClose').onclick=bibleClose;
   $('brPrev').onclick=()=>_brStepAnim(-1);$('brNext').onclick=()=>_brStepAnim(1);
+  // 이동 기록 알약 — 마우스는 올리면 펼쳐지고 누르면 그 자리로. 터치는 첫 번째 알약을 한 번 눌러 펼친 뒤 고른다
+  $('brNav').addEventListener('click',e=>{const b=e.target.closest('[data-hk]');if(!b)return;
+    const [side,i]=b.dataset.hk.split('.'),box=b.closest('.br-hist');
+    if(matchMedia('(hover:none)').matches&&+i===0&&box.querySelectorAll('.br-hi').length>1&&!box.classList.contains('open')){
+      box.classList.add('open');clearTimeout(box._ot);box._ot=setTimeout(()=>box.classList.remove('open'),5000);return;}
+    box.classList.remove('open');_brNavGoAnim(side,+i);});
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest||e.target.closest('.br-hist'))return;document.querySelectorAll('#bibleRd .br-hist.open').forEach(x=>x.classList.remove('open'));},{passive:true});
   $('brScrim').onclick=_brCloseSheets;
   document.querySelectorAll('#bibleRd [data-brclose]').forEach(b=>b.onclick=_brCloseSheets);
   document.querySelectorAll('#bibleRd .br-sheet').forEach(sh=>
@@ -17585,6 +17707,8 @@ function _brBind(){
   $('brFsUp').onclick=()=>_brSet('bibleFs',Math.min(30,_brS('bibleFs',18)+1));
   [['brSegLh','bibleLh'],['brSegFont','bibleFont'],['brSegFlow','bibleFlow'],['brSegRs','txtRefStyle'],['brSegRb','txtRefBracket'],['brSegRp','txtRefPos']]
     .forEach(([id,k])=>$(id).onclick=e=>{const b=e.target.closest('button');if(b)_brSet(k,b.dataset.v);});
+  $('brHn').addEventListener('input',e=>_brHnPaint(+e.target.value));
+  $('brHn').addEventListener('change',e=>{ST.settings.bibleHistN=+e.target.value;save();_brHnPaint(_brHnGet());_brNavSync();});
   $('brLz').addEventListener('input',e=>_brLzPaint(+e.target.value));
   $('brLz').addEventListener('change',e=>{ST.settings.bibleLoupe=+e.target.value;save();_brLzPaint(_brLzGet());});
   $('brThemes').onclick=e=>{const b=e.target.closest('.br-th');if(b)_brSet('bibleTheme',b.dataset.t);};
@@ -17702,12 +17826,20 @@ function _brBind(){
   // 검색
   $('brFind').onclick=()=>{$('brFree').checked=!!_brS('bibleFindFree',false);_brSyncScope();_brRunFind();$('brFindP').classList.add('on');setTimeout(()=>$('brFq').focus(),280);};
   $('brFClose').onclick=()=>$('brFindP').classList.remove('on');
+  _brFHRender();
+  {let ht=null,hold=false;const fh=$('brFHist');
+    fh.addEventListener('click',e=>{const b=e.target.closest('[data-fh]');if(!b||hold){hold=false;return;}
+      const q=b.dataset.fh;$('brFq').value=q;_brFs.q=q;_brFs.lim=100;_brRunFind();});
+    const del=b=>{const q=b.dataset.fh;_brFHSet(_brFHGet().filter(x=>x!==q));_brFHRender();showToast('‘'+q+'’ 검색어를 지웠어요');};
+    fh.addEventListener('contextmenu',e=>{const b=e.target.closest('[data-fh]');if(!b)return;e.preventDefault();del(b);});
+    fh.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-fh]');if(!b||e.pointerType==='mouse')return;ht=setTimeout(()=>{hold=true;del(b);},650);},{passive:true});
+    ['pointerup','pointercancel','pointermove'].forEach(t=>fh.addEventListener(t,()=>clearTimeout(ht),{passive:true}));}
   $('brFScope').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brFs.scope=b.dataset.v;_brFs.lim=100;_brSyncScope();_brRunFind();};
   $('brFree').onchange=e=>{ST.settings.bibleFindFree=e.target.checked;save();_brFs.lim=100;_brRunFind();};
   let ft=null;
   $('brFq').addEventListener('input',()=>{clearTimeout(ft);ft=setTimeout(()=>{_brFs.q=$('brFq').value.trim();_brFs.lim=100;_brRunFind();},220);});
-  $('brFq').addEventListener('keydown',e=>{if(e.key==='Enter'){const j=$('brFBody').querySelector('.br-fjump');if(j)j.click();else $('brFq').blur();}});
-  $('brFBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const [b,c,v]=g.dataset.go.split('.').map(Number);$('brFindP').classList.remove('on');_brNextSrc='search';_brShow(b,c,v);});
+  $('brFq').addEventListener('keydown',e=>{if(e.key==='Enter'){if(_brFs.q&&(!_brFcnt||_brFcnt.all>0))_brFHAdd(_brFs.q);const j=$('brFBody').querySelector('.br-fjump');if(j)j.click();else $('brFq').blur();}});
+  $('brFBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const [b,c,v]=g.dataset.go.split('.').map(Number);$('brFindP').classList.remove('on');_brFHAdd(_brFs.q);_brNextSrc='search';_brShow(b,c,v);});
   // ESC — 앱의 공용 ESC 는 입력 칸을 비켜선다(There 와 같은 사정). 메모·검색 칸에서도
   // 누르면 그 판만 닫히게 이 상자가 먼저 받는다.
   $('bibleRd').addEventListener('keydown',e=>{
@@ -17773,6 +17905,9 @@ function _brBind(){
     if(!_brOpen)return;
     const tg=e.target&&e.target.tagName;if(tg==='TEXTAREA'||tg==='INPUT')return;
     if(document.querySelector('#bibleRd .br-pick.on, #bibleRd .br-sheet.on'))return;
+    if(e.altKey&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+      // ⌥(Option)/Alt + 좌우 — 이동 기록 뒤로 · 앞으로 (윈도우 브라우저의 뒤로 가기와 같은 키)
+      e.preventDefault();_brNavGoAnim(e.key==='ArrowLeft'?'back':'fwd',0);return;}
     if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&!e.altKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
       // ⌘/Ctrl + 좌우 — 이 성경(책)의 첫 장 · 마지막 장으로 (맥 브라우저의 '뒤로 가기' 와 겹치므로 막는다)
       e.preventDefault();const last=_bibleChapters(_brBooks()[_brCur.b]),t=e.key==='ArrowRight'?last:1;
