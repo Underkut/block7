@@ -15,6 +15,7 @@
 //  ⑪ (C2-4) 폼 ↔ '속성' 탭 — 처음엔 폼 선택지를 탭으로 · 폼에서 더함 → 탭 · 앱에서 더함/숨김/다시 쓰기 → 폼 · '기타' 글을 선택지로 · 폼에 '장소 · 메모' 질문 · 다시 맞춰도 폼을 또 고치지 않는다
 //  ⑫ (C3) 계획 ↔ '심방' 캘린더 — 만들기 · 캘린더에서 옮김/지움 따라가기 · 제목 앞뒤 글자 · 만들다 끊긴 일정 이어 붙이기 · 여벌 지우기 ·
 //     계획 → 기록(✓) · 캘린더에만 있는 일정 가져오기 · 앱에서 취소 → 일정 지움 · 캘린더에 안 넣기
+//  ㉞ (1110-Q) 다음 심방 질문 — 붙여넣기 · 한 줄 적기 · 체크 · 지우기 → '다음 질문' 탭 한 줄 · BLOCK7 로 '이름 심방' + 하위 항목
 //  ⑬ (C3b) 할 일 → BLOCK7 할일 — 쪽지함에 쪽지 한 줄(종류 · 이름 · 날짜만, 나눈 이야기 없음) · 액션 탭에 보낸 날 · 보낸 뒤 단추에 날짜 · 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
 //  ⑭ (C3c) 기록도 '심방' 캘린더에 — 2026-10-01 부터 기록마다 ✓ 하루 종일 하나 · 계획에서 온 기록은 건너뜀 · 기록 날짜를 고치면 일정도 · 캘린더에서 옮겨도 기록 날짜로 · 지운 기록의 일정은 지움 · 다시 맞춰도 그대로
 //  ⑮ (1108-A) 출석 — 처음 적을 때 출석 탭 · 한 줄 · 붙여 넣기로 여럿 · 사람 화면 출석 · 고치기는 바뀐 칸만 · 지우기는 그 한 줄 · 되돌리기 · 출석만 있는 새 이름도 성도 목록에
@@ -1067,6 +1068,43 @@ async function route(r) {
     const pr = (tab('Form Responses 1').rows || []).find(r => r[2] === '폰사람') || [];
     eq('㉜ 폰에서 적은 기록 — 태그 · 깊이 · 이야기가 시트에', [pr[6], pr[8], pr[5]], ['학교', '깊음', '성도: 폰에서 적은 이야기']);
     await pc.close();
+  }
+
+  // ㉞ (1110-Q) 다음 심방 질문 — 붙여넣기 → 체크리스트 · 한 줄 적기 · 체크 · 지우기 → '다음 질문' 탭 · BLOCK7 로 하위 항목
+  {
+    for (let i = 0; i < 5; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+    await page.evaluate(() => {
+      window.__inbox = []; window.__inboxFail = 0;
+      window.firebase = { firestore: { FieldValue: { arrayUnion: x => ({ __u: x }) } } };
+      DB = { doc: p => ({ set: async (o, m) => { window.__inbox.push([p, o.items.__u, m]); } }) };
+    });
+    const TQ = await page.evaluate(() => today()), RT = tab('Form Responses 1'), hq = RT.rows[0];
+    const nr = hq.map(x => ({ 'Timestamp': '11/10/2026 09:00:00', '심방 날짜': +TQ.slice(5, 7) + '/' + +TQ.slice(8), '성도 이름': '파파파', '구분': '셀원', '전화 / 만남': '전화', '내용': '질문 시험용 아주 사적인 기록', '대화 깊이': '중간', '기록ID': 'C960', '출처': '폼', '심방일': TQ })[x] || '');
+    RT.rows.push(nr);
+    await reload();
+    const key = await page.evaluate(() => (M().visits.find(x => x.id === 'C960') || {}).key);
+    await page.evaluate(k => openLayer('detail', { key: k }), key); await tidy();
+    const LQ = '.layer:last-child';
+    eq('㉞ 기록 창에 다음 심방 질문 칸 · 붙여넣기 단추', [await page.$$eval(LQ + ' .qnsec', x => x.length), await page.$$eval(LQ + ' [data-act="qnpaste"]', x => x.length)], [1, 1]);
+    await page.click(LQ + ' [data-act="qnpaste"]'); await page.waitForTimeout(200);
+    await page.fill('#qnPasteText', '7. 다음 심방 질문\n\n1. 파파파 님 요즘 잠은 잘 주무시나요?\n2. 지난번 이야기한 모임은\n어떻게 되었나요?\n');
+    await page.click(LQ + ' [data-act="qnpastego"]'); await page.waitForTimeout(1200);
+    const QT = () => (tab('다음 질문') || { rows: [] }).rows, qrow = () => QT().find(r => r[0] === 'C960') || [];
+    eq('㉞ 붙여넣기 → 체크리스트 둘 (제목 · 번호 뗌 · 이어진 줄 합침)', await page.$$eval(LQ + ' .todo.qn .lab', x => x.map(e => e.textContent)), ['파파파 님 요즘 잠은 잘 주무시나요?', '지난번 이야기한 모임은 어떻게 되었나요?']);
+    eq("㉞ '다음 질문' 탭이 생기고 머리글 · 그 기록 한 줄", [JSON.stringify(QT()[0]), qrow()[1], qrow()[2]], [JSON.stringify(['기록ID', '성도', '질문', '수정']), '파파파', '[ ] 파파파 님 요즘 잠은 잘 주무시나요?\n[ ] 지난번 이야기한 모임은 어떻게 되었나요?']);
+    await page.fill('#qnIn', '셋째 질문'); await page.press('#qnIn', 'Enter'); await page.waitForTimeout(1000);
+    await page.click(LQ + ' [data-act="qntick"][data-k="0"]'); await page.waitForTimeout(1000);
+    await page.click(LQ + ' [data-act="qndel"][data-k="1"]'); await page.waitForTimeout(1000);
+    eq('㉞ 한 줄 적기(Enter) · 체크 · 지우기 → 같은 줄을 고쳐 쓴다(줄 하나)', [QT().filter(r => r[0] === 'C960').length, qrow()[2]], [1, '[x] 파파파 님 요즘 잠은 잘 주무시나요?\n[ ] 셋째 질문']);
+    await reload();
+    if (process.env.SHOT) { await page.$eval(LQ + ' .qnsec', e => e.scrollIntoView()); await page.screenshot({ path: process.env.SHOT + '/qn.png' }); }
+    eq('㉞ 다시 읽어도 그대로', await page.$$eval(LQ + ' .todo.qn', x => x.map(e => (e.classList.contains('done') ? 'x ' : '_ ') + e.querySelector('.lab').textContent)), ['x 파파파 님 요즘 잠은 잘 주무시나요?', '_ 셋째 질문']);
+    await page.click(LQ + ' [data-act="qnb7"]'); await tidy();
+    eq("㉞ BLOCK7 로 — 글은 '이름 심방' · 하위 항목 미리보기는 안 물어본 것만", [await page.inputValue('.layer:last-child [data-f="text"]'), await page.$$eval('.layer:last-child .qnprev li', x => x.map(e => e.textContent))], ['파파파 심방', ['셋째 질문']]);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/qnb7.png' });
+    await page.click('.layer:last-child [data-act="b7send"]'); await page.waitForTimeout(1200);
+    const ib = await page.evaluate(() => window.__inbox), nt = (ib[0] || [])[1] || {};
+    eq('㉞ 쪽지 한 줄 — 내 쪽지함 · 이름 심방 · 하위 항목 · 나눈 이야기 없음', [ib.length, (ib[0] || [])[0], nt.text, JSON.stringify(nt.subs), JSON.stringify(ib).includes('사적인')], [1, 'pray/u/c/b7inbox', '파파파 심방', JSON.stringify(['셋째 질문']), false]);
   }
 
   eq('⑦ 화면 오류 없음', errs, []);

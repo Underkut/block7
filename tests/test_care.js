@@ -16,6 +16,7 @@
 //  ⑮ (1109-T) 나눈 이야기 주제 칸 — 시트 한 칸 글 ↔ 칸 · 옛 글 · 폼 글은 그대로 메모 · 기록 태그 = 칸 태그 ∪ 직접 고른 것 · 안 바꾸면 칸이 안 바뀐다
 //  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
 //  ⑯ 속성 · 폼 맞추기 — 처음엔 폼 선택지를 탭으로 · 폼에서 새로 → 앱에 · 앱에서 새로 → 폼에 · 폼에서 뺌 → 앱에서 숨김 · 앱에서 숨김 → 폼에서 뺌(상한) · 한 번 맞추면 다시 맞춰도 할 일 없음
+//  ㉞ (1110-Q) 다음 심방 질문 — 플라우드 붙여넣기 → 체크리스트 · 시트 칸 글 '[ ] / [x]' · 탭 한 줄 = 기록 하나 · BLOCK7 쪽지에 하위 항목(안 물어본 것만)
 //  ⑱ 할 일 → BLOCK7 할일 — 보낼 글은 종류 · 이름뿐 · 쪽지 모양(BLOCK7 받기와 같은 꼴, sec 비움) · 빈 글 · 틀린 날짜는 안 보냄 · 보낸 날은 'BLOCK7 할일' 칸에만
 //  ⑲ 기록도 '심방' 캘린더에 — 2026-10-01 부터 · ✓ 하루 종일 · 계획에서 온 기록은 건너뜀 · 날짜 · 이름은 시트가 이김 · 지운 기록의 일정은 지움(상한 · 우리 표식만 · 시트를 못 읽었으면 안 지움) · 여벌
 //  ⑰ 계획 · '심방' 캘린더 — 계획 줄 읽기 · 일정 모양(제목은 이름만 + 앞뒤 글자, 표식만) · 캘린더에서 옮김 → 계획 따라감 · 지움 → 취소됨 · 만들다 끊긴 일정 이어 붙이기 · 두 기기 여벌 지우기(상한) · 기록됨 → ✓
@@ -44,7 +45,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY };`, ctx);
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -662,6 +663,33 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㉗ 갱신 열쇠를 쓰지 않는다 · supabase 도구를 싣지 않는다(로그인을 건드릴 길이 없게)', [/refresh_token|grant_type/.test(code), /supabase-js|createClient\(/.test(code)], [false, false]);
   const cell = fs.readFileSync(path.join(__dirname, '..', 'cell', 'index.html'), 'utf8');
   sc.eq("㉗ 셀 한눈에의 cell-core 에 pickMine 이 있다(심방 노트가 그대로 불러 씀)", /<script id="cell-core">[\s\S]*?function pickMine\(/.test(cell), true);
+}
+
+// ㉞ 다음 심방 질문 (1110-Q) — 이름은 지어낸 것
+{
+  const PLAUD = '7. 다음 심방 질문\n\n1. 가가 님께서 내려오신 이후 혼자 계시는 시간대는 어떻게 조정되고 있나요?\n2. 2026-11-07 섬김 이후 나나 자매의 마음은 지금 어떻게\n정리되었나요?\n3. 다다와 토요일 대화로 정리된 부분이 이어지고 있는지요?\n';
+  sc.eq('㉞ 플라우드 붙여넣기 — 제목 줄 버림 · 번호 뗌 · 줄바꿈된 질문은 앞 질문에 이어 붙임', J(A.qnParse(PLAUD)),
+    ['가가 님께서 내려오신 이후 혼자 계시는 시간대는 어떻게 조정되고 있나요?', '2026-11-07 섬김 이후 나나 자매의 마음은 지금 어떻게 정리되었나요?', '다다와 토요일 대화로 정리된 부분이 이어지고 있는지요?']);
+  sc.eq('㉞ 번호 없는 목록은 한 줄 = 하나 · 글머리(- • □ 1) )도 뗀다', J(A.qnParse('- 가\n• 나\n□ 다\n2) 라\n')), ['가', '나', '다', '라']);
+  sc.eq('㉞ 번호가 하나도 없으면 줄마다 하나', J(A.qnParse('첫 질문\n둘째 질문')), ['첫 질문', '둘째 질문']);
+  sc.eq('㉞ 빈 글 · 제목만 → 없음 · 30개까지 · 300자까지', [A.qnParse('').length, A.qnParse('다음 심방 질문').length, A.qnParse(Array.from({ length: 40 }, (_, i) => (i + 1) + '. q' + i).join('\n')).length, A.qnParse('가'.repeat(500))[0].length], [0, 0, 30, 300]);
+  const items = [{ t: '가 질문', done: false }, { t: '나 질문', done: true }];
+  sc.eq("㉞ 시트 칸 글 — '[ ] ' 아직 · '[x] ' 물어봄 · 한 줄에 하나", A.qnEncode(items), '[ ] 가 질문\n[x] 나 질문');
+  sc.eq('㉞ 칸 글 → 목록 (되읽기 그대로 · 표시 없는 줄은 아직 · 사람이 [X] · [✓] 로 고쳐도 읽음)', [J(A.qnDecode(A.qnEncode(items))), J(A.qnDecode('맨 글\n[X] 큰 엑스\n[✓] 체크'))],
+    [J(items), [{ t: '맨 글', done: false }, { t: '큰 엑스', done: true }, { t: '체크', done: true }]]);
+  const tab = [A.QN_HEAD, ['C1', '가가', '[ ] 하나', 's'], ['C2', '나나', '[x] 둘', 's'], ['C2', '나나', '[ ] 겹침', 's'], ['', 'x', 'y', '']];
+  const m = A.parseQnTab(tab);
+  sc.eq('㉞ 탭 읽기 — 기록ID 로 · 줄 번호 · 같은 기록ID 둘이면 dup', [m.C1.row, J(m.C1.items), !!m.C2.dup, Object.keys(m).length], [2, [{ t: '하나', done: false }], true, 2]);
+  sc.eq('㉞ 머리글이 다르면 아무것도 읽지 않는다', J(A.parseQnTab([['가', '나'], ['C1', 'x']])), {});
+  const v = { id: 'C1', name: '가가' };
+  sc.eq('㉞ 쓰기 — 줄이 있으면 질문 · 수정 칸만', J(A.qnPlan(m, v, items, '2026-11-10 10:00')), { update: { row: 2, cells: { '질문': '[ ] 가 질문\n[x] 나 질문', '수정': '2026-11-10 10:00' } } });
+  sc.eq('㉞ 쓰기 — 줄이 없으면 머리글 순서대로 한 줄 (사람이 열을 옮겨도)', J(A.qnPlan({}, { id: 'C9', name: '다다' }, items, 'T', ['질문', '기록ID', '수정', '성도'])), { append: ['[ ] 가 질문\n[x] 나 질문', 'C9', 'T', '다다'] });
+  sc.eq('㉞ 쓰기 — 같은 기록ID 줄이 둘이면 쓰지 않는다', J(A.qnPlan(m, { id: 'C2', name: '나나' }, items, 'T')), { dup: true });
+  sc.eq("㉞ BLOCK7 로 — '이름 심방' · 하위 항목은 안 물어본 것만", [A.qnB7Text(v), J(A.qnSubs(items))], ['가가 심방', ['가 질문']]);
+  const n = A.b7Note('가가 심방', '2026-11-10', 1, 'N', A.qnSubs(items));
+  sc.eq('㉞ 쪽지 — 받는 꼴 그대로 + subs', J(n), { id: 'N', from: 'care', date: '2026-11-10', sec: '', text: '가가 심방', at: 1, subs: ['가 질문'] });
+  sc.eq('㉞ 하위 항목이 없으면 subs 칸도 없다(예전 쪽지와 같은 꼴)', 'subs' in A.b7Note('a', '2026-11-10', 1, 'N', []), false);
+  sc.eq('㉞ 하위 항목도 공백 정리 · 200자 · 30개까지', [A.b7Note('a', '2026-11-10', 1, 'N', ['  가   나 ', '', 'ㄱ'.repeat(300)]).subs.map(x => x.length), A.b7Note('a', '2026-11-10', 1, 'N', Array(40).fill('q')).subs.length], [[3, 200], 30]);
 }
 
 sc.done();
