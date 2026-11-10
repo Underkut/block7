@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1110-2  [production]  -->
+<!-- BLOCK7  v. 26-1110-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5858,6 +5858,12 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 /* 읽어 내려갈 때 — 하단은 아래로 미끄러지며 사라지고, 헤더는 위로 접혀 '책 장' 한 줄만 */
 #bibleRd .br-nav.hide{pointer-events:none;}
 #bibleRd .br-nav.hide *{pointer-events:none;}
+/* PC(마우스) — 성경 화면의 단추는 평소엔 옅게, 마우스를 올리면 짙게 (HB 2026-11-10). 터치 기기는 그대로 */
+@media (hover:hover) and (pointer:fine){
+  #bibleRd .br-top .br-ic,#bibleRd .br-top .br-ttl,#bibleRd .br-nav .br-nv,#bibleRd .br-nav .br-lts{opacity:.42;transition:opacity .2s ease;}
+  #bibleRd .br-top .br-ic:hover,#bibleRd .br-top .br-ttl:hover,#bibleRd .br-nav .br-nv:hover,#bibleRd .br-nav .br-lts:hover{opacity:1;}
+  #bibleRd .br-nav .br-nv[disabled]{opacity:.2;}
+}
 #bibleRd #brHead{border-bottom:0;}
 #bibleRd .br-trbar{position:absolute;right:0;top:100%;max-width:100%;display:flex;flex-direction:row-reverse;gap:0;overflow-x:auto;scrollbar-width:none;
   padding:0 8px 6px;pointer-events:auto;overscroll-behavior-x:contain;}
@@ -7044,7 +7050,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1110-2";
+const APP_VERSION = "v. 26-1110-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -16412,9 +16418,9 @@ function _brSwRelease(dx,v){const W=document.documentElement.clientWidth,dd=dx<0
   else _brSwBack();}
 // 나가고(≈150ms) → 그리고 → 들어온다(≈300ms). 앞(다음 장)은 왼쪽으로 나가고 오른쪽에서 들어온다
 let _brSwBusy=false;
-function _brStepAnim(dd,fromSwipe){
+function _brStepAnim(dd,fromSwipe,to){
   const el=_brSwPage();
-  if(!el||_brSwQuiet()){if(el){el.style.transition='';el.style.transform='';el.style.opacity='';}return _brStep(dd);}
+  if(!el||_brSwQuiet()){if(el){el.style.transition='';el.style.transform='';el.style.opacity='';}return _brStep(dd,to);}
   if(!_brSwCan(dd)){_brSwBack();return;}
   if(_brSwBusy)return;_brSwBusy=true;
   const W=document.documentElement.clientWidth;
@@ -16425,7 +16431,7 @@ function _brStepAnim(dd,fromSwipe){
     const fin=()=>{el.offsetWidth;   // eslint-disable-line — 들어올 자리를 먼저 잡는다
       el.style.transition='transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s ease';el.style.transform='';el.style.opacity='';
       setTimeout(()=>{el.style.transition='';_brSwBusy=false;},320);};
-    let p;try{p=_brStep(dd);}catch(e){fin();throw e;}
+    let p;try{p=_brStep(dd,to);}catch(e){fin();throw e;}
     Promise.resolve(p).then(fin,fin);
   },150);
 }
@@ -16787,8 +16793,9 @@ async function _brShow(b,c,focus,focus2,keep){
   _brPosSet({b,c,v:focus||0});setTimeout(_brPosSave,600);
   _brSessStart();
 }
-function _brStep(dd){
+function _brStep(dd,to){   // to: 그 책의 이 장으로 곧장 (⌘/Ctrl+좌우 — 첫 장·마지막 장)
   _brNextSrc='nav';
+  if(to)return _brShow(_brCur.b,to);
   let {b,c}=_brCur;const books=_brBooks();c+=dd;
   if(c<1){if(b===0)return;b--;c=_bibleChapters(books[b]);}
   else if(c>_bibleChapters(books[b])){if(b===65)return;b++;c=1;}
@@ -17760,6 +17767,12 @@ function _brBind(){
     if(!_brOpen)return;
     const tg=e.target&&e.target.tagName;if(tg==='TEXTAREA'||tg==='INPUT')return;
     if(document.querySelector('#bibleRd .br-pick.on, #bibleRd .br-sheet.on'))return;
+    if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&!e.altKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+      // ⌘/Ctrl + 좌우 — 이 성경(책)의 첫 장 · 마지막 장으로 (맥 브라우저의 '뒤로 가기' 와 겹치므로 막는다)
+      e.preventDefault();const last=_bibleChapters(_brBooks()[_brCur.b]),t=e.key==='ArrowRight'?last:1;
+      if(t!==_brCur.c)_brStepAnim(e.key==='ArrowRight'?1:-1,false,t);return;}
+    if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&!e.altKey&&(e.key==='ArrowUp'||e.key==='ArrowDown')){
+      const sc=_brEl('brScroll');if(sc){e.preventDefault();sc.scrollTo({top:e.key==='ArrowUp'?0:sc.scrollHeight,behavior:'smooth'});}return;}
     if(e.key==='ArrowRight'){e.preventDefault();_brStepAnim(1);}else if(e.key==='ArrowLeft'){e.preventDefault();_brStepAnim(-1);}
     else if((e.key==='ArrowDown'||e.key==='ArrowUp')&&!e.shiftKey&&!e.metaKey&&!e.altKey&&!e.ctrlKey){const sc=_brEl('brScroll');if(sc){e.preventDefault();sc.scrollBy({top:(e.key==='ArrowDown'?1:-1)*80,behavior:'smooth'});}}
   });
