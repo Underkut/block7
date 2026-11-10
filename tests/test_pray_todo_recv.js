@@ -5,6 +5,7 @@
 //  ③ 한 번에 50개까지 (외부에서 받은 것에는 규모 상한)
 //  ④ ⭐ 쓰는 자리는 쪽지함(pray/{uid}/c/b7inbox) 하나 · users/ 문서 · 기도노트 덩어리를 쓰지 않는다
 //  ⑤ ⭐ 첫 클라우드 읽기 전에는 받지 않는다 — 준비 확인 함수를 거친다 · 로그인 덩어리 안 이름(_fbInitLoaded · fbDB · _fbApplyRenders)을 직접 부르지 않는다
+//  ⑦ (1110-Q) 쪽지의 하위 항목(subs) → 할일의 하위 — 글만 · 30개 · 200자
 //  ⑥ BLOCK7 에서만 · 개발본은 받지 않는다 · 넣는 길은 사람이 할일을 넣는 길(beforeSave → getBigs().push → save)
 const fs = require('fs'), path = require('path');
 const { makeScorer } = require('./_load');
@@ -35,7 +36,11 @@ sc.eq('⭐⑤ 받기 전에 준비 확인(_prayTodoReady)', /!_prayTodoReady\(\)
 sc.eq('⭐⑤ 로그인 덩어리 안 이름을 직접 쓰지 않는다', /\b(_fbInitLoaded|fbDB|_fbApplyRenders)\b/.test(CODE), false);
 sc.eq('⑤ 로그인 덩어리가 준비 함수를 넘긴다', /_prayTodoWatch\(\(\)=>_fbInitLoaded\)/.test(SRC), true);
 sc.eq('⑥ BLOCK7 에서만 · 개발본 아님', [/APP_PRODUCT!=='block7'/.test(pull), /DEV_MODE/.test(pull)], [true, true]);
-sc.eq('⑥ 사람이 넣는 길 그대로 (만든 시각 ct 도 함께 — v. 26-1102-14)', /beforeSave\(\);[\s\S]*getBigs\(p\.date,p\.sec\)\.push\(_ctNow\(\{text:p\.text,done:false\}\)\)\);[\s\S]*save\(\);/.test(pull), true);
+sc.eq('⑥ 사람이 넣는 길 그대로 (만든 시각 ct 도 함께 — v. 26-1102-14)', /beforeSave\(\);[\s\S]*getBigs\(p\.date,p\.sec\)\.push\(_ctNow\(p\.subs\?\{text:p\.text,done:false,subs:p\.subs\.map\(t=>\(\{text:t,done:false\}\)\)\}:\{text:p\.text,done:false\}\)\)\);[\s\S]*save\(\);/.test(pull), true);
+// ⑦ (1110-Q) 심방 노트 '다음 심방 질문' — 쪽지의 subs 가 하위 항목으로
+sc.eq('⑦ 하위 항목(subs) — 글만 · 공백 정리 · 빈 것 버림', place([{ from: 'care', date: '2026-11-10', sec: '', text: '가가 심방', subs: ['  첫  질문 ', '', 3, null, '둘째'] }], secs), [{ date: '2026-11-10', sec: 'dawn', text: '가가 심방', from: 'care', subs: ['첫 질문', '둘째'] }]);
+sc.eq('⑦ 하위 항목 규모 상한 — 30개 · 한 줄 200자', [place([{ date: '2026-11-10', sec: 'am', text: 'a', subs: Array(80).fill('q') }], secs)[0].subs.length, place([{ date: '2026-11-10', sec: 'am', text: 'a', subs: ['ㄱ'.repeat(500)] }], secs)[0].subs[0].length], [30, 200]);
+sc.eq('⑦ subs 가 배열이 아니거나 비면 칸 자체가 없다(예전 쪽지와 같은 꼴)', ['subs' in place([{ date: '2026-11-10', sec: 'am', text: 'a', subs: 'x' }], secs)[0], 'subs' in place([{ date: '2026-11-10', sec: 'am', text: 'a', subs: [] }], secs)[0]], [false, false]);
 // 개발본 · Sweeter 개발본에도 같은 덩어리가 있다(만드는 도구가 그대로 옮긴다)
 ['index-dev.html', 'sweeter-dev.html'].forEach(f => {
   const t = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');

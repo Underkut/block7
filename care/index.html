@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1110-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -515,6 +515,10 @@ a.wl{color:inherit;text-decoration:none}
 .layer .ph-foot{position:sticky;bottom:0;left:auto;right:auto;max-width:720px;margin:0 auto;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;pointer-events:none}
 .addbox{margin-top:12px}.addbox .row{display:flex;gap:8px;margin-top:8px}
+.todo.qn{padding:9px 0}.todo.qn .lab{line-height:1.55}.todo.qn .send svg{width:14px;height:14px;opacity:.45}
+.qnadd{display:flex;gap:8px;align-items:center;margin-top:8px}.qnadd .inp{flex:1;min-width:0}.qnadd .send{font-size:20px;padding:0 4px}
+.qnsec .b7b{font-size:11.5px;font-weight:400;color:var(--tx2)}
+.qnprev{margin:0 0 4px;padding-left:20px;font-size:14px;line-height:1.6}.qnprev li{padding:3px 0}
 .inp.etc{margin-top:8px;font-size:14px;padding:8px 11px}
 /* 1108-B 아이폰: 16 보다 작은 글자의 칸을 누르면 화면을 확대해 버린다(확대된 채 좌우로 밀려 잘려 보이던 것) → 손가락 기기에선 칸 글자 16 */
 .stabs{padding:2px max(18px,env(safe-area-inset-right,0px)) 6px max(18px,env(safe-area-inset-left,0px))}
@@ -677,7 +681,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-14';
+const APP_VERSION = 'v. 26-1110-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1083,12 +1087,16 @@ function checkPlan(statusMap, v, a, done, nowYmd, newIdStr) {
 }
 // ── 할 일 → BLOCK7 할일 (C3b-1) ──
 // 기도노트 · 시리와 같은 쪽지함(pray/{uid}/c/b7inbox)에 쪽지 한 줄 — BLOCK7 이 꺼내 그날 할일로 넣는다(sec '' = 첫 구간).
-// ⚠️ 보내는 것은 HB 가 보고 고친 글 한 줄 · 날짜뿐. 나눈 이야기 · 물어볼 것은 싣지 않는다.
+// ⚠️ 보내는 것은 HB 가 보고 고친 글 한 줄 · 날짜뿐. 나눈 이야기는 싣지 않는다.
+//    예외 하나(HB 2026-11-10): '다음 심방 질문' 을 보낼 때만 HB 가 화면에서 본 질문들이 하위 항목(subs)으로 함께 간다.
 function b7Text(v, a) { return (a.t === '기타' && a.x ? a.x : a.t + (a.x ? ' ' + a.x : '')) + ' · ' + norm(v.name); }
-function b7Note(text, date, nowMs, id) {
+function b7Note(text, date, nowMs, id, subs) {
   const t = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null;
-  return { id, from: 'care', date, sec: '', text: t, at: nowMs };
+  const n = { id, from: 'care', date, sec: '', text: t, at: nowMs };
+  const ss = (Array.isArray(subs) ? subs : []).map(s => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 200)).filter(Boolean).slice(0, QN_MAX);
+  if (ss.length) n.subs = ss;
+  return n;
 }
 // 보낸 날 적기 — 줄이 있으면 'BLOCK7 할일' 칸만, 없으면 '할 일' 상태로 한 줄 더한다
 function b7MarkPlan(statusMap, v, a, stamp, newIdStr) {
@@ -1096,6 +1104,51 @@ function b7MarkPlan(statusMap, v, a, stamp, newIdStr) {
   if (cur) return { update: { row: cur.row, cells: { 'BLOCK7 할일': stamp } } };
   return { append: [newIdStr, v.id, v.name, a.t, '', a.x || '', '', '할 일', '', stamp] };
 }
+// ── 다음 심방 질문 (1110-Q) — 기록마다 체크리스트. 시트 '다음 질문' 탭에 기록 하나 = 한 줄 ──
+// 플라우드 정리를 그대로 붙여 넣으면 번호 · 글머리를 떼고 한 줄 = 질문 하나. 제목 줄('7. 다음 심방 질문')은 버린다.
+// 번호 붙은 줄이 하나라도 있으면, 번호 없는 줄은 앞 질문에 이어 붙인다(긴 질문이 줄바꿈된 것).
+const QN_TAB = '다음 질문', QN_HEAD = ['기록ID', '성도', '질문', '수정'], QN_MAX = 30, QN_LEN = 300;
+const QN_BULLET = /^\s*(?:\d{1,2}\s*[.)．、]|[-•·*▪◦○●□☐☑✓✔]|\[\s?[xX ]?\s?\])\s*/;
+function qnParse(raw) {
+  const lines = String(raw == null ? '' : raw).split(/\r?\n/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const numbered = lines.some(s => QN_BULLET.test(s)), out = [];
+  lines.forEach(s => {
+    const b = QN_BULLET.test(s), t = s.replace(QN_BULLET, '').trim();
+    if (!t || /^#*\s*다음\s*심방\s*질문\s*:?$/.test(t)) return;
+    if (numbered && !b && out.length) out[out.length - 1] += ' ' + t; else out.push(t);
+  });
+  return out.map(t => t.slice(0, QN_LEN)).slice(0, QN_MAX);
+}
+// 칸 글: 한 줄에 하나 · 앞에 '[x] ' 이면 물어봄, '[ ] ' 이면 아직. 사람이 시트에서 봐도 읽힌다
+function qnEncode(items) { return (items || []).filter(q => q && norm(q.t)).slice(0, QN_MAX).map(q => (q.done ? '[x] ' : '[ ] ') + norm(q.t).slice(0, QN_LEN)).join('\n'); }
+function qnDecode(cell) {
+  return String(cell == null ? '' : cell).split(/\r?\n/).map(s => s.trim()).filter(Boolean).slice(0, QN_MAX).map(s => {
+    const m = /^\[\s?([xX✓ ]?)\s?\]\s*/.exec(s);
+    return { t: norm(m ? s.slice(m[0].length) : s).slice(0, QN_LEN), done: !!(m && /[xX✓]/.test(m[1])) };
+  }).filter(q => q.t);
+}
+// '다음 질문' 탭 → { 기록ID: { row, items } } — 같은 기록ID 줄이 둘이면 그 기록은 쓰지 않는다(dup)
+function parseQnTab(values) {
+  const h = ((values && values[0]) || []).map(norm), ci = { rec: h.indexOf('기록ID'), q: h.indexOf('질문') }, out = {};
+  if (ci.rec < 0 || ci.q < 0) return out;
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i] || [], id = norm(r[ci.rec]); if (!id) continue;
+    if (out[id]) { out[id].dup = true; continue; }
+    out[id] = { row: i + 1, items: qnDecode(r[ci.q]) };
+  }
+  return out;
+}
+// 쓸 것 — 줄이 있으면 질문 · 수정 칸만, 없으면 한 줄 더한다(머리글 순서대로)
+function qnPlan(map, v, items, stamp, head) {
+  const h = (head && head.length ? head : QN_HEAD).map(norm), cur = map[v.id], cell = qnEncode(items);
+  if (cur && cur.dup) return { dup: true };
+  if (cur) return { update: { row: cur.row, cells: { '질문': cell, '수정': stamp } } };
+  const row = h.map(k => ({ '기록ID': v.id, '성도': norm(v.name), '질문': cell, '수정': stamp })[k] || '');
+  return { append: row };
+}
+// BLOCK7 로 — '이름 심방' 할일 하나 + 아직 안 물어본 질문들이 하위 항목으로 (HB 2026-11-10)
+function qnB7Text(v) { return norm(v && v.name) + ' 심방'; }
+function qnSubs(items) { return (items || []).filter(q => q && !q.done && norm(q.t)).map(q => norm(q.t).slice(0, 200)).slice(0, QN_MAX); }
 // 덧붙임 탭 → { 기록ID: [{at, who, x}] }
 function parseAddenda(values) {
   const h = (values && values[0]) || [], c = n => h.map(norm).indexOf(n), out = {};
@@ -1977,6 +2030,7 @@ async function loadData(quiet) {
     if (DATA.prepared) await patchIds(s.id, tab.title, vals);
     DATA.actStatus = parseActionTab(V('액션'));
     DATA.addenda = parseAddenda(V('덧붙임'));
+    DATA.qn = parseQnTab(V(QN_TAB));
     DATA.plans = parsePlans(V(PLAN_TAB));
     DATA.attend = parseAttend(V(ATT_TAB));
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
@@ -2117,6 +2171,32 @@ async function writeCheck(v, a, done) {
   else { const h = (av[0] || []).map(norm); await batchValues(s.id, Object.keys(plan.update.cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1('액션', h.indexOf(k), plan.update.row), values: [[plan.update.cells[k]]] }))); }
   return true;
 }
+// ── 다음 심방 질문 (1110-Q) — '다음 질문' 탭 (처음 적을 때 만든다). 쓸 때마다 탭을 새로 읽어 그 기록 줄을 찾는다 ──
+async function ensureQnTab(s) {
+  const m = await sheetMeta(s.id);
+  if (!(m.sheets || []).some(x => x.properties.title === QN_TAB)) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: QN_TAB } } }] } });
+  const v = await readTab(s.id, QN_TAB), h = (v[0] || []).map(norm);
+  if (!h.some(Boolean)) { await batchValues(s.id, [{ range: "'" + QN_TAB + "'!A1", values: [QN_HEAD] }]); return { v: [QN_HEAD.slice()], h: QN_HEAD.slice() }; }
+  if (h.indexOf('기록ID') < 0 || h.indexOf('질문') < 0) throw new Error("'" + QN_TAB + "' 탭의 첫 줄이 앱이 아는 머리글이 아닙니다 — 쓰지 않았습니다.");
+  return { v, h };
+}
+async function writeQn(v, items) {
+  if (!v.id) throw new Error('이 기록에 아직 기록ID 가 없습니다.\n시트를 준비한 뒤 다시 해 주세요.');
+  const s = saved().sheet, { v: vals, h } = await ensureQnTab(s), plan = qnPlan(parseQnTab(vals), v, items, stampLocal(Date.now()), h);
+  if (plan.dup) throw new Error("'" + QN_TAB + "' 탭에 이 기록 줄이 둘 있습니다 — 쓰지 않았습니다.\n시트에서 한쪽을 지워 주세요.");
+  if (plan.append) await appendTo(s.id, QN_TAB, plan.append);
+  else await batchValues(s.id, Object.keys(plan.update.cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1(QN_TAB, h.indexOf(k), plan.update.row), values: [[plan.update.cells[k]]] })));
+}
+// 화면은 먼저 바꾸고, 시트 쓰기는 차례대로(빠르게 여러 번 눌러도 순서가 뒤바뀌지 않게). 실패하면 시트를 다시 읽어 되돌린다
+let QN_Q = Promise.resolve();
+function qnItems(v) { return ((DATA.qn || {})[v.id] || {}).items || []; }
+function qnSet(v, items) {
+  if (!v || !v.id) { toast('이 기록은 아직 시트 준비 전이라 적을 수 없습니다'); return; }
+  DATA.qn = DATA.qn || {}; DATA.qn[v.id] = Object.assign({}, DATA.qn[v.id], { items: items.slice(0, QN_MAX) });
+  render();
+  const snap = items.slice(0, QN_MAX);
+  QN_Q = QN_Q.then(() => writeQn(v, snap)).catch(e => { toast('다음 심방 질문을 시트에 적지 못했습니다\n' + e.message); return loadData(true); });
+}
 // ── 할 일 → BLOCK7 할일 (C3b-1) — 기도노트 · 시리와 같은 쪽지함. BLOCK7 은 그대로 받는다 ──
 async function inboxPush(note) { await DB.doc('pray/' + USER.uid + '/c/b7inbox').set({ items: firebase.firestore.FieldValue.arrayUnion(note) }, { merge: true }); }
 async function writeB7Mark(v, a, stamp) {
@@ -2125,9 +2205,13 @@ async function writeB7Mark(v, a, stamp) {
   else { const h = (av[0] || []).map(norm); await batchValues(s.id, Object.keys(plan.update.cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1('액션', h.indexOf(k), plan.update.row), values: [[plan.update.cells[k]]] }))); }
 }
 async function sendB7(L) {
-  const v = L.pname ? null : byKey(L.vkey), a = v && v.actions[L.i]; if (!a && !L.pname) return;
-  const note = b7Note(L.form.text, L.form.date, Date.now(), newId('B', Date.now(), Math.random()));
+  const v = L.pname ? null : byKey(L.vkey), a = v && v.actions[L.i]; if (!a && !L.pname && !L.qn) return;
+  const note = b7Note(L.form.text, L.form.date, Date.now(), newId('B', Date.now(), Math.random()), L.qn ? L.subs : null);
   if (!note) { toast(norm(L.form.text) ? '날짜를 골라 주세요' : '보낼 글을 적어 주세요'); return; }
+  if (L.qn) {   // 1110-Q 다음 심방 질문 → '이름 심방' + 하위 항목 (시트에는 적지 않는다)
+    if (!USER || !DB) { toast('로그인한 뒤에 보낼 수 있습니다'); return; }
+    await inboxPush(note); closeLayer(true); toast('BLOCK7 할일로 보냈습니다\n' + md(note.date) + ' · ' + note.text + (note.subs ? '\n하위 항목 ' + note.subs.length + '개' : '')); return;
+  }
   if (L.pname) {   // 1108-A2 사람 화면에서 — 할 일 줄이 없으니 쪽지만 (시트에는 적지 않는다)
     if (!USER || !DB) { toast('로그인한 뒤에 보낼 수 있습니다'); return; }
     await inboxPush(note); closeLayer(true); toast('BLOCK7 할일로 보냈습니다\n' + md(note.date) + ' · ' + note.text); return;
@@ -2714,11 +2798,25 @@ function lDetail(L) {
   if (S.addn === v.key) h += '<div class="addbox"><textarea id="addnText" class="inp" rows="3" placeholder="나중에 알게 된 것을 적습니다. 원래 이야기는 그대로 둡니다."></textarea><div class="row"><button class="btn pri" data-act="addnsave" data-v="' + esc(v.key) + '">덧붙이기</button><button class="btn" data-act="addnopen" data-v="">그만두기</button></div></div>';
   else h += '<button class="send" data-act="addnopen" data-v="' + esc(v.key) + '" style="margin-top:12px;display:block">+ 덧붙이기</button>';
   h += '<div class="h-sec"><span>할 일<small style="margin-left:6px">' + (v.actions.length ? v.actions.filter(a => a.done).length + ' / ' + v.actions.length + ' 마침' : '') + '</small></span>' + (v.actions.length ? '' : '<button class="send" data-act="edit" data-v="' + esc(v.key) + '" aria-label="할 일 더하기(고치기)" style="padding-top:0;font-size:12.5px">+</button>') + '</div>' + (v.actions.length ? v.actions.map((a, i) => todoRow(v, a, i)).join('') : '');
+  h += qnSecHtml(v);
   const past = M().visits.filter(x => x.name === v.name && x.key !== v.key);
   if (past.length) h += '<div class="h-sec">' + esc(v.name) + ' 님 다른 심방<small>' + past.length + '번</small></div><div class="tl">' + past.map(tlRow).join('') + '</div>';
   h += '<p class="muted" style="margin-top:22px">시트 ' + v.row + '번째 줄 · ' + esc(v.src === '폼' ? '구글폼' : v.src) + '</p>' +
     '<a class="sheetlnk" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="시트에서 이 줄 열기">' + IC.sheet + '</a>';
   return h + '</div>';
+}
+// 1110-Q 다음 심방 질문 — 체크리스트 · 한 줄씩 적기 · 플라우드 붙여넣기 · BLOCK7 로
+function qnSecHtml(v) {
+  const it = qnItems(v), dv = esc(v.key), nd = it.filter(q => q.done).length;
+  let h = '<div class="h-sec qnsec"><span>다음 심방 질문<small style="margin-left:6px">' + (it.length ? nd + ' / ' + it.length + ' 물어봄' : '') + '</small></span><span class="r">' +
+    (v.id ? '<button data-act="qnpaste" data-v="' + dv + '">' + (S.qnPaste === v.key ? '그만두기' : '붙여넣기') + '</button>' : '') +
+    (v.id && it.length ? '<button class="b7b" data-act="qnb7" data-v="' + dv + '" aria-label="BLOCK7 할일로 보내기">BLOCK7 →</button>' : '') + '</span></div>';
+  if (!v.id) return h + '<p class="muted">시트를 준비한 뒤에 적을 수 있습니다.</p>';
+  if (S.qnPaste === v.key) h += '<div class="addbox"><textarea id="qnPasteText" class="inp" rows="6" placeholder="플라우드의 \'다음 심방 질문\' 을 그대로 붙여 넣으세요.\n번호 · 제목 줄은 알아서 뗍니다."></textarea><div class="row"><button class="btn pri" data-act="qnpastego" data-v="' + dv + '">체크리스트로</button></div></div>';
+  h += '<div class="qnlist">' + it.map((q, i) => '<div class="todo qn' + (q.done ? ' done' : '') + '"><button class="ck' + (q.done ? ' on' : '') + '" style="--k:var(--tx3)" data-act="qntick" data-v="' + dv + '" data-k="' + i + '" aria-label="' + (q.done ? '아직 안 물어봄으로' : '물어봄 표시') + '"></button>' +
+    '<div class="lab">' + esc(q.t) + '</div><div class="tacts"><button class="send" data-act="qndel" data-v="' + dv + '" data-k="' + i + '" aria-label="이 질문 지우기">' + IC.x + '</button></div></div>').join('') + '</div>';
+  h += '<div class="qnadd"><input id="qnIn" class="inp" data-qnadd="' + dv + '" maxlength="' + QN_LEN + '" placeholder="+ 질문 적기" aria-label="질문 적기" enterkeyhint="done"><button class="send" data-act="qnadd" data-v="' + dv + '" aria-label="질문 더하기">+</button></div>';
+  return h;
 }
 function todoRow(v, a, i, sub) {
   const lab = a.t === '기타' && a.x ? a.x : a.t + (a.x ? ' · ' + a.x : '');
@@ -2729,6 +2827,7 @@ function todoRow(v, a, i, sub) {
 }
 // 할 일 → BLOCK7 할일 (겹 화면) — 날짜 · 보낼 글을 보고 보낸다
 function lB7Send(L) {
+  if (L.qn) return lB7SendQn(L);
   const v = L.pname ? null : byKey(L.vkey), a = v && v.actions[L.i]; if (!a && !L.pname) return lhead('BLOCK7 할일로', L) + '<div class="ph-body"><p class="empty">이 할 일을 찾지 못했습니다.</p></div>';
   const f = L.form, t = today(), dchip = (d, lb) => '<button class="opt" data-act="b7date" data-v="' + d + '" aria-pressed="' + (f.date === d) + '">' + lb + '</button>';
   let h = lhead('BLOCK7 할일로', L) + '<div class="ph-body" style="padding-bottom:110px">';
@@ -2737,6 +2836,20 @@ function lB7Send(L) {
   h += '<div class="fsec">보낼 글</div><div class="fld"><input class="inp" data-f="text" value="' + esc(f.text) + '" maxlength="200" aria-label="보낼 글"></div>';
   h += '<p class="hint">BLOCK7 이 열리면 그날 <b>첫 시간 구간</b>의 할일로 들어갑니다(기도노트 · 시리와 같은 길).<br>나눈 이야기 · 물어볼 것은 보내지 않습니다 — 이 한 줄만 BLOCK7 계정에 남습니다.</p>';
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="b7send">BLOCK7 로 보내기</button></div>';
+}
+// 1110-Q 다음 심방 질문 → BLOCK7 '이름 심방' 할일 하나 + 아직 안 물어본 질문이 하위 항목으로
+function lB7SendQn(L) {
+  const f = L.form, t = today(), dchip = (d, lb) => '<button class="opt" data-act="b7date" data-v="' + d + '" aria-pressed="' + (f.date === d) + '">' + lb + '</button>';
+  let h = lhead('BLOCK7 할일로', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  h += '<div class="fsec">언제</div><div class="fld"><div class="opts">' + dchip(t, '오늘') + dchip(ymdAdd(t, 1), '내일') + dchip(ymdAdd(t, 2), '모레') + '</div><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜" style="margin-top:8px"></div>';
+  h += '<div class="fsec">할 일</div><div class="fld"><input class="inp" data-f="text" value="' + esc(f.text) + '" maxlength="200" aria-label="보낼 글"></div>';
+  h += '<div class="fsec">하위 항목<small style="margin-left:6px">' + L.subs.length + '개</small></div>' + (L.subs.length ? '<ol class="qnprev">' + L.subs.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '<p class="muted">아직 안 물어본 질문이 없습니다 — 할 일 한 줄만 갑니다.</p>');
+  h += '<p class="hint">BLOCK7 이 열리면 그날 <b>첫 시간 구간</b>에 할 일 하나로 들어가고, 질문들은 그 아래 하위 항목이 됩니다.<br>체크한(물어본) 질문은 보내지 않습니다. 나눈 이야기는 보내지 않습니다.</p>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="b7send">BLOCK7 로 보내기</button></div>';
+}
+function openB7SendQn(vkey) {
+  const v = byKey(vkey); if (!v) return;
+  openLayer('b7send', { qn: true, vkey, subs: qnSubs(qnItems(v)), form: { date: today(), text: qnB7Text(v) } });
 }
 function openB7Send(vkey, i) {
   const v = byKey(vkey), a = v && v.actions[i]; if (!a) return;
@@ -3003,6 +3116,13 @@ document.addEventListener('pointercancel', drReset);
 document.addEventListener('touchmove', e => { if (DR.lifted) e.preventDefault(); }, { passive: false });   // 들린 동안엔 화면이 굴러가지 않게
 document.addEventListener('click', e => { if (DR.eat && e.target.closest && e.target.closest('.pills')) { DR.eat = false; e.preventDefault(); e.stopPropagation(); } }, true);   // 알약에 떨어진 누름만 먹는다 (메뉴 '취소' 를 바로 눌러도 되게)
 document.addEventListener('contextmenu', e => { const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"]'); if (!el) return; e.preventDefault(); drReset(); attOptMenu(el.dataset.k, el.dataset.v); });
+function qnAddFrom(inp) {
+  if (!inp) return; const vv = byKey(inp.dataset.qnadd), t = norm(inp.value).slice(0, QN_LEN); if (!vv || !t) return;
+  const it = qnItems(vv); if (it.length >= QN_MAX) { toast('질문은 ' + QN_MAX + '개까지 적을 수 있습니다'); return; }
+  inp.value = ''; qnSet(vv, it.concat([{ t, done: false }]));
+  const n = $('qnIn'); if (n) n.focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.target.dataset && e.target.dataset.qnadd) { e.preventDefault(); qnAddFrom(e.target); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.optadd) { e.preventDefault(); attOptCommit(e.target); } });
 // 1109-T 주제 칸 — Enter · 줄 고치기 마침 · 여러 줄 붙여 넣기
 document.addEventListener('keydown', e => { const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (f && f.startsWith('tk:') && L && L.type === 'edit' && L.talk) talkKey(L, e); });
@@ -4103,6 +4223,23 @@ document.addEventListener('click', e => {
     });
     return;
   }
+  if (a === 'qnpaste') { S.qnPaste = S.qnPaste === v ? null : v; render(); const t = $('qnPasteText'); if (t) t.focus(); return; }
+  if (a === 'qnpastego') {
+    const t = $('qnPasteText'), vv = byKey(v), got = qnParse(t ? t.value : ''); if (!vv) return;
+    if (!got.length) { toast('질문을 찾지 못했습니다\n한 줄에 질문 하나씩 붙여 넣어 주세요'); return; }
+    const cur = qnItems(vv), have = new Set(cur.map(q => q.t)), add = got.filter(x => !have.has(x)).map(x => ({ t: x, done: false }));
+    const room = QN_MAX - cur.length; S.qnPaste = null;
+    qnSet(vv, cur.concat(add.slice(0, Math.max(0, room))));
+    toast('질문 ' + Math.min(add.length, Math.max(0, room)) + '개를 넣었습니다' + (add.length > room ? '\n' + QN_MAX + '개까지만 넣었습니다' : '') + (got.length > add.length ? '\n이미 있는 ' + (got.length - add.length) + '개는 건너뜀' : ''));
+    return;
+  }
+  if (a === 'qnadd') { qnAddFrom($('qnIn')); return; }
+  if (a === 'qntick' || a === 'qndel') {
+    const vv = byKey(v), it = vv ? qnItems(vv).slice() : [], i = +k; if (!vv || !it[i]) return;
+    if (a === 'qntick') it[i] = { t: it[i].t, done: !it[i].done }; else it.splice(i, 1);
+    qnSet(vv, it); return;
+  }
+  if (a === 'qnb7') { openB7SendQn(v); return; }
   if (a === 'addnopen') { S.addn = v || null; render(); const t = $('addnText'); if (t) t.focus(); return; }
   if (a === 'addnsave') {
     const t = $('addnText'), text = t ? t.value.trim() : '', vv = byKey(v); if (!text || !vv) return;
