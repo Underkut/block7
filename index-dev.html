@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1110-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1110-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5880,15 +5880,21 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-nav .br-hi button{width:auto;min-width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:22px;font-size:13px;font-weight:600;white-space:nowrap;}
 #bibleRd .br-nav .br-hi button{background:color-mix(in srgb,var(--s1) calc(55% + var(--o,1) * 45%),transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   color:color-mix(in srgb,var(--tx2) calc(var(--o,1) * 100%),transparent);}   /* 글자 뒤 본문이 비쳐 어지럽지 않게: 바탕은 거의 채우고 글자색으로 옅어진다 */
-#bibleRd .br-hi .l{display:none;padding:0 16px;}
-#bibleRd .br-hi:first-child .d{display:block;}
+#bibleRd .br-hi .d,#bibleRd .br-hi .l{display:block;overflow:hidden;white-space:nowrap;
+  transition:max-width .34s cubic-bezier(.22,.8,.24,1),opacity .22s ease,padding .34s cubic-bezier(.22,.8,.24,1);}
+#bibleRd .br-hi .d{max-width:44px;width:44px;display:grid;place-items:center;opacity:1;}
+#bibleRd .br-hi .l{max-width:0;opacity:0;padding:0;}
 #bibleRd .br-hi+.br-hi .d{display:none;}
+#bibleRd .br-hi+.br-hi .l{max-width:200px;opacity:1;padding:0 16px;}
 #bibleRd .br-hi .d svg{width:20px;height:20px;}
-#bibleRd .br-hi+.br-hi{max-height:0;opacity:0;overflow:hidden;padding:0;pointer-events:none;
-  transition:max-height .3s cubic-bezier(.22,.8,.24,1),opacity .25s ease,padding .3s cubic-bezier(.22,.8,.24,1);}
-#bibleRd .br-hist:hover .br-hi+.br-hi,#bibleRd .br-hist.open .br-hi+.br-hi{max-height:56px;opacity:1;padding:3px 0;pointer-events:auto;}
-#bibleRd .br-hist:hover .br-hi .l,#bibleRd .br-hist.open .br-hi .l{display:block;}
-#bibleRd .br-hist:hover .br-hi:first-child .d,#bibleRd .br-hist.open .br-hi:first-child .d{display:none;}
+#bibleRd .br-hist:hover .br-hi:first-child .l,#bibleRd .br-hist.open .br-hi:first-child .l{max-width:200px;opacity:1;padding:0 16px;transition-delay:.04s;}
+#bibleRd .br-hist:hover .br-hi:first-child .d,#bibleRd .br-hist.open .br-hi:first-child .d{max-width:0;opacity:0;}
+/* 위 기록 — 접힐 땐 한꺼번에 빠르게, 펼칠 땐 아래부터 차례로 (35ms 씩) */
+#bibleRd .br-hi+.br-hi{max-height:0;opacity:0;overflow:hidden;padding:0;pointer-events:none;transform:translateY(10px) scale(.94);transform-origin:bottom center;
+  transition:max-height .24s cubic-bezier(.22,.8,.24,1),opacity .16s ease,padding .24s cubic-bezier(.22,.8,.24,1),transform .24s cubic-bezier(.22,.8,.24,1);}
+#bibleRd .br-hr .br-hi+.br-hi{transform-origin:bottom right;}#bibleRd .br-hl .br-hi+.br-hi{transform-origin:bottom left;}
+#bibleRd .br-hist:hover .br-hi+.br-hi,#bibleRd .br-hist.open .br-hi+.br-hi{max-height:56px;opacity:1;padding:3px 0;pointer-events:auto;transform:none;
+  transition:max-height .36s cubic-bezier(.22,.8,.24,1),opacity .3s ease,padding .36s cubic-bezier(.22,.8,.24,1),transform .4s cubic-bezier(.22,.8,.24,1);transition-delay:calc(var(--i,1) * 35ms);}
 /* 검색 — 지난 검색어 줄 · 갈래별 개수 */
 #bibleRd .br-fhist{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;margin:-2px -16px 0;padding:2px 16px;}
 #bibleRd .br-fhist::-webkit-scrollbar{display:none;}
@@ -5899,12 +5905,12 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd #brFScope button small{font-size:10px;color:var(--tx3);font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;font-weight:400;}
 #bibleRd #brFScope button.on small{color:var(--tx2);}
 #bibleRd .br-frr{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
-#bibleRd .br-fex{width:30px;height:30px;display:grid;place-items:center;color:var(--tx2);}
+#bibleRd .br-fex{width:30px;height:30px;display:grid;place-items:center;color:var(--tx3);transition:color .2s ease,opacity .2s ease;}
 #bibleRd .br-fex svg{width:20px;height:20px;}
-#bibleRd .br-fex[disabled]{opacity:.3;pointer-events:none;}
-@media (hover:hover) and (pointer:fine){#bibleRd .br-fex:hover{color:var(--tx);}}
+#bibleRd .br-fex[disabled]{opacity:.35;pointer-events:none;}
+@media (hover:hover) and (pointer:fine){#bibleRd .br-fex:hover,#bibleRd .br-fgb:not(.on):hover{color:var(--tx2);}}
 #bibleRd .br-fsg{display:flex;align-items:center;gap:6px;}
-#bibleRd .br-fgb{width:30px;height:30px;display:grid;place-items:center;color:var(--tx3);}
+#bibleRd .br-fgb{width:30px;height:30px;display:grid;place-items:center;color:var(--tx3);transition:color .2s ease;}
 #bibleRd .br-fgb svg{width:20px;height:20px;}
 #bibleRd .br-fgb.on{color:var(--ac-tx);}
 /* 책별 분포 띠 — 66칸, 많이 나온 책일수록 진하다. 누르면 책별 개수 시트 */
@@ -5919,8 +5925,12 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-fbk svg{width:11px;height:11px;color:var(--tx3);}
 #bibleRd .br-fg{display:flex;justify-content:space-between;align-items:center;width:100%;margin:8px 0 2px;padding:8px 12px;border-radius:9px;background:var(--s2);color:var(--tx2);font-size:13.5px;font-weight:600;}
 #bibleRd .br-fg span+span{display:flex;align-items:center;gap:6px;font-weight:500;font-size:12.5px;}
-#bibleRd .br-fg svg{width:12px;height:12px;transition:transform .2s ease;}
-#bibleRd .br-fg.on svg{transform:rotate(180deg);}
+#bibleRd .br-fg svg{width:12px;height:12px;transition:transform .34s cubic-bezier(.22,.8,.24,1);}
+#bibleRd .br-fgw.on .br-fg svg{transform:rotate(180deg);}
+#bibleRd .br-fgx{display:grid;grid-template-rows:0fr;transition:grid-template-rows .36s cubic-bezier(.22,.8,.24,1);}
+#bibleRd .br-fgx>div{min-height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:opacity .2s ease,transform .36s cubic-bezier(.22,.8,.24,1);}
+#bibleRd .br-fgw.on .br-fgx{grid-template-rows:1fr;}
+#bibleRd .br-fgw.on .br-fgx>div{opacity:1;transform:none;transition:opacity .3s ease .06s,transform .36s cubic-bezier(.22,.8,.24,1);}
 #bibleRd #brFBk{z-index:40;}
 #bibleRd .br-fsc{position:absolute;inset:0;z-index:35;background:var(--br-scrim);opacity:0;pointer-events:none;transition:opacity .2s;}
 #bibleRd .br-sheet.on+.br-fsc{opacity:1;pointer-events:auto;}
@@ -5930,6 +5940,24 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-fbr b{text-align:right;font-weight:500;font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;color:var(--tx2);}
 #bibleRd .br-fbr.cur{color:var(--tx);font-weight:600;}
 #bibleRd .br-fsort{display:flex;justify-content:center;padding:2px 0 8px;flex:0 0 auto;}
+/* 검색 판 움직임 (v. 26-1110-10, HB — 펼치고 접히는 것은 스르륵) */
+@keyframes brFin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+#bibleRd #brFBody.br-fin{animation:brFin .32s cubic-bezier(.22,.8,.24,1) both;}
+@keyframes brStripIn{from{transform:scaleY(.15);opacity:0;}to{transform:none;opacity:1;}}
+#bibleRd .br-fstrip i{transform-origin:bottom center;transition:background-color .3s ease;}
+#bibleRd .br-fstrip.in i{animation:brStripIn .5s cubic-bezier(.22,.8,.24,1) both;animation-delay:calc(var(--k,0) * 5ms);}
+@keyframes brCntIn{from{opacity:0;max-height:0;transform:translateY(-3px);}to{opacity:1;max-height:16px;transform:none;}}
+#bibleRd #brFScope button small{animation:brCntIn .34s cubic-bezier(.22,.8,.24,1) both;overflow:hidden;}
+#bibleRd #brFScope button{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease;}
+#bibleRd .br-fbr .bar i{width:0;transition:width .6s cubic-bezier(.22,.8,.24,1);}
+@keyframes brChipIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:none;}}
+#bibleRd .br-fbk{animation:brChipIn .3s cubic-bezier(.22,.8,.24,1) both;}
+#bibleRd .br-fh{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease;}
+@media (prefers-reduced-motion:reduce){
+  #bibleRd #brFBody.br-fin,#bibleRd .br-fstrip.in i,#bibleRd #brFScope button small,#bibleRd .br-fbk{animation:none;}
+  /* 아이디를 겹쳐 써서(#bibleRd#bibleRd) 펼침 상태 규칙보다 앞서게 한다 (강제 표시 없이) */
+  #bibleRd#bibleRd .br-fgx,#bibleRd#bibleRd .br-fgx>div,#bibleRd#bibleRd .br-fbr .bar i,#bibleRd#bibleRd .br-hist .br-hi,#bibleRd#bibleRd .br-hist .br-hi .d,#bibleRd#bibleRd .br-hist .br-hi .l,#bibleRd#bibleRd .br-fg svg{transition:none;}
+}
 #bibleRd .br-trbar{position:absolute;right:0;top:100%;max-width:100%;display:flex;flex-direction:row-reverse;gap:0;overflow-x:auto;scrollbar-width:none;
   padding:0 8px 6px;pointer-events:auto;overscroll-behavior-x:contain;}
 #bibleRd .br-trbar::-webkit-scrollbar{display:none;}
@@ -7115,7 +7143,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1110-9";
+const APP_VERSION = "v. 26-1110-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9988,7 +10016,7 @@ try{
       <div class="br-fhist" id="brFHist"></div>
       <div class="br-frow"><div class="br-fsg"><div class="br-seg" id="brFScope"><button data-v="all">전체</button><button data-v="ot">구약</button><button data-v="nt">신약</button><button data-v="book">이 책</button></div>
         <button class="br-fgb" id="brFGrp" aria-label="책별로 묶어 보기" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="3.6" height="12" rx=".8"/><rect x="7.4" y="4" width="3.6" height="12" rx=".8"/><path d="M12.6 5.4l3.4-.9 2.5 10.6-3.4.9z"/></svg></button></div>
-        <div class="br-frr"><button class="br-fex" id="brFEx" aria-label="검색 결과 복사" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4.5 14v3.5a2 2 0 002 2h11a2 2 0 002-2V14"/></svg></button>
+        <div class="br-frr"><button class="br-fex" id="brFEx" aria-label="검색 결과 복사" disabled><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12.2V3.6M6.9 6.6L10 3.5l3.1 3.1"/><path d="M4 11v3.6c0 .99.81 1.8 1.8 1.8h8.4c.99 0 1.8-.81 1.8-1.8V11"/></svg></button>
         <label class="br-chk"><input type="checkbox" id="brFree"><span>검색어 순서 자유</span></label></div></div>
       <div class="br-fsw" id="brFSw"><button class="br-fstrip" id="brFStrip" aria-label="책별 개수 보기"></button><span class="br-fstip" id="brFStip"></span></div>
     </div>
@@ -17407,7 +17435,7 @@ function _brNavSync(){
   [['brHistL','back','이전 자리로 돌아가기'],['brHistR','fwd','다음 자리로 다시 가기']].forEach(([id,side,al])=>{
     const el=_brEl(id);if(!el)return;
     const arr=st[side].slice(-N).reverse();
-    el.innerHTML=arr.map((x,i)=>'<div class="br-hi" style="--o:'+_BR_HO[i]+'"><button data-hk="'+side+'.'+i+'" aria-label="'+al+' · '+esc(_brNavLabel(x))+'"><span class="d">'+_BR_DOTS+'</span><span class="l">'+esc(_brNavLabel(x))+'</span></button></div>').join('');
+    el.innerHTML=arr.map((x,i)=>'<div class="br-hi" style="--o:'+_BR_HO[i]+';--i:'+i+'"><button data-hk="'+side+'.'+i+'" aria-label="'+al+' · '+esc(_brNavLabel(x))+'"><span class="d">'+_BR_DOTS+'</span><span class="l">'+esc(_brNavLabel(x))+'</span></button></div>').join('');
     if(!arr.length)el.classList.remove('open');
   });
 }
@@ -17443,7 +17471,7 @@ function _brFHMigrate(){
 function _brFHRender(){const el=_brEl('brFHist');if(!el)return;
   el.innerHTML=_brFHList().map(x=>'<button class="br-fh" data-fh="'+esc(x)+'">'+esc(x)+'</button>').join('');}
 // ── 검색 ──
-let _brFs={q:'',scope:'all',lim:100,bk:null,open:null,sort:'cnt'},_brFcnt=null,_brFLast=null,_brFVis=[],_brFVisLbl='';
+let _brFs={q:'',scope:'all',lim:100,bk:null,open:null,sort:'cnt'},_brFcnt=null,_brFLast=null,_brFVis=[],_brFVisLbl='',_brFRK='';
 async function _brRunFind(){
   const body=_brEl('brFBody'),q=_brFs.q,books=_brBooks();
   if(!q){_brFcnt=null;_brSyncScope();body.innerHTML='<div class="br-empty">찾을 낱말을 넣어 주세요.<br>띄어쓰기·쉼표는 없는 셈 치고 찾아요.<br>‘검색어 순서 자유’를 켜면 낱말이 떨어져 있어도 찾아요.<br>장절(요 3:16)을 넣으면 그 자리로 바로 가요.</div>';return;}
@@ -17488,13 +17516,16 @@ async function _brRunFind(){
     const m=new Map();vis.forEach(x=>{if(!m.has(x[0]))m.set(x[0],[]);m.get(x[0]).push(x);});
     const keys=[...m.keys()],open=_brFs.open||new Set(keys.slice(0,1));_brFs.openCur=open;
     keys.forEach(b=>{const L=m.get(b),on=open.has(b);
-      h+='<button class="br-fg'+(on?' on':'')+'" data-fg="'+b+'"><span>'+esc(books[b])+'</span><span>'+L.length.toLocaleString()+'개<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></span></button>';
-      if(on){L.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});if(L.length>_brFs.lim)h+=more(L.length-_brFs.lim);}
+      h+='<div class="br-fgw'+(on?' on':'')+'"><button class="br-fg" data-fg="'+b+'" aria-expanded="'+on+'"><span>'+esc(books[b])+'</span><span>'+L.length.toLocaleString()+'개<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></span></button>';
+      // 접힌 묶음도 내용은 미리 그려 둔다 — 펼 때 다시 그리지 않고 높이만 움직인다
+      h+='<div class="br-fgx"><div>';L.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});if(L.length>_brFs.lim)h+=more(L.length-_brFs.lim);h+='</div></div></div>';
     });
   }else{
     vis.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});
     if(vis.length>_brFs.lim)h+=more(vis.length-_brFs.lim);
   }
+  {const rk=[q,free,scp,bk,_brS('bibleFindGroup',false)].join('|');
+    if(rk!==_brFRK){_brFRK=rk;body.classList.remove('br-fin');void body.offsetWidth;body.classList.add('br-fin');}}
   _brFVis=vis;_brFVisLbl=(bk!=null?books[bk]:scp==='ot'?'구약':scp==='nt'?'신약':scp==='book'?books[_brCur.b]:'전체');{const ex=_brEl('brFEx');if(ex)ex.disabled=!vis.length;}
   body.innerHTML=h;
   body.querySelectorAll('.br-more').forEach(mb=>mb.onclick=()=>{_brFs.lim+=200;const y=body.scrollTop;_brRunFind().then(()=>{body.scrollTop=y;});});
@@ -17504,7 +17535,7 @@ function _brSyncScope(){
   document.querySelectorAll('#brFScope button').forEach(b=>{
     const k=b.dataset.v;
     b.classList.toggle('on',k===_brFs.scope&&_brFs.bk==null);
-    b.innerHTML=esc(nm[k])+(_brFcnt?'<small>'+_brFcnt[k].toLocaleString()+'</small>':'');
+    const nh=esc(nm[k])+(_brFcnt?'<small>'+_brFcnt[k].toLocaleString()+'</small>':'');if(b.innerHTML!==nh)b.innerHTML=nh;
   });
   _brFStripSync();
   const gb=_brEl('brFGrp');if(gb){const on=!!_brS('bibleFindGroup',false);gb.classList.toggle('on',on);gb.setAttribute('aria-pressed',on?'true':'false');}
@@ -17512,9 +17543,12 @@ function _brSyncScope(){
 // 책별 분포 띠 + 책별 개수 시트 (v. 26-1110-9, HB)
 function _brFStripSync(){
   const el=_brEl('brFStrip'),w=_brEl('brFSw');if(!el||!w)return;
-  if(!_brFcnt||!_brFcnt.bk||!_brFcnt.all){el.innerHTML='';w.classList.remove('has');return;}
-  const bk=_brFcnt.bk,mx=Math.max(1,...bk);
-  el.innerHTML=bk.map((n,b)=>(b===39?'<u></u>':'')+'<i data-b="'+b+'" style="'+(n?'--a:'+Math.round(16+84*Math.sqrt(n/mx))+'%':'')+'"'+(b===_brFs.bk?' class="sel"':'')+'></i>').join('');
+  if(!_brFcnt||!_brFcnt.bk||!_brFcnt.all){el.innerHTML='';el.dataset.sig='';w.classList.remove('has');return;}
+  const bk=_brFcnt.bk,mx=Math.max(1,...bk),sig=bk.join(',');
+  if(el.dataset.sig!==sig){el.dataset.sig=sig;
+    el.innerHTML=bk.map((n,b)=>(b===39?'<u></u>':'')+'<i data-b="'+b+'" style="--k:'+b+';'+(n?'--a:'+Math.round(16+84*Math.sqrt(n/mx))+'%':'')+'"></i>').join('');
+    el.classList.remove('in');void el.offsetWidth;el.classList.add('in');}
+  el.querySelectorAll('i').forEach(i=>i.classList.toggle('sel',+i.dataset.b===_brFs.bk));
   w.classList.add('has');
 }
 function _brFBkRender(){
@@ -17522,8 +17556,10 @@ function _brFBkRender(){
   const books=_brBooks(),bk=_brFcnt.bk,mx=Math.max(1,...bk);
   let L=bk.map((n,b)=>[b,n]).filter(x=>x[1]>0);
   if(_brFs.sort==='cnt')L.sort((x,y)=>y[1]-x[1]||x[0]-y[0]);
-  body.innerHTML=L.map(([b,n])=>'<button class="br-fbr'+(b===_brFs.bk?' cur':'')+'" data-fbr="'+b+'"><span>'+esc(books[b])+'</span><span class="bar"><i style="width:'+Math.max(2,Math.round(n/mx*100))+'%"></i></span><b>'+n.toLocaleString()+'</b></button>').join('');
+  body.innerHTML=L.map(([b,n])=>'<button class="br-fbr'+(b===_brFs.bk?' cur':'')+'" data-fbr="'+b+'"><span>'+esc(books[b])+'</span><span class="bar"><i data-w="'+Math.max(2,Math.round(n/mx*100))+'%"></i></span><b>'+n.toLocaleString()+'</b></button>').join('');
   document.querySelectorAll('#brFBkSort button').forEach(b=>b.classList.toggle('on',b.dataset.v===_brFs.sort));
+  const bars=[...body.querySelectorAll('.bar i')];bars.forEach((i,k)=>{i.style.transitionDelay=Math.min(k,24)*18+'ms';});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>bars.forEach(i=>{i.style.width=i.dataset.w;})));
 }
 // ── 묶기 (한 번만) ──
 function _brBind(){
@@ -17959,8 +17995,9 @@ function _brBind(){
   $('brFBkBody').onclick=e=>{const r=e.target.closest('[data-fbr]');if(!r)return;_brFs.bk=+r.dataset.fbr;_brFs.open=null;_brFs.lim=100;_brCloseSheets();_brSyncScope();_brRunFind();};
   $('brFBody').addEventListener('click',e=>{
     if(e.target.closest('#brFBkX')){_brFs.bk=null;_brFs.open=null;_brFs.lim=100;_brSyncScope();_brRunFind();return;}
-    const g=e.target.closest('[data-fg]');if(!g)return;const b=+g.dataset.fg,o=new Set(_brFs.openCur||[]);
-    if(o.has(b))o.delete(b);else o.add(b);_brFs.open=o;const y=$('brFBody').scrollTop;_brRunFind().then(()=>{$('brFBody').scrollTop=y;});});
+    const g=e.target.closest('[data-fg]');if(!g)return;const w=g.parentNode,on=!w.classList.contains('on');
+    w.classList.toggle('on',on);g.setAttribute('aria-expanded',on);
+    _brFs.open=_brFs.openCur=new Set([...$('brFBody').querySelectorAll('.br-fgw.on>[data-fg]')].map(x=>+x.dataset.fg));});
   $('brFree').onchange=e=>{ST.settings.bibleFindFree=e.target.checked;save();_brFs.lim=100;_brRunFind();};
   let ft=null;
   $('brFq').addEventListener('input',()=>{clearTimeout(ft);ft=setTimeout(()=>{_brFs.q=$('brFq').value.trim();_brFs.bk=null;_brFs.open=null;_brFs.lim=100;_brRunFind();},220);});
