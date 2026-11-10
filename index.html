@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1110-8  [production]  -->
+<!-- BLOCK7  v. 26-1110-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5898,6 +5898,11 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd #brFScope button{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3;}
 #bibleRd #brFScope button small{font-size:10px;color:var(--tx3);font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;font-weight:400;}
 #bibleRd #brFScope button.on small{color:var(--tx2);}
+#bibleRd .br-frr{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+#bibleRd .br-fex{width:30px;height:30px;display:grid;place-items:center;color:var(--tx2);}
+#bibleRd .br-fex svg{width:20px;height:20px;}
+#bibleRd .br-fex[disabled]{opacity:.3;pointer-events:none;}
+@media (hover:hover) and (pointer:fine){#bibleRd .br-fex:hover{color:var(--tx);}}
 #bibleRd .br-fsg{display:flex;align-items:center;gap:6px;}
 #bibleRd .br-fgb{width:30px;height:30px;display:grid;place-items:center;color:var(--tx3);}
 #bibleRd .br-fgb svg{width:20px;height:20px;}
@@ -7110,7 +7115,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1110-8";
+const APP_VERSION = "v. 26-1110-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9983,7 +9988,8 @@ try{
       <div class="br-fhist" id="brFHist"></div>
       <div class="br-frow"><div class="br-fsg"><div class="br-seg" id="brFScope"><button data-v="all">전체</button><button data-v="ot">구약</button><button data-v="nt">신약</button><button data-v="book">이 책</button></div>
         <button class="br-fgb" id="brFGrp" aria-label="책별로 묶어 보기" aria-pressed="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="3.6" height="12" rx=".8"/><rect x="7.4" y="4" width="3.6" height="12" rx=".8"/><path d="M12.6 5.4l3.4-.9 2.5 10.6-3.4.9z"/></svg></button></div>
-        <label class="br-chk"><input type="checkbox" id="brFree"><span>검색어 순서 자유</span></label></div>
+        <div class="br-frr"><button class="br-fex" id="brFEx" aria-label="검색 결과 복사" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4.5 14v3.5a2 2 0 002 2h11a2 2 0 002-2V14"/></svg></button>
+        <label class="br-chk"><input type="checkbox" id="brFree"><span>검색어 순서 자유</span></label></div></div>
       <div class="br-fsw" id="brFSw"><button class="br-fstrip" id="brFStrip" aria-label="책별 개수 보기"></button><span class="br-fstip" id="brFStip"></span></div>
     </div>
     <div class="br-pbody" id="brFBody"></div>
@@ -17409,7 +17415,7 @@ function _brHnPaint(v){const sl=_brEl('brHn'),lb=_brEl('brHnV');if(!sl)return;sl
   const f=(v-1)/6*100;sl.style.setProperty('--sl-fill','linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)');
   if(lb)lb.textContent=v+'개';}
 // ── 지난 검색어 (계정 · 기기끼리 맞춤 · 50개) ──
-// ST.settings.bibleFindHist = { 검색어: ms } — 계정 설정이라 기기끼리 맞는다 (v. 26-1110-8, HB).
+// ST.settings.bibleFindHist = { 검색어: ms } — 계정 설정이라 기기끼리 맞는다 (v. 26-1110-9, HB).
 // ms 가 음수면 '지운 표'(그 시각에 지웠다) — 다른 기기에서 되살아나지 않게. 병합은 _mgFindHist.
 // 성경 검색어 기록 { 검색어: ms } — 두 기기 것을 합친다. 같은 검색어는 |ms| 가 큰 쪽(음수 = 지운 표).
 // 산 것 50 · 지운 표 50 만 남긴다. 충돌 화면에는 올리지 않는다 (_cfScanKeys).
@@ -17437,7 +17443,7 @@ function _brFHMigrate(){
 function _brFHRender(){const el=_brEl('brFHist');if(!el)return;
   el.innerHTML=_brFHList().map(x=>'<button class="br-fh" data-fh="'+esc(x)+'">'+esc(x)+'</button>').join('');}
 // ── 검색 ──
-let _brFs={q:'',scope:'all',lim:100,bk:null,open:null,sort:'cnt'},_brFcnt=null,_brFLast=null;
+let _brFs={q:'',scope:'all',lim:100,bk:null,open:null,sort:'cnt'},_brFcnt=null,_brFLast=null,_brFVis=[],_brFVisLbl='';
 async function _brRunFind(){
   const body=_brEl('brFBody'),q=_brFs.q,books=_brBooks();
   if(!q){_brFcnt=null;_brSyncScope();body.innerHTML='<div class="br-empty">찾을 낱말을 넣어 주세요.<br>띄어쓰기·쉼표는 없는 셈 치고 찾아요.<br>‘검색어 순서 자유’를 켜면 낱말이 떨어져 있어도 찾아요.<br>장절(요 3:16)을 넣으면 그 자리로 바로 가요.</div>';return;}
@@ -17489,6 +17495,7 @@ async function _brRunFind(){
     vis.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});
     if(vis.length>_brFs.lim)h+=more(vis.length-_brFs.lim);
   }
+  _brFVis=vis;_brFVisLbl=(bk!=null?books[bk]:scp==='ot'?'구약':scp==='nt'?'신약':scp==='book'?books[_brCur.b]:'전체');{const ex=_brEl('brFEx');if(ex)ex.disabled=!vis.length;}
   body.innerHTML=h;
   body.querySelectorAll('.br-more').forEach(mb=>mb.onclick=()=>{_brFs.lim+=200;const y=body.scrollTop;_brRunFind().then(()=>{body.scrollTop=y;});});
 }
@@ -17502,7 +17509,7 @@ function _brSyncScope(){
   _brFStripSync();
   const gb=_brEl('brFGrp');if(gb){const on=!!_brS('bibleFindGroup',false);gb.classList.toggle('on',on);gb.setAttribute('aria-pressed',on?'true':'false');}
 }
-// 책별 분포 띠 + 책별 개수 시트 (v. 26-1110-8, HB)
+// 책별 분포 띠 + 책별 개수 시트 (v. 26-1110-9, HB)
 function _brFStripSync(){
   const el=_brEl('brFStrip'),w=_brEl('brFSw');if(!el||!w)return;
   if(!_brFcnt||!_brFcnt.bk||!_brFcnt.all){el.innerHTML='';w.classList.remove('has');return;}
@@ -17939,6 +17946,14 @@ function _brBind(){
       tp.style.left=Math.max(0,Math.min(r.width-tp.offsetWidth,ir.left-r.left+ir.width/2-tp.offsetWidth/2))+'px';});
     st.addEventListener('mouseleave',()=>tp.classList.remove('on'));
     st.onclick=()=>{if(!_brFcnt||!_brFcnt.bk)return;tp.classList.remove('on');_brFBkRender();_brOpenSheet('brFBk',false);};}
+  // 검색 결과 내보내기 — 지금 보이는 갈래의 결과를 글로 복사 (탭 직후 동기로 복사: iOS)
+  $('brFEx').onclick=()=>{
+    if(!_brFVis.length)return;const books=_brBooks();
+    const txt='‘'+_brFs.q+'’ 검색 결과 · '+_brFVisLbl+' '+_brFVis.length.toLocaleString()+'개\n\n'
+      +_brFVis.map(([b,c,v,t])=>_bibleShort(books[b])+' '+c+':'+v+' — '+t).join('\n');
+    const ok=()=>showToast('검색 결과 '+_brFVis.length.toLocaleString()+'개를\n복사했어요');
+    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,()=>{_brCopyFallback(txt);ok();});return;}}catch(e){}
+    _brCopyFallback(txt);ok();};
   $('brFSc').onclick=_brCloseSheets;
   $('brFBkSort').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brFs.sort=b.dataset.v;_brFBkRender();};
   $('brFBkBody').onclick=e=>{const r=e.target.closest('[data-fbr]');if(!r)return;_brFs.bk=+r.dataset.fbr;_brFs.open=null;_brFs.lim=100;_brCloseSheets();_brSyncScope();_brRunFind();};
