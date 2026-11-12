@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-4";
+const APP_VERSION = "v. 26-1112-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -40506,11 +40506,7 @@ function makeBigItem(id,i,b,secColor){
   }
   const contactTaskBadge=document.createElement('span');
   contactTaskBadge.className='blk-contact-task-badge';
-  if(b.contactTask){
-    contactTaskBadge.innerHTML=_contactTaskSvg(11);
-    contactTaskBadge.title='연락할 일 — 눌러서 연락처 메뉴 열기';
-    _wireContactTaskBadge(contactTaskBadge,()=>b.text);
-  }
+  _contactBadgePaint(contactTaskBadge,b,11);
 
   const inp=document.createElement('input');
   inp.type='text';inp.value=b.text||'';inp.className='bi-inp';
@@ -40529,13 +40525,14 @@ function makeBigItem(id,i,b,secColor){
     if(_escRestoring){_escRestoring=false;return;} // ESC 복원 — 삭제/재렌더 안 함
     const arr=getBigs(tKey(),id);
     if(arr[i]){arr[i].text=inp.value;rawSave();updateTotal();}
+    let ac='';   // 글의 '@' 를 따라 연락할 일 표시를 켰나('on') · 껐나('off')
     if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSecBody(id);updateTotal();}
-    else if(_autoContactMark(arr[i],_origText)){renderSecBody(id);}
+    else if((ac=_autoContactSync(arr[i],_origText,!!(arr[i]&&arr[i].rid)))){renderSecBody(id);}
     autoSizeInput(inp);
     refreshTaskViewsLive(); // 텍스트 수정·빈값 삭제가 W/M 표시에도 즉시 반영
     // 반복 할일의 글자를 바꿨으면 "어디까지 바꿀까"를 묻는다 (글자는 이미 이 날짜
     // 것에만 들어가 있다 — 여기서 정하는 것은 다른 날짜로 옮길지 여부다)
-    _taskTextCommit('big',id,i,_origText,inp.value);
+    _taskTextCommit('big',id,i,_origText,inp.value,ac);
   };
   inp.onkeydown=e=>{
     // Enter = 편집을 마치고 그 줄을 고른 채로 빠져나온다 (Tab 은 예전처럼 다음 칸으로) — v26-1015-11, HB
@@ -40553,6 +40550,9 @@ function makeBigItem(id,i,b,secColor){
       e.preventDefault();
       const arr=getBigs(tKey(),id);
       if(arr[i]){arr[i].text=inp.value;rawSave();updateTotal();}
+      // Tab 으로 다음 칸에 가면 아래 blur 는 일찍 돌아간다(navigating) — '@' ↔ 연락할 일 표시는 여기서 맞추고,
+      // 줄을 다시 그리면 막 옮겨 갈 칸이 사라지니 아이콘만 그 자리에서 고친다.
+      if(arr[i]&&inp.value.trim()&&_autoContactSync(arr[i],_origText))_contactBadgePaint(inp.closest('.big-item')?.querySelector('.blk-contact-task-badge'),arr[i],11);
       navigating=true;
       const allBigInps=[...document.querySelectorAll(`#bl-${id} .swipe-wrap:not([hidden]) .bi-inp`)];
       const idx=allBigInps.indexOf(inp);
@@ -40742,11 +40742,7 @@ function makeSmItem(id,i,sm,secColor){
   }
   const contactTaskBadge=document.createElement('span');
   contactTaskBadge.className='blk-contact-task-badge';
-  if(sm.contactTask){
-    contactTaskBadge.innerHTML=_contactTaskSvg(10);
-    contactTaskBadge.title='연락할 일 — 눌러서 연락처 메뉴 열기';
-    _wireContactTaskBadge(contactTaskBadge,()=>sm.text);
-  }
+  _contactBadgePaint(contactTaskBadge,sm,10);
 
   const inp=document.createElement('input');
   inp.type='text';inp.value=sm.text||'';inp.className='si-inp';
@@ -40764,11 +40760,12 @@ function makeSmItem(id,i,sm,secColor){
     if(_escRestoring){_escRestoring=false;return;} // ESC 복원 — 삭제/재렌더 안 함
     const arr=getSmalls(tKey(),id);
     if(arr[i]){arr[i].text=inp.value;rawSave();}
+    let ac='';   // 글의 '@' 를 따라 연락할 일 표시를 켰나('on') · 껐나('off')
     if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSmList(id,secColor);updateSmCnt(id);}
-    else if(_autoContactMark(arr[i],_origText)){renderSmList(id,secColor);}
+    else if((ac=_autoContactSync(arr[i],_origText,!!(arr[i]&&arr[i].rid)))){renderSmList(id,secColor);}
     autoSizeInput(inp);
     refreshTaskViewsLive();
-    _taskTextCommit('small',id,i,_origText,inp.value);
+    _taskTextCommit('small',id,i,_origText,inp.value,ac);
   };
   inp.onkeydown=e=>{
     if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
@@ -40785,6 +40782,8 @@ function makeSmItem(id,i,sm,secColor){
       e.preventDefault();
       const arr=getSmalls(tKey(),id);
       if(arr[i]){arr[i].text=inp.value;rawSave();}
+      // Tab — 빅 줄과 같다 (blur 가 일찍 돌아가니 표시는 여기서, 아이콘만 그 자리에서)
+      if(arr[i]&&inp.value.trim()&&_autoContactSync(arr[i],_origText))_contactBadgePaint(inp.closest('.sm-item')?.querySelector('.blk-contact-task-badge'),arr[i],10);
       navigating=true;
       const allSmInps=[...document.querySelectorAll(`#sl-${id} .swipe-wrap:not([hidden]) .si-inp`)];
       const idx=allSmInps.indexOf(inp);
@@ -45063,7 +45062,7 @@ function toggleUrgentRank(){
   refreshTaskViewsLive();
 }
 
-// 새로 적는 할일 — 글에 '@' 가 들어 있으면 처음부터 '연락할 일' 로 표시한다 (고치는 경우는 아래 _autoContactMark).
+// 새로 적는 할일 — 글에 '@' 가 들어 있으면 처음부터 '연락할 일' 로 표시한다 (고칠 때 켜고 끄는 것은 아래 _autoContactSync).
 // 만든 시각 ct (ms) — 검색 '처음/최신 등록순' 이 본다 (v. 26-1102-15, HB). 이전 할일에는 없다(없으면 '오래된 것' 으로 친다).
 function _ctNow(it){if(it&&!it.ct)it.ct=Date.now();return it;}
 function _newTask(text){
@@ -45136,12 +45135,44 @@ function _mlAddTasks(type,dayKey,secId,lines,top){
   if(typeof refreshTaskViewsLive==='function')refreshTaskViewsLive();
   return items.length;
 }
-// 글에 '@' 가 새로 들어가면 '연락할 일' 로 자동 표시 — 편집을 마칠 때 한 번만.
-// 이미 '@' 가 있던 글은 건드리지 않는다 (사용자가 표시를 일부러 끈 것을 되살리지 않으려고).
-function _autoContactMark(item,origText){
-  if(!item||item.contactTask)return false;
-  if(String(item.text||'').indexOf('@')<0||String(origText||'').indexOf('@')>=0)return false;
-  item.contactTask=true;rawSave();return true;
+// ── 글의 '@' ↔ '연락할 일' 표시 (tests/test_contact_auto.js) ──
+// 고치기 전 글(oldText) → 고친 글(newText) 일 때 표시가 어떻게 되어야 하나. 켬 true · 끔 false · 그대로 null.
+//  · '@' 가 새로 들어가면 켠다. 이미 '@' 가 있던 글은 건드리지 않는다 (사람이 일부러 끈 것을 되살리지 않으려고).
+//  · '@' 가 있던 글에서 '@' 가 하나도 안 남으면 끈다 (HB 2026-11-12). 하나라도 남으면 그대로.
+//  · '@' 없이 사람이 메뉴로 켠 할일은 글을 어떻게 고쳐도 그대로 — 고치기 전에 '@' 가 없었으니 끌 까닭이 없다.
+// ⚠️ 반복 할일을 다른 날로 퍼뜨릴 때(_taskTextApply)도 날마다 이 규칙을 쓴다. 규칙은 여기 한 곳에서만 고칠 것.
+function _contactAtNext(on,oldText,newText){
+  const had=String(oldText||'').indexOf('@')>=0,has=String(newText||'').indexOf('@')>=0;
+  if(!on&&has&&!had)return true;
+  if(on&&had&&!has)return false;
+  return null;
+}
+const _CONTACT_OFF_MSG="'@' 가 없어져서\n연락할 일 표시를 해제했어요";
+// 편집을 마칠 때 한 번 — 그 날 것의 표시를 위 규칙대로 맞춘다. 바꾼 쪽을 돌려준다: 'on' · 'off' · ''(그대로).
+// 끈 것은 토스트로 알린다(초록 아이콘이 말없이 사라지면 왜 없어졌는지 모른다 · 다시 켜려면 메뉴의 '연락할 일').
+// quiet = 반복 할일이라 곧 '어디까지 바꿀까' 를 묻는다 — 그 창을 가리지 않게 여기서는 말하지 않고,
+//         고른 뒤의 토스트에 한 줄 덧붙인다(_taskTextApply · 고르지 않고 닫으면 _taskTextCommit 이 알린다).
+function _autoContactSync(item,origText,quiet){
+  if(!item)return '';
+  const v=_contactAtNext(!!item.contactTask,origText,item.text);
+  if(v===null)return '';
+  item.contactTask=v;rawSave();
+  if(!v&&!quiet)showToast(_CONTACT_OFF_MSG);
+  return v?'on':'off';
+}
+// 연락할 일 아이콘을 그 할일의 표시대로 칠한다 — 줄을 만들 때, 그리고 줄을 다시 그리지 않고
+// 표시만 바뀔 때(Tab 으로 다음 칸에 갈 때 — 다시 그리면 막 옮겨 간 칸이 사라진다).
+// 눌렀을 때의 동작은 한 번만 단다(_ctWired) — 껐다 켜도 연락처 메뉴가 두 번 열리지 않게.
+function _contactBadgePaint(el,item,px){
+  if(!el)return;
+  if(item&&item.contactTask){
+    el.innerHTML=_contactTaskSvg(px);
+    el.title='연락할 일 — 눌러서 연락처 메뉴 열기';
+    if(!el._ctWired){el._ctWired=true;_wireContactTaskBadge(el,()=>item.text);}
+    el.style.cursor='pointer';
+  }else{
+    el.innerHTML='';el.removeAttribute('title');el.style.cursor='';
+  }
 }
 function toggleTaskContact(){
   if(!_taskMenuCtx)return;
@@ -45861,7 +45892,9 @@ function _taskDeleteApply(type,secId,idx,scope,dayKey){
 // ═══════ 할일 — 글자를 고쳤을 때 범위 묻기 ═══════
 // 할일 글자는 화면에서 바로 고쳐지므로(누를 때마다 저장) 이미 이 날짜의 것은
 // 새 글자다. 여기서는 "다른 날짜에도 옮길까"만 정한다.
-function _taskTextCommit(type,secId,idx,oldText,newText){
+// ac = 손을 뗄 때 그 날 것의 연락할 일 표시를 글의 '@' 따라 켰나('on') · 껐나('off') (_autoContactSync).
+//      끈 것은 그 자리에서 말하지 않았으니(묻는 창을 가리지 않게) 고르면 그 토스트에, 고르지 않고 닫으면 여기서 알린다.
+function _taskTextCommit(type,secId,idx,oldText,newText,ac){
   if(oldText===newText)return;
   const k=tKey();   // ⚠️ 묻는 동안 날짜를 넘길 수 있다 — 여기서 붙잡아 둔다
   const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
@@ -45870,20 +45903,23 @@ function _taskTextCommit(type,secId,idx,oldText,newText){
   if(!newText.trim())return;   // 빈 칸은 삭제 흐름이 따로 있다
   _repScopeAsk({
     kind:'task',mode:'edit',
-    onPick:sc=>_taskTextApply(type,secId,idx,oldText,newText,sc,k)
+    onPick:sc=>_taskTextApply(type,secId,idx,oldText,newText,sc,k,ac),
+    onCancel:ac==='off'?()=>showToast(_CONTACT_OFF_MSG):null
   });
 }
-function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
+function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey,ac){
   const k=dayKey||tKey();
   const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
   const item=arr[idx];
   if(!item)return;
   const rid=item.rid;
   const root=_taskRepRootOf(rid);
-  // 글자를 옮겨 쓴다. 글에 '@' 가 새로 들어가 이 날 것이 '연락할 일' 로 표시됐으면(_autoContactMark) 그 표시도 함께 —
-  // 예전엔 글자만 퍼지고 표시는 이 날에만 남았다 (v. 26-1101-3). 표시를 **끄지는** 않는다(사람이 일부러 끈 날을 되살리지 않게)
-  const addContact=!!item.contactTask&&String(newText).indexOf('@')>=0&&String(oldText||'').indexOf('@')<0;
-  const tx=e=>{e.text=newText;if(addContact)e.contactTask=true;};
+  // 글자를 옮겨 쓴다 — 연락할 일 표시도 날마다 같은 규칙(_contactAtNext)으로: 그 날 글에 '@' 가 새로 들어가면 켜고,
+  // '@' 가 있던 글에서 하나도 안 남으면 끈다(HB 2026-11-12). 예전엔 켜기만 퍼지고 끄기는 이 날에만 남았다 (v. 26-1101-3).
+  // ⚠️ 날마다 그 날 것을 따로 보므로 사람이 일부러 끈 날은 되살리지 않고, '@' 없이 메뉴로 켠 날은 끄지 않는다.
+  const tx=e=>{const v=_contactAtNext(!!e.contactTask,e.text,newText);e.text=newText;if(v!==null)e.contactTask=v;};
+  // 이 날 것의 표시는 손 뗄 때 이미 맞췄다(ac). 화면에서 오면 늘 넘어온다 — 안 넘어오면(시험 · 옛 호출) 예전 짐작으로 '켬' 만 본다.
+  if(ac==null)ac=(!!item.contactTask&&_contactAtNext(false,oldText,newText)===true)?'on':'';
   beforeSave();
   if(scope==='one'){
     if(root&&root.item===item){
@@ -45894,7 +45930,10 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
       if(item.flag)one.flag=true;
       if(item.contactTask)one.contactTask=true;
       _carryTaskExtras(item,one,true);   // 하위 · 메모도 그 날 것 그대로 (예전엔 빠졌다 — v. 26-1101-1)
-      if(addContact)item.contactTask=false;   // '@' 로 붙은 표시는 이 날 것 몫 — 원본(앞날의 본보기)은 예전대로
+      // 손 뗄 때 '@' 따라 바뀐 표시는 이 날 것 몫 — 원본(앞날의 본보기)은 옛 글과 함께 예전 표시로 되돌린다.
+      // (예전엔 '켜졌으면 원본은 끈다' 로 짐작해서, 메뉴로 켜 둔 원본에 '@' 를 넣으면 원본 표시가 꺼졌다)
+      if(ac==='on')item.contactTask=false;
+      else if(ac==='off')item.contactTask=true;
       arr.splice(idx+1,0,one);
     } else {
       delete item.rid;      // 묶음에서 떼어 낸다 — 이 날짜만의 할일이 된다
@@ -45932,7 +45971,8 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
   save();
   if(tKey()===k)renderSecBody(secId);else renderToday();
   updateTotal();refreshTaskViewsLive();
-  showToast(scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요');
+  showToast((scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요')+
+    (ac==='off'?'\n연락할 일 표시도 해제했어요':''));
 }
 
 // ═══════ 할일 — 보조 속성(하위 · 메모 · 중요 · 연락할 일)을 바꿨을 때 범위 묻기 ═══════

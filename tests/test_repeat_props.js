@@ -12,6 +12,7 @@ const RULE = slice('function _repRule(rep){', 'function getDisplayEvents(k,secId
 const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
 const PRUNE = slice('function _subPrune(item){', 'function _subKey(');
 const TASK = slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec,markDone){');
+const CONTACT = slice('function _contactAtNext(', 'function _autoContactSync(');   // 글의 '@' ↔ 연락할 일 규칙 (시나리오 15~21)
 
 const T = '2026-11-01';   // 오늘
 function makeEnv(days) {
@@ -37,7 +38,7 @@ function makeEnv(days) {
   env.getSmalls = (k, id) => { const d = env.getDay(k); if (!d.small[id]) d.small[id] = []; return d.small[id]; };
   env.getEvents = (k, id) => { const d = env.getDay(k); if (!d.events) d.events = {}; if (!d.events[id]) d.events[id] = []; return d.events[id]; };
   const names = Object.keys(env);
-  const body = RULE + '\n' + SUBHELP + '\n' + PRUNE + '\n' + TASK + '\nreturn {' +
+  const body = RULE + '\n' + SUBHELP + '\n' + PRUNE + '\n' + CONTACT + '\n' + TASK + '\nreturn {' +
     ['materializeRepeatsFor', '_repHiddenOn', '_taskTextApply', '_repPropSnap', '_repPropKey',
      '_repPropApply', '_taskRepRootOf', 'eventRepeatsOnDate'].join(',') + '};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
@@ -298,6 +299,96 @@ console.log('시나리오 15 — 글에 "@" 를 넣어 연락할 일로 표시�
   it.text = '@철수 운동'; it.contactTask = true;
   api._taskTextApply('big', 'am', 0, '운동', '@철수 운동', 'one', T);
   sc.eq('원본에서 "이 할일만": 원본은 표시 없이 · 그 날 것만 표시', [!!at(ST, T)[0].contactTask, at(ST, T)[1].contactTask], [false, true]);
+}
+
+// ── 16~21: 글에서 '@' 를 지워 연락할 일 표시가 풀렸을 때 (HB 2026-11-12) ──
+// 화면은 손을 뗄 때 그 날 것의 표시를 먼저 끄고(_autoContactSync → 'off'), 그 결과를 범위 고르기로 넘긴다.
+// 다른 날에는 날마다 같은 규칙(_contactAtNext)을 쓴다 — 그 날 글에 '@' 가 있었고 표시가 켜져 있었으면 끈다.
+const AT = '@철수 운동';
+const offToday = ST => { const it = at(ST, T)[0]; it.text = '운동'; it.contactTask = false; return it; };   // _autoContactSync 가 한 일
+
+console.log('시나리오 16 — \'@\' 를 지우고 "모든 할일" → 원본 · 앞날도 표시가 풀린다 · 지난 기록은 그대로');
+{
+  const { ST, api, log } = makeEnv(series({ text: AT, contactTask: true }));
+  offToday(ST);
+  api._taskTextApply('big', 'am', 0, AT, '운동', 'all', T, 'off');
+  const root = at(ST, '2026-10-30')[0], next = at(ST, '2026-11-02')[0], past = at(ST, '2026-10-31')[0];
+  sc.eq('원본: 새 글 · 표시 풀림', [root.text, root.contactTask], ['운동', false]);
+  sc.eq('앞날 실체: 새 글 · 표시 풀림', [next.text, next.contactTask], ['운동', false]);
+  sc.eq('지난 실체는 기록이라 글 · 표시 그대로', [past.text, past.contactTask], [AT, true]);
+  api.materializeRepeatsFor('2026-11-03');
+  sc.eq('아직 안 생긴 날도 표시 없이 생긴다', [at(ST, '2026-11-03')[0].text, !!at(ST, '2026-11-03')[0].contactTask], ['운동', false]);
+  sc.eq('토스트: 무엇을 고쳤나 / 표시도 풀렸나', log.toasts[log.toasts.length - 1], '반복 전체를 고쳤어요\n연락할 일 표시도 해제했어요');
+}
+
+console.log('시나리오 17 — 원본(첫 날)에서 \'@\' 를 지우고 "이 할일만" → 원본은 글 · 표시를 되찾는다 (앞날은 예전대로 연락할 일)');
+{
+  const d = { [T]: day([{ text: AT, done: false, daily: true, rid: 'r1', repeat: rep(), contactTask: true }]) };
+  const { ST, api, log } = makeEnv(d);
+  offToday(ST);
+  api._taskTextApply('big', 'am', 0, AT, '운동', 'one', T, 'off');
+  const [r, one] = at(ST, T);
+  sc.eq('원본: 옛 글 · 표시 되찾음', [r.text, r.contactTask], [AT, true]);
+  sc.eq('그 날만 따로 선 할일: 새 글 · 표시 없음', [one.text, !!one.contactTask], ['운동', false]);
+  api.materializeRepeatsFor('2026-11-02');
+  sc.eq('내일은 예전대로 연락할 일', [at(ST, '2026-11-02')[0].text, at(ST, '2026-11-02')[0].contactTask], [AT, true]);
+  sc.eq('토스트', log.toasts[log.toasts.length - 1], '이 날짜만 고쳤어요\n연락할 일 표시도 해제했어요');
+}
+
+console.log('시나리오 18 — 실체에서 \'@\' 를 지우고 "이 할일만" → 그 날 것만 풀리고 원본 · 앞날은 그대로');
+{
+  const { ST, api } = makeEnv(series({ text: AT, contactTask: true }));
+  offToday(ST);
+  api._taskTextApply('big', 'am', 0, AT, '운동', 'one', T, 'off');
+  sc.eq('그 날 것: 묶음에서 떨어지고 표시 없음', [at(ST, T)[0].rid, at(ST, T)[0].contactTask], [undefined, false]);
+  sc.eq('원본 · 앞날 그대로', [at(ST, '2026-10-30')[0].contactTask, at(ST, '2026-11-02')[0].contactTask, at(ST, '2026-11-02')[0].text], [true, true, AT]);
+}
+
+console.log('시나리오 19 — 실체에서 \'@\' 를 지우고 "이번 및 이후"(쪼개기) → 옛 원본은 그대로, 오늘부터 표시 없음');
+{
+  const { ST, api } = makeEnv(series({ text: AT, contactTask: true }));
+  offToday(ST);
+  api._taskTextApply('big', 'am', 0, AT, '운동', 'future', T, 'off');
+  const root = at(ST, '2026-10-30')[0], today = at(ST, T)[0], next = at(ST, '2026-11-02')[0];
+  sc.eq('옛 원본: 어제까지 · 글 · 표시 그대로', [root.repeat.until, root.text, root.contactTask], ['2026-10-31', AT, true]);
+  sc.eq('오늘(새 원본): 표시 없음', [today.text, today.contactTask, !!today.repeat], ['운동', false, true]);
+  sc.eq('앞날 실체: 새 묶음 · 표시 없음', [next.rid === today.rid, next.text, next.contactTask], [true, '운동', false]);
+  api.materializeRepeatsFor('2026-11-03');
+  sc.eq('새로 생기는 날도 표시 없음', !!at(ST, '2026-11-03')[0].contactTask, false);
+}
+
+console.log('시나리오 20 — 날마다 따로 본다: \'@\' 가 남거나 · 메뉴로 켠 표시는 풀지 않는다');
+{
+  const { ST, api, log } = makeEnv(series({ text: '@철수 @영희 운동', contactTask: true }));
+  at(ST, T)[0].text = '@영희 운동';   // '@' 가 남았다 — 손 뗄 때 표시는 그대로('')
+  api._taskTextApply('big', 'am', 0, '@철수 @영희 운동', '@영희 운동', 'all', T, '');
+  sc.eq('\'@\' 가 남으면 원본 · 앞날 표시 유지', [at(ST, '2026-10-30')[0].contactTask, at(ST, '2026-11-02')[0].contactTask], [true, true]);
+  sc.eq('토스트에 표시 이야기는 없다', log.toasts[log.toasts.length - 1], '반복 전체를 고쳤어요');
+}
+{
+  const { ST, api } = makeEnv(series({ contactTask: true }));   // '운동' — '@' 없이 메뉴로 켬
+  at(ST, T)[0].text = '아침 운동';
+  api._taskTextApply('big', 'am', 0, '운동', '아침 운동', 'all', T, '');
+  sc.eq('메뉴로 켠 표시는 글을 고쳐도 유지', [at(ST, '2026-10-30')[0].contactTask, at(ST, '2026-11-02')[0].contactTask], [true, true]);
+}
+{
+  const d = series({ text: AT, contactTask: true });
+  d['2026-11-02'].big.am[0].contactTask = false;   // 그 날만 사람이 일부러 끔
+  d['2026-11-02'].big.am[0].text = '@철수 @영희 운동';   // 그 날만 글도 달라졌다
+  const { ST, api } = makeEnv(d);
+  offToday(ST);
+  api._taskTextApply('big', 'am', 0, AT, '운동', 'all', T, 'off');
+  sc.eq('일부러 끈 날은 꺼진 채 (되살리지 않는다)', at(ST, '2026-11-02')[0].contactTask, false);
+}
+
+console.log('시나리오 21 — 원본에서 \'@\' 를 넣고 "이 할일만": 메뉴로 켜 둔 원본의 표시는 지킨다 (예전엔 꺼졌다)');
+{
+  const d = { [T]: day([{ text: '운동', done: false, daily: true, rid: 'r1', repeat: rep(), contactTask: true }]) };
+  const { ST, api } = makeEnv(d);
+  at(ST, T)[0].text = '@철수 운동';   // 이미 켜져 있었으니 손 뗄 때 바뀐 것 없음('')
+  api._taskTextApply('big', 'am', 0, '운동', '@철수 운동', 'one', T, '');
+  sc.eq('원본: 옛 글 · 표시 유지', [at(ST, T)[0].text, at(ST, T)[0].contactTask], ['운동', true]);
+  sc.eq('그 날 것: 새 글 · 표시', [at(ST, T)[1].text, at(ST, T)[1].contactTask], ['@철수 운동', true]);
 }
 
 sc.done();

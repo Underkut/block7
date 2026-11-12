@@ -45,7 +45,7 @@ function makeEnv(items, tabId) {
   };
   env.getBigs(T, 'am').push(...items);
   const names = Object.keys(env);
-  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDoneYday,nextAfterDoneYdayPicked,_dupDone:()=>_dupDone,nextAfterDonePicked,_autoContactMark,_newTask};';
+  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDoneYday,nextAfterDoneYdayPicked,_dupDone:()=>_dupDone,nextAfterDonePicked,_autoContactSync,_newTask};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
   return { ST, api, log, inp };
 }
@@ -112,17 +112,19 @@ console.log('\n시나리오 4 — 이미 완료한 할일도 문제없다 · 없
   sc.eq('할일이 없으면(이미 사라짐) 만들지 않는다', Object.keys(f.ST.days).filter(k => k !== T && at(f.ST, k).length), []);
 }
 
-console.log("\n시나리오 5 — '@' 자동 연락 표시");
+console.log("\n시나리오 5 — '@' 자동 연락 표시 (켜기 · 끄기 — 자세한 것은 tests/test_contact_auto.js)");
 {
-  const { api } = makeEnv([]);
+  const { api, log } = makeEnv([]);
   let it = { text: '@홍길동 전화', done: false };
-  sc.eq("새로 생긴 '@' 는 표시한다", [api._autoContactMark(it, '전화'), it.contactTask], [true, true]);
+  sc.eq("새로 생긴 '@' 는 표시한다", [api._autoContactSync(it, '전화'), it.contactTask], ['on', true]);
   it = { text: '@홍길동 전화 급함', done: false };
-  sc.eq("이미 '@' 가 있던 글은 건드리지 않는다 (직접 끈 표시를 되살리지 않는다)", [api._autoContactMark(it, '@홍길동 전화'), it.contactTask], [false, undefined]);
+  sc.eq("이미 '@' 가 있던 글은 건드리지 않는다 (직접 끈 표시를 되살리지 않는다)", [api._autoContactSync(it, '@홍길동 전화'), it.contactTask], ['', undefined]);
   it = { text: '그냥 일', done: false };
-  sc.eq("'@' 가 없으면 아무것도 안 한다", [api._autoContactMark(it, '그냥'), it.contactTask], [false, undefined]);
+  sc.eq("'@' 가 없으면 아무것도 안 한다", [api._autoContactSync(it, '그냥'), it.contactTask], ['', undefined]);
   it = { text: 'a@b', done: false, contactTask: true };
-  sc.eq('이미 표시된 것은 그대로', api._autoContactMark(it, 'a'), false);
+  sc.eq('이미 표시된 것은 그대로', api._autoContactSync(it, 'a'), '');
+  it = { text: '홍길동 전화', done: false, contactTask: true };
+  sc.eq("'@' 가 있던 글에서 '@' 를 지우면 표시를 푼다 (HB 2026-11-12)", [api._autoContactSync(it, '@홍길동 전화'), it.contactTask, log.toast.length], ['off', false, 1]);
 }
 
 console.log("\n시나리오 6 — 새로 적을 때도 '@' 가 있으면 처음부터 연락할 일");

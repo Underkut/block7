@@ -15,7 +15,8 @@ const RULE = slice('function _repRule(rep){', 'function getDisplayEvents(k,secId
 // 하위·메모를 실어 나르는 순수 함수 — _movedTaskCopy·_freshTaskCopy 등
 // 항목을 새로 만드는 자리들이 모두 이것을 쓴다 (tests/test_subtask.js 가 규칙을 지킨다)
 const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
-const TASK = SUBHELP + '\n' + slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec,markDone){');
+const CONTACT = slice('function _contactAtNext(', 'function _autoContactSync(');   // 글자를 퍼뜨릴 때 '@' ↔ 연락할 일 규칙 (tests/test_contact_auto.js)
+const TASK = SUBHELP + '\n' + CONTACT + '\n' + slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec,markDone){');
 
 function makeEnv(days, todayK, extra) {
   const ST = { days: days || {} };
