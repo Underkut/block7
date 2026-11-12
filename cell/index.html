@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1109-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1112-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -387,7 +387,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1109-2';
+const APP_VERSION = 'v. 26-1112-1';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -934,11 +934,19 @@ function linkVisits(members, visits, today) {
   const put = (m, v) => { const o = out[m.id] || (out[m.id] = { n: 0, last: '', recent: [] }); o.n++; o.recent.push(v); if ((v.ymd || '') > o.last) o.last = v.ymd || o.last; };
   for (const v of visits || []) {
     if (v.archived) continue;
-    const k = normName(v.name); if (!k) continue;
-    let hit = byKey.get(k);
-    if (!hit) { const alt = swapKeys({ name: v.name }); for (const a of alt) if (byKey.has(a)) { hit = byKey.get(a); break; } }
-    if (!hit && k.length >= 3) { const c = [...byKey.keys()].filter(x => x.length >= 3 && k.includes(x)); if (c.length === 1) hit = byKey.get(c[0]); }
-    if (hit && hit.length === 1) put(hit[0], v);
+    // 1112-M 여러 분이 함께한 심방은 이름 하나하나로 맞춘다(심방 노트가 나눠 준 v.names). 셀 표시('김철수 셀')만 적은 기록은 사람이 없어 안 붙는다.
+    //   그 분 몫 글(v.notes)이 있으면 그것을 보여 준다. 예전 꼴(v.names 없음 · 출석)은 이름 칸 그대로 한 분.
+    const names = Array.isArray(v.names) ? v.names : [v.name], done = new Set();
+    for (const nm of names) {
+      const k = normName(nm); if (!k) continue;
+      let hit = byKey.get(k);
+      if (!hit) { const alt = swapKeys({ name: nm }); for (const a of alt) if (byKey.has(a)) { hit = byKey.get(a); break; } }
+      if (!hit && k.length >= 3) { const c = [...byKey.keys()].filter(x => x.length >= 3 && k.includes(x)); if (c.length === 1) hit = byKey.get(c[0]); }
+      if (!hit || hit.length !== 1 || done.has(hit[0].id)) continue;
+      done.add(hit[0].id);
+      const mine = (v.notes || []).find(n => normName(n.name) === k);
+      put(hit[0], mine ? Object.assign({}, v, { text: mine.text, mine: true }) : v);
+    }
   }
   for (const o of Object.values(out)) {
     o.recent.sort((a, b) => (b.ymd || '').localeCompare(a.ymd || '')); o.recent = o.recent.slice(0, 3);

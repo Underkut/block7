@@ -15,6 +15,7 @@
 //  ⑪ (C2-4) 폼 ↔ '속성' 탭 — 처음엔 폼 선택지를 탭으로 · 폼에서 더함 → 탭 · 앱에서 더함/숨김/다시 쓰기 → 폼 · '기타' 글을 선택지로 · 폼에 '장소 · 메모' 질문 · 다시 맞춰도 폼을 또 고치지 않는다
 //  ⑫ (C3) 계획 ↔ '심방' 캘린더 — 만들기 · 캘린더에서 옮김/지움 따라가기 · 제목 앞뒤 글자 · 만들다 끊긴 일정 이어 붙이기 · 여벌 지우기 ·
 //     계획 → 기록(✓) · 캘린더에만 있는 일정 가져오기 · 앱에서 취소 → 일정 지움 · 캘린더에 안 넣기
+//  ㉟ (1112-M) 여러 이름 — 쉼표 · Enter 로 알약 · × 와 되돌리기 · '○○ 셀' → 셀 케어 명단 / 지난 심방 명단 · 한 분씩 → 내용 칸 ◆ 줄 · 열람 · 성도 화면 · 안 바꾸면 그대로
 //  ㉞ (1110-Q) 다음 심방 질문 — 붙여넣기 · 한 줄 적기 · 체크 · 지우기 → '다음 질문' 탭 한 줄 · BLOCK7 로 '이름 심방' + 하위 항목
 //  ⑬ (C3b) 할 일 → BLOCK7 할일 — 쪽지함에 쪽지 한 줄(종류 · 이름 · 날짜만, 나눈 이야기 없음) · 액션 탭에 보낸 날 · 보낸 뒤 단추에 날짜 · 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
 //  ⑭ (C3c) 기록도 '심방' 캘린더에 — 2026-10-01 부터 기록마다 ✓ 하루 종일 하나 · 계획에서 온 기록은 건너뜀 · 기록 날짜를 고치면 일정도 · 캘린더에서 옮겨도 기록 날짜로 · 지운 기록의 일정은 지움 · 다시 맞춰도 그대로
@@ -179,7 +180,7 @@ async function route(r) {
 
   // ①② 새 기록
   await page.click('[data-act="addrec"]'); await tidy();
-  await page.fill('[data-f="name"]', '새사람');
+  await page.fill('[data-f="nameq"]', '새사람');
   await talk(page, [['s', '새로 적은 이야기'], ['m', '둘째 줄']]);
   await page.click('.layer [data-act="fone"][data-k="method"][data-v="카톡, 문자"]');
   await page.click('.layer [data-act="fone"][data-k="depth"][data-v="깊음"]');
@@ -348,7 +349,7 @@ async function route(r) {
   for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   await page.click('.ph-nav [data-act="tab"][data-v="plan"]'); await tidy();
   await page.click('.fab[data-act="addplan"]'); await tidy();
-  await page.fill('.layer [data-f="name"]', '하하하');
+  await page.fill('.layer [data-f="nameq"]', '하하하');
   await page.fill('.layer [data-f="date"]', D2); await page.fill('.layer [data-f="time"]', '14:00');
   await page.fill('.layer [data-f="why"]', '지난번 이야기 이어서');
   await page.click('.layer [data-act="fone"][data-k="method"][data-v="티타임"]');
@@ -386,7 +387,7 @@ async function route(r) {
   eq('⑫ 같은 계획의 여벌 일정 → 계획이 가리키는 것만 남긴다', [evOf('evd1').status, evOf('evd2').status], ['confirmed', 'cancelled']);
   // 계획 → 기록
   await page.click('.pcard:has-text("거거거") [data-act="plan2rec"]'); await tidy();
-  eq('⑫ 기록 쓰기 — 이름 · 날짜가 채워져 있다', [await page.inputValue('.layer [data-f="name"]'), await page.$eval('.layer [data-f="ymd"]', e => e.value).catch(() => '?')], ['거거거', D2]);
+  eq('⑫ 기록 쓰기 — 이름 · 날짜가 채워져 있다', [await page.evaluate(() => topLayer().form.name), await page.$eval('.layer [data-f="ymd"]', e => e.value).catch(() => '?')], ['거거거', D2]);
   await talk(page, [['n', '계획대로 만남']]);
   await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
   const gr = R.rows.find(r => r[2] === '거거거') || [];
@@ -406,7 +407,7 @@ async function route(r) {
   eq('⑫ 앱에서 계획 취소 → 계획 취소됨 · 일정 지움', [prow('더더더')['상태'], evOf('evx').status], ['취소됨', 'cancelled']);
   // 캘린더에 안 넣기
   await page.click('.fab[data-act="addplan"]'); await tidy();
-  await page.fill('.layer [data-f="name"]', '러러러'); await page.fill('.layer [data-f="date"]', D3);
+  await page.fill('.layer [data-f="nameq"]', '러러러'); await page.fill('.layer [data-f="date"]', D3);
   await page.click('.layer [data-act="plancal"]');
   const nIns2 = LOG.filter(x => x[0] === 'cal+').length;
   await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
@@ -414,7 +415,7 @@ async function route(r) {
   eq("⑫ 캘린더에 안 넣기 → 일정ID '없음' · 일정 안 만든다(다시 맞춰도)", [prow('러러러')['캘린더 일정ID'], LOG.filter(x => x[0] === 'cal+').length], ['없음', nIns2]);
   // (코덱스 검토 PR 977) ① 기록은 저장됐는데 계획 표시가 끊김 → 같은 기록을 두 번 만들지 않고, 다음에 '기록됨' 으로
   await page.click('.fab[data-act="addplan"]'); await tidy();
-  await page.fill('.layer [data-f="name"]', '머머머'); await page.fill('.layer [data-f="date"]', D1);
+  await page.fill('.layer [data-f="nameq"]', '머머머'); await page.fill('.layer [data-f="date"]', D1);
   await page.click('.layer [data-act="plancal"]');
   await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1500);
   await page.click('.pcard:has-text("머머머") [data-act="plan2rec"]'); await tidy();
@@ -428,7 +429,7 @@ async function route(r) {
   eq('⑫ 남은 계획에서 다시 \'기록 쓰기\' → 새 기록 창을 열지 않고 \'기록됨\' 으로 맞춘다', [await page.$$eval('.layer [data-act="saverec"]', x => x.length), nMe(), prow('머머머')['상태'], prow('머머머')['기록ID'] === (R.rows.find(r => r[2] === '머머머') || [])[9]], [0, 1, '기록됨', true]);
   // ② 엉뚱한 캘린더(다른 계정 것)를 보고 있으면 — 캘린더를 못 읽었으니 계획을 하나도 취소하지 않는다
   await page.click('.fab[data-act="addplan"]'); await tidy();
-  await page.fill('.layer [data-f="name"]', '버버버'); await page.fill('.layer [data-f="date"]', D3);
+  await page.fill('.layer [data-f="nameq"]', '버버버'); await page.fill('.layer [data-f="date"]', D3);
   await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
   await page.evaluate(() => { DATA.calId = 'calOld'; DATA.calOurs = []; });
   await reload();
@@ -804,7 +805,7 @@ async function route(r) {
     await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("그제")'); await page.waitForTimeout(200);
     eq('㉔ 그제를 누르면 날짜 · 요일 글자가 따라감', [await page.evaluate(() => topLayer().form.ymd), await page.$eval('.layer:last-child .dsel', e => e.textContent)], await page.evaluate(() => { const y = ymdAdd(today(), -2); return [y, dayName(y)]; }));
     await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("오늘")'); await page.waitForTimeout(200);
-    await page.fill('.layer:last-child [data-f="name"]', '장소사람');
+    await page.fill('.layer:last-child [data-f="nameq"]', '장소사람');
     await talk(page, [['n', '카페에서 만남']]);
     eq('㉔ 장소는 알약 + 더하기(직접 적기 칸은 접힘)', [await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aplus"]', x => x.length), await page.$$eval('.layer:last-child [data-f="place"]', x => x.length)], [1, 0]);
     await plus(page, '.layer:last-child', 'place'); await page.click('.layer:last-child [data-act="aetc"][data-k="place"]'); await page.waitForTimeout(200);
@@ -885,7 +886,15 @@ async function route(r) {
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/cells.png' });
     await page.click(LE + ' .cmem [data-v="셀원하나"]'); await page.waitForTimeout(300);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/recent.png', clip: { x: 0, y: 0, width: 420, height: 260 } });
-    eq('㉗ 셀원을 누르면 팝업이 닫히고 이름 칸에', [await page.evaluate(() => topLayer().type), await page.inputValue('.layer:last-child [data-f="name"]')], ['edit', '셀원하나']);
+    // 1112-M 여럿 고르기 — 누르면 넣고(창은 그대로) 다시 누르면 뺀다 · '셀 전체' 는 셀 표시 + 모두를 넣고 닫는다
+    const under = () => page.evaluate(() => S.layers[S.layers.length - 2].form.name);
+    eq('㉗ 셀원을 누르면 이름 칸에 들어가고 창은 그대로 (눌린 모양)', [await page.evaluate(() => topLayer().type), await under(), await page.getAttribute(LE + ' .cmem [data-v="셀원하나"]', 'aria-pressed')], ['cellpick', '셀원하나', 'true']);
+    await page.click(LE + ' .cmem [data-v="셀원둘"]'); await page.waitForTimeout(200);
+    await page.click(LE + ' .cmem [data-v="셀원하나"]'); await page.waitForTimeout(200);
+    eq('㉗ 하나 더 · 다시 누르면 빠진다', await under(), '셀원둘');
+    await page.click(LE + ' .cgrp:has-text("하늘셀") [data-act="cellall"]'); await page.waitForTimeout(300);
+    eq("㉗ '셀 전체' → 셀 표시 + 셀리더 + 셀원 (이미 있던 분은 그대로) · 창 닫힘", [await page.evaluate(() => topLayer().type), await page.evaluate(() => topLayer().form.name)], ['edit', '하늘 셀, 셀원둘, 가리더, 셀원하나']);
+    eq('㉗ 이름 알약 — 셀 표시 + 세 분', await page.$$eval(LE + ' .who .wc', x => x.map(e => (e.classList.contains('grp') ? '셀:' : '') + e.textContent)), ['셀:하늘 셀', '셀원둘', '가리더', '셀원하나']);
     await page.evaluate(() => { topLayer().dirty = false; localStorage.removeItem(CELL_SB_KEY); }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
@@ -895,7 +904,7 @@ async function route(r) {
   { const LE = '.layer:last-child', IN = LE + ' [data-f="tk:in"]', RT = tab('Form Responses 1');
     const on = () => page.$eval(LE + ' [data-act="tkw"][aria-pressed="true"]', e => e.dataset.v);
     const lines = i => page.$$eval(LE + ' .tp[data-tp="' + i + '"] .ln', x => x.map(e => e.classList[1] + ':' + (e.querySelector('textarea') ? e.querySelector('textarea').value : e.querySelector('.tx').textContent)));
-    await page.fill(LE + ' [data-f="name"]', '주제사람');
+    await page.fill(LE + ' [data-f="nameq"]', '주제사람');
     eq('㉘ 처음엔 칸 하나 · 입력줄은 성도 차례', [await page.$$eval(LE + ' .tp', x => x.length), await on()], [1, 's']);
     await page.fill(LE + ' [data-f="tk:t:0"]', '어머님 수술');
     await page.click(LE + ' [data-act="tktags"][data-k="0"]'); await page.waitForTimeout(150);
@@ -1050,7 +1059,7 @@ async function route(r) {
     await pp.click('[data-act="addrec"]'); await pp.waitForTimeout(500);
     const LE = '.layer:last-child';
     const keys = await pp.$$eval(LE + ' .crow', x => x.map(e => e.dataset.crow));
-    eq('㉜ 폰 — 누구 · 언제 · 이야기는 펴 있고, 고르는 칸은 접힌 줄(구분 · 어떻게 · … · 깊이 · 태그 · 할 일)', [await pp.$$eval(LE + ' .edf.e-narrow', x => x.length), keys[0], keys[1], keys.slice(-3), await pp.$$eval(LE + ' .crow.open', x => x.length), await pp.isVisible(LE + ' [data-f="name"]'), await pp.isVisible(LE + ' [data-f="tk:in"]')],
+    eq('㉜ 폰 — 누구 · 언제 · 이야기는 펴 있고, 고르는 칸은 접힌 줄(구분 · 어떻게 · … · 깊이 · 태그 · 할 일)', [await pp.$$eval(LE + ' .edf.e-narrow', x => x.length), keys[0], keys[1], keys.slice(-3), await pp.$$eval(LE + ' .crow.open', x => x.length), await pp.isVisible(LE + ' [data-f="nameq"]'), await pp.isVisible(LE + ' [data-f="tk:in"]')],
       [1, 'roles', 'method', ['depth', 'tags', 'acts'], 0, true, true]);
     eq('㉜ 접힌 줄의 알약은 보이지 않는다', await pp.isVisible(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]'), false);
     await pp.click(LE + ' [data-act="crow"][data-k="tags"]'); await pp.waitForTimeout(450);
@@ -1059,10 +1068,10 @@ async function route(r) {
     await pp.click(LE + ' [data-act="crow"][data-k="depth"]'); await pp.waitForTimeout(450);
     await pp.click(LE + ' [data-act="fone"][data-k="depth"][data-v="깊음"]'); await pp.waitForTimeout(150);
     eq('㉜ 다른 줄을 펴면 앞 줄은 접힌다(하나씩)', [await pp.$$eval(LE + ' .crow.open', x => x.map(e => e.dataset.crow)), await pp.$eval(LE + ' .crow[data-crow="depth"] .crow-h .v', e => e.textContent)], [['depth'], '깊음']);
-    await pp.fill(LE + ' [data-f="name"]', '폰사람');
+    await pp.fill(LE + ' [data-f="nameq"]', '폰사람');
     await talk(pp, [['s', '폰에서 적은 이야기']]);
     await pp.setViewportSize({ width: 820, height: 700 }); await pp.waitForTimeout(400);
-    eq('㉜ 폭이 700px 을 넘으면 카드(A)로 다시 그리고 · 쓰던 것은 그대로', await pp.evaluate(L => [!!document.querySelector(L + ' .edf.e-wide'), document.querySelector(L + ' [data-f="name"]').value, topLayer().form.tags.slice(), topLayer().form.depth], LE), [true, '폰사람', ['학교'], '깊음']);
+    eq('㉜ 폭이 700px 을 넘으면 카드(A)로 다시 그리고 · 쓰던 것은 그대로', await pp.evaluate(L => [!!document.querySelector(L + ' .edf.e-wide'), document.querySelector(L + ' [data-f="nameq"]').value, topLayer().form.tags.slice(), topLayer().form.depth], LE), [true, '폰사람', ['학교'], '깊음']);
     await pp.setViewportSize({ width: 375, height: 700 }); await pp.waitForTimeout(400);
     await pp.click(LE + ' [data-act="saverec"]'); await pp.waitForTimeout(1500);
     const pr = (tab('Form Responses 1').rows || []).find(r => r[2] === '폰사람') || [];
@@ -1105,6 +1114,65 @@ async function route(r) {
     await page.click('.layer:last-child [data-act="b7send"]'); await page.waitForTimeout(1200);
     const ib = await page.evaluate(() => window.__inbox), nt = (ib[0] || [])[1] || {};
     eq('㉞ 쪽지 한 줄 — 내 쪽지함 · 이름 심방 · 하위 항목 · 나눈 이야기 없음', [ib.length, (ib[0] || [])[0], nt.text, JSON.stringify(nt.subs), JSON.stringify(ib).includes('사적인')], [1, 'pray/u/c/b7inbox', '파파파 심방', JSON.stringify(['셋째 질문']), false]);
+  }
+
+  // ㉟ (1112-M) 한 심방에 여러 이름 · '○○ 셀' 명단 · 한 분씩 → 시트 한 줄(이름 칸 쉼표 · 내용 칸 '◆ 이름' 줄)
+  {
+    for (let i = 0; i < 5; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+    await page.evaluate(() => { CELLS.state = 'idle'; CELLS.groups = null; try { localStorage.removeItem(CELL_SB_KEY); } catch (e) { } openEdit(null); }); await tidy();
+    const LM = '.layer:last-child', Q = LM + ' [data-f="nameq"]', RT = tab('Form Responses 1');
+    const chips = () => page.$$eval(LM + ' .who .wc', x => x.map(e => (e.classList.contains('grp') ? '셀:' : '') + e.textContent));
+    await page.click(Q); await page.keyboard.type('여럿가, 여럿나,'); await page.waitForTimeout(300);
+    eq('㉟ 쉼표를 치면 알약 · 입력 칸은 비고 계속 쓰는 중(자판 그대로)', [await chips(), await page.inputValue(Q), await page.evaluate(() => document.activeElement && document.activeElement.dataset.f)], [['여럿가', '여럿나'], '', 'nameq']);
+    eq('㉟ 두 분이면 한 분씩 칸 둘', await page.$$eval(LM + ' .pnote .pn-h', x => x.map(e => e.textContent)), ['여럿가', '여럿나']);
+    await page.keyboard.type('여럿다'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
+    eq('㉟ Enter 로도 알약', await chips(), ['여럿가', '여럿나', '여럿다']);
+    await page.fill(LM + ' [data-f="pn:1"]', '여럿나 몫 이야기\n둘째 줄');
+    await page.click(LM + ' .who .wc:has-text("여럿나") [data-act="whox"]'); await page.waitForTimeout(300);
+    eq('㉟ × 로 빼면 그 분 몫 글도 함께 빠지고 되돌리기가 뜬다', [await chips(), await page.evaluate(() => !!topLayer().form.pn['여럿나']), await page.$$eval('.toast-act', x => x.length)], [['여럿가', '여럿다'], false, 1]);
+    await page.click('.toast-act'); await page.waitForTimeout(300);
+    eq('㉟ 되돌리기 → 이름 · 글 다시', [await chips(), await page.evaluate(() => topLayer().form.pn['여럿나'].text)], [['여럿가', '여럿다', '여럿나'], '여럿나 몫 이야기\n둘째 줄']);
+    // '○○ 셀' — 셀 케어 명단(읽기만)
+    await page.evaluate(() => localStorage.setItem(CELL_SB_KEY, JSON.stringify({ access_token: 'tok', refresh_token: 'rt', expires_at: Math.floor(Date.now() / 1000) + 3600 })));
+    const nCc = LOG.length;
+    await page.click(Q); await page.keyboard.type('나무 셀'); await page.waitForTimeout(200);
+    eq("㉟ '○○ 셀' 을 치면 후보 맨 앞에 '명단 불러오기'", await page.$eval(LM + ' #nameSugg .grpsg', e => e.textContent), '나무 셀 명단 불러오기');
+    await page.keyboard.press('Enter'); await page.waitForTimeout(1500);
+    eq('㉟ 셀 케어 명단 → 셀 표시(맨 앞) + 셀리더 + 셀원 알약 · 셀 케어엔 읽기만', [await chips(), LOG.slice(nCc).filter(x => x[0] === 'cc-write').length], [['셀:나무 셀', '여럿가', '여럿다', '여럿나', '나리더', '셀원셋'], 0]);
+    eq('㉟ 몇 분을 넣었는지 알린다', await page.$eval('.toast', e => e.textContent), '나무 셀 명단에서\n2명을 넣었습니다\n안 오신 분은 × 로 빼 주세요');
+    if (process.env.SHOT) { await page.$eval(LM + ' .who', e => e.scrollIntoView({ block: 'center' })); await page.waitForTimeout(200); await page.screenshot({ path: process.env.SHOT + '/multi-who.png' }); }
+    await page.fill(LM + ' [data-f="pn:0"]', '여럿가 몫');
+    await talk(page, [['s', '함께 나눈 이야기']], LM);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/multi-edit.png' });
+    await page.click(LM + ' [data-act="saverec"]'); await page.waitForTimeout(2000);
+    const row = (RT.rows || []).find(r => String(r[2]).startsWith('나무 셀')) || [], H = RT.rows[0];
+    eq("㉟ 시트 한 줄 — 이름 칸 쉼표(셀 표시 맨 앞) · 내용 칸 끝에 '◆ 이름' 줄(이름 칸 차례, 빈 칸은 빠짐)", [row[2], row[H.indexOf('내용')]],
+      ['나무 셀, 여럿가, 여럿다, 여럿나, 나리더, 셀원셋', '성도: 함께 나눈 이야기\n\n◆ 여럿가\n여럿가 몫\n\n◆ 여럿나\n여럿나 몫 이야기\n둘째 줄']);
+    await page.waitForTimeout(800);
+    eq("㉟ '심방' 캘린더 제목은 셀 표시만(사람 이름을 늘어놓지 않음)", CAL.events.filter(e => e.status !== 'cancelled' && /나무 셀/.test(e.summary || '')).map(e => /여럿/.test(e.summary) ? 'X' : 'ok'), ['ok']);
+    // 열람 · 성도 화면
+    const key = await page.evaluate(() => (M().visits.find(v => v.name.startsWith('나무 셀')) || {}).key);
+    await page.evaluate(k => openLayer('detail', { key: k }), key); await tidy();
+    eq('㉟ 열람 — 셀 표시 + 다섯 분 이름(누르면 그 분) · 한 분씩 둘', [await page.$eval(LM + ' .dt-who .grp', e => e.textContent), await page.$$eval(LM + ' .dt-who button[data-act="person"]', x => x.map(e => e.dataset.v)), await page.$$eval(LM + ' .pnv .pn-h', x => x.map(e => e.dataset.v))],
+      ['나무 셀', ['여럿가', '여럿다', '여럿나', '나리더', '셀원셋'], ['여럿가', '여럿나']]);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/multi-detail.png' });
+    await page.click(LM + ' .dt-who button[data-v="여럿나"]'); await tidy();
+    eq('㉟ 성도 화면(여럿나) — 함께한 심방이 그 분 흐름에 · 그 분 몫 글 첫 줄 · 함께 N분', await page.$$eval(LM + ' .tl button[data-act="open"]', x => x.map(e => e.querySelector('.t2').textContent + '|' + ((e.querySelector('.withn') || {}).textContent || ''))), ['여럿나 몫 이야기|함께 4분']);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    // 안 바꾸고 저장 → 시트에 아무것도 안 쓴다
+    const before = JSON.stringify(RT.rows);
+    await page.click(LM + ' [data-act="edit"]'); await tidy();
+    eq('㉟ 고치기 — 알약 · 한 분씩 글 그대로', [await chips(), await page.inputValue(LM + ' [data-f="pn:2"]')], [['셀:나무 셀', '여럿가', '여럿다', '여럿나', '나리더', '셀원셋'], '여럿나 몫 이야기\n둘째 줄']);
+    await page.click(LM + ' [data-act="saverec"]'); await page.waitForTimeout(1500);
+    eq('㉟ 안 바꾸고 저장하면 시트 그대로', JSON.stringify(RT.rows) === before, true);
+    // 셀 케어를 못 읽으면 — 지난번 그 셀 심방 명단
+    for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+    await page.evaluate(() => { CELLS.state = 'idle'; CELLS.groups = null; localStorage.removeItem(CELL_SB_KEY); openEdit(null); }); await tidy();
+    await page.click(Q); await page.keyboard.type('나무 셀'); await page.keyboard.press('Enter'); await page.waitForTimeout(1000);
+    eq('㉟ 셀 케어 로그인이 없으면 지난번 그 셀 심방 명단으로', [await chips(), await page.$eval('.toast', e => e.textContent.split('\n')[0])], [['셀:나무 셀', '여럿가', '여럿다', '여럿나', '나리더', '셀원셋'], '지난번 나무 셀 심방 명단에서']);
+    await page.click(Q); await page.keyboard.type('없는 셀'); await page.keyboard.press('Enter'); await page.waitForTimeout(800);
+    eq('㉟ 어디에도 없는 셀이면 셀 표시만 두고 알린다', [(await chips())[1], await page.$eval('.toast', e => e.textContent.split('\n')[0])], ['셀:없는 셀', '없는 셀 명단을 찾지 못했습니다']);
+    await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
   eq('⑦ 화면 오류 없음', errs, []);

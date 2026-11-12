@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1109-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1112-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1109-2';
+const APP_VERSION = 'v. 26-1112-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4096,9 +4096,15 @@ async function careLoadP() {
   const L = UI.layers[UI.layers.length - 1], el = topLayerEl(), a = document.activeElement;
   if (L && L.type === 'target' && el && !(a && el.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) fillLayer(el, L);
 }
+// 1112-M 여러 분이 함께한 심방은 이름 하나하나로(심방 노트가 나눠 준 v.names — 예전 꼴은 이름 칸 그대로). 그 분 몫 글(v.notes)이 있으면 그것을 보여 준다
+function careVisitFor(v, k) {
+  if (!(Array.isArray(v.names) ? v.names : [v.name]).some(n => nameKey(n) === k)) return null;
+  const mine = (v.notes || []).find(n => nameKey(n.name) === k);
+  return mine ? Object.assign({}, v, { text: mine.text, mine: true }) : v;
+}
 function careOf(name) {
   const k = nameKey(name); if (!k) return { att: [], vis: [] };
-  return { att: CAREX.attend.filter(a => nameKey(a.name) === k), vis: CAREX.visits.filter(v => nameKey(v.name) === k).sort((a, b) => (b.ymd || '').localeCompare(a.ymd || '')) };
+  return { att: CAREX.attend.filter(a => nameKey(a.name) === k), vis: CAREX.visits.map(v => careVisitFor(v, k)).filter(Boolean).sort((a, b) => (b.ymd || '').localeCompare(a.ymd || '')) };
 }
 function careBlock(t) {
   if (!t || t.kind !== 'person' || !SY.user) return '';

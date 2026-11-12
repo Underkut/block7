@@ -1086,6 +1086,12 @@ const MAPCSV = [
   sc.eq('A4 심방 설정 문서(users/{uid}/data/care)는 읽기만 — 쓰는 곳이 없다', /doc\('users\/' \+ uid \+ '\/data\/care'\)\.get\(\)/.test(HTML) && !/data\/care'\)\.(set|update|delete)\(/.test(HTML), true);
   sc.eq('A4 심방 내용은 화면 메모리에만 — CAREX 를 저장 · 맞추기에 넣지 않는다', !/(localStorage\.setItem|JSON\.stringify)\([^)]*CAREX/.test(HTML), true);
   sc.eq('A4 사람 상세에만 붙는다 (기도 항목 · 묶음은 아님)', /function careBlock\(t\) \{\n  if \(!t \|\| t\.kind !== 'person'/.test(HTML) && /b \+= careBlock\(t\);/.test(HTML), true);
+  // 1112-M 한 심방에 여러 분 — 이름 하나하나로 · 그 분 몫 글이 있으면 그것 (지어낸 이름)
+  const src = ['nameKey', 'careVisitFor'].map(f => { const m = HTML.match(new RegExp('\\nfunction ' + f + '\\([^]*?\\n}')) || HTML.match(new RegExp('\\nfunction ' + f + '\\(.*')); return m[0]; }).join('\n');
+  const cvf = new Function(src + '\nreturn careVisitFor;')();
+  const V = { name: '가나다 셀, 라마바, 사 아자', names: ['라마바', '사 아자'], groups: ['가나다 셀'], ymd: '2026-11-10', text: '함께 나눈 이야기', notes: [{ name: '사아자', text: '허리가 아프다' }] };
+  sc.eq('1112-M 함께한 심방 — 이름마다 맞춤(띄어쓰기 무시) · 그 분 몫 글이 먼저 · 없으면 함께 이야기 · 셀 표시나 없는 이름은 안 붙음',
+    [cvf(V, '사아자').text, cvf(V, '라마바').text, cvf(V, '가나다셀'), cvf(V, '차카타'), cvf({ name: '라마바', text: '예전 꼴' }, '라마바').text], ['허리가 아프다', '함께 나눈 이야기', null, null, '예전 꼴']);
 }
 
 console.log('\n시나리오 ㉙ — 저장 목록 정렬: ㄱㄴㄷ순 ⇄ ZYX순, 많은순 ⇄ 적은순 (pray v. 26-1109-1, HB)');
