@@ -74,4 +74,101 @@ console.log('\n시나리오 3 — 진행 중 토스트는 결과가 나올 때�
   sc.eq('옛 문구는 없앴다', SRC.includes("showToast('시트를 불러오는 중…');"), false);
 }
 
+console.log('\n시나리오 4 — 실행취소·다시실행 토스트 둘째 줄 (v26-1112-13, HB 요청)');
+{
+  // _toastName · _dayLabel 도 이 구간이 쓴다
+  eval(slice('function _toastName(t){', '\n// 구글 캘린더에 이어진 일정이면')
+    + '\nglobal._toastName=_toastName;');
+  eval(slice('function _dayLabel(dateStr,short){', '\n// "9월 20일 일요일')
+    + '\nglobal._dayLabel=_dayLabel;');
+  eval(slice('// ── 실행취소·다시실행 토스트 둘째 줄', '\nfunction updateUrBtns(')
+    + '\nglobal._undoDiffLine=_undoDiffLine;');
+
+  const base = () => ({ vis: ['am'], preset: null, collapsed: [], days: {} });
+  const withDay = (b, k, day) => { const s = JSON.parse(JSON.stringify(b)); s.days[k] = day; return s; };
+
+  sc.eq('할일을 더한 걸 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] })
+        ),
+        "11월 13일 오전에 '회의 준비' 할일을 더했어요");
+
+  sc.eq('할일을 지운 걸 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [] }, small: {}, trash: [] })
+        ),
+        "11월 13일 오전의 '회의 준비' 할일을 지웠어요");
+
+  sc.eq('완료 표시를 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: true }] }, small: {}, trash: [] })
+        ),
+        "'회의 준비' 완료를 표시했어요");
+
+  sc.eq('완료 해제를 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: true }] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] })
+        ),
+        "'회의 준비' 완료를 풀었어요");
+
+  sc.eq('글자를 고친 걸 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [{ text: '회의 자료 준비', done: false }] }, small: {}, trash: [] })
+        ),
+        "'회의 준비'를 '회의 자료 준비'로 고쳤어요");
+
+  sc.eq('휴지통으로 보낸 걸 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [] }, small: {}, trash: [{ type: 'big', secId: 'am', secName: '오전', text: '회의 준비', done: false, ts: 1 }] })
+        ),
+        "11월 13일 '회의 준비'를 휴지통으로 보냈어요");
+
+  sc.eq('휴지통에서 되살린 걸 알아본다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [] }, small: {}, trash: [{ type: 'big', secId: 'am', secName: '오전', text: '회의 준비', done: false, ts: 1 }] }),
+          withDay(base(), '2026-11-13', { big: { am: [] }, small: {}, trash: [] })
+        ),
+        "11월 13일 '회의 준비'를 휴지통에서 되살렸어요");
+
+  {
+    let s = base();
+    s.days['2026-11-13'] = { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] };
+    s.days['2026-11-14'] = { big: { am: [] }, small: {}, trash: [] };
+    const cur = JSON.parse(JSON.stringify(s));
+    s.days['2026-11-13'] = { big: { am: [] }, small: {}, trash: [] };
+    s.days['2026-11-14'] = { big: { am: [{ text: '회의 준비', done: false }] }, small: {}, trash: [] };
+    sc.eq('다른 날짜로 옮긴 걸 알아본다',
+          _undoDiffLine(cur, s),
+          "'회의 준비'를 11월 14일로 옮겼어요");
+  }
+
+  sc.eq('순서만 바뀐 건 "순서를 바꿨어요"',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [{ text: 'A', done: false }, { text: 'B', done: false }] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [{ text: 'B', done: false }, { text: 'A', done: false }] }, small: {}, trash: [] })
+        ),
+        '11월 13일 오전 순서를 바꿨어요');
+
+  sc.eq('알아볼 수 없으면 날짜만 알려준다',
+        _undoDiffLine(
+          withDay(base(), '2026-11-13', { big: { am: [{ text: 'A', done: false }] }, small: {}, trash: [] }),
+          withDay(base(), '2026-11-13', { big: { am: [{ text: 'B', done: false }] }, small: { pm: [{ text: 'C', done: false }] }, trash: [] })
+        ),
+        '11월 13일 할일을 바꿨어요');
+
+  sc.eq('아무것도 안 바뀌면 빈 줄', _undoDiffLine(base(), base()), '');
+
+  const { SRC } = require('./_load');
+  sc.eq('doUndo 가 둘째 줄을 붙인다',
+        SRC.includes("showToast('실행취소했어요'+_undoToastDetail(cur,target));"), true);
+  sc.eq('doRedo 가 둘째 줄을 붙인다',
+        SRC.includes("showToast('다시 실행했어요'+_undoToastDetail(cur,target));"), true);
+}
+
 sc.done();
