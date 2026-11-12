@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5946,7 +5946,7 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-fg i{position:absolute;left:10px;right:10px;bottom:0;height:2px;border-radius:2px;background:color-mix(in srgb,var(--bd2) 45%,transparent);overflow:hidden;}
 #bibleRd .br-fg i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);border-radius:2px;background:var(--ac);opacity:.6;
   transition:opacity .3s ease;}
-#bibleRd .br-fgw.on .br-fg{color:var(--tx);background-color:color-mix(in srgb,var(--s2) 55%,transparent);}
+#bibleRd .br-fgw.on .br-fg{color:var(--tx);background-color:color-mix(in srgb,var(--s2) 70%,var(--bd2));}
 #bibleRd .br-fgw.on .br-fg sup{color:var(--tx2);}
 #bibleRd .br-fgw.on .br-fg i::after{opacity:.9;}
 @media (hover:hover) and (pointer:fine){#bibleRd .br-fg:hover{color:var(--tx);}#bibleRd .br-fg:hover i::after{opacity:.8;}}
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-3";
+const APP_VERSION = "v. 26-1112-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17646,7 +17646,16 @@ function _brSyncScope(){
   document.querySelectorAll('#brFScope button').forEach(b=>{
     const k=b.dataset.v;
     b.classList.toggle('on',k===_brFs.scope&&_brFs.bk==null);
-    const nh=esc(nm[k])+(_brFcnt?'<small>'+_brFcnt[k].toLocaleString()+'</small>':'');if(b.innerHTML!==nh)b.innerHTML=nh;
+    // 단추를 다시 만들지 않는다 — 이름은 바뀔 때만, 숫자는 그 자리 글자만 갈아 끼우고 차분히 살짝 비친다 (v. 26-1112-4, HB)
+    const lbl=nm[k];
+    if(b.dataset.lbl!==lbl){b.dataset.lbl=lbl;const o=b.querySelector('small');b.textContent=lbl;if(o)b.appendChild(o);}
+    let sm=b.querySelector('small');
+    if(_brFcnt){
+      const t=_brFcnt[k].toLocaleString();
+      if(!sm){sm=document.createElement('small');sm.textContent=t;b.appendChild(sm);}   // 처음 생길 때만 펴지며 나타난다 (CSS)
+      else if(sm.textContent!==t){sm.textContent=t;
+        if(typeof sm.animate==='function'&&!matchMedia('(prefers-reduced-motion:reduce)').matches)sm.animate([{opacity:.25},{opacity:1}],{duration:380,easing:'ease'});}
+    }else if(sm)sm.remove();
   });
   _brFStripSync();
   const gb=_brEl('brFGrp');if(gb){const on=!!_brS('bibleFindGroup',false);gb.classList.toggle('on',on);gb.setAttribute('aria-pressed',on?'true':'false');}
