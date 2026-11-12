@@ -26,6 +26,7 @@
 //  ㉓ 출석 입력 새로 — '언제 보였나' · 알약 목록(탭 · 기본값 · 더하기 · 옮기기 · 이름 바꾸기 · 지우기 · 상한) · 이름 쉼표로 여럿 · 날짜 단추
 //  ㊱ (1112-N) vNext 칸 — 오른쪽 끝에 더한 열만 · 열이 없는 시트는 예전과 같다 · 긴 글은 줄바꿈까지 · 5만 자 · 다음 질문은 탭 · 시험 시트는 이 기기에만 · 이름 후보 명단 넓힘
 //  ㊲ (1112-N 2·3·4) 붙여넣어 채우기 — 규격 검사(JSON) · Markdown 규칙 읽기(추측 없음) · 초안 · 속성 대조 · 성도 연결(이름만 → 후보) · 중복(원본ID · 해시) · 할 일(세부 칸 · 미채택은 상세 기록 끝) · 모임
+//  ㊳ (1112-N 5) AI 입력대기함 — 대기 줄만 · 규격 오류는 '오류' + 사유(상한) · 접수ID 붙이기 · 줄 다시 찾기(접수ID · 없으면 같은 패킷) · 완료 칸 · ChatGPT 지시문(지금 시트 주소)
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -51,7 +52,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
-  PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues };`, ctx);
+  PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -968,6 +970,32 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const st = A.parseActionTab([AH, arow]), vv = { id: 'C77', actions: [{ t: '연락', x: '', k: 'k4' }] }; A.attachExtras({ visits: [vv] }, st, {});
   sc.eq('㊲ 기존 체크 화면이 그대로 이어받는다(열쇠 기록ID|종류|) · 세부 · 근거', [Object.keys(st), vv.actions[0].det, vv.actions[0].why, vv.actions[0].done], [['C77|연락|'], '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', '실제 약속', false]);
   sc.eq('㊲ 성도 탭 → 이름 · 이름 후보에 성도 탭', [A.parseRosterTab([['성도ID', '이름'], ['P1', '가미정'], ['P2', ' 가미정 '], ['P3', '']]), A.nameCands({}, [], [], ['가미정'])[0].src], [['가미정'], ['성도']]);
+}
+
+// ㊳ 1112-N 5 AI 입력대기함 (이름 · 내용은 지어낸 것)
+{
+  const J = x => JSON.parse(JSON.stringify(x));
+  const pk = (name, src) => JSON.stringify({ schema_version: 'hb-care.v1', source: { kind: 'plaud', source_id: src, source_url: null, title: name + ' 통화', recorded_at: null, duration_ms: null },
+    event: { kind: 'call', date: '2026-11-12', title: name, group_summary: '', details_markdown: '', location: null },
+    records: [{ person_name: name + ' 성도', person_confirmed: true, contact_method: '전화', depth: '얕음', summary_line: '안부', brief_note: '안부 통화', detailed_note_markdown: '', priority: '일반', long_term_watch: '', information_basis: '직접', tags: [], next_questions: [], actions: [] }], unknown_speakers: [] });
+  const H = ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태', '오류', '원본ID', '생성된 기록ID', '처리시각'];
+  const bad = JSON.parse(pk('나쁨', 'f3')); bad.records[0].priority = '급함';
+  const V = [H, ['Q1', '2026-11-12 10:00', 'hb-care.v1', pk('가나다', 'f1'), '대기', '', 'f1', '', ''], ['', '2026-11-12 10:05', 'hb-care.v1', '```json\n' + pk('라마바', 'f2') + '\n```', '대기', '', '', '', ''],
+    ['Q3', '', '', JSON.stringify(bad), '대기', '', 'f3', '', ''], ['Q4', '', '', pk('사아자', 'f4'), '완료', '', 'f4', 'C1', '2026-11-11 09:00'], ['Q5', '', '', '그냥 글입니다', '대기', '', '', '', ''], [], ['Q6', '', '', pk('차카타', 'f6'), '자동', '', '', '', '']];
+  const items = A.parseInbox(V);
+  sc.eq('㊳ 대기함 읽기 — 빈 줄은 건너뜀 · 상태 그대로', J(items.map(x => [x.row, x.id, x.st])), [[2, 'Q1', '대기'], [3, '', '대기'], [4, 'Q3', '대기'], [5, 'Q4', '완료'], [6, 'Q5', '대기'], [8, 'Q6', '자동']]);
+  const ck = A.inboxCheck(items, Date.parse('2026-11-12T03:00:00Z'));
+  sc.eq('㊳ 대기 중 맞는 것만 기다림 목록(울타리 친 JSON 도) · 제목 · 이름(호칭 뗌) · 원본ID', J(ck.waiting.map(x => [x.row, x.title, x.names, x.srcId, !!x.id])), [[2, '가나다 통화', ['가나다'], 'f1', true], [3, '라마바 통화', ['라마바'], 'f2', true]]);
+  sc.eq('㊳ 고칠 것 — 접수ID 붙이기 · 규격 오류는 오류 + 사유 + 처리시각 · 완료 · 다른 상태(자동)는 손대지 않음', J(ck.patches.map(p => [p.row, Object.keys(p.cells), p.cells['상태'] || ''])),
+    [[3, ['접수ID'], ''], [4, ['상태', '오류', '처리시각'], '오류'], [6, ['상태', '오류', '처리시각'], '오류']]);
+  sc.eq('㊳ 오류 사유 — 어디가 왜', [ck.patches[1].cells['오류'], ck.patches[2].cells['오류']], ['records[0].priority — "급함" 는 허용 값(긴급 · 이번주 · 장기관찰 · 일반)이 아닙니다', '패킷JSON 칸이 JSON 이 아닙니다']);
+  sc.eq('㊳ 붙인 접수ID 가 기다림 목록에도', ck.waiting[1].id, ck.patches[0].id);
+  sc.eq('㊳ 고치는 줄 상한', A.inboxCheck(items, 0, 1).patches.length, 1);
+  sc.eq('㊳ 줄 다시 찾기 — 접수ID 로 · 앞줄이 지워져 밀려도', A.inboxFind([H, V[2], V[1]], items[0]).row, 3);
+  sc.eq('㊳ 접수ID 가 없던 줄은 같은 패킷 글로 · 같은 접수ID 가 둘이면 쓰지 않음', [A.inboxFind(V, items[1]).row, A.inboxFind([H, V[1], V[1]], items[0])], [3, null]);
+  sc.eq('㊳ 완료 칸 — 상태 · 생성된 기록ID · 처리시각 · 오류 비움', A.inboxDoneCells('완료', ['C1', 'C2'], Date.parse('2026-11-12T03:00:00Z')), { '상태': '완료', '생성된 기록ID': 'C1, C2', '처리시각': '2026-11-12 12:00', '오류': '' });
+  const g = A.chatgptGuide('SHEET123');
+  sc.eq('㊳ ChatGPT 지시문 — 규격 · 탭 이름 · 상태 · 지금 시트 주소', [g.includes('hb-care.v1'), g.includes("'AI 입력대기' 탭"), g.includes('| 대기 |'), g.endsWith('https://docs.google.com/spreadsheets/d/SHEET123/edit')], [true, true, true, true]);
 }
 
 sc.done();

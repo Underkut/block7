@@ -36,6 +36,7 @@
 //  ㉜ (1109-G2) 새 기록 — 넓은 화면 카드(A) · 폰 접힌 줄(C) · 폭 넘나들면 다시 그림 · 폰에서 적은 것이 시트에
 //  ㊱ (1112-N) 시험 시트(이 기기만 · 캘린더 · BLOCK7 꺼짐) · 새 칸 더하기(오른쪽 끝 · 액션 K · 새 탭 둘) · 핵심 한줄 · 상세 기록 · 우선순위 · 정보 성격 · 장기 관찰 · 다음 질문(탭) · 이름 후보에 기도노트
 //  ㊲ (1112-N 2·3·4) 붙여넣어 채우기 — JSON(통화 · 셀모임) · 규격 오류 · 속성 대조 · 성도 연결(후보 여럿 · 이름 고치기 · 새 성도) · 언급만 · 할 일 체크 → 액션 탭 · 미채택은 상세 기록 끝 · 모임 탭 · 중복(원본ID · 해시 · 갱신) · Markdown · 저장 중 끊김 → 다시 시도
+//  ㊳ (1112-N 5) AI 입력대기함 — 탭에 넣은 줄 → 첫 화면 'N건' · 규격 오류는 '오류' + 사유 · 접수ID 붙임 · 열기 → 같은 미리보기 · 저장 → 다시 읽어 확인 뒤 '완료' + 기록ID · 빼기 → '취소' · ChatGPT 지시문 복사
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -1391,6 +1392,50 @@ async function route(r) {
     eq('㊲ 다시 시도 — 이어서 끝냄 · 기록은 한 줄 그대로 · 할 일 한 줄(기한)', [await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', ''))), mh.length, rowsOf('액션', r => r[1] === col(mh[0], '기록ID')).map(r => [r[3], r[4], r[6]])],
       [['ok', 'ok', 'ok', 'ok', 'ok'], 1, [['중보', '이사 위해 기도', '2026-11-15']]]);
     await page.click(LN + ' [data-act="close"]'); await tidy();
+  }
+
+  // ㊳ (1112-N 5) AI 입력대기함 — 이름 · 내용은 지어낸 것
+  {
+    for (let i = 0; i < 5; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+    const LN = '.layer:last-child', RT = tab('Form Responses 1'), QT = tab('AI 입력대기'), col = (r, n) => r[RT.rows[0].indexOf(n)];
+    const pk = (name, src, x) => JSON.stringify(Object.assign({ schema_version: 'hb-care.v1', source: { kind: 'plaud', source_id: src, source_url: null, title: name + ' 통화', recorded_at: null, duration_ms: null },
+      event: { kind: 'call', date: '2026-11-12', title: name + ' 안부', group_summary: '', details_markdown: '', location: null },
+      records: [{ person_name: name, person_confirmed: true, contact_method: '전화', depth: '얕음', summary_line: name + ' 안부 핵심', brief_note: name + ' 안부 통화', detailed_note_markdown: '', priority: '일반', long_term_watch: '', information_basis: '직접', tags: [], next_questions: [], actions: [] }], unknown_speakers: [] }, x || {}));
+    const bad = JSON.parse(pk('바오류', 'f_q3')); bad.records[0].depth = '아주 깊음';
+    QT.rows.push(['Q1', '2026-11-12 10:00', 'hb-care.v1', pk('바대기', 'f_q1'), '대기', '', 'f_q1', '', ''], ['', '2026-11-12 10:05', 'hb-care.v1', pk('사대기', 'f_q2'), '대기', '', 'f_q2', '', ''], ['Q3', '2026-11-12 10:06', 'hb-care.v1', JSON.stringify(bad), '대기', '', 'f_q3', '', '']);
+    await reload(); await page.waitForTimeout(800);
+    eq('㊳ 첫 화면 — 새로 들어온 기록 2건 · 규격 오류 1건', await page.$eval('.inbox-bar', e => e.textContent), '새로 들어온 기록 2건규격 오류 1건');
+    eq('㊳ 열 때 — 규격 오류 줄은 \'오류\' + 사유 · 접수ID 없던 줄에 붙임 · 맞는 줄은 그대로 대기', [QT.rows[QT.rows.length - 1][4], QT.rows[QT.rows.length - 1][5], /^Q/.test(QT.rows[QT.rows.length - 2][0]), QT.rows[QT.rows.length - 3][4]],
+      ['오류', 'records[0].depth — "아주 깊음" 는 허용 값(얕음 · 중간 · 깊음)이 아닙니다', true, '대기']);
+    await page.click('.inbox-bar'); await tidy();
+    eq('㊳ 대기함 — 대기 둘 · 오류 하나(사유)', [await page.$$eval(LN + ' .inbox-row', x => x.length), await page.$eval(LN + ' .inbox-bad div', e => e.textContent)], [2, 'records[0].depth — "아주 깊음" 는 허용 값(얕음 · 중간 · 깊음)이 아닙니다']);
+    await page.evaluate(() => { window.__clip = ''; Object.defineProperty(navigator, 'clipboard', { value: { writeText: async t => { window.__clip = t; } }, configurable: true }); });
+    await page.click(LN + ' [data-act="guidecopy"]'); await page.waitForTimeout(200);
+    eq('㊳ ChatGPT 지시문 복사 — 지금 시트 주소 · 대기함 탭', await page.evaluate(() => [window.__clip.startsWith('[심방노트 입력]'), window.__clip.includes("'AI 입력대기' 탭"), window.__clip.endsWith('/spreadsheets/d/S/edit')]), [true, true, true]);
+    await page.click(LN + ' .inbox-row'); await tidy();
+    eq('㊳ 열기 → 붙이기 없이 바로 미리보기 · 대기함에서 빼기 단추', [await page.$eval(LN + ' .ph-head h3', e => e.textContent), await page.$eval(LN + ' .imp-card .imp-core', e => e.textContent), await page.$$eval(LN + ' [data-act="impcancel"]', x => x.length), await page.$$eval(LN + ' [data-f="ipaste"]', x => x.length)],
+      ['들어온 기록', '바대기 안부 핵심', 1, 0]);
+    await page.click(LN + ' [data-act="implink"]'); await tidy();
+    await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(3500);
+    const q1 = QT.rows.find(r => r[0] === 'Q1'), rb = RT.rows.find(r => col(r, '성도 이름') === '바대기');
+    eq('㊳ 저장 — 시트를 다시 읽어 확인한 뒤 대기함 \'완료\' · 생성된 기록ID · 처리시각', [await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', ''))).then(a => a.slice(-2)), q1[4], q1[7] === col(rb, '기록ID'), !!q1[8], col(rb, '출처')],
+      [['ok', 'ok'], '완료', true, true, 'AI']);
+    const shut = () => page.evaluate(() => { S.layers.length = 0; render(); }).then(() => page.waitForTimeout(300));
+    await shut();
+    eq('㊳ 첫 화면 — 남은 1건', await page.$eval('.inbox-bar b', e => e.textContent), '새로 들어온 기록 1건');
+    await page.click('.inbox-bar'); await tidy(); await page.click(LN + ' .inbox-row'); await tidy();
+    const n0 = RT.rows.length;
+    await page.click(LN + ' [data-act="impcancel"]'); await page.waitForTimeout(1500);
+    const q2 = QT.rows.find(r => r[6] === 'f_q2');
+    eq('㊳ 대기함에서 빼기 → \'취소\' · 기록은 안 생김 · 첫 화면 알림은 오류만', [q2[4], RT.rows.length, await page.$eval('.inbox-bar', e => e.textContent)], ['취소', n0, '들어온 기록 없음규격 오류 1건']);
+    // 같은 녹음이 다시 들어오면 — 미리보기에서 중복으로 잡힌다(대기함은 기록 저장 전이라 따로 막지 않음)
+    await shut();
+    QT.rows.push(['Q9', '', 'hb-care.v1', pk('바대기', 'f_q1'), '대기', '', 'f_q1', '', '']);
+    await reload(); await page.waitForTimeout(800);
+    await page.click('.inbox-bar'); await tidy(); await page.click(LN + ' .inbox-row'); await tidy(); await page.click(LN + ' [data-act="implink"]'); await tidy();
+    eq('㊳ 같은 녹음 다시 → 이미 있는 기록(원본ID)', await page.$$eval(LN + ' .imp-dup b', x => x.map(e => e.textContent)), ['이미 있는 기록 (원본ID)']);
+    await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(1500);
+    eq('㊳ 저장할 것이 없으면 대기함 줄을 \'취소\' 로(묻고)', [QT.rows.find(r => r[0] === 'Q9')[4], RT.rows.filter(r => col(r, '성도 이름') === '바대기').length], ['취소', 1]);
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
