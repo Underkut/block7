@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-13";
+const APP_VERSION = "v. 26-1112-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7745,7 +7745,7 @@ try{
           <label class="settings-toggle"><input type="checkbox" id="setShowContactFilterBtn" onchange="updateSetting('showContactFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
         <div class="settings-row" data-lv="mp">
-          <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 4.5h18l-7 8.2V20l-4-2v-5.3z"/></svg></span> 깔때기 버튼 (글자 거르기)</div></div>
+          <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev"><svg width="14.3" height="14.3" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 4.5h18l-7 8.2V21.5l-4-2v-6.8z"/></svg></span> 깔때기 버튼 (글자 거르기)</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setShowTextFilterBtn" onchange="updateSetting('showTextFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
         <div class="settings-row" data-lv="mp" style="flex-direction:column;align-items:stretch;gap:6px;">
@@ -37421,7 +37421,7 @@ function renderAddRow(containerId='addRow',refreshFn=renderToday,includeExpandBt
     const q=String(ST.settings.textFilterQuery||'').trim();
     btn.title=active?'모든 할일 보기':(q?'‘'+q+'’ 든 할일만 보기':'글자를 설정에서 먼저 적어 주세요');
     btn.setAttribute('aria-pressed',active?'true':'false');
-    btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 4.5h18l-7 8.2V20l-4-2v-5.3z"/></svg>';
+    btn.innerHTML='<svg width="14.3" height="14.3" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 4.5h18l-7 8.2V21.5l-4-2v-6.8z"/></svg>';
     attachFastTap(btn,()=>{
       if(!active&&!_textFilterTerms(ST.settings.textFilterQuery).length){
         showToast('거를 글자가 없어요\n설정 › 보기 › 위 단추 에서\n글자를 적어 주세요');
