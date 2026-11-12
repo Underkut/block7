@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-10  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-11  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-10";
+const APP_VERSION = "v. 26-1112-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27782,7 +27782,7 @@ function _srchActDo(a){
     if(a==='pick')return;   // 날짜 칸이 받는다 (_srchActDate)
     if(a==='flag'){_srchWithTask(r,()=>_doToggleFlag(r.type,r.secId,r.idx));_srchActDone();return;}
     if(a==='urgent'){_srchWithTask(r,()=>_doToggleUrgent(r.type,r.secId,r.idx));_srchActDone();return;}
-    if(a==='dup'){_srchWithTask(r,()=>{_dupDoneReset();duplicateTaskTo(0);});_srchActDone();return;}
+    if(a==='dup'){_srchWithTask(r,()=>{_dupDoneReset();duplicateTaskTo(0,undefined,r.k);});_srchActDone();return;}   // 같은 날에 하나 더 — 진짜 오늘이 아니라 그 할일의 날
     if(a==='memo'){_srchActClose();_srchWithTask(r,()=>openTaskMemo(r.type,r.secId,r.idx));return;}
     if(a==='del'){
       const rep=!!it.rid;
@@ -46239,6 +46239,14 @@ function _dayKeyDiff(fromKey,toKey){
   return Math.round((d2-d1)/86400000);
 }
 
+// ── 진짜 오늘 기준 (HB 2026-11-12, tests/test_menu_realtoday.js) ──
+// 할일 메뉴의 '오늘 · 내일 · 다음 주 · 어제' 는 **언제나 진짜 오늘**을 기준으로 센다 — 보고 있는 날이 아니다.
+// (예전엔 11/7 을 보며 '내일로' 를 누르면 11/8 로 갔다. HB: "항상 진짜 오늘, 진짜 내일")
+// 옮겨 오는 쪽(그 할일이 있는 날)은 그대로 보고 있는 날(tKey())이다.
+// 하루가 바뀌는 시각(dayStartHour)은 todayKey() 가 이미 따른다 — 새벽 1시면 '오늘' 은 어제 날짜다.
+function _todayDateObj(){const t=String(todayKey()).split('-').map(Number);return new Date(t[0],t[1]-1,t[2]);}
+function _realDayKey(days){return tKey(addDays(_todayDateObj(),days||0));}
+
 // toSec — 보낼 시간 구간. 안 주면 예전 그대로 **할일이 있던 구간**으로 간다
 // (v26-0917-1 에서 구간 판이 생기기 전까지는 그 길밖에 없었다).
 function moveTaskTo(days,toSec,markDone){
@@ -46246,10 +46254,19 @@ function moveTaskTo(days,toSec,markDone){
   const {type,secId,idx}=_taskMenuCtx;
   const destSec=toSec||secId;
   const fromKey=tKey();
-  const toDate=addDays(viewDate,days);
-  const toKey=tKey(toDate);
+  const toKey=_realDayKey(days);       // 진짜 오늘 기준 (보고 있는 날이 아니다)
   // 같은 날 같은 구간 = 갈 곳이 없다. 그냥 두면 목록 맨 아래로 자리만 바뀐다.
-  if(days===0&&destSec===secId){closeTaskMenu();return;}
+  // (진짜 오늘 기준이라 내일을 보며 '내일로' 를 눌러도 여기 온다 — '어제 완료' 면 그 자리에서 완료 체크만)
+  if(toKey===fromKey&&destSec===secId){
+    closeTaskMenu();
+    const it=(type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId))[idx];
+    if(markDone&&it&&!it.done){
+      beforeSave();_finishOriginal(it);save();
+      renderSecBody(secId);updateTotal();refreshTaskViewsLive();
+      _toastWithJump('이미 어제 할일이에요\n그 자리에서 완료 체크했어요',fromKey);
+    }else if(days!==0)_toastWithJump(`이미 ${_moveLabel(days,secId,destSec).replace(/(으)?로$/,'')} 할일이에요`,fromKey);
+    return;
+  }
   if(typeof _taskIsRep==='function'&&_taskIsRep((type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId))[idx])){
     closeTaskMenu();
     _repMoveAsk(type,secId,idx,fromKey,toKey,destSec,
@@ -46264,7 +46281,8 @@ function moveTaskTo(days,toSec,markDone){
   // '어제 완료' — 완료 체크하고(하위도 따라 완료 · 긴급 표시는 풀린다) 그대로 옮긴다. 되돌리기 한 번에 둘 다 풀린다 (위 beforeSave 한 번)
   if(markDone&&!item.done){item.done=true;_subSetAll(item,true);if(typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(item);}
   src.splice(idx,1);
-  const newItem=_movedTaskCopy(item,days);
+  // 수동 이월은 '내일로' 로 **앞으로** 갔을 때만 센다 — 앞날을 보며 '내일로' 는 당겨 온 것이다
+  const newItem=_movedTaskCopy(item,(days===1&&toKey<=fromKey)?0:days);
   const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
   dest.push(newItem);
   save();
@@ -46320,12 +46338,13 @@ function _finishOriginal(item){
   if(typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(item);
   return true;
 }
-function duplicateTaskTo(days,toSec){
+function duplicateTaskTo(days,toSec,atKey){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
   const destSec=toSec||secId;
   const fromKey=tKey();
-  const toKey=tKey(addDays(viewDate,days));
+  // 진짜 오늘 기준. atKey — 날을 콕 집어 줄 때만(검색 화면의 '복제' = 그 할일의 날에 하나 더)
+  const toKey=atKey||_realDayKey(days);
   const source=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=source[idx];
   if(!item)return;
@@ -46344,7 +46363,7 @@ function duplicateTaskTo(days,toSec){
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
-  _toastWithJump(`${_moveLabel(days,secId,destSec)} 복제했어요${_rp?'\n복제본은 하루짜리예요':''}${fin?'\n원래 것은 완료 체크했어요':''}`,toKey,
+  _toastWithJump(`${atKey?_moveDateToastMsg(toKey,destSec,'복제'):_moveLabel(days,secId,destSec)+' 복제했어요'}${_rp?'\n복제본은 하루짜리예요':''}${fin?'\n원래 것은 완료 체크했어요':''}`,toKey,
     {key:toKey,secId:destSec,type,idx:dest.length-1});
 }
 
@@ -46618,10 +46637,10 @@ function _dayTaskSecs(key){
 // 어느 구간 것인지 보인다 (v26-0917-1, HB).
 function _fillTaskMenuCounts(){
   document.querySelectorAll('#taskMenu [data-cnt-days],#taskMenu [data-yd]').forEach(row=>{
-    const yd=row.dataset.yd!==undefined;           // 어제 완료 후 다음 — 실제 오늘 기준
+    const yd=row.dataset.yd!==undefined;           // 어제 완료 후 다음
     const days=parseInt(yd?row.dataset.yd:row.dataset.cntDays,10);
     if(isNaN(days))return;
-    const key=tKey(addDays(yd?_todayDateObj():viewDate,days));
+    const key=_realDayKey(days);                    // 모든 줄이 진짜 오늘 기준 (HB 2026-11-12)
     const n=_dayTaskCount(key);
     let dots=row.querySelector('.task-menu-dots');
     if(!dots){dots=document.createElement('span');dots.className='task-menu-dots';row.appendChild(dots);}
@@ -46758,7 +46777,7 @@ function nextAfterDoneTo(days,toSec,dateStr,tail){
   const {type,secId,idx}=_taskMenuCtx;
   const destSec=toSec||secId;
   const fromKey=tKey();
-  const toKey=dateStr||tKey(addDays(viewDate,days||0));
+  const toKey=dateStr||_realDayKey(days);     // 진짜 오늘 기준 (보고 있는 날이 아니다)
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=src[idx];
   if(!item){closeTaskMenu();return;}
@@ -46797,8 +46816,7 @@ function nextAfterDoneTo(days,toSec,dateStr,tail){
 function nextAfterDoneYesterday(){nextAfterDoneYday(0);}
 // 어제 완료 후 다음 (v26-1026-4, HB) — 누른 할일을 **어제 날짜로 옮겨 완료**하고, 오늘(실제 오늘)을 기준으로
 // 고른 날·구간에 이어 적을 새 할일을 만든다. '지금 완료 후 다음' 판의 '어제 했고, 이제 오늘' 도 같은 길이다.
-// ⚠️ 기준은 보고 있는 날이 아니라 **실제 오늘**이다 — 며칠 전 할일을 열어도 '어제 했다' 는 어제다.
-function _todayDateObj(){const t=String(todayKey()).split('-').map(Number);return new Date(t[0],t[1]-1,t[2]);}
+// ⚠️ 기준은 보고 있는 날이 아니라 **실제 오늘**이다 — 며칠 전 할일을 열어도 '어제 했다' 는 어제다. (_todayDateObj 는 위 '진짜 오늘 기준' 에)
 function nextAfterDoneYday(days,toSec,dateStr){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
@@ -46907,14 +46925,14 @@ function _secPickSpecFor(row){
   if(act==='nextY'){      // 어제 완료 후 다음 — 날은 실제 오늘 기준
     const yd=parseInt(row.dataset.yd,10);
     if(isNaN(yd))return null;
-    return {act,days:yd,toKey:tKey(addDays(_todayDateObj(),yd)),
+    return {act,days:yd,toKey:_realDayKey(yd),
             label:'어제 완료 후 다음 · '+(yd===0?'오늘':yd===1?'내일':'다음 주')};
   }
   const days=parseInt(row.dataset.cntDays,10);
   if(isNaN(days))return null;
   const base=days===-1?'어제':days===0?'오늘':days===1?'내일':'다음 주';
   const done=row.dataset.done==='1';
-  return {act,days,done,toKey:tKey(addDays(viewDate,days)),
+  return {act,days,done,toKey:_realDayKey(days),     // 진짜 오늘 기준 (HB 2026-11-12)
           label:(act==='dup'?'복제':act==='next'?'지금 완료 후 다음':'이동')+' · '+(done?'어제 완료':base)};
 }
 // 판을 연 손이 마우스였는가 (v26-1007-3, HB 신고).

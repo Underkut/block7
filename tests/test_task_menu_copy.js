@@ -8,7 +8,7 @@ const DUP  = slice('function _freshTaskCopy(', '// 메뉴가 열릴 때마다');
 // 하위·메모를 실어 나르는 순수 함수 — _movedTaskCopy·_freshTaskCopy 등
 // 항목을 새로 만드는 자리들이 모두 이것을 쓴다 (tests/test_subtask.js 가 규칙을 지킨다)
 const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
-const DUPRUN = SUBHELP + '\n' + DUP;   // 실행용 (글자 검사는 DUP 그대로)
+const DUPRUN = "// 메뉴의 날짜는 진짜 오늘 기준(_realDayKey, HB 2026-11-12). 이 시험은 '오늘을 보는 중' 자리라 보는 날(viewDate 자리) = 오늘로 둔다.\n// 다른 날을 보는 자리는 tests/test_menu_realtoday.js\nconst _realDayKey=n=>tKey(addDays(viewDate,n||0));\n" + SUBHELP + '\n' + DUP;   // 실행용 (글자 검사는 DUP 그대로)
 
 console.log('시나리오 1 — 이동·복제 목적지가 각각 한 뎁스 판 안에 있다');
 {

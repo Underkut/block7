@@ -8,11 +8,11 @@
 //  ⑤ '@' 자동 표시는 새로 적을 때(_newTask)와, 편집을 마칠 때 **새로** 생긴 '@' 에만 — 이미 있던 글은 건드리지 않는다
 const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
-const SRC = slice('// 원본을 완료로 —', 'function duplicateTaskTo(') + '\n' + slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec=null;') + '\n' +
+const SRC = slice('// ── 진짜 오늘 기준', '// toSec — 보낼 시간 구간') + '\n' + slice('// 원본을 완료로 —', 'function duplicateTaskTo(') + '\n' + slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec=null;') + '\n' +
   slice('// 새로 적는 할일 — 글에', 'function toggleTaskContact(){');
 
 const T = '2026-10-15';
-function makeEnv(items, tabId) {
+function makeEnv(items, tabId, realToday) {
   const ST = { days: {} };
   const log = { go: [], focus: [], render: [], toast: [], nav: [] };
   let cur = T;   // goToDate 가 보는 날을 바꾼다
@@ -33,7 +33,8 @@ function makeEnv(items, tabId) {
     _dayLabel: k => k,
     _dayKeyDiff: (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000),
     navigateDate: n => { log.nav.push(n); cur = log.nav.length ? cur : cur; },
-    todayKey: () => '2026-10-20',
+    // 진짜 오늘. 시나리오 1~4(지금 완료 후 다음)는 '오늘을 보는 중' — T 를 넘긴다. 다른 날을 보는 자리는 test_menu_realtoday
+    todayKey: () => realToday || '2026-10-20',
     closeTaskMenu() {}, goToDate: k => { cur = k; log.go.push(k); },
     _subSetAll: (it, done) => { (it.subs || []).forEach(s => { s.done = !!done; }); },
     _clearUrgentOnDone: it => { delete it.urgent; delete it.urgentRank; },
@@ -54,7 +55,7 @@ const at = (ST, k, sec) => ((ST.days[k] && ST.days[k].big && ST.days[k].big[sec 
 console.log('시나리오 1 — 내일로: 원래 할일은 완료, 내일에 새 할일');
 {
   const { ST, api, log, inp } = makeEnv([{ text: '김집사님께 전화  ', done: false, urgent: true, urgentRank: 1, contactTask: true, manualCarryCount: 2,
-    subs: [{ text: 'a', done: false }] }]);
+    subs: [{ text: 'a', done: false }] }], undefined, T);
   inp.value = '김집사님께 전화 완료했고, 이제';
   api.nextAfterDoneTo(1);
   const old = at(ST, T)[0], nu = at(ST, '2026-10-16')[0];
@@ -71,21 +72,21 @@ console.log('시나리오 1 — 내일로: 원래 할일은 완료, 내일에 �
 
 console.log('\n시나리오 1-2 — D 탭에서는 날짜 넘김(navigateDate)으로 스르륵, 그 밖은 바로 이동');
 {
-  const e = makeEnv([{ text: '심방', done: false }], 'tabD');
+  const e = makeEnv([{ text: '심방', done: false }], 'tabD', T);
   e.inp.value = '심방 완료했고, 이제';
   e.api.nextAfterDoneTo(7);
   sc.eq('D 탭: navigateDate(+7)', [e.log.nav, e.log.go], [[7], []]);
-  const f = makeEnv([{ text: '심방', done: false }], 'tabW');
+  const f = makeEnv([{ text: '심방', done: false }], 'tabW', T);
   f.api.nextAfterDoneTo(1);
   sc.eq('W 탭: goToDate', [f.log.nav, f.log.go], [[], ['2026-10-16']]);
 }
 
 console.log('\n시나리오 2 — 다음 주로 · 오늘 다른 구간으로');
 {
-  let e = makeEnv([{ text: '보고서', done: false }]);
+  let e = makeEnv([{ text: '보고서', done: false }], undefined, T);
   e.api.nextAfterDoneTo(7);
   sc.eq('다음 주 같은 구간에 새 할일', at(e.ST, '2026-10-22')[0].text, '보고서 완료했고, 이제');
-  e = makeEnv([{ text: '보고서', done: false }]);
+  e = makeEnv([{ text: '보고서', done: false }], undefined, T);
   e.api.nextAfterDoneTo(0, 'pm');
   sc.eq('오늘 오후 구간에 새 할일', at(e.ST, T, 'pm').map(x => x.text), ['보고서 완료했고, 이제']);
   sc.eq('같은 날이라 화면 이동은 없다', e.log.go, []);
@@ -103,11 +104,11 @@ console.log('\n시나리오 3 — 날짜 지정');
 
 console.log('\n시나리오 4 — 이미 완료한 할일도 문제없다 · 없는 할일은 아무 일 없다');
 {
-  const e = makeEnv([{ text: '끝낸 일', done: true }]);
+  const e = makeEnv([{ text: '끝낸 일', done: true }], undefined, T);
   e.api.nextAfterDoneTo(1);
   sc.eq('이미 완료 그대로', at(e.ST, T)[0].done, true);
   sc.eq('새 할일은 생긴다', at(e.ST, '2026-10-16').length, 1);
-  const f = makeEnv([]);
+  const f = makeEnv([], undefined, T);
   f.api.nextAfterDoneTo(1);
   sc.eq('할일이 없으면(이미 사라짐) 만들지 않는다', Object.keys(f.ST.days).filter(k => k !== T && at(f.ST, k).length), []);
 }

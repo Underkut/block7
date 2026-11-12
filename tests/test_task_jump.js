@@ -14,7 +14,8 @@ const LBL   = slice('const _KDOW=', 'function _moveDateToastMsg(');
 const JUMP  = slice('function _toastWithJump(', '// 도착한 곳에서 그 할일이');
 const FLASH = slice('let _pendingTaskFlash=null;', '// 그 날짜에 이미 있는 할일 개수');
 const COUNT = slice('function _dayTaskCount(', '// 메뉴 줄 오른쪽 끝에');
-const FILL  = slice('function _fillTaskMenuCounts(', '// ══════════ 구간 판');
+const REALDAY = "// 메뉴의 날짜는 진짜 오늘 기준(_realDayKey, HB 2026-11-12). 이 시험은 '오늘을 보는 중' 자리라 보는 날(viewDate 자리) = 오늘로 둔다.\n// 다른 날을 보는 자리는 tests/test_menu_realtoday.js\nconst _realDayKey=n=>tKey(addDays(viewDate,n||0));\n";
+const FILL  = REALDAY + slice('function _fillTaskMenuCounts(', '// ══════════ 구간 판');
 
 console.log('시나리오 1 — 날짜 이름을 한 곳에서 만든다');
 {
@@ -209,7 +210,7 @@ console.log('\n시나리오 7 — 이동·복제 네 길이 모두 같은 안내
 {
   const move = slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'");
   const movePick = slice('function moveTaskToPickedDate(', '// 복제 칸의 \'날짜 지정\'');
-  const dup = slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다');
+  const dup = slice('function duplicateTaskTo(days,toSec,atKey)', '// 메뉴가 열릴 때마다');
   const dupPick = slice('function duplicateTaskToPickedDate(', '// "8월 17일 월요일');
   [['이동',move],['이동(날짜 지정)',movePick],['복제',dup],['복제(날짜 지정)',dupPick]]
     .forEach(([name,src])=>{

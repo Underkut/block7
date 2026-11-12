@@ -26,6 +26,9 @@ function makeEnv(items, todayK) {
     DR: { active: false },
     _taskMenuCtx: { type: 'big', secId: 'am', idx: 0 },
     viewDate: new Date(2026, 8, 16),
+    // 메뉴의 '내일로' 등은 진짜 오늘 기준이다 (HB 2026-11-12) — 이 시험은 '오늘을 보는 중' 자리를 지킨다.
+    // 다른 날을 보는 자리는 tests/test_menu_realtoday.js
+    todayKey: () => todayK || T,
     z: n => String(n).padStart(2, '0'),
     tKey: d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : (todayK || T),
     addDays: (d, n) => { const x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; },
