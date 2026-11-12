@@ -1420,7 +1420,8 @@ async function route(r) {
     const q1 = QT.rows.find(r => r[0] === 'Q1'), rb = RT.rows.find(r => col(r, '성도 이름') === '바대기');
     eq('㊳ 저장 — 시트를 다시 읽어 확인한 뒤 대기함 \'완료\' · 생성된 기록ID · 처리시각', [await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', ''))).then(a => a.slice(-2)), q1[4], q1[7] === col(rb, '기록ID'), !!q1[8], col(rb, '출처')],
       [['ok', 'ok'], '완료', true, true, 'AI']);
-    await page.keyboard.press('Escape'); await page.waitForTimeout(300); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    const shut = () => page.evaluate(() => { S.layers.length = 0; render(); }).then(() => page.waitForTimeout(300));
+    await shut();
     eq('㊳ 첫 화면 — 남은 1건', await page.$eval('.inbox-bar b', e => e.textContent), '새로 들어온 기록 1건');
     await page.click('.inbox-bar'); await tidy(); await page.click(LN + ' .inbox-row'); await tidy();
     const n0 = RT.rows.length;
@@ -1428,6 +1429,7 @@ async function route(r) {
     const q2 = QT.rows.find(r => r[6] === 'f_q2');
     eq('㊳ 대기함에서 빼기 → \'취소\' · 기록은 안 생김 · 첫 화면 알림은 오류만', [q2[4], RT.rows.length, await page.$eval('.inbox-bar', e => e.textContent)], ['취소', n0, '들어온 기록 없음규격 오류 1건']);
     // 같은 녹음이 다시 들어오면 — 미리보기에서 중복으로 잡힌다(대기함은 기록 저장 전이라 따로 막지 않음)
+    await shut();
     QT.rows.push(['Q9', '', 'hb-care.v1', pk('바대기', 'f_q1'), '대기', '', 'f_q1', '', '']);
     await reload(); await page.waitForTimeout(800);
     await page.click('.inbox-bar'); await tidy(); await page.click(LN + ' .inbox-row'); await tidy(); await page.click(LN + ' [data-act="implink"]'); await tidy();
