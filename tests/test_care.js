@@ -27,6 +27,7 @@
 //  ㊱ (1112-N) vNext 칸 — 오른쪽 끝에 더한 열만 · 열이 없는 시트는 예전과 같다 · 긴 글은 줄바꿈까지 · 5만 자 · 다음 질문은 탭 · 시험 시트는 이 기기에만 · 이름 후보 명단 넓힘
 //  ㊲ (1112-N 2·3·4) 붙여넣어 채우기 — 규격 검사(JSON) · Markdown 규칙 읽기(추측 없음) · 초안 · 속성 대조 · 성도 연결(이름만 → 후보) · 중복(원본ID · 해시) · 할 일(세부 칸 · 미채택은 상세 기록 끝) · 모임
 //  ㊳ (1112-N 5) AI 입력대기함 — 대기 줄만 · 규격 오류는 '오류' + 사유(상한) · 접수ID 붙이기 · 줄 다시 찾기(접수ID · 없으면 같은 패킷) · 완료 칸 · ChatGPT 지시문(지금 시트 주소)
+//  ㊴ (1112-N 6) 화면 정리 — 상세 기록 Markdown 안전하게(제목 · 목록 · 굵게만, 나머지는 글자) · 성도 화면 요약(최근 핵심 · 장기 관찰 · 다음 질문 = 기록 + 계획) · 같은 날 계획 찾기
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -53,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
-  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide };`, ctx);
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, mdSafe, personSummary, planForRecord };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -996,6 +997,30 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊳ 완료 칸 — 상태 · 생성된 기록ID · 처리시각 · 오류 비움', A.inboxDoneCells('완료', ['C1', 'C2'], Date.parse('2026-11-12T03:00:00Z')), { '상태': '완료', '생성된 기록ID': 'C1, C2', '처리시각': '2026-11-12 12:00', '오류': '' });
   const g = A.chatgptGuide('SHEET123');
   sc.eq('㊳ ChatGPT 지시문 — 규격 · 탭 이름 · 상태 · 지금 시트 주소', [g.includes('hb-care.v1'), g.includes("'AI 입력대기' 탭"), g.includes('| 대기 |'), g.endsWith('https://docs.google.com/spreadsheets/d/SHEET123/edit')], [true, true, true, true]);
+}
+
+// ㊴ 1112-N 6 화면 정리
+{
+  const J = x => JSON.parse(JSON.stringify(x));
+  sc.eq('㊴ Markdown — 제목 · 목록 · 번호 목록 · 굵게 · 문단', A.mdSafe('### 경과\n- 하나\n- **둘**\n\n1. 첫째\n2. 둘째\n그냥 글\n이어진 줄'),
+    '<div class="md-h">경과</div><ul><li>하나</li><li><b>둘</b></li></ul><ol><li>첫째</li><li>둘째</li></ol><p>그냥 글<br>이어진 줄</p>');
+  sc.eq('㊴ Markdown — HTML · 링크 · 속성은 글자로만(XSS 막기)', A.mdSafe('<img src=x onerror=alert(1)>\n[눌러](javascript:alert(1)) "따옴표" \'홑\'\n**<b>굵게</b>**'),
+    '<p>&lt;img src=x onerror=alert(1)&gt;<br>[눌러](javascript:alert(1)) &quot;따옴표&quot; &#39;홑&#39;<br><b>&lt;b&gt;굵게&lt;/b&gt;</b></p>');
+  sc.eq('㊴ Markdown — 빈 글', A.mdSafe(''), '');
+  const V = [
+    { key: 'a', id: 'C1', ymd: '2026-11-01', who: ['가나다'], core: '옛 핵심', longObs: '가정 돌봄', srcId: 'f1', meetId: 'G1' },
+    { key: 'b', id: 'C2', ymd: '2026-11-10', who: ['가나다', '라마바'], core: '', longObs: '가정  돌봄', srcId: '' },
+    { key: 'c', id: 'C3', ymd: '2026-11-08', who: ['가나다'], core: '최근 핵심', prio: '이번주', basis: '전언', longObs: '직장 스트레스', srcId: 'f2' },
+    { key: 'd', id: 'C4', ymd: '2026-11-11', who: ['가나다'], core: '보관된 것', archived: true },
+    { key: 'e', id: 'C5', ymd: '2026-11-11', who: ['라마바'], core: '남의 것' }];
+  const QN = { C1: { items: [{ t: '수술은?', done: true }, { t: '가족은?', done: false }] }, C3: { items: [{ t: '직장은 어떠세요?', done: false }, { t: '가족은?', done: false }] } };
+  const PL = [{ id: 'P1', name: '가나다', date: '2026-11-15', status: '예정', why: '1. 이사 날짜\n2. 직장은 어떠세요?' }, { id: 'P2', name: '가나다', date: '2026-11-01', status: '예정', why: '지난 계획' }, { id: 'P3', name: '라마바, 가나다', date: '2026-11-20', status: '취소됨', why: '취소' }];
+  const ps = A.personSummary(V, QN, PL, '가나다', '2026-11-12', [{ id: 'G1', url: 'https://plaud.example/1' }]);
+  sc.eq('㊴ 성도 요약 — 최근 핵심(핵심이 있는 가장 최근 · 보관 · 남의 것 빼고)', J(ps.core), { text: '최근 핵심', ymd: '2026-11-08', key: 'c', prio: '이번주', basis: '전언' });
+  sc.eq('㊴ 성도 요약 — 장기 관찰(최근 차례 · 같은 글은 하나)', ps.obs.map(x => x.text), ['가정  돌봄', '직장 스트레스']);
+  sc.eq('㊴ 성도 요약 — 다음 질문: 앞으로의 예정 계획 \'물어볼 것\' 먼저 · 기록의 안 물어본 것 · 겹침 하나', J(ps.qs.map(x => [x.t, x.from])), [['이사 날짜', '계획'], ['직장은 어떠세요?', '계획'], ['가족은?', '기록']]);
+  sc.eq('㊴ 성도 요약 — 원본(모임 원본 링크)', J(ps.src.map(x => [x.id, x.url])), [['f2', ''], ['f1', 'https://plaud.example/1']]);
+  sc.eq('㊴ 같은 날 예정 계획 — 이름 하나하나로 · 취소된 것 · 다른 날은 아님', [A.planForRecord(PL, '가나다', '2026-11-15').id, A.planForRecord(PL, '가나다', '2026-11-20'), A.planForRecord(PL, '라마바', '2026-11-15'), A.planForRecord([{ id: 'P9', name: '라마바, 가나다', date: '2026-11-11', status: '예정' }], '가 나다', '2026-11-11').id], ['P1', null, null, 'P9']);
 }
 
 sc.done();
