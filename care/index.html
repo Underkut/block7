@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1112-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1113-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -768,7 +768,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1112-5';
+const APP_VERSION = 'v. 26-1113-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1265,7 +1265,7 @@ const NX_TABS = {
 };
 const ACT_NX = ['실행근거'];                       // '액션' 탭 K — 실제 약속 · 목회자 확정 · AI 제안 채택
 const CELL_MAX = 50000;                           // 구글 시트 한 칸 글자 상한
-const NX_LIVE = false;                            // 운영 시트에도 열 · 탭을 더해도 되나 — 7단계 HB 승인 뒤에만 true (그전엔 시험 시트에서만)
+const NX_LIVE = true;                             // 운영 시트에도 열 · 탭을 더해도 되나 — HB 승인(2026-11-13 '운영방안 승인'). 그전엔 시험 시트에서만이었다
 function longText(x) { return String(x == null ? '' : x).replace(/\r/g, '').trim(); }
 function nxReady(map) { return !!map && NX_COLS.every(c => map['@' + c] != null); }
 // 더할 것 — 응답 탭 열 · '액션' 탭 열 · 새 탭. 있는 것은 건너뛴다(여러 번 눌러도 같다). 칸 값은 건드리지 않는다
@@ -1732,17 +1732,18 @@ function parseInbox(values) {
 }
 // 연 김에 할 것 — 대기 줄: 접수ID 가 비었으면 붙이고, 규격이 틀리면 '오류' + 사유. 맞는 것은 waiting 으로(패킷 · 초안 요약과 함께)
 function inboxCheck(items, nowMs, max) {
-  const patches = [], waiting = [], stamp = stampLocal(nowMs), lim = max == null ? INBOX_PATCH_MAX : max;
+  const patches = [], waiting = [], bad = [], stamp = stampLocal(nowMs), lim = max == null ? INBOX_PATCH_MAX : max;
   (items || []).forEach((it, i) => {
+    if (it.st === INBOX_ST.err) { bad.push(it); return; }
     if (it.st !== INBOX_ST.wait) return;
     const cells = {}, id = it.id || newId('Q', nowMs + i, ((i * 53) % 1296) / 1296);
     if (!it.id) cells['접수ID'] = id;
     const j = pkJsonText(it.json), r = j == null ? { ok: false, errs: ['패킷JSON 칸이 JSON 이 아닙니다'] } : pkParse(j);
-    if (!r.ok || r.kind !== 'json') { cells['상태'] = INBOX_ST.err; cells['오류'] = (r.errs || ['JSON 이 아닙니다']).slice(0, 5).join(' / ').slice(0, 1000); cells['처리시각'] = stamp; }
+    if (!r.ok || r.kind !== 'json') { cells['상태'] = INBOX_ST.err; cells['오류'] = (r.errs || ['JSON 이 아닙니다']).slice(0, 5).join(' / ').slice(0, 1000); cells['처리시각'] = stamp; bad.push(Object.assign({}, it, { id, err: cells['오류'] })); }
     else { const p = r.packet; waiting.push(Object.assign({}, it, { id, packet: p, title: norm(p.source.title) || norm(p.event.title), date: p.event.date, names: p.records.map(x => pkCleanName(x.person_name)), srcId: it.srcId || norm(p.source.source_id || '') })); }
     if (Object.keys(cells).length && patches.length < lim) patches.push({ row: it.row, id, cells });
   });
-  return { patches, waiting };
+  return { patches, waiting, bad };
 }
 // 쓰기 직전 그 줄 다시 찾기 — 접수ID 로(둘이면 쓰지 않음). 접수ID 가 없던 줄은 패킷 글이 같은 줄 하나일 때만
 function inboxFind(values, item) {
@@ -2796,7 +2797,7 @@ async function loadData(quiet) {
     DATA.visOpts = optsParse(V(VIS_OPT_TAB), VIS_OPT_FIELDS);
     DATA.attrRows = parseAttrRows(V('속성')); DATA.meets = parseMeetTab(V('모임')); DATA.roster = parseRosterTab(V('성도'));
     { const items = parseInbox(V(INBOX_TAB)), chk = inboxCheck(items, Date.now());   // 1112-N 5 AI 입력대기함 — 열 때마다 본다
-      DATA.inbox = chk.waiting; DATA.inboxBad = items.filter(x => x.st === INBOX_ST.err).concat(items.filter(x => x.st === INBOX_ST.wait && chk.patches.some(p => p.row === x.row && p.cells['상태'] === INBOX_ST.err)).map(x => Object.assign({}, x, { err: chk.patches.find(p => p.row === x.row).cells['오류'] })));
+      DATA.inbox = chk.waiting; DATA.inboxBad = chk.bad;
       if (chk.patches.length && DATA.nx) setTimeout(() => inboxPatch(chk.patches, items), 0); }   // 1112-N 붙여넣기: 속성 대조 · 모임 중복 · 새 성도 명단
     let form = DATA.form;
     if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
@@ -2883,7 +2884,7 @@ async function ensurePrepared() {
 async function prepareNx() {
   const sv = saved(); if (!sv.trialOn && !NX_LIVE) { toast('운영 시트에는 아직 더하지 않습니다\n시험 시트에서 먼저 확인합니다'); return false; }
   if (!(await ensurePrepared())) return false;
-  if (!confirm('새 칸을 더합니다 (' + sv.sheet.name + ')\n\n· 응답 탭 끝: ' + NX_COLS.join(' · ') + '\n· 액션 탭 끝: 실행근거\n· 새 탭: 모임 · AI 입력대기\n\n있던 기록과 칸은 건드리지 않습니다. 더할까요?')) return false;
+  if (!confirm((sv.trialOn ? '시험 시트' : '⚠️ 운영 시트') + '에 새 칸을 더합니다\n' + sv.sheet.name + '\n\n· 응답 탭 끝: ' + NX_COLS.join(' · ') + '\n· 액션 탭 끝: 실행근거\n· 새 탭: 모임 · AI 입력대기\n\n있던 기록과 칸은 건드리지 않습니다(더하기만). 더할까요?')) return false;
   try {
     toast('칸을 더하는 중…', 2500);
     const info = await readTabs(sv.sheet.id), tab = findResponsesTab(info.tabs), act = info.tabs.find(t => t.title === '액션');
@@ -4217,7 +4218,7 @@ function suggHtml(L) {
   const q = norm(L.nq); if (!q) return '';
   const have = new Set(splitNames(L.form.name).map(nameKey)), g = groupCanon(q), qk = nameKey(q);
   // 1112-N 후보 = 심방 기록 성도 + 기도노트 사람 + 셀 명단(불러온 것) — HB 2026-11-12 '넓혀'
-  const names = nameCands(M().people, DATA.pray && DATA.pray.people, CELLS.groups).filter(c => !have.has(nameKey(c.name)) && nameKey(c.name).includes(qk) && !(g && nameKey(c.name) === nameKey(g))).slice(0, 8);
+  const names = allCands().filter(c => !have.has(nameKey(c.name)) && nameKey(c.name).includes(qk) && !(g && nameKey(c.name) === nameKey(g))).slice(0, 8);
   const sub = c => c.src.includes('심방') ? (c.roles || []).join(' · ') + (c.last ? ' · ' + md(c.last) : '') : c.cell ? c.cell : '기도노트';
   return (g && !have.has(nameKey(g)) ? '<button class="grpsg" data-act="pickname" data-v="' + esc(g) + '">' + esc(g) + ' <small>명단 불러오기</small></button>' : '') +
     names.map(c => '<button data-act="pickname" data-v="' + esc(c.name) + '">' + nm(c.name) + ' <small>' + esc(sub(c)) + '</small></button>').join('');
@@ -4586,7 +4587,8 @@ function knownAttrs() {
   [['구분', 'roles'], ['전화 / 만남', 'methods'], ['태그', 'tags'], ['액션', 'acts']].forEach(([t, k]) => (o[k] || []).forEach(v => { if (!out[t].includes(v)) out[t].push(v); }));
   return out;
 }
-function allCands() { return nameCands(M().people, DATA.pray && DATA.pray.people, CELLS.groups, DATA.roster); }
+let CANDS = null;   // 한 번 그릴 때 한 번만 만든다(render 가 비운다 — 명단이 바뀌는 길은 모두 render 로 끝난다)
+function allCands() { if (!CANDS) CANDS = nameCands(M().people, DATA.pray && DATA.pray.people, CELLS.groups, DATA.roster); return CANDS; }
 function candInfo(name) {
   const c = allCands().find(x => nameKey(x.name) === nameKey(name)); if (!c) return '';
   if (c.src.includes('심방')) return [(c.roles || []).join(' · '), c.last ? '최근 심방 ' + md(c.last) : ''].filter(Boolean).join(' · ');
@@ -4708,7 +4710,7 @@ function impLinkHtml(L) {
     h += '<div class="review imp-plan"><b>같은 날 계획이 있습니다</b> · ' + esc(x.person) + ' ' + mdw(pl.date) + (pl.time ? ' ' + esc(pl.time) : '') + ' 계획<br>이 기록을 그 계획에 이을까요? (계획이 \'기록됨\' 으로 바뀝니다)' +
       '<div class="row"><button class="send" data-act="impplan" data-v="' + i + '|' + esc(pl.id) + '" aria-pressed="' + (c === pl.id) + '">잇기</button><button class="send" data-act="impplan" data-v="' + i + '|" aria-pressed="' + (c === '') + '">잇지 않기</button></div></div>';
   });
-  const left = pkLinkOpen(rows).length + impPlanOpen(L).length;
+  const left = pkLinkOpen(rows).length + impPlanOpen(L, res, dups).length;
   if (left) h += '<p class="hint" style="margin-top:12px">골라야 할 것이 ' + left + '개 남았습니다.</p>';
   return h;
 }
@@ -4730,8 +4732,8 @@ function impLink(L) {
   if (bad.length) { toast('고쳐야 할 기록이 있습니다\n' + bad.map(x => (L.d.recs[x[0]].form.name || L.d.recs[x[0]].raw || '이름 없음') + ': ' + x[1][0]).join('\n')); return; }
   L.rows = pkLinkRows(L.d, allCands()); L.dupMode = {}; L.planLink = {}; L.fix = ''; L.step = 'link'; render();
 }
-function impPlanOpen(L) {   // 계획을 이을지 아직 답하지 않은 기록
-  const d = L.d, res = pkResolve(d, L.rows), dups = pkDups(d, res, M().visits);
+function impPlanOpen(L, res0, dups0) {   // 계획을 이을지 아직 답하지 않은 기록
+  const d = L.d, res = res0 || pkResolve(d, L.rows), dups = dups0 || pkDups(d, res, M().visits);
   return res.map((x, i) => (x && !(dups[i] && (L.dupMode[i] || 'skip') === 'skip') && planForRecord(DATA.plans, x.person, d.recs[i].form.ymd) && L.planLink[i] === undefined ? i : -1)).filter(i => i >= 0);
 }
 function impBuild(L) {
@@ -4991,9 +4993,9 @@ function settingsPane(L, t) {
       '<div class="srow"><span class="t">심방 시트</span><button class="v ok" data-act="pick" data-v="sheet">다시 고르기</button><div class="d">' + (sv.trialOn ? '운영 ' + esc(sv.live.sheet ? sv.live.sheet.name : '아직 안 고름') + ' — 시험 중에는 이 기기에서 안 엽니다</div></div>' +
         '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="trialend">시험 끝내기</button><div class="d">' : '') + esc(sv.sheet ? sv.sheet.name : '아직 안 고름') + (DATA.tab ? ' · 탭 ' + esc(DATA.tab.title) : '') + (M() ? ' · 기록 ' + M().visits.length + '줄' : '') + '</div></div>' +
       '<div class="srow"><span class="t">시트 준비</span>' + (DATA.prepared ? '<span class="v ok">준비됨</span>' : '<button class="v ok" data-act="prepare">준비하기</button>') + '<div class="d">' + (DATA.prepared ? '앱 열 · 탭이 있습니다. 앱에서 적고 고칠 수 있습니다.' : '앱에서 적으려면 처음 한 번 필요합니다 — 있던 기록은 건드리지 않습니다.') + '</div></div>' +
-      (sv.trialOn ? (DATA.prepared ? '<div class="srow"><span class="t">새 칸 (vNext)</span>' + (DATA.nx ? '<span class="v ok">더함</span>' : '<button class="v ok" data-act="nxprep">더하기</button>') + '<div class="d">핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 · 모임 · AI 입력대기. 응답 탭 오른쪽 끝에만 더하고 있던 칸은 건드리지 않습니다.</div></div>' : '') +
-          (DATA.nx ? '<div class="srow"><span class="t">ChatGPT 지시문</span><button class="v ok" data-act="guidecopy">복사</button><div class="d">ChatGPT 가 정리본을 이 시트의 \'' + INBOX_TAB + '\' 탭에 넣게 하는 글입니다(지금 연 시트 주소가 들어갑니다).</div></div>' : '') :
-        '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="pick" data-v="trial">고르기</button><div class="d">드라이브에서 만든 사본을 <b>이 기기에서만</b> 엽니다. 다른 기기 · 계정 설정은 그대로이고, 시험 중에는 캘린더 · 폼 맞춤 · BLOCK7 보내기가 꺼집니다.</div></div>') +
+      ((sv.trialOn || NX_LIVE) && DATA.prepared ? '<div class="srow"><span class="t">새 칸 (vNext)</span>' + (DATA.nx ? '<span class="v ok">더함</span>' : '<button class="v ok" data-act="nxprep">더하기</button>') + '<div class="d">핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 · 언급된 성도 · 모임 · AI 입력대기. 응답 탭 오른쪽 끝에만 더하고 있던 칸은 건드리지 않습니다.</div></div>' : '') +
+      (DATA.nx ? '<div class="srow"><span class="t">ChatGPT 지시문</span><button class="v ok" data-act="guidecopy">복사</button><div class="d">ChatGPT 가 정리본을 이 시트의 \'' + INBOX_TAB + '\' 탭에 넣게 하는 글입니다(지금 연 시트 주소가 들어갑니다).</div></div>' : '') +
+      (sv.trialOn ? '' : '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="pick" data-v="trial">고르기</button><div class="d">드라이브에서 만든 사본을 <b>이 기기에서만</b> 엽니다. 다른 기기 · 계정 설정은 그대로이고, 시험 중에는 캘린더 · 폼 맞춤 · BLOCK7 보내기가 꺼집니다.</div></div>') +
       '<div class="srow"><span class="t">심방 폼</span><button class="v ok" data-act="pick" data-v="form">다시 고르기</button><div class="d">' + esc(sv.form ? sv.form.name : '아직 안 고름 — 고르면 선택지를 폼과 같은 순서로 보여 줍니다') + (sv.responder ? ' · <a href="' + esc(sv.responder) + '" target="_blank" rel="noopener">폼 열기 ↗</a>' : '') + '</div></div>' +
       '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button></div>';
   } else {
@@ -5191,6 +5193,7 @@ function ready() { return USER && G.connected && saved().sheet && DATA.state ===
 let animating = false;
 function render() {
   const app = $('app'), lay = $('layers');
+  CANDS = null;
   { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }   // 1112-N 시험 시트 띠 — 어느 화면에서든(불러오는 중에도) 먼저
   if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; return; }
   const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)

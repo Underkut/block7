@@ -794,7 +794,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊱ 액션 탭은 K 에 실행근거 · 없는 새 탭만', J([pl.act, A.colLetter(pl.act.start), pl.tabs]), [{ add: ['실행근거'], start: 10, grow: 1 }, 'K', ['AI 입력대기']]);
   sc.eq('㊱ 이미 더했으면 더할 것이 없다(여러 번 눌러도 같다)', J(A.nxPlan({ header: H1, cols: 26 }, { header: ACT.concat(['실행근거']), cols: 11 }, ['모임', 'AI 입력대기'])), { resp: { add: [], start: 26, grow: 0 }, act: { add: [], start: 11, grow: 0 }, tabs: [] });
   sc.eq('㊱ 새 탭 머리글', J(A.NX_TABS), { '모임': ['모임ID', '날짜', '제목', '유형', '공통 핵심', '공통 상세 기록', '원본ID', '원본 링크', '미확인 화자', '만든 시각'], 'AI 입력대기': ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태', '오류', '원본ID', '생성된 기록ID', '처리시각'] });
-  sc.eq('㊱ 운영 시트에 열 더하기는 아직 잠김(7단계 HB 승인 뒤)', A.NX_LIVE, false);
+  sc.eq('㊱ 운영 시트에 열 더하기 — HB 승인(2026-11-13) 뒤 열림', A.NX_LIVE, true);
 
   const m0 = A.headerMap(H0).map, m1 = A.headerMap(H1).map;
   sc.eq('㊱ 열이 모두 있어야 새 칸을 보인다', [A.nxReady(m0), A.nxReady(m1), A.nxReady(A.headerMap(H0.concat(['핵심 한줄'])).map)], [false, true, false]);
@@ -991,6 +991,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
     [[3, ['접수ID'], ''], [4, ['상태', '오류', '처리시각'], '오류'], [6, ['상태', '오류', '처리시각'], '오류']]);
   sc.eq('㊳ 오류 사유 — 어디가 왜', [ck.patches[1].cells['오류'], ck.patches[2].cells['오류']], ['records[0].priority — "급함" 는 허용 값(긴급 · 이번주 · 장기관찰 · 일반)이 아닙니다', '패킷JSON 칸이 JSON 이 아닙니다']);
   sc.eq('㊳ 붙인 접수ID 가 기다림 목록에도', ck.waiting[1].id, ck.patches[0].id);
+  sc.eq('㊳ 오류 목록 — 이미 오류인 줄 + 이번에 오류로 잡은 줄(사유와 함께)', J(ck.bad.map(x => [x.row, !!x.err])), [[4, true], [6, true]]);
   sc.eq('㊳ 고치는 줄 상한', A.inboxCheck(items, 0, 1).patches.length, 1);
   sc.eq('㊳ 줄 다시 찾기 — 접수ID 로 · 앞줄이 지워져 밀려도', A.inboxFind([H, V[2], V[1]], items[0]).row, 3);
   sc.eq('㊳ 접수ID 가 없던 줄은 같은 패킷 글로 · 같은 접수ID 가 둘이면 쓰지 않음', [A.inboxFind(V, items[1]).row, A.inboxFind([H, V[1], V[1]], items[0])], [3, null]);
