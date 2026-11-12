@@ -4227,6 +4227,7 @@ function ready() { return USER && G.connected && saved().sheet && DATA.state ===
 let animating = false;
 function render() {
   const app = $('app'), lay = $('layers');
+  { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }   // 1112-N 시험 시트 띠 — 어느 화면에서든(불러오는 중에도) 먼저
   if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; return; }
   const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
   app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + '<div class="tip" id="tip" hidden></div>';
@@ -4246,7 +4247,6 @@ function render() {
   });
   [...lay.children].slice(S.layers.length).forEach(el => el.remove());
   document.body.classList.toggle('locked', S.layers.length > 0 || S.sheet);
-  { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }
   setTimeout(typingSync, 0);   // 1109-J 3-6 (다시 그린 바로 뒤 단추가 칸에 포커스를 주는 경우가 있어 한 박자 뒤에)
   recentFadeAll();
 }
