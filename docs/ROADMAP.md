@@ -42,7 +42,7 @@ HB 가 ChatGPT 와 함께 만든 지시문(첨부 zip `01_Claude_Code_지시문.
 | 2·3·4 | 붙여넣어 채우기(JSON · Markdown 규칙) · 속성 대조 · 성도 연결 확인 창 · 중복 방지 · 부분 실패 재시도 | Opus 매우 높음 | ✅ care v. 26-1112-3 · `test_care` 405(㊲ 43) · e2e `care_write` 307(㊲ 32) · 실제 샘플 둘은 저장소 밖에서만 돌려 지시문 기대와 같음 · PR #1047 배포됨 11/12 |
 | 5 | AI 입력대기함 (앱 열 때 조회 → 같은 흐름 → 다시 읽어 확인 후 '완료') | Opus 높음 | ✅ care v. 26-1112-4 · `test_care` 415(㊳ 10) · e2e `care_write` 317(㊳ 10) · PR #1050 배포됨 11/12 · ChatGPT 가 실제로 시트에 쓰는지는 HB 확인 대기 |
 | 6 | 화면: 카드 · 성도 화면 순서 · 모임↔성도 · 같은 날 계획 연결 · 안전한 Markdown | Sonnet 높음(실제는 Opus) | ✅ care v. 26-1112-5 · `test_care` 423(㊴ 8) · e2e `care_write` 327(㊴ 10) · PR #1053 배포됨 |
-| 7 | 전체 시험 · 회귀 · 운영 시트에 열 · 탭 추가(HB 승인 뒤) | Opus 높음(실제 Fable) | ✅ `NX_LIVE=true` care v. 26-1113-1 · 운영 백업 사본 11/13 · 최종 보고 `docs/care/vnext-1112.md` · 열 더하기는 HB 가 설정에서 한 번 누른다 |
+| 7 | 전체 시험 · 회귀 · 운영 시트에 열 · 탭 추가(HB 승인 뒤) | Opus 높음(실제 Fable) | ✅ `NX_LIVE=true` care v. 26-1113-1 · 운영 백업 사본 11/13 · 최종 보고 `docs/care/vnext-1112.md` · 열 더하기는 HB 가 설정에서 한 번 누른다 · PR #1055 배포됨 11/13 |
 
 ### 0 점검 결과 (2026-11-12)
 - 구조: `care/index.html` 한 장 · 브라우저가 **Sheets API 를 직접** 부른다(Apps Script 없음). 구글 열쇠는 `gcal-functions` 한 벌, 권한 `drive.file`(고른 파일만).
