@@ -24,6 +24,7 @@
 //  ⑳ 출석 — 메모 꼴 붙여 넣기를 칸으로 · 예배 · 모임 · 개인 기도 · 탭은 머리글 이름으로 · 띄어쓰기 무시로 사람 맞춤 · 바뀐 칸만 고침
 //  ㉑ 기도노트 표시색 — 기도노트 규칙대로(사람 색 · 묶음 · 분류에 이은 색, 앞 차례가 이김) · 색 이름은 기도노트 것 · 덩어리는 wid 가 같을 때만
 //  ㉓ 출석 입력 새로 — '언제 보였나' · 알약 목록(탭 · 기본값 · 더하기 · 옮기기 · 이름 바꾸기 · 지우기 · 상한) · 이름 쉼표로 여럿 · 날짜 단추
+//  ㊱ (1112-N) vNext 칸 — 오른쪽 끝에 더한 열만 · 열이 없는 시트는 예전과 같다 · 긴 글은 줄바꿈까지 · 5만 자 · 다음 질문은 탭 · 시험 시트는 이 기기에만 · 이름 후보 명단 넓힘
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -47,7 +48,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
   ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
-  groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory };`, ctx);
+  groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
+  NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -770,6 +772,75 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㉟ 지난 그 셀 심방 명단 — 가장 최근 것 · 사람 없는 기록은 건너뜀 · 없으면 빈 목록',
     J([A.groupFromHistory(M.visits.concat([{ name: '가나다 셀, 차카타', ymd: '2026-10-01', names: ['차카타'], groups: ['가나다 셀'] }]), '가나다셀'), A.groupFromHistory(M.visits, '하늘 셀')]),
     [['라마바', '사아자'], []]);
+}
+
+// ㊱ 1112-N vNext — 핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 · 시험 시트 · 이름 후보
+{
+  const J = x => JSON.parse(JSON.stringify(x));
+  const H0 = ['Timestamp', '심방 날짜', '성도 이름', '구분', '전화 / 만남', '내용', '태그', '액션', '대화 깊이', '장소', 'PAY', '기록ID', '출처', '심방일', '수정', '확인', '보관'];
+  const H1 = H0.concat(A.NX_COLS);
+  sc.eq('㊱ 더할 열 — 응답 탭 끝(R 부터) 여덟 · 다음 질문 열은 없음(탭을 쓴다)', J(A.nxPlan({ header: H0, cols: 17 }, null, []).resp), { add: A.NX_COLS.slice(), start: 17, grow: 8 });
+  sc.eq('㊱ 첫 새 열은 R', A.colLetter(A.nxPlan({ header: H0, cols: 26 }, null, []).resp.start), 'R');
+  sc.eq('㊱ 다음 질문은 열로 만들지 않는다', !A.NX_COLS.includes('다음 질문'), true);
+  const ACT = ['액션ID', '기록ID', '성도', '종류', '세부', '내용', '기한', '상태', '완료일', 'BLOCK7 할일'];
+  const pl = A.nxPlan({ header: H0, cols: 17 }, { header: ACT, cols: 10 }, ['Form Responses 1', '액션', '모임']);
+  sc.eq('㊱ 액션 탭은 K 에 실행근거 · 없는 새 탭만', J([pl.act, A.colLetter(pl.act.start), pl.tabs]), [{ add: ['실행근거'], start: 10, grow: 1 }, 'K', ['AI 입력대기']]);
+  sc.eq('㊱ 이미 더했으면 더할 것이 없다(여러 번 눌러도 같다)', J(A.nxPlan({ header: H1, cols: 25 }, { header: ACT.concat(['실행근거']), cols: 11 }, ['모임', 'AI 입력대기'])), { resp: { add: [], start: 25, grow: 0 }, act: { add: [], start: 11, grow: 0 }, tabs: [] });
+  sc.eq('㊱ 새 탭 머리글', J(A.NX_TABS), { '모임': ['모임ID', '날짜', '제목', '유형', '공통 핵심', '공통 상세 기록', '원본ID', '원본 링크', '미확인 화자', '만든 시각'], 'AI 입력대기': ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태', '오류', '원본ID', '생성된 기록ID', '처리시각'] });
+  sc.eq('㊱ 운영 시트에 열 더하기는 아직 잠김(7단계 HB 승인 뒤)', A.NX_LIVE, false);
+
+  const m0 = A.headerMap(H0).map, m1 = A.headerMap(H1).map;
+  sc.eq('㊱ 열이 모두 있어야 새 칸을 보인다', [A.nxReady(m0), A.nxReady(m1), A.nxReady(A.headerMap(H0.concat(['핵심 한줄'])).map)], [false, true, false]);
+  sc.eq('㊱ 새 열이 폼 질문으로 잘못 잡히지 않는다(폼에 없는 열 경고에도 안 뜸)', A.formVsSheet([{ title: '성도 이름' }], H1).notInForm.filter(h => A.NX_COLS.includes(h)), []);
+  // 열 순서가 섞여도 이름으로
+  const Hx = H1.slice(0, 11).concat(['상세 기록'], H1.slice(11).filter(h => h !== '상세 기록'));
+  const row = new Array(Hx.length).fill(''), put = (h, v) => { row[Hx.indexOf(h)] = v; };
+  put('성도 이름', '가나다'); put('심방 날짜', '11/11'); put('Timestamp', '11/11/2026 10:00:00'); put('내용', '짧은 메모'); put('기록ID', 'C1'); put('심방일', '2026-11-11');
+  put('핵심 한줄', '어머니 수술 앞두고 불안'); put('상세 기록', '## 상황\r\n- 다음 주 수술\n\n- 기도 부탁'); put('장기 관찰', '가정 돌봄 부담'); put('우선순위', '이번주'); put('정보 성격', '전언'); put('원본ID', 'plaud-1');
+  const v = A.rowToVisit(row, A.headerMap(Hx).map, {});
+  sc.eq('㊱ 줄 → 기록 — 새 칸을 이름으로 읽고, 긴 글은 줄바꿈 그대로(\\r 만 뺌)', J([v.core, v.detail, v.longObs, v.prio, v.basis, v.srcId, v.meetId, v.text]),
+    ['어머니 수술 앞두고 불안', '## 상황\n- 다음 주 수술\n\n- 기도 부탁', '가정 돌봄 부담', '이번주', '전언', 'plaud-1', '', '짧은 메모']);
+  const vOld = A.rowToVisit(['11/1/2026 9:00:00', '11/1', '가나다', '', '', '옛 글'], A.headerMap(H0).map, {});
+  sc.eq('㊱ 열이 없는 옛 시트는 새 칸이 모두 비어 있다', J([vOld.core, vOld.detail, vOld.prio, vOld.basis]), ['', '', '', '']);
+
+  // 쓰기
+  const f = A.recordFromVisit(Object.assign({ names: ['가나다'], groups: [], notes: [], roles: [], rolesEtc: [], tags: [], tagsEtc: [], acts: [], actsEtc: [], methodEtc: '', method: '' }, v));
+  sc.eq('㊱ 안 바꾸고 저장하면 칸이 하나도 안 바뀐다(긴 글 \\r 포함)', J(A.editPatch(Hx, A.headerMap(Hx).map, row, f, 1).cells.map(c => c.k)), []);
+  const f2 = Object.assign({}, f, { detail: '## 상황\n- 다음 주 수술\n- 기도 부탁', prio: '긴급' });
+  sc.eq('㊱ 상세 기록은 줄바꿈만 바뀌어도 값이 바뀐 것 · 우선순위', J(A.editPatch(Hx, A.headerMap(Hx).map, row, f2, 1).cells.map(c => c.k)), ['@상세 기록', '@우선순위', '@수정']);
+  const nr = A.newRowValues(H1, m1, Object.assign(A.blankRecord('2026-11-12'), { name: '라마바', core: '한줄', detail: '줄1\n줄2', basis: '직접' }), 'C9', Date.parse('2026-11-12T01:00:00Z'));
+  sc.eq('㊱ 새 줄 — 새 칸에 이름으로 · 빈 칸은 비움', J([nr.row[H1.indexOf('핵심 한줄')], nr.row[H1.indexOf('상세 기록')], nr.row[H1.indexOf('정보 성격')], nr.row[H1.indexOf('우선순위')], nr.lost]), ['한줄', '줄1\n줄2', '직접', '', []]);
+  const nr0 = A.newRowValues(H0, m0, Object.assign(A.blankRecord('2026-11-12'), { name: '라마바', text: 'x' }), 'C9', 1);
+  sc.eq('㊱ 열 없는 시트에 새 칸 비워 적으면 잃는 것 없음 · 줄 길이 그대로', J([nr0.lost, nr0.row.length]), [[], 17]);
+  const nr0b = A.newRowValues(H0, m0, Object.assign(A.blankRecord('2026-11-12'), { name: '라마바', text: 'x', core: '한줄' }), 'C9', 1);
+  sc.eq('㊱ 열 없는 시트에 새 칸을 적으면 잃은 칸으로 알린다(조용히 버리지 않음)', J(nr0b.lost), ['@핵심 한줄']);
+  sc.eq('㊱ 핵심 한줄 · 상세 기록만 있어도 저장할 수 있다', J([A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: '가', core: '한줄' })), A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: '가', detail: '길게' }))]), [[], []]);
+  const big = 'ㄱ'.repeat(A.CELL_MAX + 1);
+  sc.eq('㊱ 상세 기록 5만 자 넘으면 저장 전에 막는다', A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: '가', detail: big })).some(x => /상세 기록이 너무 깁니다/.test(x)), true);
+  sc.eq('㊱ 딱 5만 자는 된다', A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: '가', detail: 'ㄱ'.repeat(A.CELL_MAX) })), []);
+
+  // 다음 질문 — 입력 칸(줄바꿈) ↔ 탭 항목
+  const old = [{ t: '수술 날짜는 정해졌나요?', done: true }, { t: '가족은 어떠세요?', done: false }];
+  const qm = A.qnMerge(old, '1. 수술 날짜는 정해졌나요?\n2. 새 질문\n');
+  sc.eq('㊱ 다음 질문 — 줄마다 하나 · 번호 떼기 · 물어봄 표시는 같은 질문이면 이어받음', J(qm), [{ t: '수술 날짜는 정해졌나요?', done: true }, { t: '새 질문', done: false }]);
+  sc.eq('㊱ 다음 질문 → 입력 칸 글', A.qnText(old), '수술 날짜는 정해졌나요?\n가족은 어떠세요?');
+  sc.eq('㊱ 다음 질문 탭 칸 글은 예전 꼴 그대로', A.qnEncode(qm), '[x] 수술 날짜는 정해졌나요?\n[ ] 새 질문');
+
+  // 시험 시트 — 이 기기에만
+  const raw = { sheet: { id: 'LIVE', name: '운영' }, form: { id: 'F', name: '폼' }, responder: 'https://f', cutoff: '2025-01-01', at: 5, trial: { sheet: { id: 'TEST', name: '사본' } }, lmode: 'brief' };
+  const vw = A.cfgView(raw);
+  sc.eq('㊱ 시험 시트 — 보이는 시트는 사본 · 폼은 없음(선택지 맞춤 안 돎) · 운영 값은 따로 들고 있음', J([vw.sheet.id, vw.form, vw.responder, vw.trialOn, vw.live.sheet.id, vw.cutoff, vw.lmode]), ['TEST', null, '', true, 'LIVE', '2025-01-01', 'brief']);
+  sc.eq('㊱ 시험 시트는 계정에 안 올린다 — 올리는 값은 운영 시트 그대로', J(A.pickCfg(raw)), { sheet: { id: 'LIVE', name: '운영' }, form: { id: 'F', name: '폼' }, responder: 'https://f', cutoff: '2025-01-01', at: 5 });
+  sc.eq('㊱ 다른 기기에서 계정 설정이 내려와도 이 기기 시험 시트는 그대로', J(A.mergeCfg(raw, { sheet: { id: 'LIVE2', name: '운영2' }, at: 9 }, 10).local.trial), { sheet: { id: 'TEST', name: '사본' } });
+  sc.eq('㊱ 시험이 없으면 예전과 같다', J(A.cfgView({ sheet: { id: 'LIVE' }, form: { id: 'F' } })), { sheet: { id: 'LIVE' }, form: { id: 'F' } });
+  sc.eq('㊱ 시험 시트 id 가 비면 시험 아님', A.cfgView({ sheet: { id: 'LIVE' }, trial: { sheet: { id: '' } } }).sheet.id, 'LIVE');
+
+  // 이름 후보 — 심방 + 기도노트 + 셀
+  const people = { '가나다': { roles: ['셀원'], last: '2026-11-01' }, '라 마바': { roles: [], last: '2026-10-01' }, '(이름 없음)': { roles: [] } };
+  const cands = A.nameCands(people, ['라마바', '사아자', '가나다 셀'], [{ name: '하늘셀', leaders: ['차카타'], members: ['사아자', '파하'] }]);
+  sc.eq('㊱ 이름 후보 — 셋을 띄어쓰기 무시로 하나로 · 심방 기록 꼴 먼저 · 어디서 왔는지 · 셀 표시는 뺌', J(cands.map(c => [c.name, c.src, c.cell])),
+    [['가나다', ['심방'], ''], ['라 마바', ['심방', '기도'], ''], ['사아자', ['기도', '셀'], '하늘셀'], ['차카타', ['셀'], '하늘셀'], ['파하', ['셀'], '하늘셀']]);
+  sc.eq('㊱ 심방 기록 성도의 구분 · 최근 날은 그대로', J([cands[0].roles, cands[0].last]), [['셀원'], '2026-11-01']);
 }
 
 sc.done();

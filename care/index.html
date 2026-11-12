@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1112-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1112-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -692,6 +692,21 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
 .etcs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
 .etcc{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--s1);border:1px solid var(--line)}
 .etcc small{color:var(--tx3)}.etcc button{color:var(--ac);font-size:12.5px;padding:2px 6px}
+/* 1112-N vNext */
+.trialbar{position:fixed;top:env(safe-area-inset-top,0);left:50%;transform:translateX(-50%);z-index:999;background:#c2410c;color:#fff;font-size:11px;line-height:1;padding:4px 12px 5px;border-radius:0 0 9px 9px;pointer-events:none;max-width:70vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nx-core{font-weight:500}
+.nx-det{margin:12px 0 4px;border-top:1px solid var(--line)}
+.nx-det-h{display:flex;align-items:center;gap:8px;width:100%;padding:12px 2px;font-size:14px;color:var(--tx)}
+.nx-det-h .v{margin-left:auto;font-size:12px;color:var(--tx3)}
+.nx-det-h svg{transition:transform .2s}
+.nx-det.open .nx-det-h svg{transform:rotate(180deg)}
+.nx-det-t{min-height:220px;resize:vertical;font-size:14px;line-height:1.6}
+.nx-core-v{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 12px;font-size:15px}
+.nx-core-v b{font-weight:500;flex-basis:100%}
+.nx-prio{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--s2);color:var(--tx2)}
+.nx-prio.p0{background:var(--warn-soft);color:var(--warn)}
+.nx-heard{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--s2);color:var(--tx2)}
+.nx-detail{white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -702,7 +717,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1112-1';
+const APP_VERSION = 'v. 26-1112-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -747,9 +762,9 @@ function headerMap(row) {
   const cols = {}, map = {};
   (row || []).forEach((h, i) => { const n = norm(h); if (n && !(n in cols)) cols[n] = i; });
   for (const k in Q) for (const name of Q[k]) if (name in cols) { map[k] = cols[name]; break; }
-  APP_COLS.forEach(c => { if (c in cols) map['@' + c] = cols[c]; });
+  APP_COLS.concat(NX_COLS).forEach(c => { if (c in cols) map['@' + c] = cols[c]; });
   const used = new Set(Object.values(map));
-  for (const k in Q_LIKE) if (map[k] == null) { const n = Object.keys(cols).find(h => !used.has(cols[h]) && !APP_COLS.includes(h) && qLike(k, h)); if (n != null) { map[k] = cols[n]; used.add(cols[n]); } }
+  for (const k in Q_LIKE) if (map[k] == null) { const n = Object.keys(cols).find(h => !used.has(cols[h]) && !APP_COLS.includes(h) && !NX_COLS.includes(h) && qLike(k, h)); if (n != null) { map[k] = cols[n]; used.add(cols[n]); } }
   return { map, cols };
 }
 function isResponsesHeader(row) { const { map } = headerMap(row); return map.name != null && map.text != null; }
@@ -759,11 +774,11 @@ function findResponsesTab(tabs) { return (tabs || []).find(t => isResponsesHeade
 function colLetter(i) { let s = ''; i = Math.floor(i); do { s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i / 26) - 1; } while (i >= 0); return s; }
 
 // 응답 탭에 더할 앱 열. 이미 있는 것은 건너뛰고, 마지막으로 차 있는 머리글 바로 뒤부터 붙인다
-function planColumns(header, columnCount) {
+function planColumns(header, columnCount, list) {
   const h = header || [];
   let last = -1; h.forEach((x, i) => { if (norm(x)) last = i; });
   const have = new Set(h.map(norm));
-  const add = APP_COLS.filter(c => !have.has(c));
+  const add = (list || APP_COLS).filter(c => !have.has(c));
   const start = last + 1, need = start + add.length;
   return { add, start, grow: Math.max(0, need - (columnCount || 0)) };
 }
@@ -822,6 +837,9 @@ function rowToVisit(row, map, opts) {
     depth: norm(at('depth')), roles: roles.vals, rolesEtc: roles.etc, method: meth.val, methodEtc: meth.etc,
     place: norm(at('place')), pay: norm(at('pay')), tags: tags.vals, tagsEtc: tags.etc, acts: acts.vals, actsEtc: acts.etc,
     archived: !!norm(at('@보관')),
+    // 1112-N vNext 칸 — 시트에 그 열이 없으면 모두 빈 값(옛 시트 · 운영 시트는 예전과 같다)
+    core: norm(at('@핵심 한줄')), detail: longText(at('@상세 기록')), longObs: longText(at('@장기 관찰')), prio: norm(at('@우선순위')), basis: norm(at('@정보 성격')),
+    meetId: norm(at('@모임ID')), srcId: norm(at('@원본ID')), hash: norm(at('@가져오기 해시')),
   };
 }
 
@@ -841,7 +859,7 @@ function formSummary(form) {
 // 폼 질문과 시트 머리글이 같은지 — 폼이 쓰는 열 이름 = 질문 제목
 function formVsSheet(summary, header) {
   const have = new Set((header || []).map(norm)), titles = new Set((summary || []).map(q => q.title));
-  const skip = new Set(APP_COLS.concat(Q.ts));
+  const skip = new Set(APP_COLS.concat(NX_COLS, Q.ts));
   return {
     notInSheet: (summary || []).map(q => q.title).filter(t => !have.has(t)),
     notInForm: (header || []).map(norm).filter(h => h && !skip.has(h) && !titles.has(h)),
@@ -1007,14 +1025,16 @@ function talkPaste(text, w) {
   return T;
 }
 function blankRecord(today, last) {
-  return { name: '', ymd: today, roles: (last && last.roles) || [], rolesEtc: '', method: '', methodEtc: '', place: '', pay: '', text: '', pn: {}, depth: '', tags: [], tagsEtc: '', acts: [], actsEtc: '' };
+  return { name: '', ymd: today, roles: (last && last.roles) || [], rolesEtc: '', method: '', methodEtc: '', place: '', pay: '', text: '', pn: {}, depth: '', tags: [], tagsEtc: '', acts: [], actsEtc: '',
+    core: '', detail: '', longObs: '', prio: '', basis: '', qn: '' };
 }
 // 시트에서 읽은 기록 → 고치기 입력 꼴 (그대로 다시 쓰면 칸이 하나도 안 바뀌어야 한다 — 시험 ⑫)
 // 1109-T: 기록 태그 = 주제 칸 태그 ∪ 직접 고른 태그. 1109-T6(HB): 칸에서 고른 태그는 '정리' 태그 알약에도 켜진다 →
 //   입력 꼴의 tags 에 그대로 두고(talkTagSync 가 칸 태그가 늘고 줄 때 맞춘다), 저장(recordCells) 때도 한 번 더 합친다
 function recordFromVisit(v) {
   return { name: v.name, ymd: v.ymd, roles: v.roles.slice(), rolesEtc: v.rolesEtc.join(', '), method: v.method, methodEtc: v.methodEtc,
-    place: v.place, pay: v.pay || '', text: v.text, pn: pnOf(v.notes), depth: v.depth, tags: v.tags.slice(), tagsEtc: v.tagsEtc.join(', '), acts: v.acts.slice(), actsEtc: v.actsEtc.join(', ') };
+    place: v.place, pay: v.pay || '', text: v.text, pn: pnOf(v.notes), depth: v.depth, tags: v.tags.slice(), tagsEtc: v.tagsEtc.join(', '), acts: v.acts.slice(), actsEtc: v.actsEtc.join(', '),
+    core: v.core || '', detail: v.detail || '', longObs: v.longObs || '', prio: v.prio || '', basis: v.basis || '' };
 }
 // 사람별 글 목록 → {이름열쇠: {name, text}} (같은 분 칸이 둘이면 이어 붙인다)
 function pnOf(notes) { const o = {}; (notes || []).forEach(n => { const k = nameKey(n.name); if (!k) return; if (o[k]) o[k].text += '\n' + n.text; else o[k] = { name: n.name, text: n.text }; }); return o; }
@@ -1036,7 +1056,9 @@ function validateRecord(r) {
   const e = [];
   if (!whoKeys(r.name).length) e.push('성도 이름을 적어 주세요');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(r.ymd || '')) e.push('날짜를 골라 주세요');
-  if (!norm(r.text) && !notesOf(r).some(n => norm(n.text)) && !norm(r.method) && !norm(r.methodEtc)) e.push('나눈 이야기나 방식 중 하나는 적어 주세요');
+  if (!norm(r.text) && !notesOf(r).some(n => norm(n.text)) && !norm(r.method) && !norm(r.methodEtc) && !norm(r.core) && !norm(r.detail)) e.push('나눈 이야기나 방식 중 하나는 적어 주세요');
+  const c = recordCells(r);   // 1112-N 구글 시트 한 칸은 5만 자까지 — 넘으면 저장 전에 막는다
+  [['text', '나눈 이야기'], ['@상세 기록', '상세 기록'], ['@장기 관찰', '장기 관찰']].forEach(([k, l]) => { if ((c[k] || '').length > CELL_MAX) e.push(l + '이 너무 깁니다 (' + c[k].length.toLocaleString() + '자 · 한 칸 ' + CELL_MAX.toLocaleString() + '자까지)\n나눠 덧붙임으로 적어 주세요'); });
   return e;
 }
 // 입력 꼴 → { 칸이름: 값 }. 칸이름은 Q 의 열쇠(name · date …)와 '@앱열'
@@ -1048,6 +1070,7 @@ function recordCells(r) {
     method: norm(r.method) || norm(r.methodEtc), place: norm(r.place), pay: norm(r.pay), text: joinNotes(r.text || '', notesOf(r)).replace(/\r/g, '').trim(),
     tags: joinMulti(recordTags(r).vals, recordTags(r).etc), acts: joinMulti(r.acts, splitEtc(r.actsEtc)), depth: norm(r.depth),
     '@심방일': y,
+    '@핵심 한줄': norm(r.core), '@상세 기록': longText(r.detail), '@장기 관찰': longText(r.longObs), '@우선순위': norm(r.prio), '@정보 성격': norm(r.basis),
   };
 }
 function sheetSerial(nowMs) { const off = new Date(nowMs).getTimezoneOffset(); return nowMs / 86400000 + 25569 - off / 1440; }
@@ -1072,6 +1095,7 @@ function editPatch(header, map, cur, r, nowMs) {
     if (k === 'date' && norm(was) !== norm(v) && visitYmd(was, map.ts == null ? '' : cur[map.ts]) === r.ymd) return;   // 같은 날을 다른 꼴로 적은 것은 그대로
     if (MULTI_KEYS.includes(k) && sameMulti(was, v)) return;   // 순서만 다르면 같은 값
     if (k === 'name' && sameNames(was, v)) return;             // 1112-M 쉼표 · 띄어쓰기 꼴만 다르면 같은 값 (이름 차례는 본다)
+    if (NX_LONG.includes(k)) { if (longText(was) !== v) out.push({ k, col, value: v, prev: was }); return; }   // 1112-N 긴 글은 줄바꿈도 값
     if (norm(was) !== norm(v)) out.push({ k, col, value: v, prev: was });
   });
   if (out.length && map['@수정'] != null) out.push({ k: '@수정', col: map['@수정'], value: new Date(nowMs).toISOString(), prev: cur[map['@수정']] == null ? '' : cur[map['@수정']] });
@@ -1174,6 +1198,56 @@ function qnPlan(map, v, items, stamp, head) {
 // BLOCK7 로 — '이름 심방' 할일 하나 + 아직 안 물어본 질문들이 하위 항목으로 (HB 2026-11-10)
 function qnB7Text(v) { return whoShort(v && v.name) + ' 심방'; }
 function qnSubs(items) { return (items || []).filter(q => q && !q.done && norm(q.t)).map(q => norm(q.t).slice(0, 200)).slice(0, QN_MAX); }
+
+// ───────── 1112-N vNext — 핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 (+ 가져오기용 모임ID · 원본ID · 해시) ─────────
+// 새 정보는 모두 응답 탭 **오른쪽 끝에 더한 열**에. '내용'(F) 칸의 뜻은 그대로, '덧붙임' 탭은 나중에 덧붙이는 메모 전용 그대로.
+// 다음 질문은 이미 있는 '다음 질문' 탭(1110-Q)을 함께 쓴다 — 열을 따로 만들지 않는다 (HB 2026-11-12 '가').
+// 화면은 시트에 이 열이 **모두** 있을 때만 새 칸을 보여 준다(nxReady) → 열을 더하기 전 시트는 예전과 한 글자도 같다.
+const NX_COLS = ['핵심 한줄', '상세 기록', '장기 관찰', '우선순위', '정보 성격', '모임ID', '원본ID', '가져오기 해시'];
+const NX_LONG = ['@상세 기록', '@장기 관찰'];
+const NX_PRIO = ['긴급', '이번주', '장기관찰', '일반'];
+const NX_BASIS = ['직접', '전언', '혼합', '미확인'];
+const NX_TABS = {
+  '모임': ['모임ID', '날짜', '제목', '유형', '공통 핵심', '공통 상세 기록', '원본ID', '원본 링크', '미확인 화자', '만든 시각'],
+  'AI 입력대기': ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태', '오류', '원본ID', '생성된 기록ID', '처리시각'],
+};
+const ACT_NX = ['실행근거'];                       // '액션' 탭 K — 실제 약속 · 목회자 확정 · AI 제안 채택
+const CELL_MAX = 50000;                           // 구글 시트 한 칸 글자 상한
+const NX_LIVE = false;                            // 운영 시트에도 열 · 탭을 더해도 되나 — 7단계 HB 승인 뒤에만 true (그전엔 시험 시트에서만)
+function longText(x) { return String(x == null ? '' : x).replace(/\r/g, '').trim(); }
+function nxReady(map) { return !!map && NX_COLS.every(c => map['@' + c] != null); }
+// 더할 것 — 응답 탭 열 · '액션' 탭 열 · 새 탭. 있는 것은 건너뛴다(여러 번 눌러도 같다). 칸 값은 건드리지 않는다
+function nxPlan(resp, act, titles) {
+  const have = new Set((titles || []).map(norm));
+  return { resp: planColumns(resp.header, resp.cols, NX_COLS), act: act ? planColumns(act.header, act.cols, ACT_NX) : null, tabs: Object.keys(NX_TABS).filter(t => !have.has(t)) };
+}
+// 다음 질문 입력 칸(한 줄에 하나) → 항목. 같은 질문은 '물어봄' 표시를 이어받는다
+function qnMerge(old, text) {
+  const done = {}; (old || []).forEach(q => { if (q && q.done) done[norm(q.t)] = true; });
+  return qnParse(text).map(t => ({ t, done: !!done[norm(t)] }));
+}
+function qnText(items) { return (items || []).map(q => q.t).join('\n'); }
+// 이 기기 시험 시트 — 고른 시트를 **이 기기에서만** 바꾼다(계정 설정 · 다른 기기는 그대로).
+// 시험 중에는 폼이 없는 것으로 본다(폼 선택지 맞춤이 안 돈다). 캘린더 · BLOCK7 은 화면 쪽에서 막는다
+function cfgView(raw) {
+  const s = Object.assign({}, raw || {});
+  if (s.trial && s.trial.sheet && s.trial.sheet.id) { s.live = { sheet: s.sheet || null, form: s.form || null }; s.sheet = s.trial.sheet; s.form = null; s.responder = ''; s.trialOn = true; }
+  return s;
+}
+// 이름 후보 명단 — 심방 기록 성도 + 기도노트 사람 + 셀 명단(불러온 것). 띄어쓰기 무시로 하나로, 심방 기록에 적힌 꼴이 먼저
+function nameCands(people, prayNames, groups) {
+  const out = [], at = {};
+  const add = (n, src, extra) => {
+    const name = norm(n), k = nameKey(name); if (!k || groupCanon(name)) return;
+    let c = at[k]; if (!c) { c = at[k] = { name, src: [], roles: [], last: '', cell: '' }; out.push(c); }
+    if (!c.src.includes(src)) c.src.push(src);
+    if (extra) Object.keys(extra).forEach(x => { if (extra[x] && (!c[x] || !c[x].length)) c[x] = extra[x]; });
+  };
+  Object.keys(people || {}).forEach(n => { if (n !== '(이름 없음)') add(n, '심방', { roles: (people[n].roles || []).slice(), last: people[n].last || '' }); });
+  (prayNames || []).forEach(n => add(n, '기도'));
+  (groups || []).forEach(g => (g.leaders || []).concat(g.members || []).forEach(n => add(n, '셀', { cell: norm(g.name) })));
+  return out;
+}
 // 덧붙임 탭 → { 기록ID: [{at, who, x}] }
 function parseAddenda(values) {
   const h = (values && values[0]) || [], c = n => h.map(norm).indexOf(n), out = {};
@@ -1998,8 +2072,10 @@ async function checkVersion(manual) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(false); });
 setTimeout(() => checkVersion(false), 2500);
 // 이 기기 저장 — 고른 파일 id · 화면 취향뿐. 심방 내용은 담지 않는다
-function saved() { try { return JSON.parse(localStorage.getItem(CARE_KEY) || '{}') || {}; } catch (e) { return {}; } }
-function save(patch) { try { localStorage.setItem(CARE_KEY, JSON.stringify(Object.assign(saved(), patch))); } catch (e) {} }
+function savedRaw() { try { return JSON.parse(localStorage.getItem(CARE_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function saved() { return cfgView(savedRaw()); }   // 1112-N 이 기기 시험 시트가 있으면 그것을 고른 시트로 본다 (계정 · 다른 기기는 그대로)
+function save(patch) { try { localStorage.setItem(CARE_KEY, JSON.stringify(Object.assign(savedRaw(), patch))); } catch (e) {} }
+function trialOn() { return !!saved().trialOn; }
 
 async function fbInit() {
   await load(FB_JS[0]); await Promise.all(FB_JS.slice(1).map(load));   // 1108-B2: app 다음 auth · firestore 는 함께 받는다
@@ -2038,8 +2114,8 @@ async function cfgSync() {
   if (!USER || !DB) return false;
   try {
     const ref = DB.doc('users/' + USER.uid + '/' + CFG_DOC), snap = await ref.get();
-    const before = JSON.stringify(pickCfg(saved()));
-    const r = mergeCfg(saved(), snap.exists ? snap.data() : null, Date.now());
+    const before = JSON.stringify(pickCfg(savedRaw()));
+    const r = mergeCfg(savedRaw(), snap.exists ? snap.data() : null, Date.now());
     if (r.local) { try { localStorage.setItem(CARE_KEY, JSON.stringify(r.local)); } catch (e) {} }
     if (r.push) await ref.set(r.push);
     const changed = !!r.local && JSON.stringify(pickCfg(r.local)) !== before;
@@ -2050,7 +2126,7 @@ async function cfgSync() {
 // 고르기 · 기준 바꾸기는 이 기기에 적고(시각과 함께) 계정에도 올린다
 function saveCfg(patch) {
   save(Object.assign({}, patch, { at: Date.now() }));
-  if (USER && DB) DB.doc('users/' + USER.uid + '/' + CFG_DOC).set(pickCfg(saved())).catch(() => {});
+  if (USER && DB) DB.doc('users/' + USER.uid + '/' + CFG_DOC).set(pickCfg(savedRaw())).catch(() => {});
 }
 async function googleConnect() {
   try { const j = await fn('/start', { ret: 'https://sweeter.my/care/', care: true }); location.href = j.url; }
@@ -2107,18 +2183,29 @@ async function picker() {
 async function pick(kind) {
   try {
     const P = await picker(), t = await token();
-    const view = new P.DocsView(kind === 'sheet' ? P.ViewId.SPREADSHEETS : P.ViewId.FORMS).setMode(P.DocsViewMode.LIST);
+    const view = new P.DocsView(kind === 'form' ? P.ViewId.FORMS : P.ViewId.SPREADSHEETS).setMode(P.DocsViewMode.LIST);
     new P.PickerBuilder().addView(view).setOAuthToken(t).setDeveloperKey(PICKER_KEY).setAppId(PICKER_APP_ID)
-      .setTitle(kind === 'sheet' ? '심방 시트를 고르세요' : '심방 폼을 고르세요')
+      .setTitle(kind === 'trial' ? '시험할 사본 시트를 고르세요' : kind === 'sheet' ? '심방 시트를 고르세요' : '심방 폼을 고르세요')
       .setCallback(d => {
         if (d.action !== P.Action.PICKED || !d.docs || !d.docs[0]) return;
         const f = { id: d.docs[0].id, name: d.docs[0].name };
+        if (kind === 'trial') { trialSet(f); return; }
         if (kind === 'sheet') save({ test: null }); else DATA.form = null;
         saveCfg(kind === 'sheet' ? { sheet: f } : { form: f, responder: '' });
         toast((kind === 'sheet' ? '시트' : '폼') + '를 골랐습니다\n' + f.name);
         loadData();
       }).build().setVisible(true);
   } catch (e) { toast('고르기 창을 열지 못했습니다\n' + e.message); }
+}
+
+// 1112-N 시험 시트 — 이 기기에서만. 캘린더 · 폼 맞춤 · BLOCK7 보내기는 꺼진다 (사본에 남은 일정ID 가 진짜 '심방' 캘린더를 건드리지 않게)
+function trialReset() { DATA.calId = null; DATA.calOurs = null; DATA.cal = []; DATA.form = null; DATA.formRaw = null; DATA.model = null; DATA.vals = null; DATA.prepared = false; DATA.nx = false; }
+function trialSet(f) {
+  const live = saved().live ? saved().live.sheet : saved().sheet;
+  if (f && live && f.id === live.id) { toast('운영 시트를 시험 시트로 고를 수는 없습니다\n드라이브에서 사본을 만들어 그것을 골라 주세요'); return; }
+  save({ trial: f ? { sheet: f } : null, test: null }); trialReset();
+  toast(f ? '시험 시트로 엽니다\n' + f.name + '\n이 기기에서만 · 캘린더 · 폼 · BLOCK7 은 꺼짐' : '시험을 끝냈습니다\n운영 시트로 돌아갑니다');
+  loadData();
 }
 
 // ───────────────────────────── 자료 (화면 메모리에만) ─────────────────────────────
@@ -2135,7 +2222,7 @@ async function loadData(quiet) {
     const vals = tab.values;
     const tabNames = info.all, hm = headerMap(vals[0] || []).map;
     DATA.prepared = hm['@기록ID'] != null && tabNames.includes('액션') && tabNames.includes('덧붙임');
-    DATA.hasPlace = hm.place != null; DATA.hasPay = hm.pay != null;
+    DATA.hasPlace = hm.place != null; DATA.hasPay = hm.pay != null; DATA.nx = nxReady(hm);
     DATA.payTitle = hm.pay != null ? norm(vals[0][hm.pay]) : '';
     if (DATA.prepared) await patchIds(s.id, tab.title, vals);
     DATA.actStatus = parseActionTab(V('액션'));
@@ -2226,6 +2313,29 @@ async function ensurePrepared() {
   try { toast('시트를 준비하는 중…', 2500); await prepareSheet(); await loadData(true); toast('시트를 준비했습니다\n이제 앱에서 바로 적을 수 있습니다'); return DATA.prepared; }
   catch (e) { toast('시트를 준비하지 못했습니다\n' + e.message); return false; }
 }
+// 1112-N 새 칸 더하기 — 응답 탭 끝 열 · '액션' 탭 K · 새 탭 둘. 있는 칸 · 값은 건드리지 않는다. 운영 시트는 NX_LIVE 전까지 막는다
+async function prepareNx() {
+  const sv = saved(); if (!sv.trialOn && !NX_LIVE) { toast('운영 시트에는 아직 더하지 않습니다\n시험 시트에서 먼저 확인합니다'); return false; }
+  if (!(await ensurePrepared())) return false;
+  if (!confirm('새 칸을 더합니다 (' + sv.sheet.name + ')\n\n· 응답 탭 끝: ' + NX_COLS.join(' · ') + '\n· 액션 탭 끝: 실행근거\n· 새 탭: 모임 · AI 입력대기\n\n있던 기록과 칸은 건드리지 않습니다. 더할까요?')) return false;
+  try {
+    toast('칸을 더하는 중…', 2500);
+    const info = await readTabs(sv.sheet.id), tab = findResponsesTab(info.tabs), act = info.tabs.find(t => t.title === '액션');
+    if (!tab) throw new Error('응답 탭을 찾지 못했습니다');
+    const pl = nxPlan(tab, act || null, info.tabs.map(t => t.title)), reqs = [], data = [], q = t => "'" + t.replace(/'/g, "''") + "'!";
+    if (pl.resp.grow) reqs.push({ appendDimension: { sheetId: tab.sheetId, dimension: 'COLUMNS', length: pl.resp.grow } });
+    if (pl.act && pl.act.grow) reqs.push({ appendDimension: { sheetId: act.sheetId, dimension: 'COLUMNS', length: pl.act.grow } });
+    pl.tabs.forEach(t => reqs.push({ addSheet: { properties: { title: t } } }));
+    if (reqs.length) await gapi(SH + sv.sheet.id + ':batchUpdate', { method: 'POST', body: { requests: reqs } });
+    if (pl.resp.add.length) data.push({ range: q(tab.title) + colLetter(pl.resp.start) + '1', values: [pl.resp.add] });
+    if (pl.act && pl.act.add.length) data.push({ range: q('액션') + colLetter(pl.act.start) + '1', values: [pl.act.add] });
+    pl.tabs.forEach(t => data.push({ range: q(t) + 'A1', values: [NX_TABS[t]] }));
+    await batchValues(sv.sheet.id, data);
+    await loadData(true);
+    toast(DATA.nx ? '새 칸을 더했습니다\n새 기록 화면에 핵심 한줄 · 상세 기록 … 이 보입니다' : '칸을 더했는데 다시 읽어 보니 빠진 칸이 있습니다\n시트 응답 탭 머리글을 봐 주세요');
+    return DATA.nx;
+  } catch (e) { toast('칸을 더하지 못했습니다\n' + e.message); return false; }
+}
 async function freshHead() {
   const s = saved().sheet, title = DATA.tab.title, head = ((await readRange(s.id, title, '1:1'))[0]) || [];
   return { s, title, head, map: headerMap(head).map };
@@ -2308,7 +2418,7 @@ function qnSet(v, items) {
   QN_Q = QN_Q.then(() => writeQn(v, snap)).catch(e => { toast('다음 심방 질문을 시트에 적지 못했습니다\n' + e.message); return loadData(true); });
 }
 // ── 할 일 → BLOCK7 할일 (C3b-1) — 기도노트 · 시리와 같은 쪽지함. BLOCK7 은 그대로 받는다 ──
-async function inboxPush(note) { await DB.doc('pray/' + USER.uid + '/c/b7inbox').set({ items: firebase.firestore.FieldValue.arrayUnion(note) }, { merge: true }); }
+async function inboxPush(note) { if (trialOn()) throw new Error('시험 시트에서는 BLOCK7 로 보내지 않습니다'); await DB.doc('pray/' + USER.uid + '/c/b7inbox').set({ items: firebase.firestore.FieldValue.arrayUnion(note) }, { merge: true }); }
 async function writeB7Mark(v, a, stamp) {
   const s = saved().sheet, av = await readTab(s.id, '액션'), plan = b7MarkPlan(parseActionTab(av), v, a, stamp, newId('A', Date.now(), Math.random()));
   if (plan.append) await appendTo(s.id, '액션', plan.append);
@@ -2582,19 +2692,20 @@ async function busy(fn) { if (BUSY.on) return; BUSY.on = true; document.body.cla
 const TZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Asia/Seoul';
 const enc = encodeURIComponent;
 async function calId() {
+  if (trialOn()) return null;   // 1112-N 시험 시트에서는 캘린더를 읽지도 쓰지도 않는다
   if (DATA.calId) return DATA.calId;
   const list = await gapi(CAL + 'users/me/calendarList?minAccessRole=writer'), c = (list.items || []).find(x => norm(x.summary) === '심방');
   DATA.calId = c ? c.id : null; return DATA.calId;
 }
 const evUrl = (cid, id) => CAL + 'calendars/' + enc(cid) + '/events' + (id ? '/' + enc(id) : '');
-async function evInsert(p, done) { const cid = await calId(); if (!cid) throw new Error("'심방' 캘린더가 없습니다"); const sv = saved(); return (await gapi(evUrl(cid), { method: 'POST', body: calEventBody(p, sv.calPre, sv.calSuf, TZ, done) })).id; }
+async function evInsert(p, done) { const cid = await calId(); if (!cid) throw new Error(trialOn() ? '시험 시트에서는 캘린더에 넣지 않습니다' : "'심방' 캘린더가 없습니다"); const sv = saved(); return (await gapi(evUrl(cid), { method: 'POST', body: calEventBody(p, sv.calPre, sv.calSuf, TZ, done) })).id; }
 async function evPatch(id, body) { const cid = await calId(); await gapi(evUrl(cid, id), { method: 'PATCH', body }); }
 async function evDelete(id) { const cid = await calId(); try { await gapi(evUrl(cid, id), { method: 'DELETE' }); } catch (e) { if (e.status !== 404 && e.status !== 410) throw e; } }
 // '심방' 캘린더 — 우리 표식 일정(지운 것 포함, 맞추기용)과 우리 것이 아닌 일정(보기용)
 async function loadCal(noSync) {
   try {
     const cid = await calId();
-    if (!cid) { DATA.cal = []; DATA.calOurs = []; DATA.calErr = "'심방' 캘린더가 없습니다"; render(); return; }
+    if (!cid) { DATA.cal = []; DATA.calOurs = []; DATA.calErr = trialOn() ? '시험 시트에서는 캘린더를 쓰지 않습니다' : "'심방' 캘린더가 없습니다"; render(); return; }
     let ours = [], tok = '';
     for (let i = 0; i < 4; i++) {
       const j = await gapi(evUrl(cid) + '?privateExtendedProperty=' + enc('careApp=care') + '&showDeleted=true&maxResults=250' + (tok ? '&pageToken=' + enc(tok) : ''));
@@ -2686,7 +2797,7 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // ───────────────────────────── 화면 상태 ─────────────────────────────
-const S = { tvShut: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
+const S = { tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
   wk: 0, mo: today().slice(0, 7), mday: today(), grp: 'dash', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
 const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
 function M() { return DATA.model; }
@@ -2901,6 +3012,7 @@ function lDetail(L) {
     h += '<div class="dt-name dt-who">' + vw.groups.map(g => vw.names.length ? '<span class="grp">' + esc(g) + '</span>' : '<button data-act="person" data-v="' + esc(g) + '"><span class="grp">' + esc(g) + '</span></button>').join('') +
       vw.names.map(n => '<button data-act="person" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + '</div><div class="dt-when">' + dayLabel(v.ymd) + (vw.names.length > 1 ? ' · ' + vw.names.length + '분' : '') + '</div>';
   } else h += '<button data-act="person" data-v="' + esc(vWho(v)[0] || v.name) + '"><div class="dt-name">' + (v.name ? nm(vWho(v)[0] || v.name) : '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
+  if (v.core || v.prio || v.basis) h += '<div class="nx-core-v">' + (v.prio ? '<span class="nx-prio p' + Math.max(0, NX_PRIO.indexOf(v.prio)) + '">' + esc(v.prio) + '</span>' : '') + (v.basis === '전언' ? '<span class="nx-heard">전해 들음</span>' : v.basis && v.basis !== '직접' ? '<span class="nx-heard soft">' + esc(v.basis) + '</span>' : '') + (v.core ? '<b>' + esc(v.core) + '</b>' : '') + '</div>';
   h += '<div class="attrs">' +
     '<div><span class="k">구분</span><span>' + (esc(v.allRoles.join(' · ')) || '<span class="muted">—</span>') + '</span></div>' +
     '<div><span class="k">방식</span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + (meth(v) || '<span class="muted">—</span>') + (v.place ? '<span class="muted">· ' + esc(v.place) + '</span>' : '') + (v.pay ? '<span class="muted">· ' + esc(v.pay) + '</span>' : '') + '</span></div>' +
@@ -2910,6 +3022,8 @@ function lDetail(L) {
     h += '<div class="h-sec"><span>이야기' + (nT > 1 ? '<small style="margin-left:6px">주제 ' + nT + '</small>' : '') + '</span><span class="r">' + (nT > 1 ? '<button data-act="tvall" data-v="' + esc(v.key) + '">' + (anyOpen ? '제목만' : '모두 펴기') + '</button>' : '') + '<button data-act="edit" data-v="' + esc(v.key) + '">고치기</button></span></div>' + (nT || !(v.notes || []).length ? talkViewHtml(v) : ''); }
   // 1112-M 한 분씩 — 그 분 몫 이야기 (누르면 그 분 화면)
   if ((v.notes || []).length) h += '<div class="h-sec">한 분씩<small>' + v.notes.length + '분</small></div>' + v.notes.map(n => '<div class="pnv"><button class="pn-h" data-act="person" data-v="' + esc(n.name) + '">' + nm(n.name) + ' <span>›</span></button><div class="body-txt">' + esc(n.text) + '</div></div>').join('');
+  if (v.detail) { const op = !!S.detOpen[v.key]; h += '<div class="h-sec"><span>상세 기록<small style="margin-left:6px">' + v.detail.length.toLocaleString() + '자</small></span><span class="r"><button data-act="detv" data-v="' + esc(v.key) + '">' + (op ? '접기' : '펴기') + '</button></span></div>' + (op ? '<div class="body-txt nx-detail">' + esc(v.detail) + '</div>' : ''); }
+  if (v.longObs) h += '<div class="h-sec">장기 관찰</div><div class="body-txt">' + esc(v.longObs) + '</div>';
   (v.addn || []).forEach(a => { h += '<div class="addn"><small>덧붙임 · ' + esc(a.at) + '</small>' + esc(a.x) + '</div>'; });
   if (S.addn === v.key) h += '<div class="addbox"><textarea id="addnText" class="inp" rows="3" placeholder="나중에 알게 된 것을 적습니다. 원래 이야기는 그대로 둡니다."></textarea><div class="row"><button class="btn pri" data-act="addnsave" data-v="' + esc(v.key) + '">덧붙이기</button><button class="btn" data-act="addnopen" data-v="">그만두기</button></div></div>';
   else h += '<button class="send" data-act="addnopen" data-v="' + esc(v.key) + '" style="margin-top:12px;display:block">+ 덧붙이기</button>';
@@ -3521,9 +3635,11 @@ document.addEventListener('wheel', e => {   // PC: 마우스 휠(세로)로도 �
 function suggHtml(L) {
   const q = norm(L.nq); if (!q) return '';
   const have = new Set(splitNames(L.form.name).map(nameKey)), g = groupCanon(q), qk = nameKey(q);
-  const names = Object.keys(M().people).filter(n => !have.has(nameKey(n)) && nameKey(n).includes(qk) && !(g && nameKey(n) === nameKey(g))).slice(0, 6);
+  // 1112-N 후보 = 심방 기록 성도 + 기도노트 사람 + 셀 명단(불러온 것) — HB 2026-11-12 '넓혀'
+  const names = nameCands(M().people, DATA.pray && DATA.pray.people, CELLS.groups).filter(c => !have.has(nameKey(c.name)) && nameKey(c.name).includes(qk) && !(g && nameKey(c.name) === nameKey(g))).slice(0, 8);
+  const sub = c => c.src.includes('심방') ? (c.roles || []).join(' · ') + (c.last ? ' · ' + md(c.last) : '') : c.cell ? c.cell : '기도노트';
   return (g && !have.has(nameKey(g)) ? '<button class="grpsg" data-act="pickname" data-v="' + esc(g) + '">' + esc(g) + ' <small>명단 불러오기</small></button>' : '') +
-    names.map(n => { const p = M().people[n]; return '<button data-act="pickname" data-v="' + esc(n) + '">' + nm(n) + ' <small>' + esc((p.roles || []).join(' · ')) + (p.last ? ' · ' + md(p.last) : '') + '</small></button>'; }).join('');
+    names.map(c => '<button data-act="pickname" data-v="' + esc(c.name) + '">' + nm(c.name) + ' <small>' + esc(sub(c)) + '</small></button>').join('');
 }
 // ── 1112-M '누구를' — 이름 알약 + 입력 칸 ──
 // 이름 칸(L.form.name)은 시트에 적는 쉼표 글 그대로 들고, 알약은 그 글에서 그린다. 치는 중인 이름은 L.nq — 쉼표 · Enter · 후보를 누르면 알약이 된다.
@@ -3783,17 +3899,26 @@ function lEdit(L) {
   const actsF = multiHtml(L, 'acts', '할 일', offer('acts', FO.act.filter(x => x !== '기타'), []), 'actsEtc', '직접 적기 (예: 병문안 일정 잡기)', '', x => ACT_KIND[x] || 'k4');
   const planF = L.planWhy ? '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>' : '';
   const sec = (k, t, info) => '<div class="fsec">' + t + einfo(L, k, info) + '</div>' + einfoBody(L, k, info);
+  // 1112-N 시트에 새 열이 있을 때만 — 핵심 한줄(위) · 상세 기록(접이식, 이야기 아래) · 우선순위 · 정보 성격 · 장기 관찰 · 다음 질문(정리 안)
+  const nx = !!DATA.nx, segOf = (k, list) => '<div class="seg" role="group" style="margin:0">' + list.map(x => '<button data-act="fone" data-k="' + k + '" data-v="' + x + '" aria-pressed="' + (f[k] === x) + '">' + x + '</button>').join('') + '</div>';
+  const coreF = nx ? '<div class="fld"><input class="inp nx-core" data-f="core" value="' + esc(f.core || '') + '" placeholder="핵심 한줄 — 다음에 열면 맨 먼저 보일 한 문장" maxlength="200" aria-label="핵심 한줄"></div>' : '';
+  const detN = longText(f.detail).length, detF = nx ? '<div class="nx-det' + (L.detOpen ? ' open' : '') + '"><button class="nx-det-h" data-act="nxdet" aria-expanded="' + !!L.detOpen + '"><span>상세 기록</span><span class="v">' + (detN ? detN.toLocaleString() + '자' : '비어 있음') + '</span>' + IC_CHEV + '</button>' +
+    (L.detOpen ? '<textarea class="inp nx-det-t" data-f="detail" rows="14" placeholder="긴 정리 · ChatGPT 보고서 · 회의록. Markdown(## 제목, - 목록)을 그대로 적어도 됩니다." aria-label="상세 기록">' + esc(f.detail || '') + '</textarea><p class="hint">' + detN.toLocaleString() + ' / ' + CELL_MAX.toLocaleString() + '자</p>' : '') + '</div>' : '';
+  const prioF = nx ? '<div class="fld"><span class="lb">우선순위</span>' + segOf('prio', NX_PRIO) + '</div>' : '';
+  const basisF = nx ? '<div class="fld"><span class="lb">정보 성격</span>' + segOf('basis', NX_BASIS) + '</div>' : '';
+  const longF = nx ? '<div class="fld"><span class="lb">장기 관찰</span><textarea class="inp" data-f="longObs" rows="3" placeholder="오래 두고 볼 것 (예: 아버지와의 관계, 직장 스트레스)" aria-label="장기 관찰">' + esc(f.longObs || '') + '</textarea></div>' : '';
+  const qnF = nx ? '<div class="fld"><span class="lb">다음 질문</span><textarea class="inp" data-f="qn" rows="3" placeholder="다음 심방 때 여쭤볼 것 — 한 줄에 하나" aria-label="다음 질문">' + esc(f.qn || '') + '</textarea></div>' : '';
   if (wide) {
-    h += '<div class="eblk">' + sec('who', '누구를') + nameF + rolesF + '</div>';
+    h += '<div class="eblk">' + sec('who', '누구를') + nameF + rolesF + coreF + '</div>';
     h += '<div class="eblk">' + sec('when', '언제 · 어디서 · 어떻게', whereInfo + pillInfo) + attDateHtml(f, 'ymd') + methodF + placeF + payF + planF + '</div>';
-    h += '<div class="eblk">' + talkHtml(L) + pnHtml(L) + '</div>';
-    h += '<div class="eblk">' + sec('sum', '정리', pillInfo) + depthF + tagsF + ttF + actsF + '</div>';
+    h += '<div class="eblk">' + talkHtml(L) + pnHtml(L) + detF + '</div>';
+    h += '<div class="eblk">' + sec('sum', '정리', pillInfo) + prioF + basisF + depthF + tagsF + ttF + actsF + longF + qnF + '</div>';
   } else {
-    h += sec('who', '누구를 · 언제') + nameF + attDateHtml(f, 'ymd') + planF;
-    h += talkHtml(L) + pnHtml(L);
-    h += sec('sum', '정리', whereInfo + pillInfo) + '<div class="crows">' + crow(L, 'roles', '구분', rolesF) + crow(L, 'method', '어떻게', methodF) +
+    h += sec('who', '누구를 · 언제') + nameF + attDateHtml(f, 'ymd') + coreF + planF;
+    h += talkHtml(L) + pnHtml(L) + detF;
+    h += sec('sum', '정리', whereInfo + pillInfo) + '<div class="crows">' + (nx ? crow(L, 'prio', '우선순위', segOf('prio', NX_PRIO)) + crow(L, 'basis', '정보 성격', segOf('basis', NX_BASIS)) : '') + crow(L, 'roles', '구분', rolesF) + crow(L, 'method', '어떻게', methodF) +
       (placeF ? crow(L, 'place', visOptLabel('place'), placeF) : '') + (payF ? crow(L, 'pay', visOptLabel('pay'), payF) : '') +
-      crow(L, 'depth', '대화 깊이', depthF) + crow(L, 'tags', '태그', tagsF) + crow(L, 'acts', '할 일', actsF) + '</div>' + ttF;
+      crow(L, 'depth', '대화 깊이', depthF) + crow(L, 'tags', '태그', tagsF) + crow(L, 'acts', '할 일', actsF) + '</div>' + ttF + longF + qnF;
   }
   if (L.key) h += '<p class="muted" style="margin-top:12px">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
   h += omenuHtml(L);
@@ -3833,7 +3958,8 @@ async function loadTrash(L) {
   L.loading = false; render();
 }
 function openEdit(key) {
-  if (key) { const v = byKey(key); if (!v) return; openLayer('edit', { key, row: v.row, form: recordFromVisit(v) }); }
+  if (CELLS.state === 'idle') loadCells();   // 1112-N 이름 후보에 셀 명단도 (읽기만 — 셀 한눈에 로그인이 이 브라우저에 있을 때)
+  if (key) { const v = byKey(key); if (!v) return; openLayer('edit', { key, row: v.row, form: Object.assign(recordFromVisit(v), { qn: qnText(qnItems(v)) }), detOpen: !!v.detail }); }
   else { const last = null; openLayer('edit', { key: null, form: blankRecord(today(), last) }); }
 }
 async function saveRecord(L) {
@@ -3844,13 +3970,18 @@ async function saveRecord(L) {
     if (!L.key) {
       const r = await writeNew(L.form); L.dirty = false; closeLayer(true);
       if (L.planId) await finishPlan(L.planId, r.id);
-      toast('새 기록을 시트에 적었습니다' + (r.lost.includes('place') ? '\n장소는 시트에 칸이 없어 빠졌습니다' : '') + (r.lost.includes('pay') ? '\n사주심 · 사드림은 시트에 칸이 없어 빠졌습니다' : ''));
+      const qi = DATA.nx ? qnMerge([], L.form.qn) : [];   // 1112-N 다음 질문은 '다음 질문' 탭에 (기록이 먼저 생긴 뒤)
+      if (qi.length) { try { await writeQn({ id: r.id, name: L.form.name }, qi); } catch (e) { toast('기록은 적었는데 다음 질문을 적지 못했습니다\n' + e.message + '\n기록을 열어 다시 적어 주세요'); await loadData(true); return; } }
+      if (r.lost.some(k => k.startsWith('@'))) toast('시트에 새 칸이 없어 빠진 것이 있습니다\n' + r.lost.filter(k => k.startsWith('@')).map(k => k.slice(1)).join(' · '));
+      else toast('새 기록을 시트에 적었습니다' + (r.lost.includes('place') ? '\n장소는 시트에 칸이 없어 빠졌습니다' : '') + (r.lost.includes('pay') ? '\n사주심 · 사드림은 시트에 칸이 없어 빠졌습니다' : ''));
     } else {
       const v = byKey(L.key) || M().visits.find(x => x.row === L.row);
       if (!v) throw new Error('이 기록을 찾지 못했습니다');
       const r = await writeEdit(v, L.form); if (r.cancel) return;
+      let qnCh = false;
+      if (DATA.nx && v.id) { const old = qnItems(v), qi = qnMerge(old, L.form.qn); if (qnEncode(qi) !== qnEncode(old)) { await writeQn(v, qi); qnCh = true; } }
       L.dirty = false; closeLayer(true);
-      if (r.none) { toast('바뀐 것이 없습니다'); return; }
+      if (r.none) { toast(qnCh ? '다음 질문을 고쳤습니다' : '바뀐 것이 없습니다'); if (qnCh) await loadData(true); return; }
       toast('고쳤습니다\n' + r.cells.filter(c => c.k !== '@수정').length + '칸', 0, { label: '되돌리기', fn: () => busy(async () => {
         try { await undoEdit(r.id, r.cells); toast('되돌렸습니다'); await loadData(true); } catch (e) { toast('되돌리지 못했습니다\n' + e.message); } }) });
     }
@@ -3894,8 +4025,11 @@ function settingsPane(L, t) {
     h += '<div class="set">' +
       '<div class="srow"><span class="t">로그인</span><button class="v" data-act="logout">로그아웃</button><div class="d">' + esc(USER ? USER.email : '') + '</div></div>' +
       '<div class="srow"><span class="t">구글</span><button class="v ok" data-act="gconnect">' + (G.connected ? '다시 연결' : '연결') + '</button><div class="d">' + (G.connected ? esc(G.email) + ' 에 연결됨' : '연결되지 않음') + '</div></div>' +
-      '<div class="srow"><span class="t">심방 시트</span><button class="v ok" data-act="pick" data-v="sheet">다시 고르기</button><div class="d">' + esc(sv.sheet ? sv.sheet.name : '아직 안 고름') + (DATA.tab ? ' · 탭 ' + esc(DATA.tab.title) : '') + (M() ? ' · 기록 ' + M().visits.length + '줄' : '') + '</div></div>' +
+      '<div class="srow"><span class="t">심방 시트</span><button class="v ok" data-act="pick" data-v="sheet">다시 고르기</button><div class="d">' + (sv.trialOn ? '운영 ' + esc(sv.live.sheet ? sv.live.sheet.name : '아직 안 고름') + ' — 시험 중에는 이 기기에서 안 엽니다</div></div>' +
+        '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="trialend">시험 끝내기</button><div class="d">' : '') + esc(sv.sheet ? sv.sheet.name : '아직 안 고름') + (DATA.tab ? ' · 탭 ' + esc(DATA.tab.title) : '') + (M() ? ' · 기록 ' + M().visits.length + '줄' : '') + '</div></div>' +
       '<div class="srow"><span class="t">시트 준비</span>' + (DATA.prepared ? '<span class="v ok">준비됨</span>' : '<button class="v ok" data-act="prepare">준비하기</button>') + '<div class="d">' + (DATA.prepared ? '앱 열 · 탭이 있습니다. 앱에서 적고 고칠 수 있습니다.' : '앱에서 적으려면 처음 한 번 필요합니다 — 있던 기록은 건드리지 않습니다.') + '</div></div>' +
+      (sv.trialOn ? (DATA.prepared ? '<div class="srow"><span class="t">새 칸 (vNext)</span>' + (DATA.nx ? '<span class="v ok">더함</span>' : '<button class="v ok" data-act="nxprep">더하기</button>') + '<div class="d">핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 · 모임 · AI 입력대기. 응답 탭 오른쪽 끝에만 더하고 있던 칸은 건드리지 않습니다.</div></div>' : '') :
+        '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="pick" data-v="trial">고르기</button><div class="d">드라이브에서 만든 사본을 <b>이 기기에서만</b> 엽니다. 다른 기기 · 계정 설정은 그대로이고, 시험 중에는 캘린더 · 폼 맞춤 · BLOCK7 보내기가 꺼집니다.</div></div>') +
       '<div class="srow"><span class="t">심방 폼</span><button class="v ok" data-act="pick" data-v="form">다시 고르기</button><div class="d">' + esc(sv.form ? sv.form.name : '아직 안 고름 — 고르면 선택지를 폼과 같은 순서로 보여 줍니다') + (sv.responder ? ' · <a href="' + esc(sv.responder) + '" target="_blank" rel="noopener">폼 열기 ↗</a>' : '') + '</div></div>' +
       '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button></div>';
   } else {
@@ -4093,6 +4227,7 @@ function ready() { return USER && G.connected && saved().sheet && DATA.state ===
 let animating = false;
 function render() {
   const app = $('app'), lay = $('layers');
+  { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }   // 1112-N 시험 시트 띠 — 어느 화면에서든(불러오는 중에도) 먼저
   if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; return; }
   const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
   app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + '<div class="tip" id="tip" hidden></div>';
@@ -4272,6 +4407,10 @@ document.addEventListener('click', e => {
   if (a === 'close') { closeLayer(); return; }
   if (a === 'gconnect') { googleConnect(); return; }
   if (a === 'pick') { pick(v); return; }
+  if (a === 'trialend') { if (confirm('시험을 끝내고 운영 시트로 돌아갈까요?\n사본 시트는 드라이브에 그대로 남습니다.')) trialSet(null); return; }
+  if (a === 'nxprep') { busy(prepareNx).then(() => render()); return; }
+  if (a === 'nxdet') { const L = topLayer(); if (L && L.type === 'edit') { L.detOpen = !L.detOpen; render(); if (L.detOpen) setTimeout(() => { const t = document.querySelector('.layer:last-child [data-f="detail"]'); if (t) t.focus(); }, 0); } return; }
+  if (a === 'detv') { S.detOpen[v] = !S.detOpen[v]; render(); return; }
   if (a === 'reload') { loadData(); return; }
   if (a === 'logout') { if (confirm('로그아웃할까요?')) { S.layers = []; AUTH.signOut(); } return; }
   if (a === 'c0') { const s = STEPS.find(x => x[0] === v); if (s) s[3](); return; }

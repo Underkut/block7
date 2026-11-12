@@ -34,6 +34,7 @@
 //  ㉙ (1109-T4 · T5) 열람 대본 · 말풍선 · 접기 · 제목만 / 설정 탭 넷(보기 · BLOCK7 · 연결 · 그 밖에) · 마지막 탭 기억 / 성도 화면 칸 태그로 모아 보기
 //  ㉛ (1109-G1) 목록 자세히(날짜 기둥) / 간략히(한 줄) · 이 기기에 기억
 //  ㉜ (1109-G2) 새 기록 — 넓은 화면 카드(A) · 폰 접힌 줄(C) · 폭 넘나들면 다시 그림 · 폰에서 적은 것이 시트에
+//  ㊱ (1112-N) 시험 시트(이 기기만 · 캘린더 · BLOCK7 꺼짐) · 새 칸 더하기(오른쪽 끝 · 액션 K · 새 탭 둘) · 핵심 한줄 · 상세 기록 · 우선순위 · 정보 성격 · 장기 관찰 · 다음 질문(탭) · 이름 후보에 기도노트
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -107,6 +108,7 @@ async function route(r) {
     return json(FORM);
   }
   if (u.host === 'www.googleapis.com') {   // 가짜 구글 캘린더 — '심방' 캘린더 하나
+    REQ.cal = (REQ.cal || 0) + 1;
     const P = u.pathname.replace('/calendar/v3/', ''), q = u.searchParams;
     if (P === 'users/me/calendarList') return json({ items: [{ id: 'cal1', summary: '심방' }, { id: 'cal2', summary: '개인' }] });
     let mm;
@@ -981,7 +983,7 @@ async function route(r) {
     await page.evaluate(() => openLayer('settings')); await tidy();
     eq('㉙ 설정 탭 차례 — 보기 · BLOCK7 · 연결 · 그 밖에', await page.$$eval(LE + ' [data-act="stab"]', x => x.map(e => e.textContent)), ['보기', 'BLOCK7', '연결', '그 밖에']);
     await stab(page, '연결');
-    eq("㉙ '연결' 탭 — 로그인 · 구글 · 시트 · 시트 준비 · 폼 · 속성 관리", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['로그인', '구글', '심방 시트', '시트 준비', '심방 폼', '속성 관리']);
+    eq("㉙ '연결' 탭 — 로그인 · 구글 · 시트 · 시트 준비 · 폼 · 속성 관리", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['로그인', '구글', '심방 시트', '시트 준비', '시험 시트', '심방 폼', '속성 관리']);
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     await page.evaluate(() => openLayer('settings')); await tidy();
     eq('㉙ 다시 열면 마지막에 본 탭(이 기기에만 기억)', [await page.$eval(LE + ' [data-act="stab"][aria-pressed="true"]', e => e.textContent), await page.evaluate(() => 'stab' in pickCfg(saved()))], ['연결', false]);
@@ -1173,6 +1175,79 @@ async function route(r) {
     await page.click(Q); await page.keyboard.type('없는 셀'); await page.keyboard.press('Enter'); await page.waitForTimeout(800);
     eq('㉟ 어디에도 없는 셀이면 셀 표시만 두고 알린다', [(await chips())[1], await page.$eval('.toast', e => e.textContent.split('\n')[0])], ['셀:없는 셀', '없는 셀 명단을 찾지 못했습니다']);
     await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  }
+
+  // ㊱ (1112-N) vNext — 시험 시트 · 새 칸 더하기 · 새 칸 입력
+  {
+    for (let i = 0; i < 5; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+    const LN = '.layer:last-child', RT = tab('Form Responses 1');
+    await page.evaluate(() => openEdit(null)); await tidy();
+    eq('㊱ 새 칸이 없는 시트 — 새 기록 화면은 예전 그대로(핵심 한줄 · 상세 기록 없음)', await page.$$eval(LN + ' [data-f="core"], ' + LN + ' [data-act="nxdet"]', x => x.length), 0);
+    await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    // 시험 시트로 — 운영은 'LIVE', 사본은 'S'(가짜 시트)
+    const accBefore = [];
+    await page.evaluate(() => { window.__cfg = []; DB = { doc: p => ({ set: async o => { window.__cfg.push([p, JSON.parse(JSON.stringify(o))]); }, get: async () => ({ exists: false }) }) }; window.firebase = { firestore: { FieldValue: { arrayUnion: x => ({ __u: x }) } } };
+      save({ sheet: { id: 'LIVE', name: '운영 시트' }, form: { id: 'F', name: '시험 폼' }, at: 1 }); trialSet({ id: 'S', name: '사본 시트' }); });
+    await page.waitForTimeout(1500);
+    const c0 = REQ.cal || 0;
+    await reload();
+    eq('㊱ 시험 시트 — 사본을 열고 · 띠가 보이고 · 계정에는 아무것도 안 올림 · 폼은 없는 것으로', await page.evaluate(() => [saved().sheet.id, saved().form, !$('trialBar').hidden, window.__cfg.length, savedRaw().sheet.id]), ['S', null, true, 0, 'LIVE']);
+    eq('㊱ 시험 시트에서는 캘린더에 묻지도 않는다', (REQ.cal || 0) - c0, 0);
+    eq('㊱ 시험 시트에서는 BLOCK7 로 안 보낸다', await page.evaluate(() => inboxPush({ t: 'x' }).then(() => 'sent', e => e.message)), '시험 시트에서는 BLOCK7 로 보내지 않습니다');
+    // 새 칸 더하기 (설정 › 연결)
+    await page.evaluate(() => openLayer('settings')); await tidy(); await stab(page, '연결');
+    eq('㊱ 설정 — 시험 끝내기 · 새 칸 더하기 단추', [await page.$$eval(LN + ' [data-act="trialend"]', x => x.length), await page.$$eval(LN + ' [data-act="nxprep"]', x => x.length)], [1, 1]);
+    const before = JSON.stringify(RT.rows.slice(1).map(r => r.slice(0, 15)));
+    const head0 = RT.rows[0].filter(Boolean).length;
+    await page.click(LN + ' [data-act="nxprep"]'); await page.waitForTimeout(2000);
+    eq('㊱ 응답 탭 끝에 여덟 칸(R 자리부터 · 다음 질문 열은 없음)', RT.rows[0].slice(head0), ['핵심 한줄', '상세 기록', '장기 관찰', '우선순위', '정보 성격', '모임ID', '원본ID', '가져오기 해시']);
+    eq('㊱ 있던 줄 값은 그대로', JSON.stringify(RT.rows.slice(1).map(r => r.slice(0, 15))), before);
+    eq('㊱ 액션 탭 끝에 실행근거 · 새 탭 둘(머리글)', [tab('액션').rows[0].slice(-1), (tab('모임') || { rows: [[]] }).rows[0][0], (tab('AI 입력대기') || { rows: [[]] }).rows[0].slice(0, 5)], [['실행근거'], '모임ID', ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태']]);
+    eq('㊱ 한 번 더 눌러도 더 늘지 않는다(단추가 \'더함\' 으로)', await page.$$eval(LN + ' [data-act="nxprep"]', x => x.length), 0);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    // 새 기록 — 새 칸에 적기
+    await page.evaluate(() => { DATA.pray = { idx: {}, people: ['기도만분'], at: Date.now() }; openEdit(null); }); await tidy();
+    await page.click(LN + ' [data-f="nameq"]'); await page.keyboard.type('기도만'); await page.waitForTimeout(300);
+    eq('㊱ 이름 후보에 기도노트 사람(심방 기록 없어도) · 출처 표시', await page.$$eval(LN + ' #nameSugg button', x => x.map(e => e.textContent)), ['기도만분 기도노트']);
+    await page.click(LN + ' #nameSugg button'); await page.waitForTimeout(200);
+    await page.fill(LN + ' [data-f="core"]', '수술 앞두고 불안하심');
+    eq('㊱ 상세 기록은 처음엔 접혀 있다', await page.$$eval(LN + ' [data-f="detail"]', x => x.length), 0);
+    await page.click(LN + ' [data-act="nxdet"]'); await page.waitForTimeout(200);
+    await page.fill(LN + ' [data-f="detail"]', '## 상황\n- 다음 주 수술\n\n## 기도\n- 평안');
+    for (const [k, v] of [['prio', '이번주'], ['basis', '전언']]) { const sel = LN + ' [data-act="fone"][data-k="' + k + '"][data-v="' + v + '"]'; if (!(await page.isVisible(sel))) await page.click(LN + ' [data-act="crow"][data-k="' + k + '"]').catch(() => {}); await page.click(sel); }
+    await page.fill(LN + ' [data-f="longObs"]', '가정 돌봄 부담');
+    await page.fill(LN + ' [data-f="qn"]', '1. 수술은 잘 되었나요?\n2. 식사는 어떠세요?');
+    await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2000);
+    const H2 = RT.rows[0], nrow = RT.rows.find(r => r[H2.indexOf('성도 이름')] === '기도만분') || [], at = n => nrow[H2.indexOf(n)];
+    eq('㊱ 새 줄 — 새 칸에 이름으로 · 상세 기록 줄바꿈 그대로 · 내용 칸은 비어 있음(뜻 그대로)', [at('핵심 한줄'), at('상세 기록'), at('장기 관찰'), at('우선순위'), at('정보 성격'), at('내용') || ''],
+      ['수술 앞두고 불안하심', '## 상황\n- 다음 주 수술\n\n## 기도\n- 평안', '가정 돌봄 부담', '이번주', '전언', '']);
+    const qt = tab('다음 질문'), qr = qt ? qt.rows.find(r => r[0] === at('기록ID')) : null;
+    eq('㊱ 다음 질문은 \'다음 질문\' 탭에(기록ID · 두 줄)', qr ? [qr[1], qr[2]] : null, ['기도만분', '[ ] 수술은 잘 되었나요?\n[ ] 식사는 어떠세요?']);
+    eq('㊱ 덧붙임 탭에는 아무것도 안 들어간다', (tab('덧붙임').rows.filter(r => r[0] === at('기록ID'))).length, 0);
+    eq('㊱ 시험 시트에서 기록을 적어도 캘린더에는 안 간다', (REQ.cal || 0) - c0, 0);
+    // 열람
+    const key = await page.evaluate(id => (M().visits.find(v => v.id === id) || {}).key, at('기록ID'));
+    await page.evaluate(k => openLayer('detail', { key: k }), key); await tidy();
+    eq('㊱ 열람 — 우선순위 · 전해 들음 · 핵심 한줄 · 상세 기록(접힘) · 장기 관찰', [await page.$eval(LN + ' .nx-core-v', e => e.textContent), await page.$$eval(LN + ' .nx-detail', x => x.length), await page.$$eval(LN + ' [data-act="detv"]', x => x.length)],
+      ['이번주전해 들음수술 앞두고 불안하심', 0, 1]);
+    await page.click(LN + ' [data-act="detv"]'); await page.waitForTimeout(200);
+    eq('㊱ 상세 기록 펴기 — 글 그대로(꾸밈 없이 안전하게)', await page.$eval(LN + ' .nx-detail', e => e.textContent), '## 상황\n- 다음 주 수술\n\n## 기도\n- 평안');
+    // 고치기 — 안 바꾸면 그대로 · 다음 질문만 바꾸면 탭만
+    const snap = JSON.stringify(RT.rows), qsnap = JSON.stringify(qt.rows);
+    await page.click(LN + ' [data-act="edit"]'); await tidy();
+    eq('㊱ 고치기 — 상세 기록은 펴진 채 · 다음 질문은 탭에서', [await page.inputValue(LN + ' [data-f="detail"]'), await page.inputValue(LN + ' [data-f="qn"]')], ['## 상황\n- 다음 주 수술\n\n## 기도\n- 평안', '수술은 잘 되었나요?\n식사는 어떠세요?']);
+    await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(1500);
+    eq('㊱ 안 바꾸고 저장 — 시트 · 다음 질문 탭 그대로', [JSON.stringify(RT.rows) === snap, JSON.stringify(qt.rows) === qsnap], [true, true]);
+    await page.click(LN + ' [data-act="edit"]'); await tidy();
+    await page.fill(LN + ' [data-f="qn"]', '수술은 잘 되었나요?\n새로 여쭐 것');
+    await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(1500);
+    eq('㊱ 다음 질문만 바꾸면 탭만 바뀐다', [JSON.stringify(RT.rows) === snap, qt.rows.find(r => r[0] === at('기록ID'))[2]], [true, '[ ] 수술은 잘 되었나요?\n[ ] 새로 여쭐 것']);
+    for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
+    // 시험 끝내기
+    await page.evaluate(() => trialSet(null)); await page.waitForTimeout(300);
+    eq('㊱ 시험 끝 — 운영 시트로 · 띠 사라짐', await page.evaluate(() => [saved().sheet.id, saved().trialOn || false, $('trialBar').hidden]), ['LIVE', false, true]);
+    eq('㊱ 운영 시트를 시험 시트로 고를 수 없다', await page.evaluate(() => { trialSet({ id: 'LIVE', name: 'x' }); return saved().trialOn || false; }), false);
+    await page.evaluate(() => { save({ sheet: { id: 'S', name: '시험 시트' }, trial: null }); }); await reload();
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
