@@ -1262,7 +1262,7 @@ async function route(r) {
       detailed_note_markdown: '### 경과\n' + name + ' 자세한 이야기', priority: '일반', long_term_watch: name + ' 장기 관찰', information_basis: '직접', tags: [], next_questions: [], actions: [] }, x || {});
     const P1 = { schema_version: 'hb-care.v1', source: { kind: 'plaud', source_id: 'f_e2e_call', source_url: null, title: '가미정 통화', recorded_at: null, duration_ms: 1000 },
       event: { kind: 'call', date: '2026-11-12', title: '가미정 — 섬김', group_summary: '', details_markdown: '', location: null },
-      records: [rec('가미정', { category: '부산', information_basis: '전언', tags: ['관계', '교회', '사역'], next_questions: ['마음은 정리되었나?', '안내를 보완할까?'],
+      records: [rec('가미정', { category: '부산', information_basis: '전언', tags: ['돌봄', '교회', '사역'], next_questions: ['마음은 정리되었나?', '안내를 보완할까?'],
         actions: [act('가미정 성도에게 감사 인사', 'AI 제안', '연락'), act('다음 봉사 안내 보완', 'AI 제안', '기타')] })],
       unknown_speakers: [], mentioned_people: ['윤정(성씨 미확인)', '형만(성씨 미확인)'] };
     const P2 = { schema_version: 'hb-care.v1', source: { kind: 'plaud', source_id: 'f_e2e_cell', source_url: null, title: '셀 모임', recorded_at: null, duration_ms: null },
@@ -1291,12 +1291,12 @@ async function route(r) {
     eq('㊲ 미리보기 — 기록 하나 · 모임 없음 · 핵심 한줄 · 전해 들음 · AI 제안 둘은 체크 안 됨', [await page.$$eval(LN + ' .imp-card', x => x.length), await page.$eval(LN + ' .imp-card .imp-core', e => e.textContent), await page.$$eval(LN + ' .imp-card .nx-heard', x => x.map(e => e.textContent)), await page.$$eval(LN + ' .imp-act', x => x.map(e => e.getAttribute('aria-pressed')))],
       [1, '가미정 핵심 한줄', ['전해 들음'], ['false', 'false']]);
     const issues = await page.$$eval(LN + ' .imp-attr > div:first-child', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
-    eq('㊲ 속성에 없는 값 — 구분 부산 · 태그 관계 · 사역 · 할 일 종류 연락', issues, ['구분 · 부산 가미정', '태그 · 관계 가미정', '태그 · 사역 가미정', '액션 · 연락 가미정']);
+    eq('㊲ 속성에 없는 값 — 구분 부산 · 태그 돌봄 · 사역 · 할 일 종류 연락', issues, ['구분 · 부산 가미정', '태그 · 돌봄 가미정', '태그 · 사역 가미정', '액션 · 연락 가미정']);
     await page.click(LN + ' [data-act="implink"]'); await tidy();
     eq('㊲ 속성을 다 고르기 전엔 다음으로 안 간다', await page.$$eval(LN + ' .imp-attr', x => x.length), 4);
-    const pickAttr = async (val, mode, to) => { const ix = await page.evaluate(v => topLayer().issues.findIndex(x => x.val === v), val); await page.click(LN + ' [data-act="impattr"][data-v="' + ix + '|' + mode + '|' + (to || '') + '"]'); await page.waitForTimeout(150); };
-    await pickAttr('부산', 'add'); await pickAttr('관계', 'add'); await pickAttr('사역', 'map', '교회'); await pickAttr('연락', 'add');
-    eq('㊲ 기존 값으로 바꾼 태그 · 더할 것 안내', [await page.evaluate(() => topLayer().d.recs[0].form.tags), await page.$eval(LN + ' .imp > p.muted:last-of-type', e => e.textContent).catch(() => '')].map(String)[0], '관계,교회');
+    const pickAttr = async (val, mode, to) => { const ix = await page.evaluate(v => topLayer().issues.findIndex(x => x.val === v && !x.done), val); if (ix < 0) { eq('㊲ (시험 자료) 속성에 없는 값이어야 함: ' + val, false, true); return; } await page.click(LN + ' [data-act="impattr"][data-v="' + ix + '|' + mode + '|' + (to || '') + '"]'); await page.waitForTimeout(150); };
+    await pickAttr('부산', 'add'); await pickAttr('돌봄', 'add'); await pickAttr('사역', 'map', '교회'); await pickAttr('연락', 'add');
+    eq('㊲ 기존 값으로 바꾼 태그 · 더할 것 안내', [await page.evaluate(() => topLayer().d.recs[0].form.tags), await page.$eval(LN + ' .imp > p.muted:last-of-type', e => e.textContent).catch(() => '')].map(String)[0], '돌봄,교회');
     // 고치기 → 새 기록 화면을 그대로 · 고친 것 담기
     await page.click(LN + ' [data-act="impedit"][data-v="0"]'); await tidy();
     eq('㊲ 고치기 — 새 기록 화면에 칸이 채워져 열림(핵심 한줄 · 상세 기록 · 다음 질문)', [await page.inputValue(LN + ' [data-f="core"]'), await page.inputValue(LN + ' [data-f="detail"]'), await page.inputValue(LN + ' [data-f="qn"]'), await page.$eval(LN + ' [data-act="saverec"]', e => e.textContent)],
@@ -1321,12 +1321,12 @@ async function route(r) {
       ['ok:\'속성\' 에 새 선택지 3개', 'ok:\'성도\' 탭에 새 성도 가미정', 'ok:가미정', 'ok:가미정', 'ok:시트를 다시 읽어 확인']);
     const g = RT.rows.filter(r => col(r, '성도 이름') === '가미정');
     eq('㊲ 가미정 — 개인 기록 한 줄 · 출처 AI · 정보 성격 전언 · 내용 칸은 짧은 메모 · 원본ID · 언급된 성도(연결만)', g.map(r => [col(r, '출처'), !!col(r, '확인'), col(r, '정보 성격'), col(r, '핵심 한줄'), col(r, '내용'), col(r, '원본ID'), col(r, '언급된 성도'), col(r, '모임ID') || '', col(r, '구분'), col(r, '태그')]),
-      [['AI', true, '전언', '봉사 오해가 배움으로 이어졌다는 소식', '가미정 짧은 메모', 'f_e2e_call', '김윤정, 차형만', '', '부산', '관계, 교회']]);
+      [['AI', true, '전언', '봉사 오해가 배움으로 이어졌다는 소식', '가미정 짧은 메모', 'f_e2e_call', '김윤정, 차형만', '', '부산', '돌봄, 교회']]);
     const gid = col(g[0], '기록ID');
     eq('㊲ 체크 안 한 AI 제안 둘 — 액션 탭에 없음 · 상세 기록 끝에 글로만', [rowsOf('액션', r => r[1] === gid).length, col(g[0], '상세 기록').split('\n').slice(-3)], [0, ['### AI 제안(미채택)', '- 가미정 성도에게 감사 인사 · 연락', '- 다음 봉사 안내 보완']]);
     eq('㊲ 언급된 윤정 · 형만은 심방 기록이 생기지 않는다', RT.rows.filter(r => ['김윤정', '차형만', '윤정', '형만'].includes(col(r, '성도 이름'))).length, 0);
-    eq('㊲ 다음 질문 탭 · 성도 탭 · 속성 탭', [rowsOf('다음 질문', r => r[0] === gid).map(r => r[2]), rowsOf('성도', r => r[1] === '가미정').length, rowsOf('속성', r => ['부산', '관계', '연락'].includes(r[1])).map(r => r[0] + ':' + r[1])],
-      [['[ ] 마음은 정리되었나?\n[ ] 안내를 보완할까?'], 1, ['구분:부산', '태그:관계', '액션:연락']]);
+    eq('㊲ 다음 질문 탭 · 성도 탭 · 속성 탭', [rowsOf('다음 질문', r => r[0] === gid).map(r => r[2]), rowsOf('성도', r => r[1] === '가미정').length, rowsOf('속성', r => ['부산', '돌봄', '연락'].includes(r[1])).map(r => r[0] + ':' + r[1])],
+      [['[ ] 마음은 정리되었나?\n[ ] 안내를 보완할까?'], 1, ['구분:부산', '태그:돌봄', '액션:연락']]);
     await page.evaluate(() => openLayer('person', { name: '김윤정' })); await tidy();
     eq('㊲ 언급된 분 화면 — \'다른 기록에서 언급됨\' 에 그 기록', await page.$$eval(LN + ' .h-sec', x => x.map(e => e.textContent).filter(t => t.startsWith('다른 기록에서 언급됨'))), ['다른 기록에서 언급됨1번']);
     for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
@@ -1362,7 +1362,7 @@ async function route(r) {
     await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     const P1n = JSON.parse(JSON.stringify(P1)); P1n.source.source_id = null; P1n.records[0].summary_line = '봉사 오해가 배움으로 이어졌다는 소식!'; P1n.records[0].long_term_watch = '새 장기 관찰';
     P1n.records[0].summary_line = P1.records[0].summary_line + '  ';   // 해시는 붙여 넣은 원래 글(띄어쓰기 · 기호 무시)로
-    await paste(P1n); for (const v of ['부산', '관계', '사역', '연락']) { const has = await page.evaluate(x => topLayer().issues.some(i => i.val === x && !i.done), v); if (has) await pickAttr(v, v === '사역' ? 'map' : 'add', v === '사역' ? '교회' : ''); }
+    await paste(P1n); for (const v of ['부산', '돌봄', '사역', '연락']) { const has = await page.evaluate(x => topLayer().issues.some(i => i.val === x && !i.done), v); if (has) await pickAttr(v, v === '사역' ? 'map' : 'add', v === '사역' ? '교회' : ''); }
     await page.click(LN + ' [data-act="implink"]'); await tidy();
     await page.click(LN + ' .lk-row[data-lk="m0"] [data-act="lkpick"][data-v="m0|박윤정"]'); await tidy();
     eq('㊲ 원본ID 없는 같은 내용 → \'같은 내용\' 으로 잡는다', await page.$$eval(LN + ' .imp-dup b', x => x.map(e => e.textContent)), ['이미 있는 기록 (같은 내용)']);
