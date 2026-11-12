@@ -16,10 +16,11 @@ const SECSF = slice('function _dayTaskSecs(', '// 메뉴 줄 오른쪽 끝에 �
 const CNTF  = slice('function _dayTaskCount(', '// 그 날짜에 할일이 있는 구간들');
 const TASKF = slice('function _daySecTasks(', '// 판에 세울 구간들');
 const PICKS = slice('function _secPickSecs(', '// 줄 하나가 뜻하는 목적지');
-const SPECF = slice('function _secPickSpecFor(', 'function _secPickRender(');
+const REALDAY = "// 메뉴의 날짜는 진짜 오늘 기준(_realDayKey, HB 2026-11-12). 이 시험은 '오늘을 보는 중' 자리라 보는 날(viewDate 자리) = 오늘로 둔다.\n// 다른 날을 보는 자리는 tests/test_menu_realtoday.js\nconst _realDayKey=n=>tKey(addDays(viewDate,n||0));\n";
+const SPECF = REALDAY + slice('function _secPickSpecFor(', 'function _secPickRender(');
 const EURO  = slice("// '오전으로' · '오후로'", '// ─ Toast ─');
 const LABEL = slice("// '내일 오전으로' · '다음 주 밤으로'", '// 복제된 할일은');
-const MOVE  = slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'");
+const MOVE  = REALDAY + slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'");
 
 console.log('시나리오 1 — 목적지 줄마다 어디로 가는지 적혀 있다');
 {
@@ -170,7 +171,7 @@ console.log('\n시나리오 7 — 네 길이 모두 구간을 받는다');
 {
   const four = [
     ['이동',           slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'")],
-    ['복제',           slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다')],
+    ['복제',           slice('function duplicateTaskTo(days,toSec,atKey)', '// 메뉴가 열릴 때마다')],
     ['이동(날짜 지정)', slice('function moveTaskToPickedDate(dateStr,toSec)', "// 복제 칸의 '날짜 지정'")],
     ['복제(날짜 지정)', slice('function duplicateTaskToPickedDate(dateStr,toSec)', '// "8월 17일 월요일')],
   ];
