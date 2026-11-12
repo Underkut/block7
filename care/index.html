@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1112-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1112-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -693,6 +693,42 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
 .etcc{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--s1);border:1px solid var(--line)}
 .etcc small{color:var(--tx3)}.etcc button{color:var(--ac);font-size:12.5px;padding:2px 6px}
 /* 1112-N vNext */
+.imp-btn{display:flex;align-items:center;gap:6px;width:100%;margin:0 0 14px;padding:11px 14px;border:1px dashed var(--line2);border-radius:12px;font-size:14px;color:var(--tx)}
+.imp-btn small{margin-left:auto;font-size:11px;color:var(--tx3)}
+.imp-paste{min-height:240px;font-size:13px;font-family:ui-monospace,Menlo,monospace;line-height:1.5}
+.imp-err{margin:6px 0 0 18px;padding:0;font-size:12px;line-height:1.6}
+.imp-help{margin-top:12px;font-size:13px}.imp-help summary{color:var(--tx2);cursor:pointer}
+.imp-src{font-size:12px;color:var(--tx2);margin-bottom:4px}
+.imp-card{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0;background:var(--paper)}
+.imp-card.meet{background:var(--s1)}
+.imp-k{font-size:11px;color:var(--tx3);margin-bottom:4px}
+.imp-name{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:16px}.imp-name .send{margin-left:auto}
+.imp-core{font-weight:500;margin:6px 0 2px;font-size:14px}
+.imp-t{font-size:13px;color:var(--tx2);white-space:pre-wrap;margin:4px 0}
+.imp-sub{font-size:13px;margin-top:6px}.imp-sub span{display:block;font-size:11px;color:var(--tx3)}
+.imp-unk{font-size:12px;margin-top:8px;color:var(--tx2)}
+.imp-fold button{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);padding:6px 0}.imp-fold small{color:var(--tx3)}
+.imp-acts{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.imp-act{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:7px 0;font-size:13px}
+.imp-act .ck{flex:none;width:18px;height:18px;border:1.5px solid var(--line2);border-radius:5px;margin-top:1px}
+.imp-act .ck.on{background:var(--deep);border-color:var(--deep)}
+.imp-act small{display:block;color:var(--tx3);font-size:11px}
+.imp-auth{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--s2);color:var(--tx2)}.imp-auth.a0,.imp-auth.a1{background:var(--warn-soft);color:var(--warn)}
+.imp-attr{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:13px}.imp-attr .opts{margin:8px 0 0}.imp-attr .row{display:flex;gap:12px;margin-top:8px}
+.lk-row{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.lk-row.m-open{border-color:var(--warn)}.lk-row.m-skip{opacity:.6}
+.lk-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-size:14px}
+.lk-raw{color:var(--tx2)}.lk-arrow{color:var(--tx3)}.lk-to small{font-size:11px;color:var(--tx3)}
+.lk-st{margin-left:auto;font-size:11px;color:var(--tx3)}.m-open .lk-st{color:var(--warn)}
+.lk-row .opts{margin:8px 0 0}.lk-row .opt small{font-size:10px;color:var(--tx3)}
+.lk-btns{display:flex;gap:14px;margin-top:8px}.lk-btns [aria-pressed="true"]{font-weight:600;color:var(--tx)}
+.lk-fix{margin-top:8px}
+.imp-dup .row{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}.imp-dup [aria-pressed="true"]{font-weight:600;color:var(--tx)}
+.imp-steps{margin:6px 0 12px}.imp-step{display:flex;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid var(--line)}
+.imp-step .ic{width:16px;flex:none;text-align:center}.imp-step.ok .ic{color:var(--deep)}.imp-step.err .ic,.imp-step .e{color:var(--warn)}.imp-step.wait{color:var(--tx3)}
+.imp-step small{font-size:11px;color:var(--tx3)}
+.imp-foot{display:flex;gap:10px}.imp-foot .btn{flex:1}
+.tdet{display:block;font-size:12px;color:var(--tx2);margin:2px 0}.tdet em{font-style:normal;font-size:10px;color:var(--tx3)}
 .trialbar{position:fixed;top:env(safe-area-inset-top,0);left:50%;transform:translateX(-50%);z-index:999;background:#c2410c;color:#fff;font-size:11px;line-height:1;padding:4px 12px 5px;border-radius:0 0 9px 9px;pointer-events:none;max-width:70vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nx-core{font-weight:500}
 .nx-det{margin:12px 0 4px;border-top:1px solid var(--line)}
@@ -717,7 +753,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1112-2';
+const APP_VERSION = 'v. 26-1112-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -839,7 +875,7 @@ function rowToVisit(row, map, opts) {
     archived: !!norm(at('@보관')),
     // 1112-N vNext 칸 — 시트에 그 열이 없으면 모두 빈 값(옛 시트 · 운영 시트는 예전과 같다)
     core: norm(at('@핵심 한줄')), detail: longText(at('@상세 기록')), longObs: longText(at('@장기 관찰')), prio: norm(at('@우선순위')), basis: norm(at('@정보 성격')),
-    meetId: norm(at('@모임ID')), srcId: norm(at('@원본ID')), hash: norm(at('@가져오기 해시')),
+    meetId: norm(at('@모임ID')), srcId: norm(at('@원본ID')), hash: norm(at('@가져오기 해시')), mentions: splitEtc(at('@언급된 성도')),
   };
 }
 
@@ -1118,11 +1154,12 @@ function a1(title, col, row) { return "'" + String(title).replace(/'/g, "''") + 
 function actionKey(recId, a) { return norm(recId) + '|' + norm(a.t) + '|' + norm(a.x); }
 function parseActionTab(values) {
   const h = (values && values[0]) || [], c = n => h.map(norm).indexOf(n), out = {};
-  const ci = { id: c('액션ID'), rec: c('기록ID'), t: c('종류'), x: c('내용'), st: c('상태'), done: c('완료일'), b7: c('BLOCK7 할일') };
+  const ci = { id: c('액션ID'), rec: c('기록ID'), t: c('종류'), x: c('내용'), st: c('상태'), done: c('완료일'), b7: c('BLOCK7 할일'), det: c('세부'), due: c('기한'), why: c('실행근거') };
   if (ci.rec < 0 || ci.t < 0 || ci.st < 0) return out;
   for (let i = 1; i < values.length; i++) {
     const r = values[i] || []; if (!norm(r[ci.rec])) continue;
-    out[norm(r[ci.rec]) + '|' + norm(r[ci.t]) + '|' + norm(ci.x < 0 ? '' : r[ci.x])] = { row: i + 1, st: norm(r[ci.st]), done: ci.done < 0 ? '' : norm(r[ci.done]), b7: ci.b7 < 0 ? '' : norm(r[ci.b7]) };
+    out[norm(r[ci.rec]) + '|' + norm(r[ci.t]) + '|' + norm(ci.x < 0 ? '' : r[ci.x])] = { row: i + 1, st: norm(r[ci.st]), done: ci.done < 0 ? '' : norm(r[ci.done]), b7: ci.b7 < 0 ? '' : norm(r[ci.b7]),
+      det: ci.det < 0 ? '' : longText(r[ci.det]), due: ci.due < 0 ? '' : norm(r[ci.due]), why: ci.why < 0 ? '' : norm(r[ci.why]) };   // 1112-N 가져온 할 일의 글 · 기한 · 근거
   }
   return out;
 }
@@ -1203,7 +1240,7 @@ function qnSubs(items) { return (items || []).filter(q => q && !q.done && norm(q
 // 새 정보는 모두 응답 탭 **오른쪽 끝에 더한 열**에. '내용'(F) 칸의 뜻은 그대로, '덧붙임' 탭은 나중에 덧붙이는 메모 전용 그대로.
 // 다음 질문은 이미 있는 '다음 질문' 탭(1110-Q)을 함께 쓴다 — 열을 따로 만들지 않는다 (HB 2026-11-12 '가').
 // 화면은 시트에 이 열이 **모두** 있을 때만 새 칸을 보여 준다(nxReady) → 열을 더하기 전 시트는 예전과 한 글자도 같다.
-const NX_COLS = ['핵심 한줄', '상세 기록', '장기 관찰', '우선순위', '정보 성격', '모임ID', '원본ID', '가져오기 해시'];
+const NX_COLS = ['핵심 한줄', '상세 기록', '장기 관찰', '우선순위', '정보 성격', '모임ID', '원본ID', '가져오기 해시', '언급된 성도'];   // 언급된 성도: 2·3·4단계에 더함(제삼자 — 연결만, 그 분 기록은 안 만듦)
 const NX_LONG = ['@상세 기록', '@장기 관찰'];
 const NX_PRIO = ['긴급', '이번주', '장기관찰', '일반'];
 const NX_BASIS = ['직접', '전언', '혼합', '미확인'];
@@ -1235,7 +1272,7 @@ function cfgView(raw) {
   return s;
 }
 // 이름 후보 명단 — 심방 기록 성도 + 기도노트 사람 + 셀 명단(불러온 것). 띄어쓰기 무시로 하나로, 심방 기록에 적힌 꼴이 먼저
-function nameCands(people, prayNames, groups) {
+function nameCands(people, prayNames, groups, roster) {
   const out = [], at = {};
   const add = (n, src, extra) => {
     const name = norm(n), k = nameKey(name); if (!k || groupCanon(name)) return;
@@ -1246,7 +1283,419 @@ function nameCands(people, prayNames, groups) {
   Object.keys(people || {}).forEach(n => { if (n !== '(이름 없음)') add(n, '심방', { roles: (people[n].roles || []).slice(), last: people[n].last || '' }); });
   (prayNames || []).forEach(n => add(n, '기도'));
   (groups || []).forEach(g => (g.leaders || []).concat(g.members || []).forEach(n => add(n, '셀', { cell: norm(g.name) })));
+  (roster || []).forEach(n => add(n, '성도'));   // '성도' 탭 (붙여넣기에서 '새 성도로 추가' 한 분들)
   return out;
+}
+
+// ───────── 1112-N 2·3·4 붙여넣어 채우기 — HB Care Packet v1(JSON) · ChatGPT Markdown 보고서 ─────────
+// 앱은 정리된 결과만 받아 칸을 채운다(LLM 없음 · 바깥 전송 없음). 전사 원문은 받지도 두지도 않는다.
+// 흐름: 읽기(pkParse) → 초안(pkDraft) → 속성 대조(pkAttrIssues) → 성도 연결(pkLinkRows) → 중복(pkDups) → 저장할 줄(pkRecordOut · pkActRows · pkMeetRow)
+const PK_VER = 'hb-care.v1';
+const PK_EV_KIND = { call: '통화', visit: '심방', group: '모임', brief_chat: '짧은 대화', message: '메시지', other: '기타' };
+const PK_SRC_KIND = ['plaud', 'chatgpt', 'manual', 'other'];
+const PK_AUTH = ['실제 약속', '목회자 확정', 'AI 제안'];
+const PK_ACT_PRIO = ['긴급', '이번주', '일반'];
+const PK_DEPTH = ['얕음', '중간', '깊음'];
+const ACT_WHY = { '실제 약속': '실제 약속', '목회자 확정': '목회자 확정', 'AI 제안': 'AI 제안 채택' };
+const PK_AI_HEAD = '### AI 제안(미채택)';
+const PK_ATTRS = [['roles', '구분'], ['method', '전화 / 만남'], ['tags', '태그'], ['acts', '액션']];
+const PK_MAX_RECS = 30;                           // 한 번에 만드는 기록 상한 (밖에서 받은 것으로 쓰는 일에는 상한)
+
+// ── JSON 규격 검사 (02_HB_Care_Packet_v1.schema.json 을 그대로 손으로 옮김) ──
+function pkValidate(o) {
+  const E = [], isObj = x => !!x && typeof x === 'object' && !Array.isArray(x), isStr = x => typeof x === 'string';
+  const nul = (x, f) => x === null || f(x), isDate = x => isStr(x) && /^\d{4}-\d{2}-\d{2}$/.test(x) && !isNaN(Date.parse(x + 'T00:00:00Z')) && new Date(x + 'T00:00:00Z').toISOString().slice(0, 10) === x;
+  const isDT = x => isStr(x) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(x) && !isNaN(Date.parse(x));
+  const err = (p, m) => E.push(p + ' — ' + m);
+  const keys = (x, p, allow, req) => {
+    Object.keys(x).forEach(k => { if (!allow.includes(k)) err(p, "모르는 칸 '" + k + "' (규격에 없음)"); });
+    req.forEach(k => { if (!(k in x)) err(p, "'" + k + "' 칸이 없습니다"); });
+  };
+  const en = (x, p, list) => { if (!list.includes(x)) err(p, JSON.stringify(x) + ' 는 허용 값(' + list.join(' · ') + ')이 아닙니다'); };
+  const str = (x, p, min) => { if (!isStr(x)) err(p, '글이어야 합니다'); else if (min && !x.trim()) err(p, '비어 있습니다'); };
+  const strs = (x, p, uniq) => { if (!Array.isArray(x)) { err(p, '목록이어야 합니다'); return; } x.forEach((y, i) => { if (!isStr(y)) err(p + '[' + i + ']', '글이어야 합니다'); }); if (uniq && new Set(x).size !== x.length) err(p, '같은 값이 두 번 있습니다'); };
+  if (!isObj(o)) return ['맨 바깥이 { … } 묶음이 아닙니다'];
+  keys(o, '(맨 바깥)', ['schema_version', 'source', 'event', 'records', 'unknown_speakers', 'mentioned_people', 'import_notes'], ['schema_version', 'source', 'event', 'records', 'unknown_speakers']);
+  if ('schema_version' in o && o.schema_version !== PK_VER) err('schema_version', JSON.stringify(o.schema_version) + " — '" + PK_VER + "' 이어야 합니다");
+  const s = o.source;
+  if ('source' in o) {
+    if (!isObj(s)) err('source', '묶음이어야 합니다');
+    else {
+      keys(s, 'source', ['kind', 'source_id', 'source_url', 'title', 'recorded_at', 'duration_ms'], ['kind', 'title']);
+      if ('kind' in s) en(s.kind, 'source.kind', PK_SRC_KIND);
+      if ('title' in s) str(s.title, 'source.title', 1);
+      if ('source_id' in s && !nul(s.source_id, isStr)) err('source.source_id', '글 또는 null');
+      if ('source_url' in s && !nul(s.source_url, isStr)) err('source.source_url', '글 또는 null');
+      if ('recorded_at' in s && !nul(s.recorded_at, isDT)) err('source.recorded_at', '날짜시각(2026-11-12T16:18:46+09:00 꼴) 또는 null');
+      if ('duration_ms' in s && !nul(s.duration_ms, x => Number.isInteger(x) && x >= 0)) err('source.duration_ms', '0 이상의 정수 또는 null');
+    }
+  }
+  const ev = o.event;
+  if ('event' in o) {
+    if (!isObj(ev)) err('event', '묶음이어야 합니다');
+    else {
+      keys(ev, 'event', ['kind', 'date', 'title', 'group_summary', 'details_markdown', 'location'], ['kind', 'date', 'title', 'group_summary', 'details_markdown']);
+      if ('kind' in ev) en(ev.kind, 'event.kind', Object.keys(PK_EV_KIND));
+      if ('date' in ev && !isDate(ev.date)) err('event.date', '날짜(2026-11-12 꼴)여야 합니다');
+      if ('title' in ev) str(ev.title, 'event.title', 1);
+      ['group_summary', 'details_markdown'].forEach(k => { if (k in ev) str(ev[k], 'event.' + k); });
+      if ('location' in ev && !nul(ev.location, isStr)) err('event.location', '글 또는 null');
+    }
+  }
+  if ('records' in o) {
+    if (!Array.isArray(o.records) || !o.records.length) err('records', '기록이 하나 이상 든 목록이어야 합니다');
+    else if (o.records.length > PK_MAX_RECS) err('records', '한 번에 ' + PK_MAX_RECS + '개까지만 받습니다 (' + o.records.length + '개)');
+    else o.records.forEach((r, i) => {
+      const p = 'records[' + i + ']';
+      if (!isObj(r)) { err(p, '묶음이어야 합니다'); return; }
+      keys(r, p, ['person_name', 'person_confirmed', 'speaker_label', 'category', 'contact_method', 'depth', 'summary_line', 'brief_note', 'detailed_note_markdown', 'priority', 'long_term_watch', 'information_basis', 'tags', 'next_questions', 'actions'],
+        ['person_name', 'person_confirmed', 'contact_method', 'depth', 'summary_line', 'brief_note', 'detailed_note_markdown', 'priority', 'long_term_watch', 'information_basis', 'tags', 'next_questions', 'actions']);
+      ['person_name', 'contact_method', 'summary_line', 'brief_note'].forEach(k => { if (k in r) str(r[k], p + '.' + k, 1); });
+      ['detailed_note_markdown', 'long_term_watch'].forEach(k => { if (k in r) str(r[k], p + '.' + k); });
+      if ('person_confirmed' in r && typeof r.person_confirmed !== 'boolean') err(p + '.person_confirmed', 'true / false');
+      if ('speaker_label' in r && !nul(r.speaker_label, isStr)) err(p + '.speaker_label', '글 또는 null');
+      if ('category' in r && !(r.category === null || isStr(r.category) || (Array.isArray(r.category) && r.category.every(isStr)))) err(p + '.category', 'null · 글 · 글 목록 중 하나');
+      if ('depth' in r) en(r.depth, p + '.depth', PK_DEPTH);
+      if ('priority' in r) en(r.priority, p + '.priority', NX_PRIO);
+      if ('information_basis' in r) en(r.information_basis, p + '.information_basis', NX_BASIS);
+      if ('tags' in r) strs(r.tags, p + '.tags', true);
+      if ('next_questions' in r) strs(r.next_questions, p + '.next_questions');
+      if ('actions' in r) {
+        if (!Array.isArray(r.actions)) err(p + '.actions', '목록이어야 합니다');
+        else r.actions.forEach((a, j) => {
+          const q = p + '.actions[' + j + ']';
+          if (!isObj(a)) { err(q, '묶음이어야 합니다'); return; }
+          keys(a, q, ['text', 'authority', 'owner', 'due_date', 'priority', 'kind', 'target_person'], ['text', 'authority', 'owner', 'due_date', 'priority', 'kind']);
+          if ('text' in a) str(a.text, q + '.text', 1);
+          if ('authority' in a) en(a.authority, q + '.authority', PK_AUTH);
+          if ('owner' in a && !nul(a.owner, isStr)) err(q + '.owner', '글 또는 null');
+          if ('due_date' in a && !nul(a.due_date, isDate)) err(q + '.due_date', '날짜(2026-11-12 꼴) 또는 null');
+          if ('priority' in a) en(a.priority, q + '.priority', PK_ACT_PRIO);
+          if ('kind' in a) str(a.kind, q + '.kind');
+          if ('target_person' in a && !nul(a.target_person, isStr)) err(q + '.target_person', '글 또는 null');
+        });
+      }
+    });
+  }
+  if ('unknown_speakers' in o) strs(o.unknown_speakers, 'unknown_speakers');
+  if ('mentioned_people' in o) strs(o.mentioned_people, 'mentioned_people');
+  if ('import_notes' in o && !isStr(o.import_notes)) err('import_notes', '글이어야 합니다');
+  return E;
+}
+// 붙여 넣은 글에서 JSON 부분 — ```json 울타리 · 앞뒤 말 · 그냥 { … }. JSON 이 아니면 null (→ Markdown 으로 읽는다)
+function pkJsonText(t) {
+  const s = String(t || '').trim();
+  if (s.startsWith('{')) return s;
+  const f = s.match(/```(?:json)?\s*\n?([\s\S]*?)```/i); if (f && f[1].trim().startsWith('{')) return f[1].trim();
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a >= 0 && b > a && /"schema_version"\s*:/.test(s.slice(a, b + 1))) return s.slice(a, b + 1);
+  return null;
+}
+function pkParse(text) {
+  const t = String(text == null ? '' : text).replace(/^﻿/, '').trim();
+  if (!t) return { ok: false, kind: '', errs: ['붙여 넣은 글이 비어 있습니다'] };
+  const j = pkJsonText(t);
+  if (j != null) {
+    let o; try { o = JSON.parse(j); } catch (e) { return { ok: false, kind: 'json', errs: ['JSON 을 읽지 못했습니다 — ' + e.message] }; }
+    const errs = pkValidate(o);
+    return errs.length ? { ok: false, kind: 'json', errs } : { ok: true, kind: 'json', packet: o, missing: [] };
+  }
+  const md = mdToPacket(t);
+  if (!md.packet.records.length) return { ok: false, kind: 'md', errs: ['JSON 도 아니고, Markdown 에서 알아볼 제목(성도 · 핵심 한줄 · 내용 …)을 하나도 찾지 못했습니다'] };
+  return { ok: true, kind: 'md', packet: md.packet, missing: md.missing };
+}
+
+// ── ChatGPT Markdown 보고서 — 규칙으로만 읽는다(추측 없음) ──
+// 알아보는 꼴: '## 핵심 한줄' 제목 아래 글 · '**핵심 한줄**: 글' · '핵심 한줄: 글'(한 줄 값 칸만 — 긴 글 칸 안에서는 제목 · 굵은 이름표만)
+// '성도' 가 나올 때마다 새 기록. 첫 '성도' 앞의 칸은 첫 기록 것(제목 · 날짜 · 모임 공통 · 원본은 모임 것)
+const MD_KEYS = [
+  ['person', ['성도', '성도 이름', '이름', '대상']], ['date', ['날짜', '심방 날짜', '심방일', '일시']], ['title', ['제목']],
+  ['method', ['방식', '전화 / 만남', '만남 방식', '연락 방식']], ['depth', ['대화 깊이', '깊이']],
+  ['core', ['핵심 한줄', '핵심 한 줄', '한줄 요약', '한 줄 요약']], ['brief', ['내용', '요약', '간단 메모']], ['detail', ['상세 기록', '상세']],
+  ['prio', ['우선순위']], ['basis', ['정보 성격']], ['longObs', ['장기 관찰']], ['qn', ['다음 질문', '다음 심방 질문']],
+  ['promise', ['실제 약속']], ['pastor', ['목회자 확정']], ['ai', ['AI 제안']], ['tags', ['태그']], ['roles', ['구분']],
+  ['mentioned', ['언급된 사람', '언급된 성도']], ['unknown', ['미확인 화자']], ['srcId', ['원본ID', '원본 ID', '녹음 ID', 'PLAUD ID', 'PLAUD 녹음 ID']],
+  ['srcUrl', ['원본 링크', '녹음 링크']], ['gsum', ['공통 핵심', '모임 공통 핵심']], ['gdetail', ['공통 상세 기록', '모임 공통 상세 기록']],
+];
+const MD_ONE = ['person', 'date', 'title', 'method', 'depth', 'prio', 'basis', 'srcId', 'srcUrl', 'roles', 'tags'];   // 한 줄 값 칸 — 'X: 값' 꼴을 어디서든 알아본다
+const MD_LONG = ['brief', 'detail', 'gdetail', 'longObs'];   // 여러 줄 글 칸 — 이 안에서는 '이름표: 값' 꼴(한 줄 값 칸 빼고)을 글로 둔다
+const MD_EVENT = ['title', 'date', 'gsum', 'gdetail', 'unknown', 'mentioned', 'srcId', 'srcUrl'];
+function mdKeyOf(label) {
+  const k = String(label || '').replace(/\*\*|__/g, '').replace(/[:：]\s*$/, '').replace(/\s+/g, '').toLowerCase();
+  if (!k) return null;
+  for (const [f, names] of MD_KEYS) if (names.some(n => n.replace(/\s+/g, '').toLowerCase() === k)) return f;
+  return null;
+}
+function pkDate(s) {
+  const t = norm(s); let m;
+  if ((m = t.match(/(\d{4})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/))) { const y = ymd3(+m[1], +m[2], +m[3]), d = new Date(y + 'T00:00:00Z'); return !isNaN(d) && d.toISOString().slice(0, 10) === y ? y : ''; }
+  return '';
+}
+function mdItems(lines) {   // 목록 줄 → 항목. 글머리(- · 1.) 없는 줄도 한 항목
+  return lines.map(l => l.replace(/^\s*(?:[-*•·▪◦]|\d{1,2}[.)])\s*/, '').replace(/^\[\s?[xX ]?\s?\]\s*/, '').trim()).filter(Boolean);
+}
+function mdAction(line, auth) {
+  let t = line, kind = '기타', due = null, m;
+  if ((m = t.match(/\(\s*(?:기한|마감)\s*[:：]?\s*(\d{4}-\d{2}-\d{2})\s*\)/))) { due = m[1]; t = t.replace(m[0], '').trim(); }
+  if ((m = t.match(/^\[([^\]]{1,8})\]\s*(.+)$/)) || (m = t.match(/^([가-힣A-Za-z]{1,6})\s*[:：]\s*(.+)$/))) { kind = m[1].trim(); t = m[2].trim(); }
+  return { text: t, authority: auth, owner: null, due_date: due, priority: '일반', kind, target_person: null };
+}
+function mdToPacket(text) {
+  const lines = String(text || '').replace(/\r/g, '').split('\n');
+  const ev = {}, recs = [], missing = []; let cur = null, field = null, buf = [], h1 = '';
+  const newRec = () => { cur = { f: {} }; recs.push(cur); return cur; };
+  const flush = () => {
+    if (!field) return;
+    const body = buf.join('\n').replace(/^\n+|\n+$/g, '');
+    if (MD_EVENT.includes(field) && field !== 'date') ev[field] = (ev[field] ? ev[field] + '\n' : '') + body;
+    else { const r = cur || newRec(); r.f[field] = (r.f[field] ? r.f[field] + '\n' : '') + body; if (field === 'date' && !ev.date) ev.date = body; }
+    field = null; buf = [];
+  };
+  const start = (f, val) => {
+    flush();
+    if (f === 'person' && cur && cur.f.person != null) newRec();
+    if (f === 'person' && !cur) newRec();
+    field = f; buf = val ? [val] : [];
+  };
+  lines.forEach(l => {
+    let m;
+    if ((m = l.match(/^\s*(#{1,6})\s+(.+?)\s*#*\s*$/))) {
+      const txt = m[2].replace(/\*\*/g, '').trim(), kv = txt.match(/^([^:：]{1,14})[:：]\s*(.*)$/), k = mdKeyOf(txt) || (kv && mdKeyOf(kv[1]));
+      if (k) { start(k, mdKeyOf(txt) ? '' : kv[2]); return; }
+      if (m[1].length === 1 && !h1 && !field) { h1 = txt; return; }
+    }
+    if ((m = l.match(/^\s*(?:[-*]\s+)?\*\*([^*]{1,20})\*\*\s*[:：]?\s*(.*)$/)) && mdKeyOf(m[1])) { start(mdKeyOf(m[1]), m[2].trim()); return; }
+    if ((m = l.match(/^\s*(?:[-*]\s+)?([^:：#*\-\s][^:：]{0,13})\s*[:：]\s*(.*)$/))) {
+      const k = mdKeyOf(m[1]);
+      if (k && (MD_ONE.includes(k) || !MD_LONG.includes(field))) { start(k, m[2].trim()); return; }
+    }
+    if (field) buf.push(l);
+  });
+  flush();
+  const one = s => norm(String(s || '').split('\n').find(x => norm(x)) || '');
+  const enumOf = (s, list, alias) => { const v = one(s).replace(/\s+/g, ''); const a = (alias || {})[v] || v; return list.find(x => x.replace(/\s+/g, '') === a) || ''; };
+  const date = pkDate(one(ev.date));
+  const records = recs.map((r, i) => {
+    const f = r.f, miss = k => missing.push({ rec: i, k });
+    const rec = {
+      person_name: one(f.person), person_confirmed: false, speaker_label: null,
+      category: f.roles ? one(f.roles).split(/\s*[,，·]\s*/).map(norm).filter(Boolean) : null,
+      contact_method: one(f.method), depth: enumOf(f.depth, PK_DEPTH), summary_line: longText(f.core).replace(/\n+/g, ' '),
+      brief_note: longText(f.brief), detailed_note_markdown: longText(f.detail), priority: enumOf(f.prio, NX_PRIO),
+      long_term_watch: longText(f.longObs), information_basis: enumOf(f.basis, NX_BASIS, { '전해들음': '전언', '직접들음': '직접' }),
+      tags: f.tags ? [...new Set(String(f.tags).split(/[\s,，#·]+/).map(norm).filter(Boolean))] : [],
+      next_questions: f.qn ? mdItems(f.qn.split('\n')) : [],
+      actions: [].concat(f.promise ? mdItems(f.promise.split('\n')).map(x => mdAction(x, '실제 약속')) : [], f.pastor ? mdItems(f.pastor.split('\n')).map(x => mdAction(x, '목회자 확정')) : [], f.ai ? mdItems(f.ai.split('\n')).map(x => mdAction(x, 'AI 제안')) : []),
+    };
+    if (!rec.person_name) miss('성도');
+    if (!rec.contact_method) miss('방식');
+    if (!rec.summary_line) miss('핵심 한줄');
+    if (!rec.brief_note) miss('내용');
+    if (f.depth && !rec.depth) miss('대화 깊이'); if (f.prio && !rec.priority) miss('우선순위'); if (f.basis && !rec.information_basis) miss('정보 성격');
+    return rec;
+  }).slice(0, PK_MAX_RECS);
+  if (!date) missing.push({ rec: -1, k: '날짜' + (one(ev.date) ? '(연도까지 적힌 날짜가 아님: ' + one(ev.date) + ')' : '') });
+  const title = one(ev.title) || h1;
+  return {
+    packet: {
+      schema_version: PK_VER, source: { kind: 'chatgpt', source_id: one(ev.srcId) || null, source_url: one(ev.srcUrl) || null, title: title || '', recorded_at: null, duration_ms: null },
+      event: { kind: ev.gsum || ev.gdetail || (ev.unknown && mdItems(ev.unknown.split('\n')).length) ? 'group' : 'other', date, title: title || '', group_summary: longText(ev.gsum), details_markdown: longText(ev.gdetail), location: null },
+      records, unknown_speakers: ev.unknown ? mdItems(ev.unknown.split('\n')) : [], mentioned_people: ev.mentioned ? mdItems(ev.mentioned.split(/\n|[,，]/)) : [],
+    },
+    missing,
+  };
+}
+
+// ── 초안 — 패킷 → 화면이 고칠 수 있는 꼴(기록마다 새 기록 입력 꼴 그대로) ──
+function pkCleanName(raw) {
+  let n = norm(String(raw || '').replace(/\([^)]*\)|（[^）]*）/g, ' '));
+  const t = n.replace(/\s*(성도님|성도|자매님|자매|형제님|형제|집사님|집사|권사님|권사|장로님|장로|목사님|목사|전도사님|전도사|간사님|간사|님)$/, '').trim();
+  return t || n;
+}
+function pkNormText(s) { return String(s || '').replace(/[\s\p{P}\p{S}]/gu, ''); }
+function pkHashStr(str) {   // cyrb53 — 같은 글이면 어느 기기에서나 같은 값
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 'h' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+// 가져오기 해시 = 날짜 + 연결된 성도 + (붙여 넣은 그대로의) 핵심 한줄 · 상세 기록. 공백 · 기호는 뺀다
+function pkHash(ymd, person, fp) { return pkHashStr(String(ymd || '') + '|' + nameKey(person) + '|' + String(fp || '')); }
+function pkDraft(p, kind) {
+  const ev = p.event || {}, so = p.source || {}, unknown = (p.unknown_speakers || []).map(norm).filter(Boolean);
+  const meet = ev.kind === 'group' || !!norm(ev.group_summary) || !!norm(ev.details_markdown) || unknown.length > 0;
+  const recs = (p.records || []).slice(0, PK_MAX_RECS).map(r => {
+    const f = blankRecord(ev.date || '');
+    Object.assign(f, {
+      name: pkCleanName(r.person_name), ymd: ev.date || '', roles: r.category == null ? [] : (Array.isArray(r.category) ? r.category : String(r.category).split(/\s*[,，]\s*/)).map(norm).filter(Boolean),
+      method: norm(r.contact_method), depth: PK_DEPTH.includes(r.depth) ? r.depth : '', core: norm(r.summary_line), text: longText(r.brief_note), detail: longText(r.detailed_note_markdown),
+      prio: NX_PRIO.includes(r.priority) ? r.priority : '', basis: NX_BASIS.includes(r.information_basis) ? r.information_basis : '', longObs: longText(r.long_term_watch),
+      tags: [...new Set((r.tags || []).map(norm).filter(Boolean))], qn: (r.next_questions || []).map(norm).filter(Boolean).join('\n'), place: norm(ev.location || ''),
+    });
+    const acts = (r.actions || []).map(a => ({ text: norm(a.text), auth: a.authority, kind: norm(a.kind) || '기타', due: a.due_date || '', prio: a.priority || '일반', owner: a.owner || '', target: a.target_person || '', on: a.authority !== 'AI 제안' }));
+    return { raw: norm(r.person_name), speaker: r.speaker_label || '', form: f, acts, fp: pkNormText(norm(r.summary_line) + '|' + longText(r.detailed_note_markdown)) };
+  });
+  return {
+    kind, src: { kind: so.kind || '', id: norm(so.source_id || ''), url: norm(so.source_url || ''), title: norm(so.title || ''), at: so.recorded_at || '' },
+    ev: { kind: ev.kind || 'other', date: ev.date || '', title: norm(ev.title || ''), sum: longText(ev.group_summary), detail: longText(ev.details_markdown) },
+    meet, unknown, mentioned: (p.mentioned_people || []).map(norm).filter(Boolean), notes: norm(p.import_notes || ''), recs,
+    meetFp: pkNormText(norm(ev.title) + '|' + longText(ev.group_summary) + '|' + longText(ev.details_markdown)),
+  };
+}
+
+// ── 속성 대조 — 구분 · 방식 · 태그 · 할 일 종류가 '속성' 탭(+ 폼)에 없는 값이면 고르게 한다 ──
+// known = { '구분': [...], '전화 / 만남': [...], '태그': [...], '액션': [...] }. '기타' 할 일은 늘 된다
+function pkAttrIssues(d, known) {
+  const out = [], at = {};
+  const see = (attr, val, i) => {
+    const v = norm(val); if (!v) return;
+    if ((known[attr] || []).includes(v) || (attr === '액션' && v === '기타')) return;
+    const k = attr + '|' + v; if (!at[k]) { at[k] = { attr, val: v, recs: [], mode: '', to: '' }; out.push(at[k]); }
+    if (!at[k].recs.includes(i)) at[k].recs.push(i);
+  };
+  d.recs.forEach((r, i) => { r.form.roles.forEach(x => see('구분', x, i)); see('전화 / 만남', r.form.method, i); r.form.tags.forEach(x => see('태그', x, i)); r.acts.forEach(a => see('액션', a.kind, i)); });
+  return out;
+}
+// 고른 대로 초안을 고친다 — map: 기존 값으로 바꿈 · add: 그대로(저장 때 '속성' 탭에 더함) · drop: 버림(할 일 종류는 '기타' 로)
+function pkApplyAttrs(d, issues) {
+  issues.forEach(is => {
+    if (is.mode !== 'map' && is.mode !== 'drop') return;
+    const to = is.mode === 'map' ? norm(is.to) : '';
+    d.recs.forEach(r => {
+      const f = r.form, sw = arr => { const o = []; arr.forEach(x => { const y = x === is.val ? to : x; if (y && !o.includes(y)) o.push(y); }); return o; };
+      if (is.attr === '구분') f.roles = sw(f.roles);
+      if (is.attr === '태그') f.tags = sw(f.tags);
+      if (is.attr === '전화 / 만남' && f.method === is.val) f.method = to;
+      if (is.attr === '액션') r.acts.forEach(a => { if (a.kind === is.val) a.kind = to || '기타'; });
+    });
+    is.done = true;
+  });
+  return d;
+}
+
+// ── 성도 연결 — 원문 이름 → 명단(nameCands). 성까지 같으면 하나, 이름만이면 '○윤정' 꼴 후보들 ──
+function pkLinkCands(raw, cands) {
+  const n = pkCleanName(raw), k = nameKey(n);
+  if (!k) return { name: n, exact: null, list: [] };
+  const ex = (cands || []).find(c => nameKey(c.name) === k);
+  if (ex) return { name: n, exact: ex.name, list: [ex.name] };
+  if (k.length <= 2) return { name: n, exact: null, list: (cands || []).filter(c => { const ck = nameKey(c.name); return ck.length > k.length && ck.length <= k.length + 2 && ck.endsWith(k); }).map(c => c.name) };
+  return { name: n, exact: null, list: [] };
+}
+// 본문에서 아는 이름(세 글자 이상) 찾기 — 띄어쓰기 무시
+function pkBodyNames(text, cands, skip) {
+  const t = nameKey(text), sk = new Set((skip || []).map(nameKey));
+  return (cands || []).filter(c => { const k = nameKey(c.name); return k.length >= 3 && !sk.has(k) && t.includes(k); }).map(c => c.name);
+}
+// 확인 창 줄. mode: auto(저절로 붙음) · ok(확인함) · new(새 성도) · skip(연결 안 함 / 기록이면 저장 안 함) · ''(골라야 함)
+function pkLinkRows(d, cands) {
+  const rows = [], seen = new Set();
+  d.recs.forEach((r, i) => {
+    const c = pkLinkCands(r.form.name || r.raw, cands);
+    rows.push({ id: 'r' + i, role: 'rec', rec: i, raw: r.raw || r.form.name, name: c.name, list: c.list, pick: c.exact || (c.list.length === 1 ? c.list[0] : (c.list.length ? '' : c.name)), mode: c.exact || c.list.length === 1 ? 'auto' : c.list.length ? '' : 'new' });
+    seen.add(nameKey(c.exact || c.name));
+  });
+  d.mentioned.forEach((m, j) => {
+    const c = pkLinkCands(m, cands), k = nameKey(c.exact || c.name); if (!k || seen.has(k)) return; seen.add(k);
+    rows.push({ id: 'm' + j, role: 'men', rec: -1, raw: m, name: c.name, list: c.list, pick: c.exact || (c.list.length === 1 ? c.list[0] : ''), mode: c.exact || c.list.length === 1 ? 'auto' : c.list.length ? '' : 'skip' });
+  });
+  d.recs.forEach((r, i) => {
+    pkBodyNames([r.form.core, r.form.text, r.form.detail, r.form.longObs].join('\n'), cands, [...seen]).forEach(n => {
+      if (seen.has(nameKey(n))) return; seen.add(nameKey(n));
+      rows.push({ id: 'b' + rows.length, role: 'body', rec: i, raw: n, name: n, list: [n], pick: n, mode: 'auto' });
+    });
+  });
+  return rows;
+}
+function pkLinkOpen(rows) { return rows.filter(x => !x.mode || ((x.mode === 'auto' || x.mode === 'ok' || x.mode === 'new') && !norm(x.pick))); }
+// 확인 끝 → 기록마다 성도 · 언급된 성도 (취소한 기록은 빠진다)
+function pkResolve(d, rows) {
+  const linked = x => (x.mode === 'auto' || x.mode === 'ok' || x.mode === 'new') && norm(x.pick);
+  const men = rows.filter(x => x.role === 'men' && linked(x)).map(x => norm(x.pick));
+  return d.recs.map((r, i) => {
+    const rr = rows.find(x => x.role === 'rec' && x.rec === i);
+    if (!rr || !linked(rr)) return null;
+    const body = rows.filter(x => x.role === 'body' && x.rec === i && linked(x)).map(x => norm(x.pick));
+    const person = norm(rr.pick), mentions = [...new Set(men.concat(body))].filter(n => nameKey(n) !== nameKey(person));
+    return { i, person, mentions, hash: pkHash(d.ev.date, person, r.fp) };
+  });
+}
+function pkNewPeople(rows) { return [...new Set(rows.filter(x => x.mode === 'new' && norm(x.pick)).map(x => norm(x.pick)))]; }
+
+// ── 중복 — ① 원본ID + 연결된 성도 + 개인/모임 ② 원본ID 가 없으면 가져오기 해시 ──
+function pkDups(d, res, visits) {
+  return res.map(x => {
+    if (!x) return null;
+    const grp = !!d.meet;
+    let v = d.src.id ? (visits || []).find(w => w.srcId === d.src.id && hasPerson(w, x.person) && !!w.meetId === grp) : null;
+    if (v) return { key: v.key, id: v.id, why: '원본ID' };
+    v = (visits || []).find(w => w.hash && w.hash === x.hash);
+    return v ? { key: v.key, id: v.id, why: '같은 내용' } : null;
+  });
+}
+function pkMeetDup(d, meets) {
+  return (meets || []).find(m => (d.src.id && m.srcId === d.src.id) || (!d.src.id && m.date === d.ev.date && m.fp === d.meetFp)) || null;
+}
+// '모임' 탭 → [{row, id, date, srcId, fp}]
+function parseMeetTab(values) {
+  const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [];
+  const ci = { id: c('모임ID'), date: c('날짜'), title: c('제목'), sum: c('공통 핵심'), det: c('공통 상세 기록'), src: c('원본ID'), url: c('원본 링크'), unk: c('미확인 화자'), kind: c('유형') };
+  if (ci.id < 0) return out;
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || [], g = k => (ci[k] < 0 ? '' : r[ci[k]]), id = norm(g('id')); if (!id) continue;
+    out.push({ row: i + 1, id, date: norm(g('date')), title: norm(g('title')), kind: norm(g('kind')), sum: longText(g('sum')), det: longText(g('det')), srcId: norm(g('src')), url: norm(g('url')), unknown: longText(g('unk')),
+      fp: pkNormText(norm(g('title')) + '|' + longText(g('sum')) + '|' + longText(g('det'))) });
+  }
+  return out;
+}
+// '성도' 탭 → 이름 목록
+function parseRosterTab(values) {
+  const h = ((values && values[0]) || []).map(norm), ci = h.indexOf('이름'); if (ci < 0) return [];
+  return [...new Set((values || []).slice(1).map(r => norm((r || [])[ci])).filter(Boolean))];
+}
+
+// ── 저장할 것 ──
+function pkEtcText(s) { return norm(String(s || '').replace(/[,，]/g, ' ·')).slice(0, 100); }
+// 체크한 할 일 → 액션 탭 줄들(기록 · 종류 하나에 한 줄). 기타는 글마다 한 줄
+function pkActRows(acts) {
+  const out = [], by = {};
+  (acts || []).filter(a => a.on && norm(a.text)).forEach(a => {
+    const kind = norm(a.kind) || '기타', det = (a.prio && a.prio !== '일반' ? '(' + a.prio + ') ' : '') + norm(a.text), why = ACT_WHY[a.auth] || '';
+    if (kind === '기타') { out.push({ t: '기타', x: pkEtcText(a.text), det, due: a.due || '', why }); return; }
+    const o = by[kind];
+    if (o) { o.det += '\n' + det; if (!o.due && a.due) o.due = a.due; if (why && !o.why.split(' · ').includes(why)) o.why = o.why ? o.why + ' · ' + why : why; return; }
+    by[kind] = { t: kind, x: '', det, due: a.due || '', why }; out.push(by[kind]);
+  });
+  return out;
+}
+function pkUnadopted(acts) {
+  const un = (acts || []).filter(a => !a.on && norm(a.text));
+  if (!un.length) return '';
+  return PK_AI_HEAD + '\n' + un.map(a => '- ' + (a.auth && a.auth !== 'AI 제안' ? '(' + a.auth + ') ' : '') + norm(a.text) + [a.kind && a.kind !== '기타' ? a.kind : '', a.owner ? '담당 ' + a.owner : '', a.due ? '기한 ' + a.due : ''].filter(Boolean).map(x => ' · ' + x).join('')).join('\n');
+}
+// 기록 하나 → 시트에 쓸 입력 꼴 + 앱 열 값
+function pkRecordOut(d, r, res, meetId, nowMs) {
+  const f = JSON.parse(JSON.stringify(r.form)), rows = pkActRows(r.acts), un = pkUnadopted(r.acts);
+  f.name = res.person;
+  rows.forEach(a => { if (a.t === '기타') { const e = splitEtc(f.actsEtc); if (!e.includes(a.x)) e.push(a.x); f.actsEtc = e.join(', '); } else if (!f.acts.includes(a.t)) f.acts.push(a.t); });
+  if (un) f.detail = longText(f.detail) ? longText(f.detail) + '\n\n' + un : un;
+  return { form: f, acts: rows, qn: qnMerge([], f.qn),
+    extra: { '@출처': 'AI', '@확인': stampLocal(nowMs), '@모임ID': meetId || '', '@원본ID': d.src.id || '', '@가져오기 해시': res.hash, '@언급된 성도': res.mentions.join(', ') } };
+}
+function pkMeetRow(head, d, id, nowMs) {
+  const v = { '모임ID': id, '날짜': d.ev.date, '제목': d.ev.title || d.src.title, '유형': PK_EV_KIND[d.ev.kind] || d.ev.kind, '공통 핵심': d.ev.sum, '공통 상세 기록': d.ev.detail, '원본ID': d.src.id, '원본 링크': d.src.url, '미확인 화자': d.unknown.join('\n'), '만든 시각': stampLocal(nowMs) };
+  return (head && head.length ? head : NX_TABS['모임']).map(k => (v[norm(k)] == null ? '' : v[norm(k)]));
+}
+function pkActTabRow(head, a, recId, name, actId) {
+  const v = { '액션ID': actId, '기록ID': recId, '성도': name, '종류': a.t, '세부': a.det, '내용': a.x, '기한': a.due, '상태': '할 일', '완료일': '', 'BLOCK7 할일': '', '실행근거': a.why };
+  return (head && head.length ? head : ACT_TAB_HEAD.concat(ACT_NX)).map(k => (v[norm(k)] == null ? '' : v[norm(k)]));
+}
+// 새 줄 + 앱 열 값(출처 AI · 확인 · 모임ID …) — 머리글에 그 칸이 없으면 lost 로 알린다
+function importRowValues(header, map, rec, id, nowMs, extra) {
+  const o = newRowValues(header, map, rec, id, nowMs);
+  Object.keys(extra || {}).forEach(k => { const v = extra[k]; if (v === '' || v == null) return; if (map[k] == null) { o.lost.push(k); return; } o.row[map[k]] = v; });
+  return o;
 }
 // 덧붙임 탭 → { 기록ID: [{at, who, x}] }
 function parseAddenda(values) {
@@ -1263,7 +1712,7 @@ function parseAddenda(values) {
 // 읽어 둔 모양에 체크 · 덧붙임을 붙인다
 function attachExtras(model, statusMap, addenda) {
   (model.visits || []).forEach(v => {
-    v.actions.forEach(a => { const s = v.id ? statusMap[actionKey(v.id, a)] : null; a.done = !!s && s.st === '마침'; a.doneAt = s ? s.done : ''; a.b7 = s ? s.b7 : ''; });
+    v.actions.forEach(a => { const s = v.id ? statusMap[actionKey(v.id, a)] : null; a.done = !!s && s.st === '마침'; a.doneAt = s ? s.done : ''; a.b7 = s ? s.b7 : ''; a.det = s ? s.det || '' : ''; a.due = s ? s.due || '' : ''; a.why = s ? s.why || '' : ''; });
     v.addn = (v.id && addenda[v.id]) || [];
   });
   return model;
@@ -2232,6 +2681,7 @@ async function loadData(quiet) {
     DATA.attend = parseAttend(V(ATT_TAB));
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
     DATA.visOpts = optsParse(V(VIS_OPT_TAB), VIS_OPT_FIELDS);
+    DATA.attrRows = parseAttrRows(V('속성')); DATA.meets = parseMeetTab(V('모임')); DATA.roster = parseRosterTab(V('성도'));   // 1112-N 붙여넣기: 속성 대조 · 모임 중복 · 새 성도 명단
     let form = DATA.form;
     if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
     const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [], places: (formQOf(form, 'place') || {}).options || [] } : {};
@@ -3051,7 +3501,7 @@ function qnSecHtml(v) {
 function todoRow(v, a, i, sub) {
   const lab = a.t === '기타' && a.x ? a.x : a.t + (a.x ? ' · ' + a.x : '');
   return '<div class="todo' + (a.done ? ' done' : '') + '"><button class="ck' + (a.done ? ' on' : '') + '" style="--k:var(--' + a.k + ')" data-act="tick" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-label="' + (a.done ? '다시 할 일로' : '마침 표시') + '"></button>' +
-    '<div class="lab"><b>' + esc(sub ? whoShort(v.name) : lab) + '</b>' + (sub ? ' · ' + esc(lab) : '') + '<small>' + (a.done ? (a.doneAt ? mdw(a.doneAt) + ' 마침 · ' : '마침 · ') : '') + mdw(v.ymd) + ' 심방' + (sub ? ' · ' + esc(visitPreview(v)).slice(0, 30) : '') + '</small></div>' +
+    '<div class="lab"><b>' + esc(sub ? whoShort(v.name) : lab) + '</b>' + (sub ? ' · ' + esc(lab) : '') + (a.det ? '<span class="tdet">' + esc(a.det).replace(/\n/g, '<br>') + (a.why ? ' <em>' + esc(a.why) + '</em>' : '') + '</span>' : '') + '<small>' + (a.due ? '기한 ' + mdw(a.due) + ' · ' : '') + (a.done ? (a.doneAt ? mdw(a.doneAt) + ' 마침 · ' : '마침 · ') : '') + mdw(v.ymd) + ' 심방' + (sub ? ' · ' + esc(visitPreview(v)).slice(0, 30) : '') + '</small></div>' +
     '<div class="tacts">' + (v.id && (!a.done || a.b7) ? '<button class="b7b' + (a.b7 ? ' sent' : '') + '" data-act="b7open" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-label="BLOCK7 할일로 보내기">' + (a.b7 ? 'BLOCK7 ' + md(a.b7) : 'BLOCK7 →') + '</button>' : '') +
     (sub ? '<button class="send" data-act="open" data-v="' + esc(v.key) + '">›</button>' : '') + '</div></div>';
 }
@@ -3143,6 +3593,8 @@ function lPerson(L) {
   up.forEach(e => { h += e.planId ? '<button class="tlx" data-act="planopen" data-v="' + esc(e.planId) + '"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(((DATA.plans || []).find(p => p.id === e.planId) || {}).why || '물어볼 것 없음').split('\n')[0] + '</span></span></button>' : '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
   h += vs.map(x => tlRow(x, n)).join('') + '</div>';
   if (all.length > vs.length) h += '<button class="send" data-act="arch" style="margin-top:10px">보관 기록 함께 보기</button>';
+  const ment = M().visits.filter(v => !hasPerson(v, n) && (v.mentions || []).some(x => nameKey(x) === nameKey(n)) && (S.showArch || !v.archived));   // 1112-N 다른 분 기록에 이름만 나온 것(그 분 기록은 안 만듦)
+  if (ment.length) h += '<div class="h-sec">다른 기록에서 언급됨<small>' + ment.length + '번</small></div><div class="tl">' + ment.map(x => tlRow(x)).join('') + '</div>';
   return h + '</div>';
 }
 
@@ -3879,7 +4331,9 @@ function crow(L, k, label, body) {
 function lEdit(L) {
   const f = L.form, FO = filterOptions(M().visits, DATA.opts), wide = editWide();
   L.wide = wide;
-  let h = lhead(L.key ? '기록 고치기' : '심방했어요', L) + '<div class="ph-body edf ' + (wide ? 'e-wide' : 'e-narrow') + '" style="padding-bottom:110px">';
+  let h = lhead(L.impSlot ? '가져온 기록 고치기' : L.key ? '기록 고치기' : '심방했어요', L) + '<div class="ph-body edf ' + (wide ? 'e-wide' : 'e-narrow') + '" style="padding-bottom:110px">';
+  if (DATA.nx && !L.key && !L.impSlot) h += '<button class="imp-btn" data-act="impopen">' + IC.plus + '붙여넣어 채우기 <small>ChatGPT 정리(JSON · Markdown)</small></button>';
+  if (L.impSlot) h += '<p class="muted" style="margin:0 0 10px">고친 것은 미리보기로 돌아갑니다. 시트에는 \'저장\' 때 한 번에 씁니다. 할 일 제안은 미리보기에서 체크합니다.</p>';
   const nameF = whoFieldHtml(L);   // 1112-M 이름 알약 (여럿 · '○○ 셀')
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
   const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
@@ -3922,7 +4376,7 @@ function lEdit(L) {
   }
   if (L.key) h += '<p class="muted" style="margin-top:12px">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
   h += omenuHtml(L);
-  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '완료') + '</button></div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.impSlot ? '고친 것 담기' : L.key ? '고친 것 저장' : '완료') + '</button></div>';
 }
 function topLayer() { return S.layers[S.layers.length - 1]; }
 function lAttrs(L) {
@@ -3963,6 +4417,7 @@ function openEdit(key) {
   else { const last = null; openLayer('edit', { key: null, form: blankRecord(today(), last) }); }
 }
 async function saveRecord(L) {
+  if (L.impSlot) { impSlotSave(L); return; }   // 1112-N 붙여넣기 미리보기에서 연 고치기 — 시트가 아니라 미리보기로
   whoFlush(L);   // 1112-M 아직 알약이 안 된 이름도
   const errs = validateRecord(L.form); if (errs.length) { toast(errs.join('\n')); return; }
   if (!(await ensurePrepared())) return;
@@ -3987,6 +4442,306 @@ async function saveRecord(L) {
     }
     await loadData(true);
   } catch (e) { toast('저장하지 못했습니다\n' + e.message); }
+}
+
+// ───────────────────────────── 1112-N 2·3·4 붙여넣어 채우기 (겹 화면 'imp') ─────────────────────────────
+// 붙여넣기 → 미리보기(속성 대조 · 할 일 체크 · 기록마다 고치기) → 성도 연결 확인(+ 중복) → 저장 1회 → 결과(단계마다 ✓/✗ · 다시 시도)
+// 5단계 입력대기함도 이 겹 화면을 그대로 쓴다(openImp(글, { inbox })).
+function knownAttrs() {
+  const out = {};
+  ['구분', '전화 / 만남', '태그', '액션'].forEach(t => { out[t] = (DATA.attrRows || []).filter(r => r.attr === t && !r.parent && !r.hidden).map(r => r.val); });
+  const o = DATA.opts || {};
+  [['구분', 'roles'], ['전화 / 만남', 'methods'], ['태그', 'tags'], ['액션', 'acts']].forEach(([t, k]) => (o[k] || []).forEach(v => { if (!out[t].includes(v)) out[t].push(v); }));
+  return out;
+}
+function allCands() { return nameCands(M().people, DATA.pray && DATA.pray.people, CELLS.groups, DATA.roster); }
+function candInfo(name) {
+  const c = allCands().find(x => nameKey(x.name) === nameKey(name)); if (!c) return '';
+  if (c.src.includes('심방')) return [(c.roles || []).join(' · '), c.last ? '최근 심방 ' + md(c.last) : ''].filter(Boolean).join(' · ');
+  return c.src.map(x => x === '셀' ? (c.cell || '셀 명단') : x === '기도' ? '기도노트' : '성도 탭').join(' · ') + ' · 심방 기록 없음';
+}
+function openImp(text, extra) {
+  if (CELLS.state === 'idle') loadCells();
+  openLayer('imp', Object.assign({ step: 'paste', paste: text || '', open: {}, dupMode: {} }, extra || {}));
+  if (text) impParse(topLayer());
+}
+function impParse(L) {
+  const r = pkParse(L.paste);
+  L.perr = r.ok ? null : r.errs; L.pkind = r.kind;
+  if (r.ok) { L.d = pkDraft(r.packet, r.kind); L.missing = r.missing; L.issues = pkAttrIssues(L.d, knownAttrs()); L.step = 'review'; L.open = {}; L.dirty = true; }
+  render();
+}
+function impBadges(f) {
+  return (f.prio ? '<span class="nx-prio p' + Math.max(0, NX_PRIO.indexOf(f.prio)) + '">' + esc(f.prio) + '</span>' : '') +
+    (f.basis === '전언' ? '<span class="nx-heard">전해 들음</span>' : f.basis && f.basis !== '직접' ? '<span class="nx-heard soft">' + esc(f.basis) + '</span>' : '');
+}
+function impFold(L, key, label, body) {
+  if (!norm(body)) return '';
+  const op = !!L.open[key];
+  return '<div class="imp-fold"><button data-act="impfold" data-v="' + esc(key) + '" aria-expanded="' + op + '">' + esc(label) + ' <small>' + body.length.toLocaleString() + '자</small> ' + IC_CHEV + '</button>' + (op ? '<div class="body-txt nx-detail">' + esc(body) + '</div>' : '') + '</div>';
+}
+function impRecErrs(L, i) {
+  const r = L.d.recs[i], e = validateRecord(r.form).slice();
+  (L.missing || []).filter(x => x.rec === i).forEach(x => { if (!e.some(y => y.includes(x.k))) e.push(x.k + ' 칸을 찾지 못했습니다'); });
+  return e;
+}
+function lImp(L) {
+  let h = lhead(L.inbox ? '들어온 기록' : '붙여넣어 채우기', L) + '<div class="ph-body imp" style="padding-bottom:110px">';
+  let foot = '';
+  if (L.step === 'paste') {
+    h += '<p class="muted">ChatGPT 가 정리한 <b>HB Care Packet(JSON)</b> 이나 <b>Markdown 보고서</b>를 붙여 넣으세요. 앱은 칸을 채우기만 하고, 저장 전에 한 번 더 보여 드립니다. 녹음 전사 원문은 넣지 마세요.</p>';
+    h += '<textarea class="inp imp-paste" data-f="ipaste" rows="12" placeholder="{ &quot;schema_version&quot;: &quot;hb-care.v1&quot;, … }\n\n또는\n\n성도: 홍길동\n날짜: 2026-11-12\n## 핵심 한줄\n…" aria-label="붙여 넣을 글">' + esc(L.paste || '') + '</textarea>';
+    if (L.perr) h += '<div class="review"><b>' + (L.pkind === 'json' ? '규격에 맞지 않습니다' : '읽지 못했습니다') + '</b><ul class="imp-err">' + L.perr.slice(0, 20).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' + (L.perr.length > 20 ? '<small>외 ' + (L.perr.length - 20) + '개</small>' : '') + '</div>';
+    h += '<details class="imp-help"><summary>Markdown 으로 붙일 때 알아보는 제목</summary><p class="muted">' + MD_KEYS.map(k => k[1][0]).map(esc).join(' · ') + '<br>\'## 핵심 한줄\' 처럼 제목으로, 또는 \'우선순위: 이번주\' 처럼 한 줄로 적습니다. \'성도\' 가 나올 때마다 새 기록입니다. 못 찾은 칸은 비워 두고 알려 드립니다.</p></details>';
+    foot = '<button class="btn pri" data-act="impgo">채우기</button>';
+  } else if (L.step === 'review') {
+    const d = L.d, open = L.issues.filter(x => !x.done);
+    h += '<div class="imp-src">' + (d.kind === 'json' ? 'JSON 규격' : 'Markdown 보고서') + ' · ' + (d.src.id ? '원본 ' + esc(d.src.id) : '원본ID 없음') + ' · 기록 ' + d.recs.length + (d.meet ? ' · 모임 1' : '') + '</div>';
+    if (d.src.title) h += '<div class="muted" style="margin-bottom:6px">' + esc(d.src.title) + '</div>';
+    if (d.notes) h += '<p class="muted">정리 메모 — ' + esc(d.notes) + '</p>';
+    const mm = (L.missing || []).filter(x => x.rec < 0);
+    if (mm.length) h += '<div class="review"><b>못 찾은 칸</b> · ' + mm.map(x => esc(x.k)).join(' · ') + '<br>비워 두었습니다. 기록의 \'고치기\' 에서 채워 주세요.</div>';
+    if (open.length) {
+      const K = knownAttrs();
+      h += '<div class="h-sec">시트 \'속성\' 에 없는 값<small>' + open.length + '</small></div>';
+      open.forEach(is => {
+        const ix = L.issues.indexOf(is), opts = K[is.attr] || [];
+        h += '<div class="imp-attr"><div><b>' + esc(is.attr) + '</b> · ' + esc(is.val) + ' <small class="muted">' + is.recs.map(i => esc(L.d.recs[i].form.name || L.d.recs[i].raw)).join(', ') + '</small></div>' +
+          (opts.length ? '<div class="opts">' + opts.map(o => '<button class="opt" data-act="impattr" data-v="' + ix + '|map|' + esc(o) + '">' + esc(o) + '</button>').join('') + '</div>' : '') +
+          '<div class="row"><button class="send" data-act="impattr" data-v="' + ix + '|add|">새 선택지로 추가</button><button class="send" data-act="impattr" data-v="' + ix + '|drop|">버리기</button></div></div>';
+      });
+    }
+    const added = L.issues.filter(x => x.mode === 'add');
+    if (added.length) h += '<p class="muted">저장할 때 \'속성\' 에 더함: ' + added.map(x => esc(x.attr + ' · ' + x.val)).join(', ') + '</p>';
+    if (d.meet) h += '<div class="imp-card meet"><div class="imp-k">모임 · ' + mdw(d.ev.date) + ' · ' + esc(PK_EV_KIND[d.ev.kind] || d.ev.kind) + '</div><b>' + esc(d.ev.title) + '</b>' + (d.ev.sum ? '<div class="imp-t">' + esc(d.ev.sum) + '</div>' : '') + impFold(L, 'm', '공통 상세 기록', d.ev.detail) +
+      (d.unknown.length ? '<div class="imp-unk"><b>미확인 화자</b> — 누구에게도 붙이지 않고 모임에만 남깁니다<br>' + d.unknown.map(esc).join('<br>') + '</div>' : '') + '</div>';
+    d.recs.forEach((r, i) => {
+      const f = r.form, errs = impRecErrs(L, i);
+      h += '<div class="imp-card"><div class="imp-k">' + esc(f.ymd ? mdw(f.ymd) : '날짜 없음') + ' · ' + esc(f.method || '방식 없음') + (f.depth ? ' · ' + esc(f.depth) : '') + (r.speaker ? ' · ' + esc(r.speaker) : '') + '</div>' +
+        '<div class="imp-name"><b>' + esc(f.name || r.raw || '(이름 없음)') + '</b>' + impBadges(f) + '<button class="send" data-act="impedit" data-v="' + i + '">고치기</button></div>' +
+        (f.core ? '<div class="imp-core">' + esc(f.core) + '</div>' : '') + (f.text ? '<div class="imp-t">' + esc(f.text) + '</div>' : '') + impFold(L, 'd' + i, '상세 기록', f.detail) +
+        (f.longObs ? '<div class="imp-sub"><span>장기 관찰</span>' + esc(f.longObs) + '</div>' : '') +
+        (f.tags.length || f.roles.length ? '<div class="imp-sub"><span>구분 · 태그</span>' + esc(f.roles.join(' · ')) + (f.roles.length && f.tags.length ? ' · ' : '') + f.tags.map(t => '#' + esc(t)).join(' ') + '</div>' : '') +
+        (norm(f.qn) ? '<div class="imp-sub"><span>다음 질문</span>' + qnParse(f.qn).map(esc).join('<br>') + '</div>' : '');
+      if (r.acts.length) h += '<div class="imp-acts"><div class="imp-k">할 일 — 체크한 것만 \'액션\' 탭에. 나머지는 상세 기록 끝에 글로만</div>' + r.acts.map((a, j) =>
+        '<button class="imp-act' + (a.on ? ' on' : '') + '" data-act="impact" data-v="' + i + ':' + j + '" aria-pressed="' + a.on + '"><span class="ck' + (a.on ? ' on' : '') + '"></span><span><span class="imp-auth a' + PK_AUTH.indexOf(a.auth) + '">' + esc(a.auth) + '</span> ' + esc(a.text) +
+        '<small>' + [a.kind, a.due ? '기한 ' + md(a.due) : '', a.owner ? '담당 ' + a.owner : '', a.prio && a.prio !== '일반' ? a.prio : ''].filter(Boolean).map(esc).join(' · ') + '</small></span></button>').join('') + '</div>';
+      if (errs.length) h += '<div class="review" style="margin:8px 0 0"><b>고쳐야 저장됩니다</b><br>' + errs.map(esc).join('<br>') + '</div>';
+      h += '</div>';
+    });
+    foot = '<button class="btn" data-act="impback">다시 붙이기</button><button class="btn pri" data-act="implink">다음 — 성도 확인</button>';
+  } else if (L.step === 'link') {
+    h += impLinkHtml(L);
+    foot = '<button class="btn" data-act="impback">미리보기로</button><button class="btn pri" data-act="impsave">저장</button>';
+  } else {
+    h += impResultHtml(L);
+    foot = L.failed ? '<button class="btn pri" data-act="impretry">다시 시도</button>' : '';   // 닫기는 우상단 × 하나(하단 '닫기' 단추를 만들지 않는다)
+  }
+  return h + '</div>' + (foot ? '<div class="ph-foot imp-foot">' + foot + '</div>' : '');
+}
+function lkRowHtml(L, x) {
+  const rec = x.role === 'rec', st = x.mode === 'skip' ? (rec ? '이 기록은 저장 안 함' : '연결 안 함') : x.mode === 'new' ? '새 성도로 추가' : x.mode === 'ok' ? '확인함' : x.mode === 'auto' ? (x.list.length === 1 && nameKey(x.list[0]) !== nameKey(x.name) ? '이름만 같아 붙임' : '자동 연결') : '골라 주세요';
+  const to = x.mode === 'skip' ? '—' : norm(x.pick) ? nm(x.pick) + ' <small>' + esc(x.mode === 'new' ? '새 성도' : candInfo(x.pick)) + '</small>' : '<span class="muted">후보 ' + x.list.length + '분 중 고르기</span>';
+  let h = '<div class="lk-row m-' + (x.mode || 'open') + '" data-lk="' + esc(x.id) + '"><div class="lk-main"><span class="lk-raw">' + esc(x.raw) + (x.role === 'body' ? ' <small>본문에서</small>' : '') + '</span><span class="lk-arrow">→</span><span class="lk-to">' + to + '</span><span class="lk-st">' + st + '</span></div>';
+  if (x.list.length > 1 && x.mode !== 'skip') h += '<div class="opts">' + x.list.map(n => '<button class="opt" data-act="lkpick" data-v="' + esc(x.id) + '|' + esc(n) + '" aria-pressed="' + (norm(x.pick) === n) + '">' + nm(n) + ' <small>' + esc(candInfo(n)) + '</small></button>').join('') + '</div>';
+  h += '<div class="lk-btns"><button class="send" data-act="lkok" data-v="' + esc(x.id) + '"' + (x.mode === 'ok' ? ' aria-pressed="true"' : '') + '>확인</button><button class="send" data-act="lkskip" data-v="' + esc(x.id) + '"' + (x.mode === 'skip' ? ' aria-pressed="true"' : '') + '>취소</button><button class="send" data-act="lkfix" data-v="' + esc(x.id) + '">이름 고치기</button></div>';
+  if (L.fix === x.id) h += '<div class="lk-fix"><input class="inp" data-f="lkq" value="' + esc(L.lkq || '') + '" placeholder="이름을 쳐서 찾기" autocomplete="off" aria-label="연결할 성도 이름"><div class="sugg" id="lkSugg">' + lkSuggHtml(L) + '</div></div>';
+  return h + '</div>';
+}
+// 이름 고치기 — 새 기록 이름 칸과 같은 명단(nameCands) · 같은 후보 줄 꼴
+function lkSuggHtml(L) {
+  const q = norm(L.lkq), qk = nameKey(q); if (!qk) return '';
+  const names = allCands().filter(c => nameKey(c.name).includes(qk)).slice(0, 8);
+  const sub = c => c.src.includes('심방') ? (c.roles || []).join(' · ') + (c.last ? ' · ' + md(c.last) : '') : c.cell ? c.cell : c.src.includes('기도') ? '기도노트' : '성도 탭';
+  return names.map(c => '<button data-act="lkpick" data-v="' + esc(L.fix) + '|' + esc(c.name) + '">' + nm(c.name) + ' <small>' + esc(sub(c)) + '</small></button>').join('') +
+    (names.some(c => nameKey(c.name) === qk) ? '' : '<button class="grpsg" data-act="lknew" data-v="' + esc(L.fix) + '">새 성도로 추가: ' + esc(q) + '</button>');
+}
+function impLinkHtml(L) {
+  const d = L.d, rows = L.rows, recs = rows.filter(x => x.role === 'rec'), men = rows.filter(x => x.role !== 'rec');
+  let h = '<p class="muted">저장하기 전에 이름이 맞는 분께 붙는지 봐 주세요. 언급된 분은 연결만 하고 그 분 이름으로 기록을 만들지 않습니다.</p>';
+  h += '<div class="h-sec">심방 기록<small>' + recs.length + '</small></div>' + recs.map(x => lkRowHtml(L, x)).join('');
+  if (men.length) h += '<div class="h-sec">언급된 분<small>' + men.length + '</small></div>' + men.map(x => lkRowHtml(L, x)).join('');
+  const res = pkResolve(d, rows), dups = pkDups(d, res, M().visits), mdup = d.meet ? pkMeetDup(d, DATA.meets) : null;
+  if (mdup) h += '<div class="review" style="margin-top:14px"><b>이 모임은 이미 있습니다</b> · ' + md(mdup.date) + ' ' + esc(mdup.title) + '<br>모임 줄을 새로 만들지 않고, 기록들을 그 모임에 잇습니다.</div>';
+  dups.forEach((x, i) => {
+    if (!x) return; const v = byKey(x.key), mode = L.dupMode[i] || 'skip';
+    h += '<div class="review imp-dup"><b>이미 있는 기록 (' + esc(x.why) + ')</b> · ' + esc(res[i].person) + ' ' + (v ? md(v.ymd) + ' · ' + esc(firstLine(v.core || v.text)).slice(0, 40) : '') +
+      '<div class="row"><button class="send" data-act="impdupopen" data-v="' + esc(x.key) + '">열기</button>' + [['update', '그 기록 갱신'], ['new', '그래도 새로 저장'], ['skip', '저장 안 함']].map(o => '<button class="send" data-act="impdup" data-v="' + i + '|' + o[0] + '" aria-pressed="' + (mode === o[0]) + '">' + o[1] + '</button>').join('') + '</div></div>';
+  });
+  const left = pkLinkOpen(rows).length;
+  if (left) h += '<p class="hint" style="margin-top:12px">골라야 할 이름이 ' + left + '개 남았습니다.</p>';
+  return h;
+}
+function impResultHtml(L) {
+  const J = L.job; let h = '<div class="h-sec">' + (L.running ? '저장하는 중…' : L.failed ? '일부만 저장했습니다' : '저장했습니다') + '</div><div class="imp-steps">';
+  J.steps.forEach(st => { h += '<div class="imp-step ' + (st.ok ? 'ok' : st.err ? 'err' : st.busy ? 'busy' : 'wait') + '"><span class="ic">' + (st.ok ? '✓' : st.err ? '✗' : st.busy ? '…' : '·') + '</span><span>' + esc(st.label) + (st.note ? ' <small>' + esc(st.note) + '</small>' : '') + (st.err ? '<br><small class="e">' + esc(st.err) + '</small>' : '') + '</span></div>'; });
+  h += '</div>';
+  if (L.failed) h += '<p class="muted">✓ 표시는 시트에 들어갔습니다. \'다시 시도\' 는 안 된 것부터 이어 갑니다(이미 들어간 줄은 다시 넣지 않습니다).</p>';
+  if (!L.running && !L.failed) {
+    h += '<p class="muted">시트를 다시 읽어 들어간 것을 확인했습니다.</p>';
+    J.recs.forEach(r => { const v = M() && M().visits.find(x => x.id === r.id); if (v) h += '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + mdw(v.ymd) + '</span><span><b style="font-weight:500">' + nm(r.person) + '</b> · ' + esc(v.core || visitPreview(v)).slice(0, 40) + '</span></button>'; });
+  }
+  return h;
+}
+function impLink(L) {
+  const open = L.issues.filter(x => !x.done);
+  if (open.length) { toast("'속성' 에 없는 값을 먼저 골라 주세요\n" + open.map(x => x.attr + ' · ' + x.val).join('\n')); return; }
+  const bad = L.d.recs.map((r, i) => [i, validateRecord(r.form)]).filter(x => x[1].length);
+  if (bad.length) { toast('고쳐야 할 기록이 있습니다\n' + bad.map(x => (L.d.recs[x[0]].form.name || L.d.recs[x[0]].raw || '이름 없음') + ': ' + x[1][0]).join('\n')); return; }
+  L.rows = pkLinkRows(L.d, allCands()); L.dupMode = {}; L.fix = ''; L.step = 'link'; render();
+}
+function impBuild(L) {
+  const d = L.d, now = Date.now(), res = pkResolve(d, L.rows), dups = pkDups(d, res, M().visits), mdup = d.meet ? pkMeetDup(d, DATA.meets) : null;
+  const meetId = d.meet ? (mdup ? mdup.id : newId('G', now, Math.random())) : '';
+  const recs = [];
+  res.forEach((x, i) => {
+    if (!x) return;
+    const dup = dups[i], mode = dup ? (L.dupMode[i] || 'skip') : 'new'; if (mode === 'skip') return;
+    const out = pkRecordOut(d, d.recs[i], x, meetId, now);
+    recs.push({ i, person: x.person, out, mode, dup, id: mode === 'update' ? dup.id : newId('C', now + i + 1, Math.random()), actIds: out.acts.map((a, j) => newId('A', now + 100 + i * 10 + j, Math.random())) });
+  });
+  const used = new Set(recs.map(r => nameKey(r.person)).concat(...recs.map(r => r.out.extra['@언급된 성도'] ? splitEtc(r.out.extra['@언급된 성도']).map(nameKey) : [])));
+  const people = pkNewPeople(L.rows).filter(n => used.has(nameKey(n)) && !(DATA.roster || []).some(x => nameKey(x) === nameKey(n)));
+  const attrs = L.issues.filter(x => x.mode === 'add').map(x => [x.attr, x.val]);
+  const steps = [];
+  if (attrs.length) steps.push({ k: 'attr', label: "'속성' 에 새 선택지 " + attrs.length + '개', attrs });
+  if (people.length) steps.push({ k: 'people', label: "'성도' 탭에 새 성도 " + people.join(', '), people });
+  if (d.meet && recs.length && !mdup) steps.push({ k: 'meet', label: '모임 줄 — ' + (d.ev.title || d.src.title) });
+  recs.forEach(r => {
+    steps.push({ k: 'rec', r, label: r.person + (r.mode === 'update' ? ' — 있던 기록 갱신' : ' — 새 기록') });
+    if (r.out.qn.length) steps.push({ k: 'qn', r, label: r.person + ' — 다음 질문 ' + r.out.qn.length + '개' });
+    if (r.out.acts.length) steps.push({ k: 'act', r, label: r.person + ' — 할 일 ' + r.out.acts.length + '줄' });
+  });
+  if (recs.length) steps.push({ k: 'verify', label: '시트를 다시 읽어 확인' });
+  return { steps, recs, meetId, mdup, now };
+}
+async function impStep(L, st) {
+  const s = saved().sheet, J = L.job, d = L.d;
+  if (st.k === 'attr') {
+    const { v, h } = await attrTab(s), rows = parseAttrRows(v), add = [], unhide = [];
+    st.attrs.forEach(([attr, val]) => {
+      const ex = rows.find(r => r.attr === attr && r.val === val && !r.parent);
+      if (ex) { if (ex.hidden) unhide.push(ex.row); return; }
+      add.push(attrRowFor(h, [attr, val, '', rows.filter(r => r.attr === attr).length + add.filter(a => a[h.indexOf('속성')] === attr).length + 1, '', '', '', '']));
+    });
+    if (add.length) await gapi(SH + s.id + '/values/' + rng('속성', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: add } });
+    if (unhide.length && h.indexOf('숨김') >= 0) await batchValues(s.id, unhide.map(r => ({ range: a1('속성', h.indexOf('숨김'), r), values: [['']] })));
+    st.note = add.length + '개 더함' + (unhide.length ? ' · ' + unhide.length + '개 다시 씀' : '');
+  } else if (st.k === 'people') {
+    const v = await readTab(s.id, '성도'), h = (v[0] || []).map(norm); if (h.indexOf('이름') < 0) throw new Error("'성도' 탭 첫 줄에 '이름' 머리글이 없습니다 — 쓰지 않았습니다");
+    const have = new Set(parseRosterTab(v).map(nameKey)), add = st.people.filter(n => !have.has(nameKey(n)));
+    if (add.length) await gapi(SH + s.id + '/values/' + rng('성도', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: add.map((n, i) => h.map(k => ({ '성도ID': newId('P', J.now + i, Math.random()), '이름': n, '메모': '붙여넣기로 추가 ' + today() })[k] || '')) } });
+    st.note = add.length + '분';
+  } else if (st.k === 'meet') {
+    const v = await readTab(s.id, '모임'), h = (v[0] || []).map(norm); if (h.indexOf('모임ID') < 0) throw new Error("'모임' 탭이 없거나 첫 줄이 머리글이 아닙니다 — 설정 › 새 칸 더하기를 먼저");
+    if (parseMeetTab(v).some(m => m.id === J.meetId)) { st.note = '이미 들어가 있음'; return; }
+    await appendTo(s.id, '모임', pkMeetRow(h, d, J.meetId, J.now));
+  } else if (st.k === 'rec') {
+    const r = st.r;
+    if (r.mode === 'update') { await impUpdate(r); return; }
+    const { title, head, map } = await freshHead();
+    if (!nxReady(map)) throw new Error('시트에 새 칸이 없습니다 — 설정 › 새 칸 더하기를 먼저');
+    const ids = await readRange(s.id, title, colLetter(map['@기록ID']) + ':' + colLetter(map['@기록ID']));
+    if (findRowById(ids, r.id) !== -1) { st.note = '이미 들어가 있음'; return; }
+    const o = importRowValues(head, map, r.out.form, r.id, J.now, r.out.extra);
+    if (o.lost.length) throw new Error('시트에 없는 칸: ' + o.lost.map(k => k.replace(/^@/, '')).join(', '));
+    await gapi(SH + s.id + '/values/' + rng(title, 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: [o.row] } });
+  } else if (st.k === 'qn') {
+    const r = st.r, old = r.mode === 'update' ? qnItems({ id: r.id }) : [];
+    await writeQn({ id: r.id, name: r.person }, r.mode === 'update' ? qnMerge(old, qnText(old) + '\n' + qnText(r.out.qn)) : r.out.qn);
+  } else if (st.k === 'act') {
+    const r = st.r, av = await readTab(s.id, '액션'), h = (av[0] || []).map(norm);
+    if (h.indexOf('액션ID') < 0 || h.indexOf('기록ID') < 0) throw new Error("'액션' 탭 첫 줄이 앱이 아는 머리글이 아닙니다 — 쓰지 않았습니다");
+    const idc = h.indexOf('액션ID'), ids = new Set(av.slice(1).map(x => norm((x || [])[idc]))), keys = parseActionTab(av);
+    const add = r.out.acts.map((a, j) => (ids.has(r.actIds[j]) || keys[actionKey(r.id, a)] ? null : pkActTabRow(h, a, r.id, r.person, r.actIds[j]))).filter(Boolean);
+    if (add.length) await gapi(SH + s.id + '/values/' + rng('액션', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: add } });
+    st.note = add.length < r.out.acts.length ? (r.out.acts.length - add.length) + '줄은 이미 있음' : '';
+  } else if (st.k === 'verify') {
+    await loadData(true);
+    if (DATA.state !== 'ok') throw new Error('시트를 다시 읽지 못했습니다 — ' + (DATA.err || ''));
+    const miss = J.recs.filter(r => !M().visits.some(v => v.id === r.id));
+    if (J.meetId && !J.mdup && !(DATA.meets || []).some(m => m.id === J.meetId)) miss.push({ person: '모임 줄' });
+    if (miss.length) throw new Error('다시 읽어 보니 시트에 없습니다: ' + miss.map(r => r.person).join(', '));
+  }
+}
+// 중복 → '그 기록 갱신': 비어 있던 칸은 채우고, 새 칸(핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격)은 가져온 것으로. 태그 · 할 일은 합친다
+async function impUpdate(r) {
+  const v = M().visits.find(x => x.id === r.id); if (!v) throw new Error('갱신할 기록을 찾지 못했습니다 (' + r.id + ')');
+  const f = recordFromVisit(v), n = r.out.form;
+  ['core', 'detail', 'longObs', 'prio', 'basis'].forEach(k => { if (norm(n[k])) f[k] = n[k]; });
+  ['text', 'method', 'depth', 'place'].forEach(k => { if (!norm(f[k]) && norm(n[k])) f[k] = n[k]; });
+  if (!f.roles.length) f.roles = n.roles.slice();
+  n.tags.forEach(t => { if (!f.tags.includes(t)) f.tags.push(t); });
+  n.acts.forEach(t => { if (!f.acts.includes(t)) f.acts.push(t); });
+  const e = splitEtc(f.actsEtc); splitEtc(n.actsEtc).forEach(x => { if (!e.includes(x)) e.push(x); }); f.actsEtc = e.join(', ');
+  const w = await writeEdit(v, f); if (w.cancel) throw new Error('갱신을 멈췄습니다 (시트에서 바뀐 칸)');
+  const { s, title, map } = await freshHead(), { r: row, cur } = await readRowById(s, title, map, v.id), cells = [];
+  const put = (k, val) => { if (map[k] != null && norm(val) && norm(cur[map[k]]) !== norm(val)) cells.push({ range: a1(title, map[k], row), values: [[val]] }); };
+  ['@원본ID', '@가져오기 해시', '@모임ID'].forEach(k => { if (!norm(cur[map[k]])) put(k, r.out.extra[k]); });
+  put('@언급된 성도', [...new Set(splitEtc(cur[map['@언급된 성도']]).concat(splitEtc(r.out.extra['@언급된 성도'])))].join(', '));
+  await batchValues(s.id, cells);
+}
+async function impRun(L) {
+  if (L.running) return;
+  L.running = true; L.failed = false; L.step = 'done'; render();
+  for (const st of L.job.steps) {
+    if (st.ok) continue;
+    st.err = ''; st.busy = true; render();
+    try { await impStep(L, st); st.ok = true; }
+    catch (e) { st.err = e.message || String(e); st.busy = false; L.running = false; L.failed = true; render(); toast('저장하다 멈췄습니다\n' + st.label + '\n\'다시 시도\' 로 이어 갈 수 있습니다'); return; }
+    st.busy = false; render();
+  }
+  L.running = false; L.dirty = false;
+  if (L.onDone) { try { await L.onDone(L); } catch (e) { toast('기록은 저장했는데 마무리를 못 했습니다\n' + e.message); } }
+  render();
+  toast('저장했습니다\n기록 ' + L.job.recs.length + '개' + (L.job.meetId && !L.job.mdup ? ' · 모임 1' : ''));
+}
+function impSave(L) {
+  const left = pkLinkOpen(L.rows);
+  if (left.length) { toast('골라야 할 이름이 남았습니다\n' + left.map(x => x.raw).join(', ')); return; }
+  const J = impBuild(L);
+  if (!J.recs.length) { toast('저장할 기록이 없습니다\n(모두 취소했거나 이미 있는 기록입니다)'); return; }
+  L.job = J; impRun(L);
+}
+function impClick(a, v) {
+  const L = topLayer(); if (!L || L.type !== 'imp') return false;
+  if (a === 'impgo') { const t = document.querySelector('.layer:last-child [data-f="ipaste"]'); if (t) L.paste = t.value; impParse(L); return true; }
+  if (a === 'impback') { if (L.step === 'link') L.step = 'review'; else if (L.step === 'review') L.step = 'paste'; render(); return true; }
+  if (a === 'impfold') { L.open[v] = !L.open[v]; render(); return true; }
+  if (a === 'impact') { const [i, j] = v.split(':').map(Number), x = L.d.recs[i] && L.d.recs[i].acts[j]; if (x) { x.on = !x.on; render(); } return true; }
+  if (a === 'impattr') {
+    const [ix, mode, val] = v.split('|'), is = L.issues[+ix]; if (!is) return true;
+    is.mode = mode; is.to = val || '';
+    if (mode === 'add') is.done = true; else pkApplyAttrs(L.d, [is]);
+    render(); return true;
+  }
+  if (a === 'impedit') { const i = +v, r = L.d.recs[i]; openLayer('edit', { key: null, form: JSON.parse(JSON.stringify(r.form)), impSlot: { k: L._k, i }, detOpen: !!r.form.detail }); return true; }
+  if (a === 'implink') { impLink(L); return true; }
+  const row = id => (L.rows || []).find(x => x.id === id);
+  if (a === 'lkok') { const x = row(v); if (x) { if (!norm(x.pick)) { toast('후보 중 한 분을 먼저 골라 주세요'); return true; } x.mode = x.mode === 'new' ? 'new' : 'ok'; render(); } return true; }
+  if (a === 'lkskip') { const x = row(v); if (x) { x.mode = 'skip'; if (L.fix === x.id) L.fix = ''; render(); } return true; }
+  if (a === 'lkfix') { const x = row(v); if (x) { L.fix = L.fix === x.id ? '' : x.id; L.lkq = x.name; render(); setTimeout(() => { const i = document.querySelector('.layer:last-child [data-f="lkq"]'); if (i) { i.focus(); i.select(); } }, 0); } return true; }
+  if (a === 'lkpick') { const p = v.indexOf('|'), x = row(v.slice(0, p)); if (x) { x.pick = v.slice(p + 1); x.mode = 'ok'; L.fix = ''; render(); } return true; }
+  if (a === 'lknew') { const x = row(v), n = pkCleanName(L.lkq); if (x && n) { x.pick = n; x.mode = 'new'; L.fix = ''; render(); } return true; }
+  if (a === 'impdup') { const [i, m] = v.split('|'); L.dupMode[+i] = m; render(); return true; }
+  if (a === 'impdupopen') { openLayer('detail', { key: v }); return true; }
+  if (a === 'impsave') { impSave(L); return true; }
+  if (a === 'impretry') { impRun(L); return true; }
+  return false;
+}
+// 고치기(새 기록 화면)에서 '고친 것 담기' → 미리보기로 돌려준다(시트에는 아직 안 씀)
+function impSlotSave(L) {
+  whoFlush(L);
+  const errs = validateRecord(L.form); if (errs.length) { toast(errs.join('\n')); return; }
+  const I = S.layers.find(x => x._k === L.impSlot.k);
+  if (I && I.d && I.d.recs[L.impSlot.i]) {
+    I.d.recs[L.impSlot.i].form = L.form;
+    const prev = {}; I.issues.forEach(x => { prev[x.attr + '|' + x.val] = x; });
+    I.issues = pkAttrIssues(I.d, knownAttrs()).map(x => (prev[x.attr + '|' + x.val] && prev[x.attr + '|' + x.val].mode === 'add' ? prev[x.attr + '|' + x.val] : x));
+    (I.missing || []).forEach(x => { if (x.rec === L.impSlot.i) x.rec = -2; });   // 사람이 고쳤으니 '못 찾음' 표시는 걷는다(남은 문제는 저장 검사가 다시 본다)
+    if (!I.d.ev.date && /^\d{4}-\d{2}-\d{2}$/.test(L.form.ymd || '')) { I.d.ev.date = L.form.ymd; I.missing = (I.missing || []).filter(x => !(x.rec === -1 && x.k.startsWith('날짜'))); }
+  }
+  L.dirty = false; closeLayer(true);
 }
 
 // ───────────────────────────── 설정 (겹 화면) ─────────────────────────────
@@ -4222,7 +4977,7 @@ function loadingHtml(msg, step) {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -4281,7 +5036,9 @@ let lid = 0;
 function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type }, extra || {}, { _k: type + (++lid) })); render(); }
 function closeLayer(force) {
   const lay = $('layers'), el = lay.lastElementChild; if (!S.layers.length) return;
-  const top = topLayer(); if (!force && ['edit', 'planedit', 'attedit', 'attpaste'].includes(top.type) && top.dirty && !confirm('적던 내용을 버릴까요?')) return;
+  const top = topLayer();
+  if (top.type === 'imp' && top.running) { toast('저장하는 중입니다 — 끝날 때까지 기다려 주세요'); return; }
+  if (!force && ['edit', 'planedit', 'attedit', 'attpaste', 'imp'].includes(top.type) && top.dirty && !confirm(top.type === 'imp' ? (top.failed ? '일부만 저장된 채로 닫을까요?\n✓ 표시된 것은 시트에 들어가 있습니다.' : '붙여 넣은 것을 저장하지 않고 닫을까요?') : '적던 내용을 버릴까요?')) return;
   const done = () => { S.layers.pop(); S.menu = null; render(); };
   if (!el || RM.matches) return done();
   el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
@@ -4369,7 +5126,9 @@ document.addEventListener('change', e => {
   busy(async () => { try { if (DATA.prepared && await calSync()) { toast('일정 제목을 바꿨습니다'); await loadData(true); } } catch (err) { /* 다음에 */ } });
 });
 document.addEventListener('input', e => {
-  const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (!f || !L || (L.type !== 'edit' && L.type !== 'planedit' && L.type !== 'b7send' && L.type !== 'attedit' && L.type !== 'attpaste')) return;
+  const f = e.target.dataset && e.target.dataset.f, L = topLayer();
+  if (f && L && L.type === 'imp') { if (f === 'ipaste') L.paste = e.target.value; if (f === 'lkq') { L.lkq = e.target.value; const sg = $('lkSugg'); if (sg) sg.innerHTML = lkSuggHtml(L); } return; }
+  if (!f || !L || (L.type !== 'edit' && L.type !== 'planedit' && L.type !== 'b7send' && L.type !== 'attedit' && L.type !== 'attpaste')) return;
   if (L.type === 'attpaste') { L.form[f] = e.target.value; L.dirty = !!norm(e.target.value); const pv = $('attPrev'); if (pv) pv.innerHTML = attPreviewHtml(L); return; }
   if (L.type === 'attedit') {
     L.form[f] = e.target.value; L.dirty = true;
@@ -4400,6 +5159,8 @@ document.addEventListener('click', e => {
     return;
   }
   const a = b.dataset.act, v = b.dataset.v, k = b.dataset.k;
+  if (impClick(a, v)) return;   // 1112-N 붙여넣어 채우기
+  if (a === 'impopen') { const L = topLayer(); if (L && L.dirty && !confirm('적던 것을 버리고 붙여넣기로 채울까요?')) return; if (L && L.type === 'edit') S.layers.pop(); openImp(''); setTimeout(() => { const t = document.querySelector('.layer:last-child [data-f="ipaste"]'); if (t) t.focus(); }, 50); return; }
   if (a === 'tab') { goTab(v === 'week' && S.view === 'week' && b.closest('.ph-nav') ? 'month' : v); return; }   // 아래 달력 단추를 한 번 더 누르면 주간 ⇄ 월간 (1109-J 5)
   if (a === 'open') { openLayer('detail', { key: v }); return; }
   if (a === 'person') { openLayer('person', { name: v }); return; }
