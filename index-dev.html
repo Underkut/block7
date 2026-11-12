@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5939,18 +5939,22 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-fbk{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px;padding:5px 8px 5px 12px;border-radius:999px;background:var(--s2);color:var(--tx);font-size:13px;font-weight:600;}
 #bibleRd .br-fbk svg{width:11px;height:11px;color:var(--tx3);}
 /* 책별 묶음 머리 (C+D, HB 2026-11-10) — 상자 없이 이름 + 오른쪽 위 작은 숫자, 바닥 2px 선 = 가장 많은 책 대비 비율 */
-#bibleRd .br-fg{position:relative;display:block;width:100%;margin:4px 0 0;padding:12px 2px 9px;background:none;text-align:left;
-  color:var(--tx2);font-size:14px;font-weight:600;transition:color .2s ease;}
+#bibleRd .br-fg{position:relative;display:block;width:calc(100% + 16px);margin:4px -8px 0;padding:12px 10px 9px;border-radius:9px;text-align:left;
+  background-color:color-mix(in srgb,var(--s2) 0%,transparent);color:var(--tx2);font-size:14px;font-weight:600;transition:color .2s ease,background-color .3s ease;}
 #bibleRd .br-fg sup{margin-left:4px;font-size:10.5px;font-weight:500;color:var(--tx3);font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;
   vertical-align:super;line-height:0;transition:color .2s ease;}
-#bibleRd .br-fg i{position:absolute;left:2px;right:2px;bottom:0;height:2px;border-radius:2px;background:var(--bd2);overflow:hidden;}
-#bibleRd .br-fg i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);border-radius:2px;background:var(--ac);opacity:.45;
+#bibleRd .br-fg i{position:absolute;left:10px;right:10px;bottom:0;height:2px;border-radius:2px;background:color-mix(in srgb,var(--bd2) 45%,transparent);overflow:hidden;}
+#bibleRd .br-fg i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);border-radius:2px;background:var(--ac);opacity:.6;
   transition:opacity .3s ease;}
-#bibleRd .br-fgw.on .br-fg{color:var(--tx);}
+#bibleRd .br-fgw.on .br-fg{color:var(--tx);background-color:color-mix(in srgb,var(--s2) 55%,transparent);}
 #bibleRd .br-fgw.on .br-fg sup{color:var(--tx2);}
-#bibleRd .br-fgw.on .br-fg i::after{opacity:.85;}
-@media (hover:hover) and (pointer:fine){#bibleRd .br-fg:hover{color:var(--tx);}#bibleRd .br-fg:hover i::after{opacity:.7;}}
+#bibleRd .br-fgw.on .br-fg i::after{opacity:.9;}
+@media (hover:hover) and (pointer:fine){#bibleRd .br-fg:hover{color:var(--tx);}#bibleRd .br-fg:hover i::after{opacity:.8;}}
 #bibleRd .br-fgx>div>.br-mi:first-child{padding-top:12px;}
+/* 펼친 묶음 안 구절 사이 줄 (HB 2026-11-12) — 바깥 줄(접힌 행 사이)보다 얇고 옅게, 좌우를 들인 짧은 줄. 줄은 가상요소로 그려 글자 자리는 그대로 */
+#bibleRd .br-fgx .br-mi{position:relative;border-bottom:0;}
+#bibleRd .br-fgx .br-mi::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:1px;background:color-mix(in srgb,var(--bd2) 50%,transparent);}
+#bibleRd .br-fgx .br-mi:last-child::after{display:none;}
 #bibleRd .br-fgx{display:grid;grid-template-rows:0fr;transition:grid-template-rows .36s cubic-bezier(.22,.8,.24,1);}
 #bibleRd .br-fgx>div{min-height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:opacity .2s ease,transform .36s cubic-bezier(.22,.8,.24,1);}
 #bibleRd .br-fgw.on .br-fgx{grid-template-rows:1fr;}
@@ -5967,9 +5971,10 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 /* 검색 판 움직임 (v. 26-1110-10, HB — 펼치고 접히는 것은 스르륵) */
 @keyframes brFin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 #bibleRd #brFBody.br-fin{animation:brFin .32s cubic-bezier(.22,.8,.24,1) both;}
-@keyframes brStripIn{from{transform:scaleY(.15);opacity:0;}to{transform:none;opacity:1;}}
-#bibleRd .br-fstrip i{transform-origin:bottom center;transition:background-color .3s ease;}
-#bibleRd .br-fstrip.in i{animation:brStripIn .5s cubic-bezier(.22,.8,.24,1) both;animation-delay:calc(var(--k,0) * 5ms);}
+/* 분포 띠: 칸은 제자리, 개수가 바뀐 칸만 '이전 색 → 새 색' 으로 디졸브. 처음 생길 때만 띠 전체가 한 번 나타난다 */
+@keyframes brStripIn{from{opacity:0;}to{opacity:1;}}
+#bibleRd .br-fstrip i{transition:background-color .35s ease;}
+#bibleRd .br-fstrip.in{animation:brStripIn .35s ease both;}
 @keyframes brCntIn{from{opacity:0;max-height:0;transform:translateY(-3px);}to{opacity:1;max-height:16px;transform:none;}}
 #bibleRd #brFScope button small{animation:brCntIn .34s cubic-bezier(.22,.8,.24,1) both;overflow:hidden;}
 #bibleRd #brFScope button{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease;}
@@ -5978,7 +5983,8 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-fbk{animation:brChipIn .3s cubic-bezier(.22,.8,.24,1) both;}
 #bibleRd .br-fh{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease;}
 @media (prefers-reduced-motion:reduce){
-  #bibleRd #brFBody.br-fin,#bibleRd .br-fstrip.in i,#bibleRd #brFScope button small,#bibleRd .br-fbk{animation:none;}
+  #bibleRd #brFBody.br-fin,#bibleRd .br-fstrip.in,#bibleRd #brFScope button small,#bibleRd .br-fbk{animation:none;}
+  #bibleRd#bibleRd .br-fstrip i{transition:none;}
   /* 아이디를 겹쳐 써서(#bibleRd#bibleRd) 펼침 상태 규칙보다 앞서게 한다 (강제 표시 없이) */
   #bibleRd#bibleRd .br-fgx,#bibleRd#bibleRd .br-fgx>div,#bibleRd#bibleRd .br-fbr .bar i,#bibleRd#bibleRd .br-hist .br-hi,#bibleRd#bibleRd .br-hist .br-hi .d,#bibleRd#bibleRd .br-hist .br-hi .l,#bibleRd#bibleRd .br-fg,#bibleRd#bibleRd .br-fg i::after{transition:none;}
 }
@@ -7188,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-2";
+const APP_VERSION = "v. 26-1112-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17650,10 +17656,17 @@ function _brFStripSync(){
   const el=_brEl('brFStrip'),w=_brEl('brFSw');if(!el||!w)return;
   if(!_brFcnt||!_brFcnt.bk||!_brFcnt.all){el.innerHTML='';el.dataset.sig='';w.classList.remove('has');return;}
   const bk=_brFcnt.bk,mx=Math.max(1,...bk),sig=bk.join(',');
-  if(el.dataset.sig!==sig){el.dataset.sig=sig;
-    el.innerHTML=bk.map((n,b)=>(b===39?'<u></u>':'')+'<i data-b="'+b+'" style="--k:'+b+';'+(n?'--a:'+Math.round(16+84*Math.sqrt(n/mx))+'%':'')+'"></i>').join('');
-    el.classList.remove('in');void el.offsetWidth;el.classList.add('in');}
-  el.querySelectorAll('i').forEach(i=>i.classList.toggle('sel',+i.dataset.b===_brFs.bk));
+  const aOf=n=>n?Math.round(16+84*Math.sqrt(n/mx))+'%':'0%';
+  let cells=el.querySelectorAll('i');
+  if(cells.length!==bk.length){   // 처음 생길 때만 만든다 (한 번 부드럽게 나타남)
+    el.innerHTML=bk.map((n,b)=>(b===39?'<u></u>':'')+'<i data-b="'+b+'" style="--a:'+aOf(n)+'"></i>').join('');
+    el.dataset.sig=sig;el.classList.remove('in');void el.offsetWidth;el.classList.add('in');
+    cells=el.querySelectorAll('i');
+  }else if(el.dataset.sig!==sig){   // 칸은 그대로 — 바뀐 칸의 진하기 값만 갈아 끼우면 CSS 가 이전 색 → 새 색으로 디졸브한다
+    el.dataset.sig=sig;el.classList.remove('in');
+    cells.forEach((i,b)=>{const a=aOf(bk[b]);if(i.style.getPropertyValue('--a')!==a)i.style.setProperty('--a',a);});
+  }
+  cells.forEach(i=>i.classList.toggle('sel',+i.dataset.b===_brFs.bk));
   w.classList.add('has');
 }
 function _brFBkRender(){
