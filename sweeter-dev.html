@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5939,11 +5939,11 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-fbk{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px;padding:5px 8px 5px 12px;border-radius:999px;background:var(--s2);color:var(--tx);font-size:13px;font-weight:600;}
 #bibleRd .br-fbk svg{width:11px;height:11px;color:var(--tx3);}
 /* 책별 묶음 머리 (C+D, HB 2026-11-10) — 상자 없이 이름 + 오른쪽 위 작은 숫자, 바닥 2px 선 = 가장 많은 책 대비 비율 */
-#bibleRd .br-fg{position:relative;display:block;width:calc(100% + 16px);margin:4px -8px 0;padding:12px 10px 9px;border-radius:9px;text-align:left;
+#bibleRd .br-fg{position:relative;display:block;width:100%;margin:0;padding:16px 2px 9px;border-radius:0;text-align:left;
   background-color:color-mix(in srgb,var(--s2) 0%,transparent);color:var(--tx2);font-size:14px;font-weight:600;transition:color .2s ease,background-color .3s ease;}
 #bibleRd .br-fg sup{margin-left:4px;font-size:10.5px;font-weight:500;color:var(--tx3);font-family:var(--font-number),monospace;font-variant-numeric:tabular-nums;
   vertical-align:super;line-height:0;transition:color .2s ease;}
-#bibleRd .br-fg i{position:absolute;left:10px;right:10px;bottom:0;height:2px;border-radius:2px;background:color-mix(in srgb,var(--bd2) 45%,transparent);overflow:hidden;}
+#bibleRd .br-fg i{position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px;background:color-mix(in srgb,var(--bd2) 45%,transparent);overflow:hidden;}
 #bibleRd .br-fg i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);border-radius:2px;background:var(--ac);opacity:.6;
   transition:opacity .3s ease;}
 #bibleRd .br-fgw.on .br-fg{color:var(--tx);background-color:color-mix(in srgb,var(--s2) 70%,var(--bd2));}
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-5";
+const APP_VERSION = "v. 26-1112-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17635,7 +17635,8 @@ async function _brRunFind(){
     vis.slice(0,_brFs.lim).forEach(x=>{h+=row(x);});
     if(vis.length>_brFs.lim)h+=more(vis.length-_brFs.lim);
   }
-  {const rk=[q,free,scp,bk,_brS('bibleFindGroup',false)].join('|');
+  // 검색어가 바뀔 때는 결과 판을 다시 올려 보이지 않는다 — 글자마다 판이 아래에서 올라오면 어지럽다 (v. 26-1112-6, HB). 갈래 · 책 · 묶음을 바꿀 때만
+  {const rk=[scp,bk,_brS('bibleFindGroup',false)].join('|');
     if(rk!==_brFRK){_brFRK=rk;body.classList.remove('br-fin');void body.offsetWidth;body.classList.add('br-fin');}}
   _brFVis=vis;_brFVisLbl=(bk!=null?books[bk]:scp==='ot'?'구약':scp==='nt'?'신약':scp==='book'?books[_brCur.b]:'전체');{const ex=_brEl('brFEx');if(ex)ex.disabled=!vis.length;}
   body.innerHTML=h;
