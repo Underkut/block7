@@ -46,7 +46,7 @@ function makeEnv(items, tabId, realToday) {
   };
   env.getBigs(T, 'am').push(...items);
   const names = Object.keys(env);
-  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDoneYday,nextAfterDoneYdayPicked,_dupDone:()=>_dupDone,nextAfterDonePicked,_autoContactSync,_newTask};';
+  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDoneYday,nextAfterDoneYdayPicked,nextAfterDoneOn,nextAfterDoneOnPicked,_nextDoneSet,nextDoneKey:()=>_nextDoneKey,_dupDone:()=>_dupDone,nextAfterDonePicked,_autoContactSync,_newTask};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
   return { ST, api, log, inp };
 }
@@ -184,5 +184,43 @@ console.log("\n시나리오 9 — 어제 완료 후 다음: 내일로 · 다음 
   e = makeEnv([]);
   e.api.nextAfterDoneYday(1);
   sc.eq('할일이 없으면(이미 사라짐) 아무것도 안 만든다', Object.keys(e.ST.days).filter(k => k !== T && at(e.ST, k).length), []);
+}
+console.log("\n시나리오 10 — 날짜 완료 후 다음: 고른 날로 옮겨 완료, 다음 할일은 실제 오늘 기준");
+{
+  // 실제 오늘 10-20, 보는 날 10-15 (T)
+  let e = makeEnv([{ text: '빨래 ', done: false, contactTask: true }]);
+  sc.eq('완료한 날을 고른다', e.api._nextDoneSet('2026-10-16'), true);
+  e.api.nextAfterDoneOn(0);
+  sc.eq('보던 날 칸에서는 빠진다', at(e.ST, T).length, 0);
+  sc.eq('고른 날(10-16) 칸에 완료로', [at(e.ST, '2026-10-16')[0].text, at(e.ST, '2026-10-16')[0].done], ['빨래 ', true]);
+  sc.eq('오늘(10-20)에 새 할일 · 날짜를 적은 글', [at(e.ST, '2026-10-20')[0].text, at(e.ST, '2026-10-20')[0].contactTask], ['빨래 10/16에 했고, 이제 오늘', true]);
+  sc.eq('토스트: 고른 날짜로 완료 체크', /2026-10-16 날짜로 완료 체크했어요/.test(e.log.toast[0]), true);
+  sc.eq('어제 칸(10-19)은 그대로 비어 있다', at(e.ST, '2026-10-19').length, 0);
+
+  e = makeEnv([{ text: '청소', done: false }]);
+  e.api._nextDoneSet('2026-10-16');
+  e.api.nextAfterDoneOn(1);
+  sc.eq('내일로 → 10-21 · "10/16 완료했고, 이제"', at(e.ST, '2026-10-21')[0].text, '청소 10/16 완료했고, 이제');
+
+  e = makeEnv([{ text: '심방', done: false }]);
+  e.api._nextDoneSet('2026-10-16');
+  e.api.nextAfterDoneOnPicked('2026-11-02', 'pm');
+  sc.eq('날짜 지정 + 구간', [at(e.ST, '2026-11-02', 'pm')[0].text, at(e.ST, '2026-10-16')[0].done], ['심방 10/16 완료했고, 이제', true]);
+
+  e = makeEnv([{ text: '운동', done: false }]);
+  e.api._nextDoneSet('2026-10-19');
+  e.api.nextAfterDoneOn(0);
+  sc.eq('고른 날이 마침 어제면 어제 문구 그대로', at(e.ST, '2026-10-20')[0].text, '운동 어제 했고, 이제 오늘');
+
+  e = makeEnv([{ text: '독서', done: false }]);
+  e.api._nextDoneSet(T);
+  e.api.nextAfterDoneOn(0);
+  sc.eq('보던 날을 고르면 제자리에서 완료', [at(e.ST, T).length, at(e.ST, T)[0].done], [1, true]);
+
+  e = makeEnv([{ text: '편지', done: false }]);
+  sc.eq('미래 날은 받지 않는다', e.api._nextDoneSet('2026-10-25'), false);
+  e.api.nextAfterDoneOn(0);
+  sc.eq('완료한 날을 안 골랐으면 아무 일도 없다', [at(e.ST, T)[0].done, Object.keys(e.ST.days).length], [false, 1]);
+  sc.eq('이상한 값도 받지 않는다', [e.api._nextDoneSet(''), e.api._nextDoneSet('어제'), e.api.nextDoneKey()], [false, false, null]);
 }
 sc.done();
