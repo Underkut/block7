@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6112,28 +6112,23 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-ga{font-style:normal;color:var(--tx3);line-height:1;}#bibleRd .br-ga.s{font-size:12px;}#bibleRd .br-ga.l{font-size:18px;}
 #bibleRd .br-fsw2{max-width:250px;gap:8px;}
 #bibleRd .br-row.dis{opacity:.38;pointer-events:none;}
-/* 미리보기 (1112-B3) — 만지는 동안 시트가 옅어지며 내려가고, 만지는 줄만 카드로 남아 본문에 바로 반영된 모습이 보인다 */
-#bibleRd #brSAa{transition:transform .3s cubic-bezier(.22,.8,.24,1),background-color .25s ease,box-shadow .25s ease;}
-#bibleRd #brSAa.peek{transform:translateY(var(--pk,0px));background-color:transparent;box-shadow:none;}
-#bibleRd #brSAa .br-sbody>*,#bibleRd #brSAa>.br-grab,#bibleRd #brSAa>.br-shead{transition:opacity .22s ease,box-shadow .25s ease,background-color .25s ease;}
+/* 미리보기 (1112-B3 v2, HB 2026-11-12) — 만지는 순간 그 줄만 옅은 유리 카드로 제자리에 남고, 시트의 나머지는 스르륵 투명해져
+   뒤의 본문에 바로 반영된 모습이 보인다. 손을 떼도 그대로 — 카드 밖 아무 데나 누르면 시트로 돌아온다(자동 복귀 없음). */
+#bibleRd #brSAa{transition:transform .24s cubic-bezier(.2,.8,.2,1),background-color .42s ease,box-shadow .42s ease;}
+#bibleRd #brSAa.peek{background-color:transparent;box-shadow:none;transform:translateY(var(--pk,0px));transition:transform .4s cubic-bezier(.22,.8,.24,1),background-color .42s ease,box-shadow .42s ease;}
+#bibleRd #brSAa .br-sbody{margin:0 -14px;padding:0 14px;}
+#bibleRd #brSAa .br-sbody>*,#bibleRd #brSAa>.br-grab,#bibleRd #brSAa>.br-shead{transition:opacity .42s ease;}
 #bibleRd #brSAa.peek>.br-grab,#bibleRd #brSAa.peek>.br-shead,#bibleRd #brSAa.peek .br-sbody>*:not(.act){opacity:0;pointer-events:none;}
-#bibleRd #brSAa.peek .br-sbody>.act{background:var(--br-sheet);border-radius:14px;border-bottom-color:transparent;
-  box-shadow:0 0 0 10px var(--br-sheet),0 10px 30px 8px rgba(0,0,0,.22);}
-/* 7 · 8 은 시트 안 작은 예시 — 만지는 동안 줄 아래로 스르륵 펼쳐진다 */
-#bibleRd .br-rxw{flex-wrap:wrap;}
-#bibleRd .br-rxp{flex-basis:100%;display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s cubic-bezier(.22,.8,.24,1);}
-#bibleRd .br-rxp>div{min-height:0;overflow:hidden;opacity:0;padding:0 6px 8px;margin:0 -6px;transition:opacity .22s ease;}
-#bibleRd .br-rxw.act .br-rxp{grid-template-rows:1fr;}#bibleRd .br-rxw.act .br-rxp>div{opacity:1;transition-delay:.06s;}
-#bibleRd .br-lzp{display:inline-block;margin:12px 0 4px;padding:calc(4px*var(--lz,2)) calc(9px*var(--lz,2));border:1px solid var(--bd);border-radius:12px;
-  background:var(--br-sheet);box-shadow:0 6px 18px rgba(0,0,0,.14);font-family:var(--font-serif,serif);font-size:calc(11px*var(--lz,2));color:var(--tx3);white-space:nowrap;
-  transition:font-size .18s ease,padding .18s ease;}
-#bibleRd .br-lzp b{background:var(--ac);color:var(--on-accent,#fff);font-weight:600;border-radius:4px;padding:0 1px;box-shadow:0 0 0 2px var(--ac);}
-#bibleRd .br-hnp{display:flex;flex-direction:column-reverse;align-items:flex-start;gap:4px;padding:12px 0 4px;}
-#bibleRd .br-hnp i{font-style:normal;height:24px;padding:0 11px;border-radius:12px;display:flex;align-items:center;font-size:11.5px;font-weight:600;white-space:nowrap;
-  background:color-mix(in srgb,var(--s2) calc(40% + var(--o,1) * 60%),transparent);color:color-mix(in srgb,var(--tx2) calc(var(--o,1) * 100%),transparent);
-  animation:brChipIn .26s cubic-bezier(.22,.8,.24,1) both;}
+#bibleRd #brSAa .br-sbody>.br-row{position:relative;isolation:isolate;transition:opacity .42s ease,transform .38s cubic-bezier(.22,.8,.24,1),border-color .3s ease;}
+#bibleRd #brSAa .br-sbody>.br-row::before{content:'';position:absolute;inset:-4px -12px;border-radius:18px;z-index:-1;pointer-events:none;
+  background:color-mix(in srgb,var(--br-sheet) 84%,transparent);-webkit-backdrop-filter:blur(16px) saturate(1.25);backdrop-filter:blur(16px) saturate(1.25);
+  box-shadow:0 16px 44px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.08),inset 0 0 0 1px color-mix(in srgb,var(--tx) 7%,transparent);
+  opacity:0;transform:scale(.97);transition:opacity .42s ease,transform .42s cubic-bezier(.22,.8,.24,1);}
+#bibleRd #brSAa.peek .br-sbody>.act::before{opacity:1;transform:none;}
+#bibleRd #brSAa.peek .br-sbody>.act{border-bottom-color:transparent;}
+#bibleRd .br-scrim.on.clear{opacity:0;transition:opacity .42s ease;}
 @media (prefers-reduced-motion:reduce){
-  #bibleRd#bibleRd #brSAa,#bibleRd#bibleRd .br-rxp,#bibleRd#bibleRd .br-lzp{transition:none;}#bibleRd#bibleRd .br-hnp i{animation:none;}}
+  #bibleRd#bibleRd #brSAa,#bibleRd#bibleRd #brSAa .br-sbody>*,#bibleRd#bibleRd #brSAa .br-sbody>.br-row::before,#bibleRd#bibleRd .br-scrim.on.clear{transition:none;}}
 #bibleRd .br-lzw>span{min-width:40px;text-align:right;font-size:13px;color:var(--tx2);font-variant-numeric:tabular-nums;}
 #bibleRd .br-loupe i{font-style:normal;border-right:3px solid var(--danger,#e5484d);margin-right:-2px;}
 #bibleRd .br-shead.br-inkhd{grid-template-columns:auto minmax(0,1fr) auto 40px;gap:2px;}
@@ -7193,7 +7188,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-1";
+const APP_VERSION = "v. 26-1112-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10157,14 +10152,14 @@ try{
     <div class="br-grab"></div>
     <div class="br-shead"><span></span><h3>글자와 화면</h3><button class="br-ic br-x" data-brclose aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>
     <div class="br-sbody">
-      <div class="br-row" style="align-items:flex-start"><span class="br-lb" style="padding-top:9px">화면</span><div class="br-themes" id="brThemes"><button class="br-th" data-t="auto"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10.5 18h3"/></svg></i>앱과 같게</button><button class="br-th" data-t="light"><i>가</i>밝게</button><button class="br-th" data-t="paper"><i>가</i>종이</button><button class="br-th" data-t="night"><i>가</i>어둡게</button></div></div>
+      <div class="br-row" data-pk="1" style="align-items:flex-start"><span class="br-lb" style="padding-top:9px">화면</span><div class="br-themes" id="brThemes"><button class="br-th" data-t="auto"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10.5 18h3"/></svg></i>앱과 같게</button><button class="br-th" data-t="light"><i>가</i>밝게</button><button class="br-th" data-t="paper"><i>가</i>종이</button><button class="br-th" data-t="night"><i>가</i>어둡게</button></div></div>
       <div class="br-row" data-pk="1"><span class="br-lb">글씨체</span><div class="br-seg" id="brSegFont"><button data-v="serif">명조</button><button data-v="sans">고딕</button></div></div>
       <div class="br-row" data-pk="1"><span class="br-lb">글자 크기</span><div class="br-lzw br-fsw2"><i class="br-ga s">가</i><input type="range" class="uiscale-slider" id="brFs" min="14" max="30" step="1" value="18" aria-label="글자 크기"><i class="br-ga l">가</i><span id="brFsV">18</span></div></div>
       <div class="br-row" data-pk="1"><span class="br-lb">줄 간격</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brLh" min="1.4" max="2.6" step="0.05" value="1.85" aria-label="줄 간격"><span id="brLhV">1.85</span></div></div>
       <div class="br-row" data-pk="1"><span class="br-lb">절 나누기</span><div class="br-seg" id="brSegFlow"><button data-v="verse">절마다 줄</button><button data-v="flow">이어 읽기</button></div></div>
       <div class="br-row" data-pk="1" id="brVgRow"><span class="br-lb">절 간격</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brVg" min="0" max="24" step="1" value="2" aria-label="절 간격"><span id="brVgV">2</span></div></div>
-      <div class="br-row br-rxw" id="brLzRow"><span class="br-lb">부분선택 돋보기</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brLz" min="1" max="3" step="0.25" value="2" aria-label="부분선택 돋보기 크기"><span id="brLzV">2배</span></div><div class="br-rxp"><div><div class="br-lzp" id="brLzP">여호와는 <b>나의 목자</b>시니</div></div></div></div>
-      <div class="br-row br-rxw" id="brHnRow"><span class="br-lb">히스토리 보여주기</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brHn" min="1" max="7" step="1" value="3" aria-label="히스토리 보여주기 개수"><span id="brHnV">3개</span></div><div class="br-rxp"><div><div class="br-hnp" id="brHnP"></div></div></div></div>
+      <div class="br-row" data-pk="1" id="brLzRow"><span class="br-lb">부분선택 돋보기</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brLz" min="1" max="3" step="0.25" value="2" aria-label="부분선택 돋보기 크기"><span id="brLzV">2배</span></div></div>
+      <div class="br-row" data-pk="1" id="brHnRow"><span class="br-lb">히스토리 보여주기</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brHn" min="1" max="7" step="1" value="3" aria-label="히스토리 보여주기 개수"><span id="brHnV">3개</span></div></div>
       <div class="br-sub">복사할 때 장절 형식 <small>말씀 설정 › 공유 › 공유 텍스트와 같은 설정이에요</small></div>
       <div class="br-row"><span class="br-lb">표기</span><div class="br-seg" id="brSegRs"><button data-v="short">시 23:1</button><button data-v="long">시편 23편 1절</button></div></div>
       <div class="br-row"><span class="br-lb">괄호</span><div class="br-seg" id="brSegRb"><button data-v="square">[ ]</button><button data-v="paren">( )</button><button data-v="none">없음</button></div></div>
@@ -16890,6 +16885,7 @@ function _brIsOpen(){return _brOpen;}
 // ESC · 뒤로: 가장 위 것 하나만 닫는다
 function _brEsc(){
   if(_brEl('brVMenu').classList.contains('on')){_brVmClose();return;}
+  if(_brPeekOn()){_brPeekEnd();return;}
   if(document.querySelector('#bibleRd .br-sheet.on')){_brCloseSheets();return;}
   if(_brEl('brDashP').classList.contains('on')){_brEl('brDashP').classList.remove('on');return;}
   if(_brEl('brFindP').classList.contains('on')){_brEl('brFindP').classList.remove('on');return;}
@@ -17273,8 +17269,7 @@ function _brApplyLook(){
 function _brLzGet(){return Math.max(1,Math.min(3,+_brS('bibleLoupe',2)||2));}   // 처음 쓰는 사람은 2배 (HB v26-1013-10)
 function _brLzPaint(v){const sl=_brEl('brLz'),lb=_brEl('brLzV');if(!sl)return;sl.value=String(v);
   const f=(v-1)/2*100;sl.style.setProperty('--sl-fill','linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)');
-  if(lb)lb.textContent=(Math.round(v*100)/100)+'배';
-  const pv=_brEl('brLzP');if(pv)pv.style.setProperty('--lz',v);}
+  if(lb)lb.textContent=(Math.round(v*100)/100)+'배';}
 function _brSyncAa(){
   _brSlPaintAll();_brLzPaint(_brLzGet());_brHnPaint(_brHnGet());
   {const r=_brEl('brVgRow');if(r)r.classList.toggle('dis',_brS('bibleFlow','verse')==='flow');}   // 이어 읽기면 절 간격이 뜻이 없다
@@ -17297,22 +17292,51 @@ function _brSlPaintAll(){_BR_SL.forEach(([id,k,d,mn,mx,fmt])=>_brSlPaint(id,Math
 function _brLiveLook(){const a=typeof _brPosLive==='function'?_brPosLive():null;_brApplyLook();if(!a||!a.v)return;
   const sc=_brEl('brScroll'),el=sc&&sc.querySelector('.br-v[data-v="'+a.v+'"]');if(!el)return;
   const d=el.getBoundingClientRect().top-sc.getBoundingClientRect().top-a.off;if(Math.abs(d)>1)sc.scrollTop+=d;}
-// 미리보기 (1112-B3): 만지는 줄만 카드로 남기고 시트를 그 줄이 화면 아래에 오도록 내린다. hold=true 면 손을 뗄 때까지
-let _brPkT=0,_brPkRow=null;
-function _brPeek(row,hold){
+// 미리보기 (1112-B3 v2, HB): 만지는 줄만 제자리에 카드로 남기고 나머지는 투명하게. 자동으로 돌아가지 않는다 —
+// 카드 밖(투명해진 시트 · 본문 자리)을 누르면 돌아온다. 7 돋보기 · 8 히스토리는 본문 위에 실제 크기로 띄운다.
+let _brPkRow=null;
+function _brPeekOn(){const sh=_brEl('brSAa');return !!(sh&&sh.classList.contains('peek'));}
+function _brPeek(row){
   const sh=_brEl('brSAa');if(!row||!sh||!sh.classList.contains('on'))return;
-  clearTimeout(_brPkT);
   if(_brPkRow&&_brPkRow!==row)_brPkRow.classList.remove('act');
+  if(row.id!=='brHnRow')sh.style.removeProperty('--pk');
   _brPkRow=row;row.classList.add('act');
-  if(row.dataset.pk&&!sh.classList.contains('peek')){
-    const H=_brEl('bibleRd').getBoundingClientRect().bottom,r=row.getBoundingClientRect();
-    sh.style.setProperty('--pk',Math.max(0,Math.round(H-22-r.bottom))+'px');sh.classList.add('peek');
-    const sc=_brEl('brScrim');if(sc)sc.classList.remove('on');}
-  if(!hold)_brPkT=setTimeout(_brPeekEnd,row.dataset.pk?1400:1800);
+  if(!sh.classList.contains('peek')){sh.classList.add('peek');const sc=_brEl('brScrim');if(sc)sc.classList.add('on','clear');}
+  _brLzDemo(row.id==='brLzRow');_brHnDemo(row.id==='brHnRow');
 }
-function _brPeekEnd(){clearTimeout(_brPkT);const sh=_brEl('brSAa');if(!sh)return;
-  if(sh.classList.contains('peek')){sh.classList.remove('peek');if(sh.classList.contains('on')){const sc=_brEl('brScrim');if(sc)sc.classList.add('on');}}
+function _brPeekEnd(){const sh=_brEl('brSAa');if(!sh)return;
+  _brLzDemo(false);_brHnDemo(false);
+  if(sh.classList.contains('peek')){sh.classList.remove('peek');const sc=_brEl('brScrim');if(sc)sc.classList.remove('clear');}
+  sh.style.removeProperty('--pk');
   if(_brPkRow){_brPkRow.classList.remove('act');_brPkRow=null;}}
+// 7 — 카드 바로 위에 보이는 절 하나에 진짜 돋보기를 지금 배율로 띄운다
+function _brLzDemo(on){const L=_brEl('brLoupe');if(!L)return;
+  if(!on){if(L.dataset.demo){L.classList.remove('on');delete L.dataset.demo;}return;}
+  const row=_brPkRow,rb=row.getBoundingClientRect(),hb=_brEl('brHead').getBoundingClientRect().bottom;let tg=null;
+  for(const v of _brEl('brChap').querySelectorAll('.br-v')){const r=v.getClientRects()[0];if(r&&r.top>hb+80&&r.bottom<rb.top-24)tg={v,r};}
+  if(!tg){L.classList.remove('on');return;}
+  const t=((tg.v.querySelector('.br-tx')||tg.v).textContent||'').slice(0,11);let h='';
+  for(let k=0;k<t.length;k++){const ch=t[k]===' '?'&nbsp;':esc(t[k]);if(k===2)h+='<b>';h+=(k===6?'<i>'+ch+'</i>':ch);if(k===6)h+='</b>';}
+  if(t.length<=6)h+='</b>';
+  const W=document.documentElement.clientWidth;let lz=_brLzGet();L.style.setProperty('--lz',lz);L.dataset.demo='1';L.innerHTML=h;L.classList.add('on');
+  const w0=L.offsetWidth;if(w0>W-20){lz=Math.max(.8,lz*(W-20)/w0);L.style.setProperty('--lz',lz);}
+  const hw=Math.min(W/2-4,L.offsetWidth/2+4),x=tg.r.left+Math.min(tg.r.width,120);
+  L.style.left=Math.min(W-hw,Math.max(hw,x))+'px';L.style.top=(tg.r.top+tg.r.height/2-56)+'px';}
+// 8 — 하단 왼쪽 알약을 지금 개수만큼 펼쳐 보인다(기록이 모자라면 예시 장절로 채움). 카드가 가리면 카드만 그 위로
+const _BR_HN_EX=[[0,1,1],[42,3,16],[18,23,1],[44,8,28],[22,40,31],[49,4,13],[19,3,5]];
+function _brHnDemo(on){const el=_brEl('brHistL');if(!el)return;
+  if(!on){if(el.dataset.demo){delete el.dataset.demo;el.classList.remove('open');_brNavSync();}return;}
+  const N=_brHnGet(),real=_brNavGet().back.slice(-N).reverse(),ex=_BR_HN_EX.map(([b,c,v])=>({b,c,v})).filter(x=>!real.some(y=>y.b===x.b&&y.c===x.c));
+  const arr=real.concat(ex).slice(0,N);
+  el.dataset.demo='1';
+  el.innerHTML=arr.map((x,i)=>'<div class="br-hi" style="--o:'+_BR_HO[i]+';--i:'+i+'"><button tabindex="-1" aria-hidden="true"><span class="d">'+_BR_DOTS+'</span><span class="l">'+esc(_brNavLabel(x))+'</span></button></div>').join('');
+  void el.offsetWidth;el.classList.add('open');
+  try{if(typeof _brP!=='undefined'&&_brP>0){_brP=0;_brChromeApply(true);}}catch(e){}
+  const row=_brPkRow;if(!row||row.id!=='brHnRow')return;
+  // 카드만 옮기면 시트의 스크롤 칸에 잘린다 → 투명해진 시트를 통째로 올린다
+  const sh=_brEl('brSAa'),top=el.getBoundingClientRect().bottom-N*50;let cur=0;try{cur=new DOMMatrixReadOnly(getComputedStyle(sh).transform).m42||0;}catch(e){}
+  const rb=row.getBoundingClientRect().bottom-cur;   // 지금 실제로 옮겨진 만큼(움직이는 도중이라도)을 빼고 잰다
+  const d=Math.min(0,Math.round(top-18-rb));if(d)sh.style.setProperty('--pk',d+'px');else sh.style.removeProperty('--pk');}
 // ── 내 표시 목록 ── (줄마다 날짜 · 오른쪽 × · 휴대폰은 왼쪽으로 밀어 지우기)
 let _brLt='mark',_brLF='all',_brLO=null,_brOM='new',_brOQ='';
 const _BR_X='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>';
@@ -17522,9 +17546,7 @@ function _brNavSync(){
 }
 function _brHnPaint(v){const sl=_brEl('brHn'),lb=_brEl('brHnV');if(!sl)return;sl.value=String(v);
   const f=(v-1)/6*100;sl.style.setProperty('--sl-fill','linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)');
-  if(lb)lb.textContent=v+'개';
-  const pv=_brEl('brHnP');if(pv){const L=['창 1:1','요 3:16','시 23:1','롬 8:28','사 40:31','빌 4:13','잠 3:5'];
-    const n=pv.children.length;if(n!==v)pv.innerHTML=L.slice(0,v).map((t,i)=>'<i style="--o:'+_BR_HO[i]+';animation-delay:'+(i>=n?(i-n)*35:0)+'ms">'+(i?'':'‹ ')+t+'</i>').join('');}}
+  if(lb)lb.textContent=v+'개';}
 // ── 지난 검색어 (계정 · 기기끼리 맞춤 · 50개) ──
 // ST.settings.bibleFindHist = { 검색어: ms } — 계정 설정이라 기기끼리 맞는다 (v. 26-1110-9, HB).
 // ms 가 음수면 '지운 표'(그 시각에 지웠다) — 다른 기기에서 되살아나지 않게. 병합은 _mgFindHist.
@@ -17678,7 +17700,8 @@ function _brBind(){
   $('brNav').addEventListener('pointerup',hkEnd);$('brNav').addEventListener('pointercancel',hkEnd);
   $('brNav').addEventListener('contextmenu',e=>{if(e.target.closest('[data-hk]'))e.preventDefault();});
   document.addEventListener('pointerdown',e=>{if(!e.target.closest||e.target.closest('.br-hist'))return;document.querySelectorAll('#bibleRd .br-hist.open').forEach(x=>x.classList.remove('open'));},{passive:true});
-  $('brScrim').onclick=_brCloseSheets;
+  $('brScrim').onclick=()=>{if(_brPeekOn()){_brPeekEnd();return;}_brCloseSheets();};
+  $('brSAa').addEventListener('pointerdown',e=>{if(_brPeekOn()&&!e.target.closest('.act')){e.preventDefault();e.stopPropagation();_brPeekEnd();}},true);
   document.querySelectorAll('#bibleRd [data-brclose]').forEach(b=>b.onclick=_brCloseSheets);
   document.querySelectorAll('#bibleRd .br-sheet').forEach(sh=>
     _sheetDrag(sh,[sh.querySelector('.br-grab'),sh.querySelector('.br-shead')],_brCloseSheets,$('brScrim')));
@@ -17946,19 +17969,19 @@ function _brBind(){
   $('brAa').onclick=()=>{_brSyncAa();_brOpenSheet('brSAa');};
   // 슬라이더: 끄는 동안 본문에 바로 반영(저장은 손을 뗄 때 한 번) · 시트는 그 줄만 남기고 내려간다
   _BR_SL.forEach(([id,k,d,mn,mx,fmt])=>{const el=$(id),row=el.closest('.br-row');
-    el.addEventListener('pointerdown',()=>_brPeek(row,true));
-    el.addEventListener('input',()=>{_brPeek(row,true);const v=+el.value;ST.settings[k]=k==='bibleLh'?(+v).toFixed(2):v;_brSlPaint(id,v,mn,mx,fmt);_brLiveLook();});
-    el.addEventListener('change',()=>{save();_brPeek(row,false);});
-    ['pointerup','pointercancel'].forEach(t=>el.addEventListener(t,()=>_brPeek(row,false)));});
+    el.addEventListener('pointerdown',()=>_brPeek(row));
+    el.addEventListener('input',()=>{_brPeek(row);const v=+el.value;ST.settings[k]=k==='bibleLh'?(+v).toFixed(2):v;_brSlPaint(id,v,mn,mx,fmt);_brLiveLook();});
+    el.addEventListener('change',()=>save());});
   [['brSegFont','bibleFont'],['brSegFlow','bibleFlow'],['brSegRs','txtRefStyle'],['brSegRb','txtRefBracket'],['brSegRp','txtRefPos']]
-    .forEach(([id,k])=>$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;_brSet(k,b.dataset.v);_brPeek($(id).closest('.br-row'),false);});
-  ['brLz','brHn'].forEach(id=>{const el=$(id),row=el.closest('.br-row');el.addEventListener('pointerdown',()=>_brPeek(row,true));
-    el.addEventListener('input',()=>_brPeek(row,true));['pointerup','pointercancel','change'].forEach(t=>el.addEventListener(t,()=>_brPeek(row,false)));});
-  $('brHn').addEventListener('input',e=>_brHnPaint(+e.target.value));
-  $('brHn').addEventListener('change',e=>{ST.settings.bibleHistN=+e.target.value;save();_brHnPaint(_brHnGet());_brNavSync();});
-  $('brLz').addEventListener('input',e=>_brLzPaint(+e.target.value));
+    .forEach(([id,k])=>$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;_brSet(k,b.dataset.v);const r=$(id).closest('.br-row');if(r.dataset.pk)_brPeek(r);});
+  // 7 · 8 — 끄는 동안 값을 바로 쓰고(저장은 뗄 때) 본문 위 실제 예시를 그 값으로 다시 그린다
+  $('brLz').addEventListener('pointerdown',()=>_brPeek($('brLzRow')));
+  $('brHn').addEventListener('pointerdown',()=>_brPeek($('brHnRow')));
+  $('brHn').addEventListener('input',e=>{ST.settings.bibleHistN=+e.target.value;_brHnPaint(+e.target.value);_brPeek($('brHnRow'));});
+  $('brHn').addEventListener('change',e=>{ST.settings.bibleHistN=+e.target.value;save();_brHnPaint(_brHnGet());_brNavSync();if(_brPkRow&&_brPkRow.id==='brHnRow')_brHnDemo(true);});
+  $('brLz').addEventListener('input',e=>{ST.settings.bibleLoupe=+e.target.value;_brLzPaint(+e.target.value);_brPeek($('brLzRow'));});
   $('brLz').addEventListener('change',e=>{ST.settings.bibleLoupe=+e.target.value;save();_brLzPaint(_brLzGet());});
-  $('brThemes').onclick=e=>{const b=e.target.closest('.br-th');if(!b)return;_brSet('bibleTheme',b.dataset.t);const r=$('brThemes').closest('.br-row');r.dataset.pk='1';_brPeek(r,false);};
+  $('brThemes').onclick=e=>{const b=e.target.closest('.br-th');if(!b)return;_brSet('bibleTheme',b.dataset.t);_brPeek($('brThemes').closest('.br-row'));};
   // 내 표시 — 하단 네 단추가 그 갈래를 바로 연다 (시트 안에서도 갈래를 바꿀 수 있다)
   document.querySelectorAll('#brNav .br-lt').forEach(b=>b.onclick=()=>{_brLt=b.dataset.lt;_brRenderList();_brOpenSheet('brSList');});
   // 헤더 좌상단 — There · 대시보드
