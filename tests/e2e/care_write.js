@@ -988,7 +988,7 @@ async function route(r) {
     await page.evaluate(() => openLayer('settings')); await tidy();
     eq('㉙ 설정 탭 차례 — 보기 · BLOCK7 · 연결 · 그 밖에', await page.$$eval(LE + ' [data-act="stab"]', x => x.map(e => e.textContent)), ['보기', 'BLOCK7', '연결', '그 밖에']);
     await stab(page, '연결');
-    eq("㉙ '연결' 탭 — 로그인 · 구글 · 시트 · 시트 준비 · 폼 · 속성 관리", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['로그인', '구글', '심방 시트', '시트 준비', '시험 시트', '심방 폼', '속성 관리']);
+    eq("㉙ '연결' 탭 — 로그인 · 구글 · 시트 · 시트 준비 · 폼 · 속성 관리", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['로그인', '구글', '심방 시트', '시트 준비', '새 칸 (vNext)', '시험 시트', '심방 폼', '속성 관리']);
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     await page.evaluate(() => openLayer('settings')); await tidy();
     eq('㉙ 다시 열면 마지막에 본 탭(이 기기에만 기억)', [await page.$eval(LE + ' [data-act="stab"][aria-pressed="true"]', e => e.textContent), await page.evaluate(() => 'stab' in pickCfg(saved()))], ['연결', false]);
