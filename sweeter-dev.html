@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1112-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-9";
+const APP_VERSION = "v. 26-1112-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7743,6 +7743,16 @@ try{
         <div class="settings-row" data-lv="p">
           <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span> 연락 버튼</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setShowContactFilterBtn" onchange="updateSetting('showContactFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <div class="settings-row" data-lv="mp">
+          <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 4.5h18l-7 8.2V20l-4-2v-5.3z"/></svg></span> 깔때기 버튼 (글자 거르기)</div></div>
+          <label class="settings-toggle"><input type="checkbox" id="setShowTextFilterBtn" onchange="updateSetting('showTextFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <div class="settings-row" data-lv="mp" style="flex-direction:column;align-items:stretch;gap:6px;">
+          <div class="settings-row-text"><div class="settings-row-label">깔때기로 거를 글자</div><div class="settings-row-desc">이 글자가 든 할일만 보여요. 연락할 이름은 @이름 으로 적어도 되고 이름만 적어도 돼요. 쉼표로 여러 개를 적으면 하나라도 들어 있는 할일이 보여요.</div></div>
+          <input type="text" id="setTextFilterQuery" placeholder="예: @홍길동, 심방" autocomplete="off" autocapitalize="off" spellcheck="false" onchange="updateSetting('textFilterQuery',this.value)"
+            style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;outline:none;box-sizing:border-box;transition:border-color .15s;"
+            onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'">
         </div>
           </div></div>
           <div class="settings-row sr-fold" role="button" aria-expanded="false" onclick="sgFold(this)"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="8" rx="4"/><circle cx="8" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="16" cy="12" r="1"/></svg><div class="settings-row-text"><div class="settings-row-label">주간 · 월간 단추</div></div><span class="sr-val">3개</span><svg class="sr-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
@@ -25521,6 +25531,8 @@ function defaultState(){
       showCompletedBtn:true,   // show/hide the completed-todo visibility button
       showFlagFilterBtn:false, // show/hide the flagged-task filter button
       showContactFilterBtn:false,// show/hide the contact-task filter button
+      showTextFilterBtn:false,// show/hide the text (funnel) filter button
+      textFilterQuery:'',      // 깔때기 단추가 거를 글자 (쉼표로 여러 개, @이름 포함)
       showCompletedTasks:false,// true = show completed todos dimmed; false = hide them
       dowFormat:'letter-lord', // 'letter-lord' (L M T W T F S) | 'letter-sun' (S M T W T F S) | 'korean' (일 월...)
       sundayRed:true,           // highlight Sunday's date/label in red across weekly/monthly views
@@ -25600,7 +25612,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',foldSwitchMode:'seg',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:12};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showTextFilterBtn:false,textFilterQuery:'',showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',foldSwitchMode:'seg',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:12};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -27186,9 +27198,11 @@ function _srchFilterFix(it,preset,set,type){
   if(!it||typeof it!=='object')return fix;
   if(preset==='flagFilter'&&!it.flag)fix.marker='flag';
   else if(preset==='contactFilter'&&!it.contactTask)fix.marker='contact';
+  else if(preset==='textFilter'&&!_textFilterPass(it,set&&set.textFilterQuery))fix.marker='text';
   // 푼 거르기의 단추가 설정에서 꺼져 있으면 함께 꺼내 둔다 — 다시 걸고 싶을 때 누를 곳이 있어야 한다 (v. 26-1102-15, HB 11-②)
   if(fix.marker==='flag'&&set&&set.showFlagFilterBtn!==true)fix.markerBtn=true;
   if(fix.marker==='contact'&&set&&set.showContactFilterBtn!==true)fix.markerBtn=true;
+  if(fix.marker==='text'&&set&&set.showTextFilterBtn!==true)fix.markerBtn=true;
   // 스몰 블럭이 꺼져 있으면 스몰 목록이 통째로 숨는다 — 스몰 할일은 켜야 보인다 (11-①)
   if(type==='small'&&set&&!set.showSmallBlocks)fix.smallOn=true;
   if(it.done&&set&&set.showCompletedTasks===false){
@@ -27537,10 +27551,10 @@ function _srchUnfilter(r){
   beforeSave();
   if(fix.marker){
     ST.preset=null;   // 깃발 · 연락 거르기만 푼다(단추를 다시 누른 것과 같다) — 구간 보기(A · ★ …)일 때는 여기 안 온다
-    notes.push((fix.marker==='flag'?'깃발만':'연락할 일만')+' 보기를 풀었어요');
+    notes.push((fix.marker==='flag'?'깃발만':fix.marker==='text'?'깔때기(글자 거르기)':'연락할 일만')+(fix.marker==='text'?' 거르기를 풀었어요':' 보기를 풀었어요'));
     if(fix.markerBtn){
-      ST.settings[fix.marker==='flag'?'showFlagFilterBtn':'showContactFilterBtn']=true;
-      notes.push((fix.marker==='flag'?'깃발':'연락처')+' 단추도 꺼내 두었어요\n(설정 › 보기 › 위 단추)');
+      ST.settings[fix.marker==='flag'?'showFlagFilterBtn':fix.marker==='text'?'showTextFilterBtn':'showContactFilterBtn']=true;
+      notes.push((fix.marker==='flag'?'깃발':fix.marker==='text'?'깔때기':'연락처')+' 단추도 꺼내 두었어요\n(설정 › 보기 › 위 단추)');
     }
   }
   if(fix.smallOn){
@@ -37251,9 +37265,29 @@ function renderAddRow(containerId='addRow',refreshFn=renderToday,includeExpandBt
     appendMarkerFilterBtn('contact','연락할 일만 보기','<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>');
   }
 
+  // 글자 거르기(깔때기) — 맨 끝 단추. 설정에 적은 글자(@이름 포함)가 든 할일만 보인다. 다시 누르면 모든 할일 보기.
+  if(includeExpandBtn&&ST.settings.showTextFilterBtn===true){
+    const active=ST.preset==='textFilter';
+    const btn=document.createElement('button');
+    btn.id='btnTextFilter';
+    btn.className='preset-btn'+(active?' on':'');
+    const q=String(ST.settings.textFilterQuery||'').trim();
+    btn.title=active?'모든 할일 보기':(q?'‘'+q+'’ 든 할일만 보기':'글자를 설정에서 먼저 적어 주세요');
+    btn.setAttribute('aria-pressed',active?'true':'false');
+    btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 4.5h18l-7 8.2V20l-4-2v-5.3z"/></svg>';
+    attachFastTap(btn,()=>{
+      if(!active&&!_textFilterTerms(ST.settings.textFilterQuery).length){
+        showToast('거를 글자가 없어요\n설정 › 보기 › 위 단추 에서\n글자를 적어 주세요');
+        return;
+      }
+      beforeSave();ST.preset=active?null:'textFilter';ST.prevVis=null;save();refreshFn();
+    });
+    row.appendChild(btn);
+  }
+
   // separator — only meaningful if at least one of A/★/+-/할일/일정 is showing;
   // otherwise it's a stray line with nothing on its left to separate.
-  const anyPresetBtnShown=ST.settings.showAllBtn!==false||ST.settings.showStarBtn!==false||ST.settings.showExpandAllBtn!==false||ST.settings.showTodoFilterBtn!==false||ST.settings.showEventFilterBtn!==false||ST.settings.showCompletedBtn!==false||ST.settings.showFlagFilterBtn===true||ST.settings.showContactFilterBtn===true;
+  const anyPresetBtnShown=ST.settings.showAllBtn!==false||ST.settings.showStarBtn!==false||ST.settings.showExpandAllBtn!==false||ST.settings.showTodoFilterBtn!==false||ST.settings.showEventFilterBtn!==false||ST.settings.showCompletedBtn!==false||ST.settings.showFlagFilterBtn===true||ST.settings.showContactFilterBtn===true||ST.settings.showTextFilterBtn===true;
   if(anyPresetBtnShown){
     const sep=document.createElement('div');sep.className='preset-sep';row.appendChild(sep);
   }
@@ -38506,10 +38540,26 @@ function makeSwipeWrap(innerEl, onDelete, onComplete){
 
 // ═══════ BIG BLOCK ═══════
 function taskMarkerFilterPass(item){
-  const markerFilter=ST.preset==='flagFilter'?'flag':ST.preset==='contactFilter'?'contact':null;
+  const markerFilter=ST.preset==='flagFilter'?'flag':ST.preset==='contactFilter'?'contact':ST.preset==='textFilter'?'text':null;
   if(markerFilter==='flag')return !!item.flag;
   if(markerFilter==='contact')return !!item.contactTask;
+  if(markerFilter==='text')return _textFilterPass(item,ST.settings&&ST.settings.textFilterQuery);
   return true;
+}
+// ── 글자 거르기 (깔때기 단추, v. 26-1112-10, HB) ──
+// 설정에 적어 둔 글자가 할일 제목 · 메모에 든 것만 보인다. 연락할 이름은 제목에 '@이름' 으로 적혀 있으니
+// 같은 잣대로 걸린다('@' 를 붙여 적든 이름만 적든 둘 다 맞는다).
+// 쉼표로 여러 개를 적으면 하나라도 들어 있으면 보인다(또는). 영문은 대소문자를 가리지 않는다. 글자가 비면 다 보인다.
+// ⚠️ 보이게만 가른다 — 할일을 고치거나 지우지 않는다(저장 자료는 그대로).
+function _textFilterTerms(q){
+  return String(q==null?'':q).split(/[,，]/).map(s=>s.trim().toLowerCase()).filter(Boolean);
+}
+function _textFilterPass(item,q){
+  const terms=_textFilterTerms(q);
+  if(!terms.length)return true;
+  if(!item||typeof item!=='object')return false;
+  const hay=(String(item.text||'')+'\n'+String(item.memo||'')).toLowerCase();
+  return terms.some(t=>hay.indexOf(t)>=0);
 }
 // ═══════ 하위 할일(subs) · 메모(memo) ═══════
 // 한 할일 안에 작은 할일 목록과 메모를 담는다 (v26-0917-3, HB).
@@ -46480,7 +46530,7 @@ function _moveDateToastMsg(dateStr,secId,verb){
 // 구간을 손으로 숨기거나 켜면 구간 보기는 더 이상 맞지 않으니 풀지만, 깃발 · 연락 거르기는
 // 구간과 상관없는 거르기라 **그대로 둔다.** (예전엔 꺽쇠로 구간을 숨기면 깃발 모드가 풀렸다)
 function _presetVisTouched(){
-  if(ST.preset!=='flagFilter'&&ST.preset!=='contactFilter')ST.preset=null;
+  if(ST.preset!=='flagFilter'&&ST.preset!=='contactFilter'&&ST.preset!=='textFilter')ST.preset=null;
   ST.prevVis=null;
 }
 function _secClosed(secId){
@@ -48680,6 +48730,8 @@ function renderSettingsPanel(){
   document.getElementById('setShowCompletedBtn').checked=s.showCompletedBtn!==false;
   document.getElementById('setShowFlagFilterBtn').checked=!!s.showFlagFilterBtn;
   document.getElementById('setShowContactFilterBtn').checked=!!s.showContactFilterBtn;
+  document.getElementById('setShowTextFilterBtn').checked=!!s.showTextFilterBtn;
+  {const e=document.getElementById('setTextFilterQuery');if(e&&document.activeElement!==e)e.value=s.textFilterQuery||'';}
   const wmBtns=['setShowWMTodoBtn','setShowWMEventBtn','setShowWMMemBtn'];
   wmBtns.forEach(id=>{const el=document.getElementById(id);if(el)el.checked=s[id.replace('setShow','').replace('Btn','').replace(/^WM/,'showWM').replace(/./,c=>c.toLowerCase())]!==false;});
   if(document.getElementById('setShowWMTodoBtn'))document.getElementById('setShowWMTodoBtn').checked=s.showWMTodoBtn!==false;
@@ -48889,8 +48941,13 @@ function updateSetting(key,value){
     applyTheme(ST.settings.theme);
     _renderThemeSummary();
   }
-  if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'||key==='showCompletedBtn'||key==='showFlagFilterBtn'||key==='showContactFilterBtn'){
+  if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'||key==='showCompletedBtn'||key==='showFlagFilterBtn'||key==='showContactFilterBtn'||key==='showTextFilterBtn'){
     renderAddRow();
+  }
+  if(key==='showTextFilterBtn'&&!value&&ST.preset==='textFilter'){ST.preset=null;save();renderToday();}   // 단추를 감추면 거르는 중이던 것도 푼다(풀 단추가 없어지므로)
+  if(key==='textFilterQuery'){
+    renderAddRow();
+    if(ST.preset==='textFilter')renderToday();   // 거르는 중에 글자를 고치면 바로 반영
   }
   if(key==='mviewMemMode'){
     document.getElementById('mviewMemCross')?.classList.toggle('on',value==='cross');
@@ -53236,7 +53293,7 @@ const _DF_SET_LABEL={
   evChipMax:'일정 이름 길이',taskOverflow:'긴 할일',moveSecPicker:'옮길 때 구간 고르기',
   showAllBtn:'D뷰 단추 · 모든 구간(A)',showStarBtn:'D뷰 단추 · 기본 구간(★)',showExpandAllBtn:'D뷰 단추 · 모두 펴기·접기',
   showTodoFilterBtn:'D뷰 단추 · 할일 있는 구간',showEventFilterBtn:'D뷰 단추 · 일정 있는 구간',showCompletedBtn:'D뷰 단추 · 완료한 할일',
-  showFlagFilterBtn:'D뷰 단추 · 깃발',showContactFilterBtn:'D뷰 단추 · 연락처',
+  showFlagFilterBtn:'D뷰 단추 · 깃발',showContactFilterBtn:'D뷰 단추 · 연락처',showTextFilterBtn:'D뷰 단추 · 깔때기',textFilterQuery:'D뷰 깔때기 · 거를 글자',
   showWMTodoBtn:'주간 · 월간 단추 · 할일',showWMEventBtn:'주간 · 월간 단추 · 일정',showWMMemBtn:'주간 · 월간 단추 · 암송',
   verseSneakCat:'상단 말씀 한 줄 · 대분류',verseSneakTopic:'상단 말씀 한 줄 · 소주제',verseSneakRef:'상단 말씀 한 줄 · 장절',
   verseSneakFirstWord:'상단 말씀 한 줄 · 본문',verseSneakTag:'상단 말씀 한 줄 · 태그',verseSneakStyle:'상단 말씀 한 줄 · 모양',
