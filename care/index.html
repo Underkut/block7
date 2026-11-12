@@ -4804,6 +4804,7 @@ async function impStep(L, st) {
     st.note = add.length < r.out.acts.length ? (r.out.acts.length - add.length) + '줄은 이미 있음' : '';
   } else if (st.k === 'plan') {
     await markPlanDone(st.planId, st.r.id);
+    const p = (DATA.plans || []).find(x => x.id === st.planId); if (p) { p.status = PLAN_ST.done; p.recId = st.r.id; }   // 확인(다시 읽기)은 앞 단계라 화면 목록을 여기서 맞춘다
   } else if (st.k === 'inbox') {   // 확인(verify)이 끝난 뒤에만 — 쓰고 다시 읽어 '완료' 를 본다
     const cur = await inboxWrite(L.inbox, inboxDoneCells(INBOX_ST.done, J.recs.map(r => r.id), J.now));
     const back = parseInbox(await readTab(s.id, INBOX_TAB)).find(x => x.row === cur.row);
