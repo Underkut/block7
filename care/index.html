@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1112-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1112-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -693,6 +693,11 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
 .etcc{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--s1);border:1px solid var(--line)}
 .etcc small{color:var(--tx3)}.etcc button{color:var(--ac);font-size:12.5px;padding:2px 6px}
 /* 1112-N vNext */
+.inbox-bar{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 12px;padding:12px 14px;border-radius:14px;background:var(--warn-soft);color:var(--tx);font-size:14px;text-align:left}
+.inbox-bar.quiet{background:var(--s1);color:var(--tx2)}
+.inbox-bar small{font-size:11px;color:var(--warn)}.inbox-bar .cv{margin-left:auto;display:flex}
+.inbox-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left}.inbox-row small{display:block;font-size:11px;color:var(--tx3)}.inbox-row .cv{margin-left:auto;display:flex}
+.inbox-bad{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:12px}.inbox-bad div{color:var(--warn);margin-top:4px;word-break:break-all}
 .imp-btn{display:flex;align-items:center;gap:6px;width:100%;margin:0 0 14px;padding:11px 14px;border:1px dashed var(--line2);border-radius:12px;font-size:14px;color:var(--tx)}
 .imp-btn small{margin-left:auto;font-size:11px;color:var(--tx3)}
 .imp-paste{min-height:240px;font-size:13px;font-family:ui-monospace,Menlo,monospace;line-height:1.5}
@@ -753,7 +758,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1112-3';
+const APP_VERSION = 'v. 26-1112-4';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1696,6 +1701,63 @@ function importRowValues(header, map, rec, id, nowMs, extra) {
   const o = newRowValues(header, map, rec, id, nowMs);
   Object.keys(extra || {}).forEach(k => { const v = extra[k]; if (v === '' || v == null) return; if (map[k] == null) { o.lost.push(k); return; } o.row[map[k]] = v; });
   return o;
+}
+
+// ───────── 1112-N 5 AI 입력대기함 — ChatGPT 가 'AI 입력대기' 탭에 규격 JSON 을 한 줄로 넣는다(상태 '대기') ─────────
+// 시트 API 로 넣은 줄은 시트 트리거가 안 돌므로 앱이 열 때 · 다시 읽을 때 본다. 자동 확정은 없다 — 사람이 미리보기 → 성도 확인 → 저장.
+// 상태: 대기 → (저장 뒤 시트를 다시 읽어 확인) 완료 / 사람이 뺌 → 취소 / 규격 오류 → 오류(사유). 다른 값은 건드리지 않는다(나중 '자동' 자리)
+const INBOX_TAB = 'AI 입력대기';
+const INBOX_ST = { wait: '대기', err: '오류', done: '완료', cancel: '취소' };
+const INBOX_PATCH_MAX = 20;                       // 한 번 열 때 고치는 줄 상한(밖에서 받은 줄에 쓰는 일)
+function parseInbox(values) {
+  const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [];
+  const ci = { id: c('접수ID'), at: c('접수시각'), ver: c('스키마버전'), json: c('패킷JSON'), st: c('상태'), err: c('오류'), src: c('원본ID'), rec: c('생성된 기록ID'), done: c('처리시각') };
+  if (ci.json < 0 || ci.st < 0) return out;
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || [], g = k => (ci[k] < 0 ? '' : r[ci[k]]);
+    if (!norm(g('json')) && !norm(g('st'))) continue;
+    out.push({ row: i + 1, id: norm(g('id')), at: norm(g('at')), ver: norm(g('ver')), json: String(g('json') == null ? '' : g('json')), st: norm(g('st')), err: norm(g('err')), srcId: norm(g('src')), recIds: norm(g('rec')), doneAt: norm(g('done')) });
+  }
+  return out;
+}
+// 연 김에 할 것 — 대기 줄: 접수ID 가 비었으면 붙이고, 규격이 틀리면 '오류' + 사유. 맞는 것은 waiting 으로(패킷 · 초안 요약과 함께)
+function inboxCheck(items, nowMs, max) {
+  const patches = [], waiting = [], stamp = stampLocal(nowMs), lim = max == null ? INBOX_PATCH_MAX : max;
+  (items || []).forEach((it, i) => {
+    if (it.st !== INBOX_ST.wait) return;
+    const cells = {}, id = it.id || newId('Q', nowMs + i, ((i * 53) % 1296) / 1296);
+    if (!it.id) cells['접수ID'] = id;
+    const j = pkJsonText(it.json), r = j == null ? { ok: false, errs: ['패킷JSON 칸이 JSON 이 아닙니다'] } : pkParse(j);
+    if (!r.ok || r.kind !== 'json') { cells['상태'] = INBOX_ST.err; cells['오류'] = (r.errs || ['JSON 이 아닙니다']).slice(0, 5).join(' / ').slice(0, 1000); cells['처리시각'] = stamp; }
+    else { const p = r.packet; waiting.push(Object.assign({}, it, { id, packet: p, title: norm(p.source.title) || norm(p.event.title), date: p.event.date, names: p.records.map(x => pkCleanName(x.person_name)), srcId: it.srcId || norm(p.source.source_id || '') })); }
+    if (Object.keys(cells).length && patches.length < lim) patches.push({ row: it.row, id, cells });
+  });
+  return { patches, waiting };
+}
+// 쓰기 직전 그 줄 다시 찾기 — 접수ID 로(둘이면 쓰지 않음). 접수ID 가 없던 줄은 패킷 글이 같은 줄 하나일 때만
+function inboxFind(values, item) {
+  const all = parseInbox(values);
+  const byId = item.id ? all.filter(x => x.id === item.id) : [];
+  if (byId.length === 1) return byId[0];
+  if (byId.length > 1) return null;
+  const byJson = all.filter(x => !x.id && x.json === item.json);
+  return byJson.length === 1 ? byJson[0] : null;
+}
+function inboxDoneCells(st, recIds, nowMs, err) { return { '상태': st, '생성된 기록ID': (recIds || []).join(', '), '처리시각': stampLocal(nowMs), '오류': err || '' }; }
+// ChatGPT 에 줄 지시문 — 지금 고른 시트 주소로 (시험 시트면 사본 주소)
+function chatgptGuide(sheetId) {
+  return ['[심방노트 입력]', '지목한 PLAUD 녹음을 읽고 HB Care Packet v1(' + PK_VER + ') JSON으로 정리해 줘.',
+    '- 짧은 통화는 짧게, 긴 심방은 상세 기록을 충분히, 셀모임은 공통 모임 기록 + 확인된 성도별 기록.',
+    '- 직접 들은 말 / 전해 들은 말 / AI 해석을 구분. 이름·화자·날짜·기한·약속을 추측하지 말 것.',
+    '- 실제로 약속한 일은 "실제 약속", 네가 추천하는 일은 "AI 제안".',
+    '- 화자를 모르면 unknown_speakers에만 적고 누구에게도 붙이지 말 것.',
+    '- 언급된 다른 사람은 mentioned_people에 적고 그 사람 기록은 만들지 말 것.',
+    '- 전사 원문은 넣지 말 것.',
+    "그다음 아래 시트의 '" + INBOX_TAB + "' 탭에 한 행 추가:",
+    '  접수ID(비워도 됨) | 지금 시각 | ' + PK_VER + ' | JSON 전체 | ' + INBOX_ST.wait + ' | (빈칸) | PLAUD 녹음 ID',
+    "같은 녹음 ID가 이미 '" + INBOX_ST.wait + "' 또는 '" + INBOX_ST.done + "'로 있으면 추가하지 말고 알려 줘.",
+    '추가 후 시트를 다시 읽어 실제로 들어갔는지 확인하고, "대기함 접수 완료(아직 기록 저장 전)"라고만 보고해.',
+    '시트: https://docs.google.com/spreadsheets/d/' + sheetId + '/edit'].join('\n');
 }
 // 덧붙임 탭 → { 기록ID: [{at, who, x}] }
 function parseAddenda(values) {
@@ -2681,7 +2743,10 @@ async function loadData(quiet) {
     DATA.attend = parseAttend(V(ATT_TAB));
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
     DATA.visOpts = optsParse(V(VIS_OPT_TAB), VIS_OPT_FIELDS);
-    DATA.attrRows = parseAttrRows(V('속성')); DATA.meets = parseMeetTab(V('모임')); DATA.roster = parseRosterTab(V('성도'));   // 1112-N 붙여넣기: 속성 대조 · 모임 중복 · 새 성도 명단
+    DATA.attrRows = parseAttrRows(V('속성')); DATA.meets = parseMeetTab(V('모임')); DATA.roster = parseRosterTab(V('성도'));
+    { const items = parseInbox(V(INBOX_TAB)), chk = inboxCheck(items, Date.now());   // 1112-N 5 AI 입력대기함 — 열 때마다 본다
+      DATA.inbox = chk.waiting; DATA.inboxBad = items.filter(x => x.st === INBOX_ST.err).concat(items.filter(x => x.st === INBOX_ST.wait && chk.patches.some(p => p.row === x.row && p.cells['상태'] === INBOX_ST.err)).map(x => Object.assign({}, x, { err: chk.patches.find(p => p.row === x.row).cells['오류'] })));
+      if (chk.patches.length && DATA.nx) setTimeout(() => inboxPatch(chk.patches, items), 0); }   // 1112-N 붙여넣기: 속성 대조 · 모임 중복 · 새 성도 명단
     let form = DATA.form;
     if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
     const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [], places: (formQOf(form, 'place') || {}).options || [] } : {};
@@ -3371,7 +3436,7 @@ function vList() {
   const L = V(), t = today(), all = M().visits.filter(v => !v.archived), pf = prefs();
   let h = head('심방 노트', ['layer', '설정', 'gear', 'settings'], ['search', '찾기', 'search']) + '<div class="ph-body">';
   if (S.searching) h += '<div class="srch"><span>' + IC.search + '</span><input id="q" placeholder="이름 · 내용 찾기" value="' + esc(S.q) + '" autocomplete="off" enterkeyhint="search"></div>';
-  h += '<div id="results">';
+  h += '<div id="results">' + inboxBar();
   const wk = weekStartOf(t), nWeek = all.filter(v => v.ymd >= wk && v.ymd <= t).length;
   const nAct = [].concat(...all.map(v => v.actions)).filter(a => !a.done).length;
   const nStale = peopleList(M(), all, t, pf.stale).filter(p => p.stale).length;
@@ -4529,7 +4594,7 @@ function lImp(L) {
       if (errs.length) h += '<div class="review" style="margin:8px 0 0"><b>고쳐야 저장됩니다</b><br>' + errs.map(esc).join('<br>') + '</div>';
       h += '</div>';
     });
-    foot = '<button class="btn" data-act="impback">다시 붙이기</button><button class="btn pri" data-act="implink">다음 — 성도 확인</button>';
+    foot = (L.inbox ? '<button class="btn" data-act="impcancel">대기함에서 빼기</button>' : '<button class="btn" data-act="impback">다시 붙이기</button>') + '<button class="btn pri" data-act="implink">다음 — 성도 확인</button>';
   } else if (L.step === 'link') {
     h += impLinkHtml(L);
     foot = '<button class="btn" data-act="impback">미리보기로</button><button class="btn pri" data-act="impsave">저장</button>';
@@ -4613,6 +4678,7 @@ function impBuild(L) {
     if (r.out.acts.length) steps.push({ k: 'act', r, label: r.person + ' — 할 일 ' + r.out.acts.length + '줄' });
   });
   if (recs.length) steps.push({ k: 'verify', label: '시트를 다시 읽어 확인' });
+  if (recs.length && L.inbox) steps.push({ k: 'inbox', label: "대기함 줄을 '완료' 로" });
   return { steps, recs, meetId, mdup, now };
 }
 async function impStep(L, st) {
@@ -4656,6 +4722,11 @@ async function impStep(L, st) {
     const add = r.out.acts.map((a, j) => (ids.has(r.actIds[j]) || keys[actionKey(r.id, a)] ? null : pkActTabRow(h, a, r.id, r.person, r.actIds[j]))).filter(Boolean);
     if (add.length) await gapi(SH + s.id + '/values/' + rng('액션', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: add } });
     st.note = add.length < r.out.acts.length ? (r.out.acts.length - add.length) + '줄은 이미 있음' : '';
+  } else if (st.k === 'inbox') {   // 확인(verify)이 끝난 뒤에만 — 쓰고 다시 읽어 '완료' 를 본다
+    const cur = await inboxWrite(L.inbox, inboxDoneCells(INBOX_ST.done, J.recs.map(r => r.id), J.now));
+    const back = parseInbox(await readTab(s.id, INBOX_TAB)).find(x => x.row === cur.row);
+    if (!back || back.st !== INBOX_ST.done) throw new Error("대기함 줄에 '완료' 를 썼는데 다시 읽어 보니 아닙니다");
+    DATA.inbox = (DATA.inbox || []).filter(x => x.row !== cur.row);
   } else if (st.k === 'verify') {
     await loadData(true);
     if (DATA.state !== 'ok') throw new Error('시트를 다시 읽지 못했습니다 — ' + (DATA.err || ''));
@@ -4700,13 +4771,13 @@ function impSave(L) {
   const left = pkLinkOpen(L.rows);
   if (left.length) { toast('골라야 할 이름이 남았습니다\n' + left.map(x => x.raw).join(', ')); return; }
   const J = impBuild(L);
-  if (!J.recs.length) { toast('저장할 기록이 없습니다\n(모두 취소했거나 이미 있는 기록입니다)'); return; }
+  if (!J.recs.length) { if (L.inbox) { inboxCancel(L); return; } toast('저장할 기록이 없습니다\n(모두 취소했거나 이미 있는 기록입니다)'); return; }
   L.job = J; impRun(L);
 }
 function impClick(a, v) {
   const L = topLayer(); if (!L || L.type !== 'imp') return false;
   if (a === 'impgo') { const t = document.querySelector('.layer:last-child [data-f="ipaste"]'); if (t) L.paste = t.value; impParse(L); return true; }
-  if (a === 'impback') { if (L.step === 'link') L.step = 'review'; else if (L.step === 'review') L.step = 'paste'; render(); return true; }
+  if (a === 'impback') { if (L.step === 'link') L.step = 'review'; else if (L.step === 'review' && !L.inbox) L.step = 'paste'; render(); return true; }
   if (a === 'impfold') { L.open[v] = !L.open[v]; render(); return true; }
   if (a === 'impact') { const [i, j] = v.split(':').map(Number), x = L.d.recs[i] && L.d.recs[i].acts[j]; if (x) { x.on = !x.on; render(); } return true; }
   if (a === 'impattr') {
@@ -4726,8 +4797,44 @@ function impClick(a, v) {
   if (a === 'impdup') { const [i, m] = v.split('|'); L.dupMode[+i] = m; render(); return true; }
   if (a === 'impdupopen') { openLayer('detail', { key: v }); return true; }
   if (a === 'impsave') { impSave(L); return true; }
+  if (a === 'impcancel') { if (L.inbox) inboxCancel(L); return true; }
   if (a === 'impretry') { impRun(L); return true; }
   return false;
+}
+// ── 1112-N 5 AI 입력대기함 ──
+async function inboxWrite(item, cells) {
+  const s = saved().sheet, v = await readTab(s.id, INBOX_TAB), h = (v[0] || []).map(norm), cur = inboxFind(v, item);
+  if (!cur) throw new Error("'" + INBOX_TAB + "' 탭에서 이 줄을 찾지 못했습니다(접수ID 가 둘이거나 지워짐) — 쓰지 않았습니다");
+  await batchValues(s.id, Object.keys(cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1(INBOX_TAB, h.indexOf(k), cur.row), values: [[cells[k]]] })));
+  return cur;
+}
+async function inboxPatch(patches, items) {   // 접수ID 붙이기 · 규격 오류 표시 — 실패해도 다음에 다시
+  for (const p of patches) { const it = items.find(x => x.row === p.row); if (!it) continue; try { await inboxWrite(it, p.cells); if (p.cells['접수ID']) { const w = (DATA.inbox || []).find(x => x.row === p.row); if (w) w.id = p.id; } } catch (e) { /* 다음에 */ } }
+}
+function inboxBar() {
+  const n = (DATA.inbox || []).length, bad = (DATA.inboxBad || []).length;
+  if (!DATA.nx || (!n && !bad)) return '';
+  return '<button class="inbox-bar' + (n ? '' : ' quiet') + '" data-act="layer" data-v="inbox">' + (n ? '<b>새로 들어온 기록 ' + n + '건</b>' : '들어온 기록 없음') + (bad ? '<small>규격 오류 ' + bad + '건</small>' : '') + '<span class="cv">' + IC.r + '</span></button>';
+}
+function inboxLabel(x) { return (x.date ? mdw(x.date) + ' · ' : '') + esc(x.title || '(제목 없음)') + '<small>' + esc(x.names.join(', ')) + (x.srcId ? ' · ' + esc(x.srcId) : '') + (x.at ? ' · 접수 ' + esc(x.at) : '') + '</small>'; }
+function lInbox(L) {
+  const w = DATA.inbox || [], bad = DATA.inboxBad || [];
+  let h = lhead('AI 입력대기함', L) + '<div class="ph-body">';
+  h += '<p class="muted">ChatGPT 가 시트 \'' + INBOX_TAB + '\' 탭에 넣은 정리본입니다. 열어서 미리보기 → 성도 확인 → 저장해야 기록이 됩니다. 저장한 뒤 시트를 다시 읽어 확인되면 \'완료\' 로 바뀝니다.</p>';
+  h += '<div class="h-sec">대기<small>' + w.length + '</small></div>' + (w.length ? w.map(x => '<button class="lrow inbox-row" data-act="inboxopen" data-v="' + x.row + '"><span>' + inboxLabel(x) + '</span><span class="cv">' + IC.r + '</span></button>').join('') : '<p class="empty">새로 들어온 것이 없습니다.</p>');
+  if (bad.length) h += '<div class="h-sec">규격 오류<small>' + bad.length + '</small></div><p class="muted">기록으로 넣지 않았습니다. ChatGPT 에 사유를 알려 다시 넣게 해 주세요.</p>' + bad.map(x => '<div class="inbox-bad"><b>' + esc(x.id || '접수ID 없음') + '</b> <small>' + esc(x.at) + '</small><div>' + esc(x.err || '') + '</div></div>').join('');
+  h += '<div class="h-sec">ChatGPT 지시문</div><p class="muted">ChatGPT 에 붙여 넣으면 이 시트의 대기함에 넣도록 안내합니다.' + (saved().trialOn ? ' 지금은 <b>시험 시트</b> 주소가 들어갑니다.' : '') + '</p><button class="send" data-act="guidecopy">지시문 복사</button>';
+  return h + '</div>';
+}
+function copyText(t) {   // 아이폰: 누른 그 자리에서 바로(기다리지 않고) 복사해야 한다
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(() => toast('복사했습니다\nChatGPT 에 붙여 넣으세요'), () => copyFallback(t)); return; } } catch (e) { }
+  copyFallback(t);
+}
+function copyFallback(t) { const a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.cssText = 'position:fixed;top:0;opacity:0'; document.body.appendChild(a); a.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { } a.remove(); toast(ok ? '복사했습니다\nChatGPT 에 붙여 넣으세요' : '복사하지 못했습니다'); }
+async function inboxCancel(L) {
+  if (!confirm('이 줄을 대기함에서 뺄까요?\n시트에는 \'취소\' 로 남고 기록은 만들지 않습니다.')) return;
+  try { await inboxWrite(L.inbox, inboxDoneCells(INBOX_ST.cancel, [], Date.now())); L.dirty = false; closeLayer(true); toast('대기함에서 뺐습니다'); await loadData(true); }
+  catch (e) { toast('빼지 못했습니다\n' + e.message); }
 }
 // 고치기(새 기록 화면)에서 '고친 것 담기' → 미리보기로 돌려준다(시트에는 아직 안 씀)
 function impSlotSave(L) {
@@ -4783,7 +4890,8 @@ function settingsPane(L, t) {
       '<div class="srow"><span class="t">심방 시트</span><button class="v ok" data-act="pick" data-v="sheet">다시 고르기</button><div class="d">' + (sv.trialOn ? '운영 ' + esc(sv.live.sheet ? sv.live.sheet.name : '아직 안 고름') + ' — 시험 중에는 이 기기에서 안 엽니다</div></div>' +
         '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="trialend">시험 끝내기</button><div class="d">' : '') + esc(sv.sheet ? sv.sheet.name : '아직 안 고름') + (DATA.tab ? ' · 탭 ' + esc(DATA.tab.title) : '') + (M() ? ' · 기록 ' + M().visits.length + '줄' : '') + '</div></div>' +
       '<div class="srow"><span class="t">시트 준비</span>' + (DATA.prepared ? '<span class="v ok">준비됨</span>' : '<button class="v ok" data-act="prepare">준비하기</button>') + '<div class="d">' + (DATA.prepared ? '앱 열 · 탭이 있습니다. 앱에서 적고 고칠 수 있습니다.' : '앱에서 적으려면 처음 한 번 필요합니다 — 있던 기록은 건드리지 않습니다.') + '</div></div>' +
-      (sv.trialOn ? (DATA.prepared ? '<div class="srow"><span class="t">새 칸 (vNext)</span>' + (DATA.nx ? '<span class="v ok">더함</span>' : '<button class="v ok" data-act="nxprep">더하기</button>') + '<div class="d">핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 · 모임 · AI 입력대기. 응답 탭 오른쪽 끝에만 더하고 있던 칸은 건드리지 않습니다.</div></div>' : '') :
+      (sv.trialOn ? (DATA.prepared ? '<div class="srow"><span class="t">새 칸 (vNext)</span>' + (DATA.nx ? '<span class="v ok">더함</span>' : '<button class="v ok" data-act="nxprep">더하기</button>') + '<div class="d">핵심 한줄 · 상세 기록 · 장기 관찰 · 우선순위 · 정보 성격 · 모임 · AI 입력대기. 응답 탭 오른쪽 끝에만 더하고 있던 칸은 건드리지 않습니다.</div></div>' : '') +
+          (DATA.nx ? '<div class="srow"><span class="t">ChatGPT 지시문</span><button class="v ok" data-act="guidecopy">복사</button><div class="d">ChatGPT 가 정리본을 이 시트의 \'' + INBOX_TAB + '\' 탭에 넣게 하는 글입니다(지금 연 시트 주소가 들어갑니다).</div></div>' : '') :
         '<div class="srow"><span class="t">시험 시트</span><button class="v ok" data-act="pick" data-v="trial">고르기</button><div class="d">드라이브에서 만든 사본을 <b>이 기기에서만</b> 엽니다. 다른 기기 · 계정 설정은 그대로이고, 시험 중에는 캘린더 · 폼 맞춤 · BLOCK7 보내기가 꺼집니다.</div></div>') +
       '<div class="srow"><span class="t">심방 폼</span><button class="v ok" data-act="pick" data-v="form">다시 고르기</button><div class="d">' + esc(sv.form ? sv.form.name : '아직 안 고름 — 고르면 선택지를 폼과 같은 순서로 보여 줍니다') + (sv.responder ? ' · <a href="' + esc(sv.responder) + '" target="_blank" rel="noopener">폼 열기 ↗</a>' : '') + '</div></div>' +
       '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button></div>';
@@ -4977,7 +5085,7 @@ function loadingHtml(msg, step) {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, inbox: lInbox };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -5160,6 +5268,8 @@ document.addEventListener('click', e => {
   }
   const a = b.dataset.act, v = b.dataset.v, k = b.dataset.k;
   if (impClick(a, v)) return;   // 1112-N 붙여넣어 채우기
+  if (a === 'inboxopen') { const x = (DATA.inbox || []).find(y => String(y.row) === v); if (x) openImp(x.json, { inbox: x }); return; }
+  if (a === 'guidecopy') { copyText(chatgptGuide(saved().sheet.id)); return; }
   if (a === 'impopen') { const L = topLayer(); if (L && L.dirty && !confirm('적던 것을 버리고 붙여넣기로 채울까요?')) return; if (L && L.type === 'edit') S.layers.pop(); openImp(''); setTimeout(() => { const t = document.querySelector('.layer:last-child [data-f="ipaste"]'); if (t) t.focus(); }, 50); return; }
   if (a === 'tab') { goTab(v === 'week' && S.view === 'week' && b.closest('.ph-nav') ? 'month' : v); return; }   // 아래 달력 단추를 한 번 더 누르면 주간 ⇄ 월간 (1109-J 5)
   if (a === 'open') { openLayer('detail', { key: v }); return; }
