@@ -1472,14 +1472,14 @@ async function route(r) {
     eq('㊴ 상세 기록 — 글 속 HTML 은 글자로 · ** 는 굵게', await page.$eval(LN + ' .nx-detail', e => [e.querySelectorAll('b').length, e.textContent.includes('<b>굵게 아님</b>')]), [1, true]);
     await page.click(LN + ' [data-act="meetopen"]'); await page.waitForTimeout(500);
     eq('㊴ 모임 화면 — 제목 · 공통 상세(스크립트는 글자) · 참석 기록 둘', [await page.$eval(LN + ' .dt-name', e => e.textContent), await page.$eval(LN + ' .nx-detail', e => e.querySelectorAll('script').length + '|' + e.textContent.includes('<script>')), await page.$$eval(LN + ' .tl button', x => x.length)], ['6단계 모임 제목', '0|true', 2]);
-    await page.click(LN + ' .tl button:last-child'); await page.waitForTimeout(500);
+    await page.click(LN + ' .tl button:has-text("하노을")'); await page.waitForTimeout(500);
     eq('㊴ 모임 → 참석 성도 기록으로', await page.$eval(LN + ' .nx-core-v b', e => e.textContent), '하노을 핵심 한줄');
-    await page.evaluate(() => { S.layers.length = 0; openLayer('person', { name: '하새벽' }); }); await page.waitForTimeout(500);
+    await page.evaluate(() => { S.layers.length = 0; render(); openLayer('person', { name: '하새벽' }); }); await page.waitForTimeout(500);
     const secs = await page.$$eval(LN + ' .h-sec', x => x.map(e => e.childNodes[0].textContent.trim()));
     eq('㊴ 성도 화면 순서 — 최근 핵심 → (남은 할 일) → 장기 관찰 → 다음 질문 → … → 원본', [secs.indexOf('최근 핵심') === 0, secs.indexOf('장기 관찰') > secs.indexOf('최근 핵심'), secs.indexOf('다음 질문') > secs.indexOf('장기 관찰'), secs[secs.length - 1]], [true, true, true, '원본']);
     eq('㊴ 다음 질문 — 기록의 것(계획은 기록됨이 되어 빠짐)', await page.$$eval(LN + ' .nx-qs li', x => x.map(e => e.childNodes[0].textContent.trim())), ['하새벽 다음 질문?']);
     // 새 기록(손으로)도 같은 날 계획이 있으면 묻는다 — 확인 창은 '예'
-    await page.evaluate(() => { S.layers.length = 0; openEdit(null); const L = topLayer(); L.form.name = '하노을'; L.form.ymd = '2026-11-14'; L.form.text = '손으로 적음'; L.dirty = true; render(); }); await page.waitForTimeout(400);
+    await page.evaluate(() => { S.layers.length = 0; render(); openEdit(null); const L = topLayer(); L.form.name = '하노을'; L.form.ymd = '2026-11-14'; L.form.text = '손으로 적음'; L.dirty = true; render(); }); await page.waitForTimeout(400);
     await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2500);
     const pn2 = PT.rows.find(r => r[0] === 'PN2'), hn = RT.rows.find(r => col(r, '성도 이름') === '하노을' && col(r, '내용') === '손으로 적음');
     eq('㊴ 새 기록 → 같은 날 계획에 이음', [pn2[ph.indexOf('상태')], pn2[ph.indexOf('기록ID')] === col(hn, '기록ID')], ['기록됨', true]);
