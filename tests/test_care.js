@@ -16,6 +16,7 @@
 //  ⑮ (1109-T) 나눈 이야기 주제 칸 — 시트 한 칸 글 ↔ 칸 · 옛 글 · 폼 글은 그대로 메모 · 기록 태그 = 칸 태그 ∪ 직접 고른 것 · 안 바꾸면 칸이 안 바뀐다
 //  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
 //  ⑯ 속성 · 폼 맞추기 — 처음엔 폼 선택지를 탭으로 · 폼에서 새로 → 앱에 · 앱에서 새로 → 폼에 · 폼에서 뺌 → 앱에서 숨김 · 앱에서 숨김 → 폼에서 뺌(상한) · 한 번 맞추면 다시 맞춰도 할 일 없음
+//  ㉟ (1112-M) 한 심방에 여러 이름 — 이름 칸 쉼표 · 셀 표시('이름 셀') · 사람별 내용('◆ 이름' 줄) · 성도 모음 · 제목 · 셀 명단 찾기 · 안 바꾸면 칸이 안 바뀐다
 //  ㉞ (1110-Q) 다음 심방 질문 — 플라우드 붙여넣기 → 체크리스트 · 시트 칸 글 '[ ] / [x]' · 탭 한 줄 = 기록 하나 · BLOCK7 쪽지에 하위 항목(안 물어본 것만)
 //  ⑱ 할 일 → BLOCK7 할일 — 보낼 글은 종류 · 이름뿐 · 쪽지 모양(BLOCK7 받기와 같은 꼴, sec 비움) · 빈 글 · 틀린 날짜는 안 보냄 · 보낸 날은 'BLOCK7 할일' 칸에만
 //  ⑲ 기록도 '심방' 캘린더에 — 2026-10-01 부터 · ✓ 하루 종일 · 계획에서 온 기록은 건너뜀 · 날짜 · 이름은 시트가 이김 · 지운 기록의 일정은 지움(상한 · 우리 표식만 · 시트를 못 읽었으면 안 지움) · 여벌
@@ -45,7 +46,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs };`, ctx);
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
+  groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -690,6 +692,84 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㉞ 쪽지 — 받는 꼴 그대로 + subs', J(n), { id: 'N', from: 'care', date: '2026-11-10', sec: '', text: '가가 심방', at: 1, subs: ['가 질문'] });
   sc.eq('㉞ 하위 항목이 없으면 subs 칸도 없다(예전 쪽지와 같은 꼴)', 'subs' in A.b7Note('a', '2026-11-10', 1, 'N', []), false);
   sc.eq('㉞ 하위 항목도 공백 정리 · 200자 · 30개까지', [A.b7Note('a', '2026-11-10', 1, 'N', ['  가   나 ', '', 'ㄱ'.repeat(300)]).subs.map(x => x.length), A.b7Note('a', '2026-11-10', 1, 'N', Array(40).fill('q')).subs.length], [[3, 200], 30]);
+}
+
+// ㉟ (1112-M) 한 심방에 여러 이름 · 셀 표시 · 사람별 내용 — 시트 모양은 그대로(이름 칸 쉼표 · 내용 칸 '◆ 이름' 줄)
+{
+  // 셀 표시 — '이름 셀'(빈칸 한 칸) · 세 글자 넘는 이름 + 셀. 두 글자 + 셀(사람 이름일 수 있음)은 사람으로
+  sc.eq('㉟ 셀 표시 알아보기 — 빈칸 · 빈칸 여럿 · 붙여 씀(긴 이름) · 짧게 붙여 씀은 사람 · 그냥 이름', J(['가나다 셀', '가나다   셀', '가나다라셀', '가나셀', '가나다', '셀'].map(A.groupCanon)),
+    ['가나다 셀', '가나다 셀', '가나다라 셀', '', '', '']);
+  sc.eq('㉟ 이름 칸 → 사람 · 셀 표시 (쉼표 · 전각 쉼표 · 、, 띄어쓰기만 다른 같은 이름은 하나)', J(A.parseWho(' 가나다 셀, 가나다，라마바、 라 마바 ,사아자')),
+    { names: ['가나다', '라마바', '사아자'], groups: ['가나다 셀'] });
+  sc.eq('㉟ 한 분 · 빈 칸', J([A.parseWho('가나다'), A.parseWho('')]), [{ names: ['가나다'], groups: [] }, { names: [], groups: [] }]);
+  sc.eq('㉟ 이어 붙일 사람 — 사람이 있으면 사람들 · 셀 표시만 있으면 그 표시 · 빈 칸이면 없음', J([A.whoKeys('가나다 셀, 라마바, 사아자'), A.whoKeys('가나다 셀'), A.whoKeys(''), A.whoKeys('가나다')]),
+    [['라마바', '사아자'], ['가나다 셀'], [], ['가나다']]);
+  sc.eq('㉟ 더하기 — 셀 표시는 앞에 · 이미 있는 이름은 건너뜀 · 빼기', [A.whoMerge('라마바', ['가나다 셀', '라 마바', '사아자']), A.whoMerge('', ['가나다']), A.whoRemove('가나다 셀, 라마바, 사아자', '라마바'), A.whoRemove('가나다 셀, 라마바', '가나다셀')],
+    ['가나다 셀, 라마바, 사아자', '가나다', '가나다 셀, 사아자', '라마바']);
+  sc.eq('㉟ 짧은 제목(캘린더 · BLOCK7) — 한 분은 예전 그대로 · 셋까지 · 넘으면 외 N명 · 셀 표시가 있으면 그것만',
+    J(['가나다', '가나다, 라마바', '가나다, 라마바, 사아자', '가나다, 라마바, 사아자, 차카타', '가나다 셀, 라마바, 사아자', ''].map(A.whoShort)),
+    ['가나다', '가나다, 라마바', '가나다, 라마바, 사아자', '가나다, 라마바 외 2명', '가나다 셀', '']);
+  sc.eq('㉟ 캘린더 제목 · BLOCK7 할 일 글도 짧은 제목으로 (한 분이면 예전과 같다)', [A.calTitle('가나다, 라마바, 사아자, 차카타', '심방 · ', ''), A.calTitle('가나다', '', ' 심방'),
+    A.b7Text({ name: '가나다 셀, 라마바' }, { t: '중보', x: '' }), A.qnB7Text({ name: '가나다 셀, 라마바' })],
+    ['심방 · 가나다, 라마바 외 2명', '가나다 심방', '중보 · 가나다 셀', '가나다 셀 심방']);
+
+  // 사람별 내용 — '내용' 칸 글 끝에 '◆ 이름' 줄로 칸을 나눈다
+  const raw = '■ 근황\n성도: 다들 잘 지내요.\n\n◆ 라마바\n이직 준비 중.\n기도 부탁.\n\n◆ 사아자\n허리가 아프다.';
+  const sp = A.splitNotes(raw);
+  sc.eq('㉟ 내용 칸 → 함께 나눈 이야기 + 사람별 (여러 줄 그대로)', J(sp), { main: '■ 근황\n성도: 다들 잘 지내요.', notes: [{ name: '라마바', text: '이직 준비 중.\n기도 부탁.' }, { name: '사아자', text: '허리가 아프다.' }] });
+  sc.eq('㉟ 다시 쓰면 한 글자도 같다', A.joinNotes(sp.main, sp.notes), raw);
+  sc.eq('㉟ ◆ 줄이 없는 옛 글은 그대로 (끝 빈칸까지)', J(A.splitNotes('그냥 글\n둘째 줄 ')), { main: '그냥 글\n둘째 줄 ', notes: [] });
+  sc.eq('㉟ 사람별만 있고 함께 이야기가 없으면 ◆ 부터', A.joinNotes('', [{ name: '라마바', text: '가' }]), '◆ 라마바\n가');
+  sc.eq('㉟ 빈 사람별 칸은 빠지고, 다 비면 예전 글 그대로 · 사람별 글 안의 ◆ 줄은 ◇ 로(다시 읽을 때 칸이 갈라지지 않게)',
+    [A.joinNotes('본문', [{ name: '라마바', text: '  ' }, { name: '', text: 'x' }]), A.joinNotes('본문', [{ name: '라마바', text: '◆ 가\n나' }])], ['본문', '본문\n\n◆ 라마바\n◇ 가\n나']);
+
+  // 읽기 — 줄 → 기록: 이름은 사람마다, 이야기는 함께 몫만(목록 · 미리보기 · 주제 칸이 사람별 글을 섞지 않게)
+  const H = ['Timestamp', '심방 날짜', '성도 이름', '구분', '전화 / 만남', '내용', '태그', '액션', '대화 깊이', '기록ID', '출처', '심방일'];
+  const rows = [H,
+    ['11/10/2026 9:00:00', '11/10', '가나다 셀, 라마바, 사아자', '셀원', '식사', raw, '', '중보', '깊음', 'C1', '앱', '2026-11-10'],
+    ['11/3/2026 9:00:00', '11/3', '라마바', '셀원', '티타임', '지난주 이야기', '', '', '중간', 'C2', '앱', '2026-11-03'],
+    ['11/1/2026 9:00:00', '11/1', '가나다 셀', '', '', '셀 모임', '', '', '', 'C3', '폼', '2026-11-01']];
+  const M = A.buildModel(rows, { cutoff: '2025-01-01' }), v1 = M.visits.find(v => v.id === 'C1');
+  sc.eq('㉟ 기록 — 이름 칸은 그대로 · 사람 · 셀 표시 · 이야기는 함께 몫 · 사람별 따로', J([v1.name, v1.names, v1.groups, v1.who, v1.text, v1.notes.map(n => n.name)]),
+    ['가나다 셀, 라마바, 사아자', ['라마바', '사아자'], ['가나다 셀'], ['라마바', '사아자'], '■ 근황\n성도: 다들 잘 지내요.', ['라마바', '사아자']]);
+  sc.eq('㉟ 성도 모음은 사람 하나하나로 · 셀 표시만 적은 기록은 그 표시로', J(Object.keys(M.people).sort()), ['가나다 셀', '라마바', '사아자']);
+  const PL = A.peopleList(M, M.visits, '2026-11-12', 21), ra = PL.find(p => p.name === '라마바');
+  sc.eq('㉟ 성도 목록 — 라마바는 함께 한 심방 + 혼자 한 심방 둘 다 · 마지막은 함께 한 날', J([ra.visits.map(v => v.id), ra.last, PL.find(p => p.name === '사아자').visits.length]), [['C1', 'C2'], '2026-11-10', 1]);
+  sc.eq('㉟ 찾기 — 사람별 글로도 찾힌다', J(A.filterVisits(M.visits, {}, '', false, '허리').map(v => v.id)), ['C1']);
+  sc.eq('㉟ 최근 이름 — 사람 하나하나 + 셀 표시도 한 알약', J(A.recentNames(M.visits, [])), ['가나다 셀', '라마바', '사아자']);
+  sc.eq('㉟ 미리보기 — 함께 이야기 첫 말 · 없으면 첫 사람별 글', [A.visitPreview(v1), A.visitPreview({ text: '', notes: [{ name: '라마바', text: '\n첫 줄\n둘째' }] })], ['다들 잘 지내요.', '라마바 · 첫 줄']);
+  sc.eq('㉟ 그 분 몫 — 사람별 글이 있으면 그것(띄어쓰기 무시) · 없으면 빈 글', [A.personNote(v1, '사 아자'), A.personNote(v1, '차카타'), A.personNote({ text: 'x' }, '라마바')], ['허리가 아프다.', '', '']);
+
+  // 쓰기 — 고치기 꼴 ↔ 칸
+  const f = A.recordFromVisit(v1);
+  sc.eq('㉟ 고치기 꼴 — 이름 칸 그대로 · 이야기는 함께 몫 · 사람별은 이름 열쇠로', J([f.name, f.text, f.pn]),
+    ['가나다 셀, 라마바, 사아자', '■ 근황\n성도: 다들 잘 지내요.', { '라마바': { name: '라마바', text: '이직 준비 중.\n기도 부탁.' }, '사아자': { name: '사아자', text: '허리가 아프다.' } }]);
+  const hm = A.headerMap(H).map, cur = rows[1].slice();
+  sc.eq('㉟ 안 바꾸고 저장하면 칸이 하나도 안 바뀐다', J(A.editPatch(H, hm, cur, f, 1).cells), []);
+  sc.eq('㉟ 이름 칸 띄어쓰기 · 쉼표 꼴만 다르면 같은 값', J(A.editPatch(H, hm, cur, Object.assign({}, f, { name: '가나다 셀,라마바,  사아자' }), 1).cells), []);
+  const f2 = A.recordFromVisit(v1); f2.name = A.whoMerge(f2.name, ['차카타']); f2.pn['차카타'] = { name: '차카타', text: '처음 오심' }; f2.pn['사아자'].text = '';
+  const p2 = A.editPatch(H, hm, cur, f2, Date.parse('2026-11-12T01:00:00Z')).cells;
+  sc.eq('㉟ 한 분 더 · 한 분 글 지움 → 이름 칸 · 내용 칸만 (빈 사람별 칸은 빠짐 · 차례는 이름 차례)', J(p2.map(c => [c.k, c.value])),
+    [['name', '가나다 셀, 라마바, 사아자, 차카타'], ['text', '■ 근황\n성도: 다들 잘 지내요.\n\n◆ 라마바\n이직 준비 중.\n기도 부탁.\n\n◆ 차카타\n처음 오심']]);
+  const f3 = A.recordFromVisit(v1); f3.name = A.whoRemove(f3.name, '사아자');
+  sc.eq('㉟ 이름을 빼도 그 분 글은 남아 있으면 끝에 그대로 적는다(지우는 것은 화면에서 따로 — 모르게 사라지지 않게)', A.recordCells(f3).text, raw);
+  sc.eq('㉟ 이름 칸 꼴 · 필수 — 셀 표시만으로도 · 이야기 없이 사람별 글만 있어도 통과', J([A.recordCells(Object.assign(A.blankRecord('2026-11-12'), { name: '가나다 셀, 라마바', text: 'x' })).name,
+    A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: '가나다 셀', text: 'x' })),
+    A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: '라마바, 사아자', pn: { '라마바': { name: '라마바', text: '글' } } })),
+    A.validateRecord(Object.assign(A.blankRecord('2026-11-12'), { name: ' , ', text: 'x' }))]),
+    ['가나다 셀, 라마바', [], [], ['성도 이름을 적어 주세요']]);
+  sc.eq('㉟ 새 기록의 빈 꼴에 사람별 칸', J(A.blankRecord('2026-11-12').pn), {});
+  sc.eq('㉟ 계획 → 기록 — 여러 이름 그대로 · 구분은 첫 분 것', J(A.recordFromPlan({ name: '라마바, 사아자', date: '2026-11-12', method: '', place: '' }, M.people)).roles, ['셀원']);
+
+  // 셀 명단 — '가나다 셀' 로 찾기 (셀 이름 · 셀리더 이름 · 띄어쓰기 · 끝 '셀' 무시) · 못 찾으면 지난 그 셀 심방 명단
+  const G = [{ name: '가나다셀', leaders: ['가나다'], members: ['라마바', '사아자'] }, { name: '하늘셀', leaders: ['차카타'], members: ['파하'] }, { name: '두리셀', leaders: ['자차'], members: [] }];
+  sc.eq('㉟ 셀 찾기 — 셀 이름으로 · 셀리더 이름으로 · 셀 표시가 아니면 · 모르는 셀', J([A.cellFind(G, '가나다 셀'), A.cellFind(G, '차카타 셀') && A.cellFind(G, '차카타 셀').name, A.cellFind(G, '가나다'), A.cellFind(G, '없는 셀')]),
+    [G[0], '하늘셀', null, null]);
+  sc.eq('㉟ 셀 이름과 셀리더가 다른 셀로 갈리면 셀 이름 쪽', A.cellFind([{ name: '자차셀', leaders: ['가'], members: [] }, { name: '다른셀', leaders: ['자차'], members: [] }], '자차 셀').name, '자차셀');
+  sc.eq('㉟ 셀 사람 — 셀리더 먼저 · 겹침 없이', J(A.cellPeople({ leaders: ['가나다'], members: ['라마바', '가 나다'] })), ['가나다', '라마바']);
+  sc.eq('㉟ 지난 그 셀 심방 명단 — 가장 최근 것 · 사람 없는 기록은 건너뜀 · 없으면 빈 목록',
+    J([A.groupFromHistory(M.visits.concat([{ name: '가나다 셀, 차카타', ymd: '2026-10-01', names: ['차카타'], groups: ['가나다 셀'] }]), '가나다셀'), A.groupFromHistory(M.visits, '하늘 셀')]),
+    [['라마바', '사아자'], []]);
 }
 
 sc.done();
