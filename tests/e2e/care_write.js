@@ -1292,6 +1292,7 @@ async function route(r) {
       [1, '가미정 핵심 한줄', ['전해 들음'], ['false', 'false']]);
     const issues = await page.$$eval(LN + ' .imp-attr > div:first-child', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     eq('㊲ 속성에 없는 값 — 구분 부산 · 태그 돌봄 · 사역 · 할 일 종류 연락', issues, ['구분 · 부산 가미정', '태그 · 돌봄 가미정', '태그 · 사역 가미정', '액션 · 연락 가미정']);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/imp-review.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.click(LN + ' [data-act="implink"]'); await tidy();
     eq('㊲ 속성을 다 고르기 전엔 다음으로 안 간다', await page.$$eval(LN + ' .imp-attr', x => x.length), 4);
     const pickAttr = async (val, mode, to) => { const ix = await page.evaluate(v => topLayer().issues.findIndex(x => x.val === v && !x.done), val); if (ix < 0) { eq('㊲ (시험 자료) 속성에 없는 값이어야 함: ' + val, false, true); return; } await page.click(LN + ' [data-act="impattr"][data-v="' + ix + '|' + mode + '|' + (to || '') + '"]'); await page.waitForTimeout(150); };
@@ -1315,10 +1316,14 @@ async function route(r) {
     await page.click(LN + ' .lk-row[data-lk="m0"] [data-act="lkfix"]'); await page.waitForTimeout(200);
     await page.fill(LN + ' [data-f="lkq"]', '김윤'); await page.waitForTimeout(150);
     eq('㊲ 이름 고치기 — 새 기록 이름 칸과 같은 명단 · 없으면 새 성도', await page.$$eval(LN + ' #lkSugg button', x => x.map(e => e.textContent)), ['김윤정 기도노트', '새 성도로 추가: 김윤']);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/imp-fix.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.click(LN + ' #lkSugg button[data-v="m0|김윤정"]'); await tidy();
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/imp-link.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    
     await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(3000);
     eq('㊲ 저장 — 단계마다 ✓ · 다시 읽어 확인', await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', '') + ':' + e.querySelector('span:last-child').firstChild.textContent.split(' — ')[0].trim())),
       ['ok:\'속성\' 에 새 선택지 3개', 'ok:\'성도\' 탭에 새 성도 가미정', 'ok:가미정', 'ok:가미정', 'ok:시트를 다시 읽어 확인']);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/imp-done.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     const g = RT.rows.filter(r => col(r, '성도 이름') === '가미정');
     eq('㊲ 가미정 — 개인 기록 한 줄 · 출처 AI · 정보 성격 전언 · 내용 칸은 짧은 메모 · 원본ID · 언급된 성도(연결만)', g.map(r => [col(r, '출처'), !!col(r, '확인'), col(r, '정보 성격'), col(r, '핵심 한줄'), col(r, '내용'), col(r, '원본ID'), col(r, '언급된 성도'), col(r, '모임ID') || '', col(r, '구분'), col(r, '태그')]),
       [['AI', true, '전언', '봉사 오해가 배움으로 이어졌다는 소식', '가미정 짧은 메모', 'f_e2e_call', '김윤정, 차형만', '', '부산', '돌봄, 교회']]);
