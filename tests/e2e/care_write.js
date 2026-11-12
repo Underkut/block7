@@ -37,6 +37,7 @@
 //  ㊱ (1112-N) 시험 시트(이 기기만 · 캘린더 · BLOCK7 꺼짐) · 새 칸 더하기(오른쪽 끝 · 액션 K · 새 탭 둘) · 핵심 한줄 · 상세 기록 · 우선순위 · 정보 성격 · 장기 관찰 · 다음 질문(탭) · 이름 후보에 기도노트
 //  ㊲ (1112-N 2·3·4) 붙여넣어 채우기 — JSON(통화 · 셀모임) · 규격 오류 · 속성 대조 · 성도 연결(후보 여럿 · 이름 고치기 · 새 성도) · 언급만 · 할 일 체크 → 액션 탭 · 미채택은 상세 기록 끝 · 모임 탭 · 중복(원본ID · 해시 · 갱신) · Markdown · 저장 중 끊김 → 다시 시도
 //  ㊳ (1112-N 5) AI 입력대기함 — 탭에 넣은 줄 → 첫 화면 'N건' · 규격 오류는 '오류' + 사유 · 접수ID 붙임 · 열기 → 같은 미리보기 · 저장 → 다시 읽어 확인 뒤 '완료' + 기록ID · 빼기 → '취소' · ChatGPT 지시문 복사
+//  ㊴ (1112-N 6) 화면 — 카드 첫 줄 핵심 한줄 · 우선순위 · 전해 들음 · 남은 할 일 · 모임 ↔ 참석 기록 · 성도 화면 순서 · 같은 날 계획 잇기(가져오기 · 새 기록) · 상세 기록 안전하게(HTML 은 글자로)
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -1235,7 +1236,7 @@ async function route(r) {
     eq('㊱ 열람 — 우선순위 · 전해 들음 · 핵심 한줄 · 상세 기록(접힘) · 장기 관찰', [await page.$eval(LN + ' .nx-core-v', e => e.textContent), await page.$$eval(LN + ' .nx-detail', x => x.length), await page.$$eval(LN + ' [data-act="detv"]', x => x.length)],
       ['이번주전해 들음수술 앞두고 불안하심', 0, 1]);
     await page.click(LN + ' [data-act="detv"]'); await page.waitForTimeout(200);
-    eq('㊱ 상세 기록 펴기 — 글 그대로(꾸밈 없이 안전하게)', await page.$eval(LN + ' .nx-detail', e => e.textContent), '## 상황\n- 다음 주 수술\n\n## 기도\n- 평안');
+    eq('㊱ 상세 기록 펴기 — Markdown 을 안전하게 꾸며서(제목 · 목록)', await page.$eval(LN + ' .nx-detail', e => e.innerHTML), '<div class="md-h">상황</div><ul><li>다음 주 수술</li></ul><div class="md-h">기도</div><ul><li>평안</li></ul>');
     // 고치기 — 안 바꾸면 그대로 · 다음 질문만 바꾸면 탭만
     const snap = JSON.stringify(RT.rows), qsnap = JSON.stringify(qt.rows);
     await page.click(LN + ' [data-act="edit"]'); await tidy();
@@ -1436,6 +1437,53 @@ async function route(r) {
     eq('㊳ 같은 녹음 다시 → 이미 있는 기록(원본ID)', await page.$$eval(LN + ' .imp-dup b', x => x.map(e => e.textContent)), ['이미 있는 기록 (원본ID)']);
     await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(1500);
     eq('㊳ 저장할 것이 없으면 대기함 줄을 \'취소\' 로(묻고)', [QT.rows.find(r => r[0] === 'Q9')[4], RT.rows.filter(r => col(r, '성도 이름') === '바대기').length], ['취소', 1]);
+  }
+
+  // ㊴ (1112-N 6) 화면 정리 — 이름 · 내용은 지어낸 것
+  {
+    const LN = '.layer:last-child', RT = tab('Form Responses 1'), PT = tab('계획'), col = (r, n) => r[RT.rows[0].indexOf(n)];
+    await page.evaluate(() => { S.layers.length = 0; render(); });
+    const ph = PT.rows[0].map(x => String(x).trim()), prow = o => ph.map(k => o[k] || '');
+    PT.rows.push(prow({ '계획ID': 'PN1', '성도': '하새벽', '날짜': '2026-11-13', '물어볼 것': '1. 이사 날짜는?', '상태': '예정', '캘린더 일정ID': '없음' }));
+    PT.rows.push(prow({ '계획ID': 'PN2', '성도': '하노을', '날짜': '2026-11-14', '상태': '예정', '캘린더 일정ID': '없음' }));
+    await reload();
+    const rec = (name, x) => Object.assign({ person_name: name, person_confirmed: true, speaker_label: null, category: null, contact_method: '전화', depth: '깊음', summary_line: name + ' 핵심 한줄', brief_note: name + ' 짧은 메모',
+      detailed_note_markdown: '### 경과\n- 첫째 <b>굵게 아님</b>\n**정말 굵게**', priority: '긴급', long_term_watch: name + ' 오래 볼 것', information_basis: '전언', tags: [], next_questions: [name + ' 다음 질문?'], actions: [] }, x || {});
+    const P4 = { schema_version: 'hb-care.v1', source: { kind: 'plaud', source_id: 'f_e2e_g6', source_url: null, title: '6단계 모임', recorded_at: null, duration_ms: null },
+      event: { kind: 'group', date: '2026-11-13', title: '6단계 모임 제목', group_summary: '함께 나눔', details_markdown: '## 공통\n- 기도 <script>x</script>', location: null },
+      records: [rec('하새벽'), rec('하노을', { information_basis: '직접', priority: '일반' })], unknown_speakers: [] };
+    await page.evaluate(() => openEdit(null)); await page.waitForTimeout(500);
+    await page.click(LN + ' [data-act="impopen"]'); await page.waitForTimeout(500);
+    await page.fill(LN + ' [data-f="ipaste"]', JSON.stringify(P4)); await page.click(LN + ' [data-act="impgo"]'); await page.waitForTimeout(500);
+    await page.click(LN + ' [data-act="implink"]'); await page.waitForTimeout(500);
+    eq('㊴ 같은 날 계획 — 하새벽 11/13 계획에 이을지 묻는다(하노을은 날이 달라 안 물음)', await page.$$eval(LN + ' .imp-plan b', x => x.length), 1);
+    await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(300);
+    eq('㊴ 답하기 전엔 저장 안 됨', await page.$eval('.toast', e => e.textContent), '같은 날 계획에 이을지 골라 주세요');
+    await page.click(LN + ' [data-act="impplan"][data-v="0|PN1"]'); await page.waitForTimeout(200);
+    await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(3500);
+    const hs = RT.rows.find(r => col(r, '성도 이름') === '하새벽'), pn1 = PT.rows.find(r => r[0] === 'PN1');
+    eq('㊴ 저장 뒤 계획 — 기록됨 · 기록ID', [pn1[ph.indexOf('상태')], pn1[ph.indexOf('기록ID')] === col(hs, '기록ID')], ['기록됨', true]);
+    await page.evaluate(() => { S.layers.length = 0; render(); }); await page.waitForTimeout(400);
+    const cardTxt = await page.evaluate(id => { const v = M().visits.find(x => x.id === id), b = document.querySelector('.card[data-v="' + v.key + '"]'); return b ? [b.querySelector('.c-core').textContent, [...b.querySelectorAll('.c-top .nx-prio, .c-top .nx-heard')].map(e => e.textContent)] : null; }, col(hs, '기록ID'));
+    eq('㊴ 목록 카드 — 첫 줄 핵심 한줄 · 긴급 · 전해 들음', cardTxt, ['하새벽 핵심 한줄', ['긴급', '전해 들음']]);
+    const kHs = await page.evaluate(id => M().visits.find(x => x.id === id).key, col(hs, '기록ID'));
+    await page.evaluate(k => openLayer('detail', { key: k }), kHs); await page.waitForTimeout(500);
+    await page.click(LN + ' [data-act="detv"]'); await page.waitForTimeout(200);
+    eq('㊴ 상세 기록 — 글 속 HTML 은 글자로 · ** 는 굵게', await page.$eval(LN + ' .nx-detail', e => [e.querySelectorAll('b').length, e.textContent.includes('<b>굵게 아님</b>')]), [1, true]);
+    await page.click(LN + ' [data-act="meetopen"]'); await page.waitForTimeout(500);
+    eq('㊴ 모임 화면 — 제목 · 공통 상세(스크립트는 글자) · 참석 기록 둘', [await page.$eval(LN + ' .dt-name', e => e.textContent), await page.$eval(LN + ' .nx-detail', e => e.querySelectorAll('script').length + '|' + e.textContent.includes('<script>')), await page.$$eval(LN + ' .tl button', x => x.length)], ['6단계 모임 제목', '0|true', 2]);
+    await page.click(LN + ' .tl button:has-text("하노을")'); await page.waitForTimeout(500);
+    eq('㊴ 모임 → 참석 성도 기록으로', await page.$eval(LN + ' .nx-core-v b', e => e.textContent), '하노을 핵심 한줄');
+    await page.evaluate(() => { S.layers.length = 0; render(); openLayer('person', { name: '하새벽' }); }); await page.waitForTimeout(500);
+    const secs = await page.$$eval(LN + ' .h-sec', x => x.map(e => e.childNodes[0].textContent.trim()));
+    eq('㊴ 성도 화면 순서 — 최근 핵심 → (남은 할 일) → 장기 관찰 → 다음 질문 → … → 원본', [secs.indexOf('최근 핵심') === 0, secs.indexOf('장기 관찰') > secs.indexOf('최근 핵심'), secs.indexOf('다음 질문') > secs.indexOf('장기 관찰'), secs[secs.length - 1]], [true, true, true, '원본']);
+    eq('㊴ 다음 질문 — 기록의 것(계획은 기록됨이 되어 빠짐)', await page.$$eval(LN + ' .nx-qs li', x => x.map(e => e.childNodes[0].textContent.trim())), ['하새벽 다음 질문?']);
+    // 새 기록(손으로)도 같은 날 계획이 있으면 묻는다 — 확인 창은 '예'
+    await page.evaluate(() => { S.layers.length = 0; render(); openEdit(null); const L = topLayer(); L.form.name = '하노을'; L.form.ymd = '2026-11-14'; L.form.text = '손으로 적음'; L.dirty = true; render(); }); await page.waitForTimeout(400);
+    await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2500);
+    const pn2 = PT.rows.find(r => r[0] === 'PN2'), hn = RT.rows.find(r => col(r, '성도 이름') === '하노을' && col(r, '내용') === '손으로 적음');
+    eq('㊴ 새 기록 → 같은 날 계획에 이음', [pn2[ph.indexOf('상태')], pn2[ph.indexOf('기록ID')] === col(hn, '기록ID')], ['기록됨', true]);
+    await page.evaluate(() => { S.layers.length = 0; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
