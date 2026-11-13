@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1113-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1113-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -707,7 +707,8 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
 .inbox-bar.quiet{background:var(--s1);color:var(--tx2)}
 .inbox-bar small{font-size:11px;color:var(--warn)}.inbox-bar .cv{margin-left:auto;display:flex}
 .inbox-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left}.inbox-row small{display:block;font-size:11px;color:var(--tx3)}.inbox-row .cv{margin-left:auto;display:flex}
-.inbox-bad{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:12px}.inbox-bad div{color:var(--warn);margin-top:4px;word-break:break-all}
+.inbox-bad{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}.inbox-bad small{color:var(--tx3)}.inbox-bad .send{margin-left:auto}.inbox-bad div{flex-basis:100%;color:var(--warn);word-break:break-all}
+.send svg,.srow .v svg{width:14px;height:14px;vertical-align:-2px;margin-right:4px}
 .imp-how{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px;font-size:13px}.imp-how ol{margin:6px 0 10px 18px;padding:0;line-height:1.7}.imp-how .send{display:inline-flex;align-items:center;gap:6px}.imp-how .send svg{width:14px;height:14px}
 .inbox-row b{font-weight:500}
 .imp-paste{min-height:240px;font-size:13px;font-family:ui-monospace,Menlo,monospace;line-height:1.5}
@@ -768,7 +769,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1113-2';
+const APP_VERSION = 'v. 26-1113-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1743,7 +1744,13 @@ function inboxCheck(items, nowMs, max) {
     else { const p = r.packet; waiting.push(Object.assign({}, it, { id, packet: p, title: norm(p.source.title) || norm(p.event.title), date: p.event.date, names: p.records.map(x => pkCleanName(x.person_name)), srcId: it.srcId || norm(p.source.source_id || '') })); }
     if (Object.keys(cells).length && patches.length < lim) patches.push({ row: it.row, id, cells });
   });
-  return { patches, waiting, bad };
+  // 같은 녹음을 고쳐 다시 보냈으면(대기 줄의 원본ID 와 같은 오류 줄) 옛 오류 줄은 '취소' 로 치운다 — 사람이 시트에 들어갈 일이 없게
+  const live = new Set(waiting.map(w => w.srcId).filter(Boolean)), keep = [];
+  bad.forEach(b => {
+    if (b.srcId && live.has(b.srcId) && patches.length < lim) { patches.push({ row: b.row, id: b.id, cells: { '상태': INBOX_ST.cancel, '오류': (b.err || '') + ' → 고쳐서 다시 보냄', '처리시각': stamp } }); return; }
+    keep.push(b);
+  });
+  return { patches, waiting, bad: keep };
 }
 // 쓰기 직전 그 줄 다시 찾기 — 접수ID 로(둘이면 쓰지 않음). 접수ID 가 없던 줄은 패킷 글이 같은 줄 하나일 때만
 function inboxFind(values, item) {
@@ -4938,7 +4945,7 @@ function lInbox(L) {
   let h = lhead('AI 입력대기함', L) + '<div class="ph-body">';
   h += '<p class="muted">ChatGPT 가 보내 둔 기록입니다. 하나를 열어 내용을 보고 → 어느 분 기록인지 확인하고 → 저장하면 심방 기록이 됩니다.</p>';
   h += '<div class="h-sec">대기<small>' + w.length + '</small></div>' + (w.length ? w.map(x => '<button class="lrow inbox-row" data-act="inboxopen" data-v="' + x.row + '"><span>' + inboxLabel(x) + '</span><span class="cv">' + IC.r + '</span></button>').join('') : '<p class="empty">새로 들어온 것이 없습니다.</p>');
-  if (bad.length) h += '<div class="h-sec">읽지 못한 것<small>' + bad.length + '</small></div><p class="muted">꼴이 맞지 않아 기록으로 넣지 않았습니다. 아래 사유를 ChatGPT 에 그대로 보여 주고 다시 보내게 하세요.</p>' + bad.map(x => '<div class="inbox-bad"><b>' + esc(x.id || '접수ID 없음') + '</b> <small>' + esc(x.at) + '</small><div>' + esc(x.err || '') + '</div></div>').join('');
+  if (bad.length) h += '<div class="h-sec">읽지 못한 것<small>' + bad.length + '</small></div><p class="muted">꼴이 맞지 않아 기록으로 넣지 않았습니다. 아래 사유를 ChatGPT 에 그대로 보여 주고 다시 보내게 하세요.</p>' + bad.map(x => '<div class="inbox-bad"><small>' + esc(x.at) + '</small><button class="send" data-act="inboxdrop" data-v="' + x.row + '">치우기</button><div>' + esc(x.err || '') + '</div></div>').join('');
   h += '<div class="h-sec">ChatGPT 에 줄 지시문</div><p class="muted">ChatGPT 에 붙여 넣으면 정리한 기록을 이 대기함에 넣어 줍니다.' + (saved().trialOn ? ' 지금은 <b>시험 시트</b> 주소가 들어갑니다.' : '') + '</p><button class="send" data-act="guidecopy">' + IC.paste + ' 지시문 복사</button>';
   return h + '</div>';
 }
@@ -5385,6 +5392,7 @@ document.addEventListener('click', e => {
   }
   const a = b.dataset.act, v = b.dataset.v, k = b.dataset.k;
   if (impClick(a, v)) return;   // 1112-N 붙여넣어 채우기
+  if (a === 'inboxdrop') { const x = (DATA.inboxBad || []).find(y => String(y.row) === v); if (x) busy(async () => { try { await inboxWrite(x, inboxDoneCells(INBOX_ST.cancel, [], Date.now(), (x.err || '') + ' → 치움')); toast('치웠습니다\n시트에는 \'취소\' 로 남습니다'); await loadData(true); } catch (e) { toast('치우지 못했습니다\n' + e.message); } }); return; }
   if (a === 'inboxopen') { const x = (DATA.inbox || []).find(y => String(y.row) === v); if (x) openImp(x.json, { inbox: x }); return; }
   if (a === 'guidecopy') { copyText(chatgptGuide(saved().sheet.id, v === 'paste' ? 'paste' : '')); return; }
   if (a === 'meetopen') { openLayer('meet', { id: v }); return; }
