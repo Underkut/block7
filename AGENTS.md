@@ -142,7 +142,8 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   사람별 내용은 '내용' 칸 글 끝에 `◆ 이름` 줄로 나눈다. `rowToVisit` 이 `v.names` · `v.groups` · `v.notes` 로 나눠 주고 `v.text` 는 함께 나눈 몫만이다.
   셀 인사이드(`linkVisits`) · 기도노트(`careOf`)는 `v.names` 하나하나로 맞춘다 — 이 꼴(칸 이름 · ◆ 표시)을 바꾸면 세 앱이 함께 깨진다 (`test_care` ㉟ · `test_cell` ⑯ · `test_pray` A4).
 - **'셀' 단추(1109-E3)**: 셀 inside가 이 브라우저에 둔 셀 케어 로그인을 **읽기만** 해 내 분파셀 · 셀원 명단을 보여 준다. 부르는 것은 읽기 넷뿐(`test_care` ㉗).
-  ⚠️ 갱신 열쇠(refresh_token)를 쓰지 말 것 — 두 앱이 같은 열쇠를 돌려 쓰면 셀 케어가 둘 다 끊는다. 만료면 셀 inside를 열게 한다. 명단은 화면 메모리에만.
+  ⚠️ 갱신 열쇠(refresh_token)를 쓰지 말 것 — 두 앱이 같은 열쇠를 돌려 쓰면 셀 케어가 둘 다 끊는다.
+  로그인이 없거나 만료면 셀 inside 가 계정에 맞춰 둔 명단(`cellbook/{uid}` 의 `roster`, 아래 셀 inside '예외 셋')을 **읽기만** 한다 — 그것도 없으면 셀 inside 를 열게 한다 (`test_care` ㊶ · e2e ㊶).
 - **vNext(1112-N) · 대기함 알림(1113-P)**: ChatGPT 가 정리한 것을 받는 길(붙여넣기 · 시트 'AI 입력대기' 탭)과 화면은 `docs/care/vnext-1112.md`, ChatGPT 쪽 약속은 `docs/care/gpt-project-guide.md` — 규격(`hb-care.v1`) · 열 · 상태값을 바꾸면 둘을 함께 고친다.
   알림 서버 `wallet-functions/src/carepush.js` 는 대기함 탭을 **읽기만** 하고 이름 · 건수만 알린다. 기기 등록은 서버만 쓰는 `carepush/{uid}` 에 — 내용을 두지 말 것(`test_carepush` ① ④). 순서는 `docs/care/push-setup.md`.
   기도노트로 가는 것은 **이름만 든 쪽지**(`pray/{uid}/c/inbox`, kind `person`)뿐이다.
@@ -163,6 +164,9 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   **예외 둘: AI 요약**(HB 결정 11/7) — 제미나이 열쇠와 한 번 만든 요약을 **`cellbook/{uid}` 의 `ai` 칸**(기기끼리 맞춤, 400개 상한)과
   이 기기 사본(`cell_ai_key` · `cell_ai_sum`)에. 계정이 기준(`aiSync`). 저장소 · `users/{uid}` 에는 두지 말 것.
   바깥으로 보낼 땐 아는 이름을 `anonText` 로 '셀원 A' 로 바꿔 보낸다(`test_cell` ⑱).
+  **예외 셋: 셀 명단**(HB 결정 11/13, 1113-D H2) — 이번 주 내 분파셀의 셀 이름 · 리더 · 셀원 **이름만** `cellbook/{uid}` 의 `roster` 칸에(심방 노트가 셀 케어 로그인 없이 쓰게).
+  셀 inside 가 화면을 그리려고 **이미 받은** 명단으로, 지난번과 **다를 때만** 쓴다(`rosterSync`). 이것 때문에 셀 케어에 더 묻지 말 것.
+  모양 · 저장 판단(빈 명단 · 같은 명단 · 절반 넘게 줄어든 명단은 안 씀)은 심방 노트 `care-core` 의 `rosterCheck` 한 곳 — 셀 inside 는 `careCore()` 로 불러 쓴다 (`test_cell` ⑲ · `test_care` ㊶).
   **새 코멘트 알림(L4, HB 동의 11/7)**: 서버 `wallet-functions/src/cellpush.js` 가 10분마다 셀 케어를 **읽기만**(읽기 함수 셋 · `test_cellpush` ①).
   서버 몫 셀 케어 로그인을 **따로** 만들어 `cellpush/{uid}`(보안 규칙에 없음 = 서버만)에 맡긴다 — 앱 열쇠를 넘기면 셀 케어가 둘 다 끊는다.
   알림에 코멘트 **내용을 싣지 말 것**(누가 · 어느 셀만). 앱 로그아웃은 `scope: 'local'` 을 지킬 것. 순서 · 까닭은 `docs/cell/push-setup.md`.

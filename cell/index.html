@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1113-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1113-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -401,7 +401,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 inside — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1113-1';
+const APP_VERSION = 'v. 26-1113-2';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1215,7 +1215,7 @@ async function loadBase() {
   if (DEMO && !CARE.visits) careDemo();
   S.det.clear(); S.rosters.clear(); S.people = null; S.loadedSpan = 0; S.weekIdx = 0;
   renderShell();
-  loadDetails(Math.max(PREF.span, 4)).then(() => { refreshBadge(); rerender(); }).then(() => loadPeople()).then(() => { if (['week', 'care'].includes(PREF.tab)) rerender(); }).catch(() => {});
+  loadDetails(Math.max(PREF.span, 4)).then(() => { refreshBadge(); rerender(); }).then(() => { rosterSync(); return loadPeople(); }).then(() => { if (['week', 'care'].includes(PREF.tab)) rerender(); }).catch(() => {});
 }
 
 // 보고서 내용 — 고른 기간(주 수)만큼. 이미 받은 보고서는 다시 받지 않는다.
@@ -2468,9 +2468,9 @@ async function fbInit() {
     FB.auth.onAuthStateChanged(u => {
       FB.user = u; FB.ready = true;
       if (FB.unsub) { FB.unsub(); FB.unsub = null; }
-      if (u) { setTimeout(() => careLoad(), 300); lsSet('cell_fb', 1); FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => { try { aiFromCloud(d.exists ? d.data().ai : null); } catch (_) { } BOOK.phones = (d.exists && d.data().phones) || {}; BOOK.loaded = true; BOOK.err = ''; phoneUi(); },
+      if (u) { setTimeout(() => careLoad(), 300); lsSet('cell_fb', 1); FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => { try { aiFromCloud(d.exists ? d.data().ai : null); } catch (_) { } BOOK.phones = (d.exists && d.data().phones) || {}; BOOK.roster = (d.exists && d.data().roster) || null; BOOK.rosterRead = true; if (ROSTER.pending) rosterSync(); BOOK.loaded = true; BOOK.err = ''; phoneUi(); },
         e => { AI.loaded = true; AI.cloudErr = (e && e.code === 'permission-denied') ? '서버 권한이 없습니다' : ((e && (e.code || e.message)) || '계정을 읽지 못했습니다'); aiAcctUi(); BOOK.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 주세요 (docs/cell/firestore-rules.md).' : '번호를 불러오지 못했습니다. ' + (e && e.message || ''); phoneUi(); }); }
-      else { BOOK.phones = {}; BOOK.loaded = false; AI.cloud = null; AI.cloudErr = ''; AI.loaded = false; }
+      else { BOOK.phones = {}; BOOK.loaded = false; BOOK.roster = null; BOOK.rosterRead = false; AI.cloud = null; AI.cloudErr = ''; AI.loaded = false; }
       phoneUi(); aiAcctUi();
     });
   })();
@@ -2506,6 +2506,27 @@ function setPhones(changes) {
   });
   return true;
 }
+/* ---------- H2 셀 명단을 계정에 (1113-D, HB 결정 ② · 11/13) ----------
+   이 앱이 **이미 읽은** 이번 주 내 분파셀 · 셀원 명단을 HB 계정 cellbook/{uid} 의 roster 칸에 둔다 — 지난번 것과 다를 때만.
+   심방 노트는 셀 케어 로그인이 없거나 만료일 때 이 사본을 쓴다(그래서 심방 노트 때문에 이 앱을 다시 열 일이 줄어든다).
+   ⚠️ 이것 때문에 셀 케어에 더 묻지 않는다 — 명단은 화면을 그리려고 이미 받은 것(S.members)이다.
+   모양 · 저장할지(빈 명단 · 같은 명단 · 절반 넘게 줄어든 명단은 안 씀)는 심방 노트 care-core 의 규칙 하나로 정한다. */
+const ROSTER = { pending: false, busy: false, why: '', at: 0 };
+async function rosterSync() {
+  if (DEMO || !S.ctx || !S.mineIds) return;
+  if (!FB.user || !FB.db || !BOOK.rosterRead) { ROSTER.pending = true; return; }   // 로그인 · 계정 문서가 오면 다시
+  if (ROSTER.busy) return; ROSTER.pending = false; ROSTER.busy = true;
+  try {
+    const core = await careCore(); if (!core.cellGroups || !core.rosterCheck) return;
+    await ensureMembers(S.mineIds);
+    const rows = (S.byWeek.get(S.weeks[0]) || []).filter(r => S.mineIds.includes(r.cell_id));
+    const groups = core.cellGroups(rows, [...S.members.values()]), ck = core.rosterCheck(BOOK.roster, groups);
+    ROSTER.why = ck.why; if (!ck.save) return;
+    const roster = { groups: core.rosterClean(groups), at: Date.now(), v: APP_VERSION };
+    await FB.db.collection('cellbook').doc(FB.user.uid).set({ roster }, { merge: true });
+    BOOK.roster = roster; ROSTER.at = roster.at;
+  } catch (e) { ROSTER.why = 'err'; } finally { ROSTER.busy = false; }
+}
 /* ---------- J 심방 노트와 잇기 (읽기만) ----------
    심방 노트(sweeter.my/care/)가 고른 시트를 같은 구글 열쇠로 읽는다. 고른 시트 id 는 심방 노트가 계정 문서
    users/{uid}/data/care 에 둔 것을 **읽기만** 한다(쓰지 않음). 시트 읽기 규칙은 심방 노트의 care-core 를 그대로 불러 쓴다 —
@@ -2518,7 +2539,7 @@ async function careCore() {
   const html = await (await fetch('/care/?nc=' + Date.now(), { cache: 'no-store' })).text();
   const m = html.match(/<script id="care-core">([\s\S]*?)<\/script>/);
   if (!m) throw new Error('심방 노트의 읽기 규칙을 찾지 못했습니다');
-  careCore.c = new Function(m[1] + '\n;return { buildModel, findResponsesTab, parseAttend: typeof parseAttend === \'function\' ? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \'function\' ? prayMarkIndex : null, prayJoin: typeof prayJoin === \'function\' ? prayJoin : null };')();
+  careCore.c = new Function(m[1] + '\n;return { buildModel, findResponsesTab, parseAttend: typeof parseAttend === \'function\' ? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \'function\' ? prayMarkIndex : null, prayJoin: typeof prayJoin === \'function\' ? prayJoin : null, cellGroups: typeof cellGroups === \'function\' ? cellGroups : null, rosterCheck: typeof rosterCheck === \'function\' ? rosterCheck : null, rosterClean: typeof rosterClean === \'function\' ? rosterClean : null };')();
   return careCore.c;
 }
 async function careFn(path) {

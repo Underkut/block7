@@ -54,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
-  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, kstOf, inboxRecAt, clockOf };`, ctx);
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -1042,6 +1042,26 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const rows = [H, ['2026-11-13 20:00', '2026-11-13', '가나다', '나중에 입력 · 녹음은 아침', 'f1'], ['2026-11-13 15:00', '2026-11-13', '라마바', '녹음 없음 15시 입력', ''], ['2026-11-13 21:00', '2026-11-13', '사아자', '녹음 오후 2시', 'f2'], ['2026-11-12 09:00', '2026-11-12', '차카타', '어제', '']];
   const mm = A.buildModel(rows, { cutoff: '', recAt: A.inboxRecAt(items) });
   sc.eq('㊵ 같은 날은 녹음 시각(없으면 입력 시각) 늦은 것이 위 · 날짜가 먼저', mm.visits.map(v => v.name + ' ' + v.clock), ['라마바 15:00', '사아자 14:00', '가나다 09:10', '차카타 09:00']);
+}
+
+// ㊶ 1113-D H2 셀 명단 계정 사본 — 이름은 지어낸 것
+{
+  const rows = [{ cell_id: 'c1', cell_name: '하늘셀', leader_names: '가리더', i_am_leader: true }, { cell_id: 'c2', cell_name: '나무셀', leader_names: '나리더' }];
+  const mem = [{ cell_id: 'c1', name: '셀원하나' }, { cell_id: 'c1', name: '셀원둘' }, { cell_id: 'c1', name: '가리더' }, { cell_id: 'c2', name: '셀원셋' }, { cell_id: 'c2', name: '쉬는분', active: false }];
+  const G = A.cellGroups(rows, mem);
+  sc.eq('㊶ 명단 꼴 — cellGroups 그대로 · 이름 · 셀 이름만', J(A.rosterClean(G)), [{ id: 'c1', name: '하늘셀', leader: '가리더', leaders: ['가리더'], lead: true, members: ['셀원둘', '셀원하나'] }, { id: 'c2', name: '나무셀', leader: '나리더', leaders: ['나리더'], lead: false, members: ['셀원셋'] }]);
+  sc.eq('㊶ 사람 수(리더 포함, 겹치면 하나)', A.rosterCount(G), 5);
+  sc.eq('㊶ 처음 → 저장 · 같은 명단 → 안 씀 · 빈 명단 → 안 씀', J([A.rosterCheck(null, G), A.rosterCheck({ groups: A.rosterClean(G) }, G), A.rosterCheck({ groups: A.rosterClean(G) }, [])]),
+    [{ save: true, why: 'new' }, { save: false, why: 'same' }, { save: false, why: 'empty' }]);
+  const G2 = A.cellGroups(rows, mem.concat([{ cell_id: 'c2', name: '새가족' }]));
+  sc.eq('㊶ 셀원이 바뀌면 저장', J(A.rosterCheck({ groups: A.rosterClean(G) }, G2)), { save: true, why: 'changed' });
+  const big = [{ id: 'x', name: '큰셀', leaders: ['리'], members: Array.from({ length: 19 }, (_, i) => '사람' + i) }];
+  sc.eq('㊶ 절반 넘게 줄면 안 씀(읽다 끊긴 명단일 수 있다) · 절반까지는 씀 · 적은 명단은 줄어도 씀',
+    [A.rosterCheck({ groups: big }, [{ id: 'x', name: '큰셀', leaders: ['리'], members: ['사람1', '사람2'] }]).why, A.rosterCheck({ groups: big }, [{ id: 'x', name: '큰셀', leaders: ['리'], members: Array.from({ length: 9 }, (_, i) => '사람' + i) }]).why, A.rosterCheck({ groups: A.rosterClean(G) }, [{ id: 'c1', name: '하늘셀', leaders: ['가리더'], members: [] }]).why],
+    ['shrink', 'changed', 'changed']);
+  sc.eq('㊶ 상한 — 셀 수 · 셀마다 이름 수 · 이상한 값은 버림', [A.rosterClean(Array.from({ length: 60 }, (_, i) => ({ id: i, name: '셀' + i }))).length, A.rosterClean([{ id: 1, name: '셀', members: Array.from({ length: 300 }, (_, i) => 'n' + i) }])[0].members.length, A.rosterClean([null, { name: '' }, { id: 2, name: ' 셀 ', members: 'x', leaders: [' 가 ', '가', ''] }])],
+    [A.ROSTER_MAX_G, A.ROSTER_MAX_N, [{ id: '2', name: '셀', leader: '', leaders: ['가'], lead: false, members: [] }]]);
+  sc.eq('㊶ 계정 문서 읽기 — 없거나 빈 것은 null', J([A.rosterUse(null), A.rosterUse({ groups: [] }), A.rosterUse({ groups: G, at: 123 }).at, A.rosterUse({ groups: G, at: 123 }).groups.length]), [null, null, 123, 2]);
 }
 
 sc.done();

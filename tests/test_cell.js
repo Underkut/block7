@@ -334,7 +334,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑯ 같은 이름(직분 무시) · 성 이름 바뀜 · 이름이 통째로 든 것은 맞춘다', J(Object.keys(L).sort()), ['a', 'b', 'e']);
   sc.eq('⑯ 같은 이름 셀원이 둘이면 맞추지 않는다', !!(L.c || L.d), false);
   sc.eq('⑯ 마지막 심방 · 횟수 · 며칠 전 · 최근 순', J([L.a.last, L.a.n, L.a.days, L.a.recent.map(v => v.ymd)]), ['2026-10-20', 2, 17, ['2026-10-20', '2026-09-14']]);
-  sc.eq('⑯ 심방 노트 읽기 규칙은 care-core 를 그대로 불러 쓴다 (따로 베끼지 않음)', /script id="care-core"/.test(HTML) && /return \{ buildModel, findResponsesTab, parseAttend: typeof parseAttend === \\'function\\' \? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \\'function\\' \? prayMarkIndex : null, prayJoin: typeof prayJoin === \\'function\\' \? prayJoin : null \}/.test(HTML), true);
+  sc.eq('⑯ 심방 노트 읽기 규칙은 care-core 를 그대로 불러 쓴다 (따로 베끼지 않음)', /script id="care-core"/.test(HTML) && /return \{ buildModel, findResponsesTab, parseAttend: typeof parseAttend === \\'function\\' \? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \\'function\\' \? prayMarkIndex : null, prayJoin: typeof prayJoin === \\'function\\' \? prayJoin : null[,} ]/.test(HTML), true);
   const CARE_HTML = fs.readFileSync(path.join(__dirname, '..', 'care', 'index.html'), 'utf8');
   const cm = CARE_HTML.match(/<script id="care-core">([\s\S]*?)<\/script>/);
   sc.eq('⑯ 심방 노트 care-core 에 셀 inside가 쓰는 두 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && /function buildModel\(/.test(cm[1]) && /function findResponsesTab\(/.test(cm[1]), true);
@@ -488,6 +488,41 @@ sc.eq('⑩ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].include
   sc.eq('⑪ 입력칸 글자 16px (작으면 아이폰이 확대해 옆으로 넘친다)', /input\[type=email\],input\[type=text\],input\[type=password\]\{[^}]*font-size:16px/.test(HTML), true);
 }
 sc.eq('⑩ 검색에 안 잡히게 (noindex)', /name="robots" content="noindex/.test(HTML), true);
+
+// ⑲ (1113-D H2) 셀 명단을 계정에 — 이미 읽은 명단만 · 바뀐 때만 · roster 칸 하나만 · 모양과 판단은 care-core 한 곳
+{
+  const CARE_HTML = fs.readFileSync(path.join(__dirname, '..', 'care', 'index.html'), 'utf8');
+  const core = CARE_HTML.match(/<script id="care-core">([\s\S]*?)<\/script>/)[1];
+  sc.eq('⑲ care-core 에 명단 규칙 넷(cellGroups · rosterCheck · rosterClean · rosterUse)', ['cellGroups', 'rosterCheck', 'rosterClean', 'rosterUse'].every(f => new RegExp('function ' + f + '\\(').test(core)), true);
+  sc.eq('⑲ 셀 inside 는 그 규칙을 careCore() 로 불러 쓴다(따로 베끼지 않음)', /cellGroups: typeof cellGroups === \\'function\\'/.test(HTML) && /rosterCheck: typeof rosterCheck === \\'function\\'/.test(HTML) && !/function rosterCheck\(/.test(HTML), true);
+  const fn = HTML.match(/async function rosterSync\(\) \{[\s\S]*?\n\}/);
+  sc.eq('⑲ rosterSync — 계정 cellbook 의 roster 칸 하나만 merge 로 · 바뀐 때만(rosterCheck) · 셀 케어에 새로 묻는 곳 없음(api. 부르지 않음)',
+    !!fn && /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.set\(\{ roster \}, \{ merge: true \}\)/.test(fn[0]) && /if \(!ck\.save\) return;/.test(fn[0]) && !/S\.api\.|\bsb\./.test(fn[0]), true);
+  sc.eq('⑲ 계정 문서를 읽기 전엔 쓰지 않는다(저장본과 견줄 수 없으면 기다림) · 미리보기에선 안 씀', !!fn && /!BOOK\.rosterRead\) \{ ROSTER\.pending = true; return; \}/.test(fn[0]) && /if \(DEMO \|\|/.test(fn[0]), true);
+  // 실제로 돌려 본다 — 가짜 계정 · care-core 진짜 규칙
+  const coreFns = new Function(core + '\n;return { cellGroups, rosterCheck, rosterClean };')();
+  const run = async (st) => {
+    const writes = [], calls = [];
+    const env = { DEMO: false, APP_VERSION: 'v', S: st.S, BOOK: st.BOOK, FB: { user: st.user === false ? null : { uid: 'u' }, db: { collection: c => ({ doc: d => ({ set: async (o, m) => { writes.push([c, d, JSON.parse(JSON.stringify(o)), m]); } }) }) } },
+      ROSTER: { pending: false, busy: false, why: '', at: 0 }, careCore: async () => coreFns, ensureMembers: async ids => { calls.push(ids); } };
+    const f = new Function(...Object.keys(env), fn[0] + '\n;return rosterSync().then(() => ROSTER);');
+    const R = await f(...Object.values(env));
+    return { writes, R, calls };
+  };
+  const mk = () => ({ ctx: {}, mineIds: ['c1'], weeks: ['w0'], byWeek: new Map([['w0', [{ cell_id: 'c1', cell_name: '하늘셀', leader_names: '가리더' }, { cell_id: 'c2', cell_name: '남의셀', leader_names: '나' }]]]),
+    members: new Map([['m1', { id: 'm1', cell_id: 'c1', name: '셀원하나' }], ['m2', { id: 'm2', cell_id: 'c2', name: '남의셀원' }]]) });
+  const pend = [];
+  (async () => {
+    const a1 = await run({ S: mk(), BOOK: { roster: null, rosterRead: false } });
+    const a2 = await run({ S: mk(), BOOK: { roster: null, rosterRead: true } });
+    const a3 = await run({ S: mk(), BOOK: { roster: a2.writes[0] && a2.writes[0][2].roster, rosterRead: true } });
+    const a4 = await run({ S: mk(), BOOK: { roster: null, rosterRead: true }, user: false });
+    sc.eq('⑲ (돌려 봄) 계정 문서 오기 전 → 안 쓰고 기다림', [a1.writes.length, a1.R.pending], [0, true]);
+    sc.eq('⑲ (돌려 봄) 처음 → 내 분파셀만 roster 칸에 merge', a2.writes.map(w => [w[0], w[1], Object.keys(w[2]), w[2].roster.groups.map(g => g.name + ':' + g.members.join('/')), w[3]]), [['cellbook', 'u', ['roster'], ['하늘셀:셀원하나'], { merge: true }]]);
+    sc.eq('⑲ (돌려 봄) 같은 명단이면 다시 안 씀 · 로그인 없으면 기다림', [a3.writes.length, a3.R.why, a4.writes.length, a4.R.pending], [0, 'same', 0, true]);
+  })().catch(e => sc.eq('⑲ 돌려 보기 오류', e.message, ''));
+
+}
 
 // pool — 동시에 n 개까지, 실패해도 나머지는 받는다
 (async () => {
