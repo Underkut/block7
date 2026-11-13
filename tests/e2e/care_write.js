@@ -41,6 +41,7 @@
 //  ㊵ (1113-D) 깔때기 · 할일/질문만 · 출석 이름 줄 · 대기함 줄 녹음 시각 · 지시문 아이콘
 //  ㊶ (1113-D H2) 셀 inside 로그인이 없으면 계정에 맞춰 둔 셀 명단으로(읽기만 · 셀 케어 안 부름)
 //  ㊷ (1113-E) 열람 시간 · ← → 이전 다음 · 주간 ▲▼ · 출석 '바로 적을 분' 알약
+//  ㊸ (1113-E) 할 일 종류마다 한 줄씩(액션 탭 한 줄 = 한 할 일 · 뺀 줄은 취소) · 성도 구분별 알약
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -1361,12 +1362,12 @@ async function route(r) {
     const cellRows = RT.rows.filter(r => col(r, '원본ID') === 'f_e2e_cell');
     eq('㊲ 기록 셋 — 모두 그 모임ID · 방식 셀모임 · 화자3 이름의 기록 없음', [cellRows.map(r => col(r, '성도 이름')), cellRows.every(r => col(r, '모임ID') === mt[0][0]), cellRows.map(r => col(r, '전화 / 만남'))], [['나호근', '다종만', '라요한'], true, ['셀모임', '셀모임', '셀모임']]);
     const ry = cellRows.find(r => col(r, '성도 이름') === '라요한'), ya = rowsOf('액션', r => r[1] === col(ry, '기록ID'));
-    eq('㊲ 라요한 실제 약속 → 액션 탭(세부 · 상태 할 일 · 실행근거) · 기록의 액션 칸', [ya.map(r => [r[3], r[4], r[7], r[10]]), col(ry, '액션')], [[['중보', '쉬운 코드 찬양곡 찾아주기', '할 일', '실제 약속']], '중보']);
+    eq('㊲ (1113-E) 라요한 실제 약속 → 액션 탭 한 줄(종류 · 내용 · 상태 할 일 · 실행근거) · 기록의 액션 칸', [ya.map(r => [r[3], r[5], r[7], r[10]]), col(ry, '액션')], [[['중보', '쉬운 코드 찬양곡 찾아주기', '할 일', '실제 약속']], '중보']);
     eq('㊲ 나머지 둘의 AI 제안은 액션 탭에 없다', cellRows.filter(r => col(r, '성도 이름') !== '라요한').map(r => rowsOf('액션', x => x[1] === col(r, '기록ID')).length), [0, 0]);
     await page.click(LN + ' [data-act="close"]'); await tidy();
     const kRy = await page.evaluate(id => (M().visits.find(v => v.id === id) || {}).key, col(ry, '기록ID'));
     await page.evaluate(k => openLayer('detail', { key: k }), kRy); await tidy();
-    eq('㊲ 기록 화면 할 일 — 가져온 문장(세부) · 근거가 보이고 체크는 예전대로', await page.$eval(LN + ' .todo .tdet', e => e.textContent), '쉬운 코드 찬양곡 찾아주기 실제 약속');
+    eq('㊲ (1113-E) 기록 화면 할 일 — 그 줄 글 · 근거가 보이고 체크는 예전대로', [await page.$eval(LN + ' .todo .lab b', e => e.textContent), await page.$eval(LN + ' .todo .tdet', e => e.textContent)], ['중보 · 쉬운 코드 찬양곡 찾아주기', '실제 약속']);
     await page.click(LN + ' .todo .ck'); await page.waitForTimeout(1200);
     eq('㊲ 체크 → 같은 액션 탭 줄의 상태만(줄이 늘지 않음)', rowsOf('액션', r => r[1] === col(ry, '기록ID')).map(r => r[7]), ['마침']);
     for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(150); }
@@ -1401,7 +1402,7 @@ async function route(r) {
     eq('㊲ 끊김 — 저장된 것 ✓ · 안 된 것 ✗ · 다시 시도 단추', [await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', ''))), await page.$$eval(LN + ' [data-act="impretry"]', x => x.length)], [['ok', 'ok', 'ok', 'err', 'wait'], 1]);
     await page.click(LN + ' [data-act="impretry"]'); await page.waitForTimeout(3000);
     const mh = RT.rows.filter(r => col(r, '성도 이름') === '마하늘');
-    eq('㊲ 다시 시도 — 이어서 끝냄 · 기록은 한 줄 그대로 · 할 일 한 줄(기한)', [await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', ''))), mh.length, rowsOf('액션', r => r[1] === col(mh[0], '기록ID')).map(r => [r[3], r[4], r[6]])],
+    eq('㊲ 다시 시도 — 이어서 끝냄 · 기록은 한 줄 그대로 · 할 일 한 줄(기한)', [await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', ''))), mh.length, rowsOf('액션', r => r[1] === col(mh[0], '기록ID')).map(r => [r[3], r[5], r[6]])],
       [['ok', 'ok', 'ok', 'ok', 'ok'], 1, [['중보', '이사 위해 기도', '2026-11-15']]]);
     await page.click(LN + ' [data-act="close"]'); await tidy();
   }
@@ -1572,6 +1573,37 @@ async function route(r) {
     eq('㊷ 1 지우기 → 알약 · 시트에서 빠짐', [await page.$$eval('.favs [data-act="favgo"]', x => x.map(e => e.dataset.v)), tab('출석 선택지').rows.filter(r => r[0] === '바로 적을 분').map(r => r[1])], [['거거거'], ['거거거']]);
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/favs.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.evaluate(() => { S.view = 'list'; render(); });
+
+    // ㊸ (1113-E 4-3) 할 일 종류마다 한 줄씩 · 5 구분별 알약
+    await page.evaluate(() => { openEdit(null); }); await page.waitForTimeout(400);
+    await page.fill(LN + ' [data-f="nameq"]', '줄할일'); await page.press(LN + ' [data-f="nameq"]', 'Enter'); await page.waitForTimeout(200);
+    await plus(page, LN, 'acts');
+    await page.click(LN + ' [data-act="ftog"][data-k="acts"][data-v="중보"]'); await page.waitForTimeout(200);
+    await page.evaluate(() => render()); await page.waitForTimeout(200);
+    eq('㊸ 중보를 고르면 그 아래 한 줄 칸(종류 안내 글)', await page.getAttribute(LN + ' [data-f="al:중보"]', 'placeholder'), '무엇을 위해 기도할까요');
+    await page.fill(LN + ' [data-f="al:중보"]', '이사 날짜'); await page.press(LN + ' [data-f="al:중보"]', 'Enter'); await page.waitForTimeout(200);
+    await page.fill(LN + ' [data-f="al:중보"]', '어머님 수술'); await page.press(LN + ' [data-f="al:중보"]', 'Enter'); await page.waitForTimeout(200);
+    eq('㊸ Enter 로 줄이 하나씩', await page.$$eval(LN + ' .al-l span', x => x.map(e => e.textContent)), ['이사 날짜', '어머님 수술']);
+    await page.evaluate(() => { topLayer().form.method = '전화'; });
+    await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2500);
+    const RT2 = tab('Form Responses 1'), nr = RT2.rows.find(r => r[RT2.rows[0].indexOf('성도 이름')] === '줄할일'), rid = nr && nr[RT2.rows[0].indexOf('기록ID')];
+    eq('㊸ 저장 → 액션 탭에 한 줄 = 한 할 일 · 응답 칸 액션은 종류만', [tab('액션').rows.filter(r => r[1] === rid).map(r => [r[3], r[5], r[7]]), nr && nr[RT2.rows[0].indexOf('액션')]], [[['중보', '이사 날짜', '할 일'], ['중보', '어머님 수술', '할 일']], '중보']);
+    const kz = await page.evaluate(id => M().visits.find(v => v.id === id).key, rid);
+    eq('㊸ 기록에 줄마다 할 일(종류만 있던 것은 없음)', await page.evaluate(k => byKey(k).actions.map(a => a.t + '|' + a.x), kz), ['중보|이사 날짜', '중보|어머님 수술']);
+    await page.evaluate(k => openEdit(k), kz); await page.waitForTimeout(400);
+    await plus(page, LN, 'acts');
+    await page.click(LN + ' [data-act="alx"][data-k="중보"][data-v="0"]'); await page.waitForTimeout(200);
+    await page.fill(LN + ' [data-f="al:중보"]', '새 기도 제목');
+    await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2500);
+    eq('㊸ 고치기 — 뺀 줄은 취소(지우지 않음) · 치다 만 줄도 더해짐', tab('액션').rows.filter(r => r[1] === rid).map(r => [r[5], r[7]]), [['이사 날짜', '취소'], ['어머님 수술', '할 일'], ['새 기도 제목', '할 일']]);
+    eq('㊸ 기록 할 일 — 취소 빠짐', await page.evaluate(k => byKey(k).actions.map(a => a.x), kz), ['어머님 수술', '새 기도 제목']);
+    await page.evaluate(() => { S.layers.length = 0; S.view = 'people'; S.pSort = 'role'; S.pRole = ''; render(); }); await page.waitForTimeout(300);
+    const rt = await page.$$eval('.rtabs button', x => x.map(e => e.dataset.v));
+    eq('㊸ 5 구분별 — 위에 전체 + 구분 알약 · 머리는 알약 + 몇 분 + 줄', [rt[0], rt.length > 1, await page.$$eval('.rhead', x => x.length) === rt.length - 1], ['', true, true]);
+    await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
+    eq('㊸ 5 구분 알약 → 그 구분만', await page.$$eval('.rhead b', x => x.map(e => e.textContent)), [rt[1]]);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.click('.rtabs button[data-v=""]'); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/roles.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    await page.evaluate(() => { S.view = 'list'; S.pSort = 'old'; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
