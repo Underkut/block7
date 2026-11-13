@@ -114,6 +114,9 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   셀 인사이드(`linkVisits`) · 기도노트(`careOf`)는 `v.names` 하나하나로 맞춘다 — 이 꼴(칸 이름 · ◆ 표시)을 바꾸면 세 앱이 함께 깨진다 (`test_care` ㉟ · `test_cell` ⑯ · `test_pray` A4).
 - **'셀' 단추(1109-E3)**: 셀 한눈에가 이 브라우저에 둔 셀 케어 로그인을 **읽기만** 해 내 분파셀 · 셀원 명단을 보여 준다. 부르는 것은 읽기 넷뿐(`test_care` ㉗).
   ⚠️ 갱신 열쇠(refresh_token)를 쓰지 말 것 — 두 앱이 같은 열쇠를 돌려 쓰면 셀 케어가 둘 다 끊는다. 만료면 셀 한눈에를 열게 한다. 명단은 화면 메모리에만.
+- **vNext(1112-N) · 대기함 알림(1113-P)**: ChatGPT 가 정리한 것을 받는 길(붙여넣기 · 시트 'AI 입력대기' 탭)과 화면은 `docs/care/vnext-1112.md`, ChatGPT 쪽 약속은 `docs/care/gpt-project-guide.md` — 규격(`hb-care.v1`) · 열 · 상태값을 바꾸면 둘을 함께 고친다.
+  알림 서버 `wallet-functions/src/carepush.js` 는 대기함 탭을 **읽기만** 하고 이름 · 건수만 알린다. 기기 등록은 서버만 쓰는 `carepush/{uid}` 에 — 내용을 두지 말 것(`test_carepush` ① ④). 순서는 `docs/care/push-setup.md`.
+  기도노트로 가는 것은 **이름만 든 쪽지**(`pray/{uid}/c/inbox`, kind `person`)뿐이다.
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r care`)가 함께 싣는다. 빠지면 다음 배포 때 사라진다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
 ### 셀 한눈에(`cell/`)도 따로 돈다 — 주소는 `sweeter.my/cell/`

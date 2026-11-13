@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1112-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1113-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1112-1';
+const APP_VERSION = 'v. 26-1113-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -749,8 +749,10 @@ function siriHoldGroup(db) {
   if (!g) { g = newGroup(SIRI_HOLD, GROUP_COLORS[topGroups(db).length % GROUP_COLORS.length]); db.G.unshift(g); }
   return g;
 }
+// · kind 'person' (심방 노트에서 온 분, HB 2026-11-13): 사람 카드 text 를 '심방 노트에서 온 분' 그룹 맨 위에. 같은 이름의 사람이 이미 있으면 아무것도 안 한다(care 수에만 셈).
+const CARE_HOLD = '심방 노트에서 온 분';
 function inboxApply(db, items) {
-  let n = 0, lost = 0, held = 0, made = 0, siri = 0, b7 = 0;
+  let n = 0, lost = 0, held = 0, made = 0, siri = 0, b7 = 0, care = 0;
   const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   const putLine = (g, s, person) => {
     let t = person ? findPersonByName(db, s) : null;
@@ -764,6 +766,15 @@ function inboxApply(db, items) {
     const s = clean(it && it.text);
     if (!s) return;
     const fromSiri = it.from === 'siri';
+    if (it.kind === 'person') {
+      care++;
+      if (findPersonByName(db, s)) return;
+      let g = topGroups(db).find(x => x.name === CARE_HOLD);
+      if (!g) { g = newGroup(CARE_HOLD, GROUP_COLORS[topGroups(db).length % GROUP_COLORS.length]); db.G.unshift(g); }
+      const t = newTarget('person', s); db.T.push(t);
+      g.lines = g.lines || []; g.lines.unshift({ id: uid(), segs: [[t.id]], r: {}, text: '' }); n++;
+      return;
+    }
     if (it.kind === 'group') {
       if (!topGroups(db).some(x => x.name === s)) { db.G.unshift(newGroup(s, GROUP_COLORS[topGroups(db).length % GROUP_COLORS.length])); made++; }
       if (fromSiri) siri++;
@@ -784,7 +795,9 @@ function inboxApply(db, items) {
     putLine(g, s, fromSiri);
     if (fromSiri) siri++; else b7++;
   });
-  return { n, lost, held, made, siri, b7 };
+  const out = { n, lost, held, made, siri, b7 };
+  if (care) out.care = care;   // 심방 노트 쪽지가 있을 때만(옛 값 꼴을 그대로)
+  return out;
 }
 // ── 시리용 그룹 차림표 (HB 2026-10-30) — pray/{uid}/c/siridir 에 써 두면 서버(b7siri /pray)가 이것만 보고 말을 푼다 ──
 // 지도 차례(그룹 → 그 서브 그룹들). 사람 · 항목 이름은 넣지 않는다 — 그룹 이름 · 부모 · 연동한 자리만.
@@ -7550,6 +7563,7 @@ async function takeInbox() {
   const L = [];
   if (r.b7) L.push('BLOCK7 에서 ' + r.b7 + '개 들어왔습니다');
   if (r.siri) L.push('시리에서 ' + r.siri + '개 들어왔습니다');
+  if (r.care) L.push('심방 노트에서 ' + r.care + '분 들어왔습니다\n\'' + CARE_HOLD + '\' 에서 옮겨 주세요');
   if (r.held) L.push('그중 ' + r.held + '개는 \'' + SIRI_HOLD + '\' 에\n옮겨 주세요');
   if (r.lost) L.push((L.length ? '' : '보낸 ') + '그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
   if (L.length) toastBg(L.join('\n'));

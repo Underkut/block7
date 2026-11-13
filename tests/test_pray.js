@@ -645,6 +645,8 @@ const MAPCSV = [
   A.inboxApply(db, [{ id: 'm5', gid: g.id, text: '병원 심방', at: 5 }]);
   sc.eq('⑭ 같은 이름의 기도 항목은 카드를 같이 쓴다 (항목은 하나 · 줄은 둘)', [db.T.filter(x => x.name === '병원 심방').length, g.lines.length], [1, 3]);
   sc.eq('⑭ 빈 우체통은 아무 일 없음', A.inboxApply(db, []), { n: 0, lost: 0, held: 0, made: 0, siri: 0, b7: 0 });
+  { const d2 = A.emptyDB(), rr = A.inboxApply(d2, [{ id: 'c1', text: '가새분', at: 1, from: 'care', kind: 'person' }, { id: 'c2', text: '가새분', at: 2, from: 'care', kind: 'person' }]);
+    sc.eq('⑭ 심방 노트에서 온 분 — 사람 카드 하나(같은 이름은 한 번만) · \'심방 노트에서 온 분\' 그룹', [rr.care, rr.n, d2.T.filter(t => t.kind === 'person' && t.name === '가새분').length, d2.G[0].name], [2, 1, 1, '심방 노트에서 온 분']); }
   sc.eq('⑭ BLOCK7 에서 넣은 수 (토스트)', A.inboxApply(db, [{ id: 'm7', gid: g.id, text: '토스트', at: 7, from: 'block7' }]).b7, 1);
   sc.eq('⑭ BLOCK7 에서 온 것은 사람 이름과 같아도 기도 항목 (예전 그대로)', (A.inboxApply(db, [{ id: 'm6', gid: g.id, text: '가나', at: 6 }]), db.T.filter(x => x.name === '가나').map(x => x.kind).sort()), ['item', 'person']);
 }
