@@ -23,7 +23,8 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiBodyKey, aiAlias, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiBodyKey, aiAlias, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX,
+  DAY_NAMES, meetDays, meetDaysText, dateInWeek, campusPass, CAMPUSES, sortNotes, issueSortKey, sliderVal, snapVal };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -436,10 +437,37 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('㉑ 요약 · 핵심으로 바꿔도 글 앞 표시(🙏 · 이번 주:)를 남긴다', /function markOf\(el\)/.test(HTML) && /el\.innerHTML = `\$\{markHtml\(el\)\}\$\{NOLBL_TABS/.test(HTML), true);
   sc.eq('㉑ 이슈 · 기도제목 · 코멘트 탭은 줄마다 핵심 알약을 달지 않는다', /const NOLBL_TABS = \['issue', 'prayer', 'comment'\]/.test(HTML), true);
   sc.eq('㉑ 모두 요약 · 핵심 보기는 탭마다 따로 (한 탭에서 켜도 다른 탭 단추는 꺼진 모양)', /const kwOn = \(\) => !!\(PREF\.aiKwT && PREF\.aiKwT\[PREF\.tab\]\)/.test(HTML) && !/PREF\.aiKw\b(?!T)/.test(HTML) && !/PREF\.aiAll\b(?!T)/.test(HTML), true);
-  sc.eq('㉑ 이슈 탭: 별 아래 기도 보기 / 접기 (모드와 상관없이)', /data-act="pray-tg">\$\{pr \? '기도 접기' : '기도 보기'\}/.test(HTML) && /\.hidepray \.pray,/.test(HTML), true);
+  sc.eq('㉑ 이슈 탭: 기도 보기 / 접기 (1113-S 부터 별 왼쪽 기도손)', /data-act="pray-tg"/.test(HTML) && /\.hidepray \.pray,/.test(HTML), true);
 }
 
 sc.eq('㉒ 기도 표시는 작은 \'기도\' 알약 (HB 11/7 시안 B · 🙏 없음)', !/pray clamp">🙏/.test(HTML) && (HTML.match(/<div class="pray clamp"><span class="praytag">기도<\/span>/g) || []).length === 3, true);
+
+// ㉓ 1113-S 셀 inside 자잘이 (HB 11/13, 지어낸 날짜)
+{
+  // 2026-11-04 수 · 11-11 수 · 10-28 수 · 11-06 금 · 10-30 금 · 10-21 화
+  const md = A.meetDays(['2026-11-04', '2026-11-11', '2026-10-28', '2026-11-06', '2026-10-30', '2026-10-21']);
+  sc.eq('㉓1 1순위 = 가장 많이 모인 요일 · 2순위 = 두 번 넘게 모인 다음 요일', [md.top, md.second, A.meetDaysText(md)], [3, 5, '수(금)']);
+  sc.eq('㉓1 한 번만 다른 날 모인 것은 괄호에 안 단다', A.meetDaysText(A.meetDays(['2026-11-04', '2026-11-11', '2026-11-06'])), '수');
+  sc.eq('㉓1 일요일은 \'주일\'', A.meetDaysText(A.meetDays(['2026-11-08'])), '주일');
+  sc.eq('㉓1 같은 횟수면 최근에 모인 요일이 1순위', A.meetDays(['2026-11-03', '2026-10-29']).top, 2);
+  sc.eq('㉓1 날짜가 없으면 표시 없음', A.meetDaysText(A.meetDays([])), '');
+  sc.eq('㉓5 쉼 · 미제출 주의 날짜 = 그 주 안 1순위 요일 (주 시작 월요일)', [A.dateInWeek('2026-11-09', 3), A.dateInWeek('2026-11-09', 0), A.dateInWeek('2026-11-09', 1)], ['2026-11-11', '2026-11-15', '2026-11-09']);
+  sc.eq('㉓2 분당 · 부산 — 다 끄면 전체 · 여럿 켜기', [A.campusPass({ campus: '부산' }, []), A.campusPass({ campus: '부산' }, ['분당']), A.campusPass({ campus: '부산' }, ['분당', '부산']), A.campusPass({ campus: '분당' }, ['분당'])], [true, false, true, true]);
+  sc.eq('㉓2 버튼은 분당 · 부산 둘', J(A.CAMPUSES), ['분당', '부산']);
+  const ns = [{ _who: '나다운', _week: '2026-10-26', created_at: '2026-10-29T10:00:00' }, { _who: '가나래', _week: '2026-11-02', created_at: '2026-11-05T10:00:00' }, { _who: '나다운', _week: '2026-11-09', created_at: '2026-11-12T10:00:00' }];
+  sc.eq('㉓4 최신순 = 이슈 상관없이 최근 작성순', A.sortNotes(ns, 'new').map(n => n.created_at.slice(5, 10)), ['11-12', '11-05', '10-29']);
+  sc.eq('㉓4 이름순 (같은 분은 최근 것 먼저)', A.sortNotes(ns, 'name').map(n => n._who + n.created_at.slice(5, 10)), ['가나래11-05', '나다운11-12', '나다운10-29']);
+  sc.eq('㉓4 처음 정렬은 이슈순 (모르는 값도 이슈순)', [A.issueSortKey(undefined), A.issueSortKey('xx'), A.issueSortKey('name')], ['issue', 'issue', 'name']);
+  sc.eq('㉓4 \'확인 필요\' 모음 상자가 표와 목록 사이에', /class="attnbox"/.test(HTML) && /data-act="iss-sort"/.test(HTML), true);
+  sc.eq('㉓4 기도 접기 · 보기는 기도손 (BLOCK7 과 같은 그림) · 글자 단추 없음', HTML.includes('m235.32 180l-36.24-36.25l-36.46-120.29A21.76 21.76 0 0 0 128 12.93') && !/'기도 접기' : '기도 보기'\}<\/button>/.test(HTML), true);
+  sc.eq('㉓5 마지막 탭 이름 \'대시보드\'', /\{ id: 'cell', label: '대시보드' \}/.test(HTML), true);
+  sc.eq('㉓5 막대의 쉼 · 미제출은 납작 띠 (점선 없음)', /b flat off/.test(HTML) && /b flat miss/.test(HTML) && !/dotted/.test(HTML.match(/\.bar \.b[^\n]*/g).join('')), true);
+  // 슬라이더: 칸 어디든 그 자리 · 끄는 동안 소수 · 놓으면 가까운 정수
+  sc.eq('㉓5 슬라이더 — 칸 끝 · 가운데 · 바깥', [A.sliderVal(0, 0, 122, 2, 8, 22), A.sliderVal(61, 0, 122, 2, 8, 22), A.sliderVal(500, 0, 122, 2, 8, 22), A.sliderVal(-30, 0, 122, 2, 8, 22)], [2, 5, 8, 2]);
+  sc.eq('㉓5 끄는 동안 값은 소수(부드럽게)', A.sliderVal(40, 0, 122, 2, 8, 22) % 1 !== 0, true);
+  sc.eq('㉓5 놓으면 가까운 주로', [A.snapVal(4.49, 2, 8), A.snapVal(4.5, 2, 8), A.snapVal(9, 2, 8), A.snapVal(1.2, 2, 8)], [4, 5, 8, 2]);
+  sc.eq('㉓5 기본 슬라이더는 손을 안 받고(칸이 받음) 한 칸씩 끊기지 않는다', /\.spanbox input\{[^}]*pointer-events:none/.test(HTML) && (HTML.match(/type="range" id="c?spanr" min="2" max="8" step="any"/g) || []).length === 2, true);
+}
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
 {
