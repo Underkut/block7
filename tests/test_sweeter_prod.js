@@ -253,9 +253,9 @@ console.log('\n시나리오 6 — 무엇을 올리는가');
   sc.eq('올리기 전에 care/ 가 담겼는지 본다', pwf.includes('test -f build-sweeter/care/index.html'), true);
   sc.eq('⭐ /care 를 손으로 넘기는 규칙이 없다 (고리 방지)',
         (h[0].redirects||[]).some(r=>/^\/care\/?$/.test(r.source||'')), false);
-  // 셀 한눈에(sweeter.my/cell/, 1106-L) — 같은 사정. 빠지면 다음 Sweeter 배포 때 사라진다.
-  sc.eq('⭐ 빌드가 셀 한눈에(cell/)를 함께 담는다', /^cp -r cell "\$OUT\/cell"$/m.test(mk), true);
-  sc.eq('셀 한눈에를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'cell/**'"), true);
+  // 셀 inside(sweeter.my/cell/, 1106-L) — 같은 사정. 빠지면 다음 Sweeter 배포 때 사라진다.
+  sc.eq('⭐ 빌드가 셀 inside(cell/)를 함께 담는다', /^cp -r cell "\$OUT\/cell"$/m.test(mk), true);
+  sc.eq('셀 inside를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'cell/**'"), true);
   sc.eq('올리기 전에 cell/ 이 담겼는지 본다', pwf.includes('test -f build-sweeter/cell/index.html'), true);
   // 사역 한눈에(sweeter.my/report/, 1106-W) — 같은 사정. 빠지면 다음 Sweeter 배포 때 사라진다.
   sc.eq('⭐ 빌드가 사역 한눈에(report/)를 함께 담는다', /^cp -r report "\$OUT\/report"$/m.test(mk), true);

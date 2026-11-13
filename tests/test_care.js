@@ -54,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
-  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord };`, ctx);
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, kstOf, inboxRecAt, clockOf };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -654,14 +654,14 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㉖ 보관 기준(2026-11-01) — 옛 이름은 알약에서 빠짐 · 경계 당일은 남음 · 기준 없으면 전부', J([A.recentNames(V, T, '2026-11-02'), A.recentNames(V, T, '2026-11-01'), A.recentNames(V, T, null).length]), [['사아자', '라마바', '차카타'], ['사아자', '라마바', '차카타', '가나다'], 4]);
 }
 
-// ㉗ (1109-E3) '셀' 단추 — 셀 한눈에 로그인 읽기만 · 내 분파셀 셀원 · 셀 케어엔 읽기 넷뿐
+// ㉗ (1109-E3) '셀' 단추 — 셀 inside 로그인 읽기만 · 내 분파셀 셀원 · 셀 케어엔 읽기 넷뿐
 {
   const now = Date.parse('2026-11-09T01:00:00Z'), sec = Math.floor(now / 1000);
   sc.eq('㉗ 로그인 없음 · 깨진 값 · 만료(1분 안 남음) · 살아 있음 · 옛 꼴(currentSession)', J([
     A.cellToken(null, now).state, A.cellToken('{깨짐', now).state, A.cellToken(JSON.stringify({ access_token: 'a', expires_at: sec + 30 }), now).state,
     A.cellToken(JSON.stringify({ access_token: 'a', expires_at: sec + 3600 }), now), A.cellToken(JSON.stringify({ currentSession: { access_token: 'b', expires_at: sec + 3600 } }), now).tok]),
     ['none', 'none', 'expired', { state: 'ok', tok: 'a' }, 'b']);
-  sc.eq('㉗ 열쇠 이름 = 셀 한눈에(supabase 기본 이름)', A.CELL_SB_KEY, 'sb-mcbbhsvvzqvtrxlbdcks-auth-token');
+  sc.eq('㉗ 열쇠 이름 = 셀 inside(supabase 기본 이름)', A.CELL_SB_KEY, 'sb-mcbbhsvvzqvtrxlbdcks-auth-token');
   const G = A.cellGroups([{ cell_id: 'c2', cell_name: '나무셀', leader_names: '가리더' }, { cell_id: 'c1', cell_name: '하늘셀', leader_names: '나리더', i_am_leader: true }],
     [{ cell_id: 'c2', name: '가 리더' }, { cell_id: 'c2', name: '다다', active: true }, { cell_id: 'c2', name: '가가' }, { cell_id: 'c2', name: '빠짐', active: false }, { cell_id: 'c2', name: '떠남', left_at: '2026-01-01' }, { cell_id: 'c1', name: '라라' }, { cell_id: 'c2', name: '가가' }]);
   sc.eq('㉗ 내가 인도하는 셀 먼저 · 셀리더 따로(셀원 명단에선 뺌, 띄어쓰기 무시) · 셀원은 가나다 순 · 쉬는 분 · 떠난 분 · 겹침 뺌', J(G.map(g => [g.name, g.lead, g.leaders, g.members])), [['하늘셀', true, ['나리더'], ['라라']], ['나무셀', false, ['가리더'], ['가가', '다다']]]);
@@ -671,7 +671,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㉗ 셀 케어에 부르는 것은 읽기 넷뿐', J([...new Set(calls)]), ['cell_members', 'leadership_assignments', 'rpc/get_my_context', 'rpc/get_week_status']);
   sc.eq('㉗ 갱신 열쇠를 쓰지 않는다 · supabase 도구를 싣지 않는다(로그인을 건드릴 길이 없게)', [/refresh_token|grant_type/.test(code), /supabase-js|createClient\(/.test(code)], [false, false]);
   const cell = fs.readFileSync(path.join(__dirname, '..', 'cell', 'index.html'), 'utf8');
-  sc.eq("㉗ 셀 한눈에의 cell-core 에 pickMine 이 있다(심방 노트가 그대로 불러 씀)", /<script id="cell-core">[\s\S]*?function pickMine\(/.test(cell), true);
+  sc.eq("㉗ 셀 inside의 cell-core 에 pickMine 이 있다(심방 노트가 그대로 불러 씀)", /<script id="cell-core">[\s\S]*?function pickMine\(/.test(cell), true);
 }
 
 // ㉞ 다음 심방 질문 (1110-Q) — 이름은 지어낸 것
@@ -1028,6 +1028,20 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊴ 성도 요약 — 다음 질문: 앞으로의 예정 계획 \'물어볼 것\' 먼저 · 기록의 안 물어본 것 · 겹침 하나', J(ps.qs.map(x => [x.t, x.from])), [['이사 날짜', '계획'], ['직장은 어떠세요?', '계획'], ['가족은?', '기록']]);
   sc.eq('㊴ 성도 요약 — 원본(모임 원본 링크)', J(ps.src.map(x => [x.id, x.url])), [['f2', ''], ['f1', 'https://plaud.example/1']]);
   sc.eq('㊴ 같은 날 예정 계획 — 이름 하나하나로 · 취소된 것 · 다른 날은 아님', [A.planForRecord(PL, '가나다', '2026-11-15').id, A.planForRecord(PL, '가나다', '2026-11-20'), A.planForRecord(PL, '라마바', '2026-11-15'), A.planForRecord([{ id: 'P9', name: '라마바, 가나다', date: '2026-11-11', status: '예정' }], '가 나다', '2026-11-11').id], ['P1', null, null, 'P9']);
+}
+
+// ㊵ 1113-D B · B2 녹음 한국 시각 · 같은 날 순서
+{
+  sc.eq('㊵ 녹음 시각 — Z 는 한국 시각으로 · +09:00 그대로 · 시간대 없으면 적힌 그대로 · 빈 값', J([A.kstOf('2026-11-13T07:50:00Z'), A.kstOf('2026-11-13T16:50:00+09:00'), A.kstOf('2026-11-13 08:05'), A.kstOf(''), A.kstOf('2026-11-12T20:30:00Z')]),
+    [{ ymd: '2026-11-13', hm: '16:50' }, { ymd: '2026-11-13', hm: '16:50' }, { ymd: '2026-11-13', hm: '08:05' }, null, { ymd: '2026-11-13', hm: '05:30' }]);
+  sc.eq('㊵ 입력 시각 — 미국꼴 · 앱꼴 · 오후 · 일련번호 · 없음', [A.clockOf('11/6/2026 10:40:51'), A.clockOf('2026-11-13 17:23'), A.clockOf('2026. 11. 13 오후 3:20:00'), A.clockOf(46000.75), A.clockOf('11/6')], ['10:40', '17:23', '15:20', '18:00', '']);
+  const pk = (id, at) => JSON.stringify({ schema_version: 'hb-care.v1', source: { kind: 'plaud', source_id: id, recorded_at: at } });
+  const items = [{ st: '완료', srcId: 'f1', json: pk('f1', '2026-11-13T00:10:00Z') }, { st: '대기', srcId: '', json: pk('f2', '2026-11-13T14:00:00+09:00') }, { st: '취소', srcId: 'f3', json: pk('f3', '2026-11-13T23:00:00+09:00') }, { st: '완료', srcId: 'f4', json: '깨진 글' }];
+  sc.eq('㊵ 대기함 → 원본ID 별 녹음 시각(완료 · 대기만, 깨진 줄은 건너뜀)', J(A.inboxRecAt(items)), { f1: '2026-11-13 09:10', f2: '2026-11-13 14:00' });
+  const H = ['Timestamp', '심방 날짜', '성도 이름', '내용', '원본ID'];
+  const rows = [H, ['2026-11-13 20:00', '2026-11-13', '가나다', '나중에 입력 · 녹음은 아침', 'f1'], ['2026-11-13 15:00', '2026-11-13', '라마바', '녹음 없음 15시 입력', ''], ['2026-11-13 21:00', '2026-11-13', '사아자', '녹음 오후 2시', 'f2'], ['2026-11-12 09:00', '2026-11-12', '차카타', '어제', '']];
+  const mm = A.buildModel(rows, { cutoff: '', recAt: A.inboxRecAt(items) });
+  sc.eq('㊵ 같은 날은 녹음 시각(없으면 입력 시각) 늦은 것이 위 · 날짜가 먼저', mm.visits.map(v => v.name + ' ' + v.clock), ['라마바 15:00', '사아자 14:00', '가나다 09:10', '차카타 09:00']);
 }
 
 sc.done();

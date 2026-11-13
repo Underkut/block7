@@ -1,4 +1,4 @@
-// 셀 한눈에(cell/index.html) 핵심 규칙 — 화면 없이 도는 덩어리(<script id="cell-core">)를 떼어 시험한다.
+// 셀 inside(cell/index.html) 핵심 규칙 — 화면 없이 도는 덩어리(<script id="cell-core">)를 떼어 시험한다.
 // 셀 · 사람 이름은 모두 지어낸 것이다 (공개 저장소).
 //
 // 지키는 것:
@@ -337,7 +337,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑯ 심방 노트 읽기 규칙은 care-core 를 그대로 불러 쓴다 (따로 베끼지 않음)', /script id="care-core"/.test(HTML) && /return \{ buildModel, findResponsesTab, parseAttend: typeof parseAttend === \\'function\\' \? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \\'function\\' \? prayMarkIndex : null, prayJoin: typeof prayJoin === \\'function\\' \? prayJoin : null \}/.test(HTML), true);
   const CARE_HTML = fs.readFileSync(path.join(__dirname, '..', 'care', 'index.html'), 'utf8');
   const cm = CARE_HTML.match(/<script id="care-core">([\s\S]*?)<\/script>/);
-  sc.eq('⑯ 심방 노트 care-core 에 셀 한눈에가 쓰는 두 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && /function buildModel\(/.test(cm[1]) && /function findResponsesTab\(/.test(cm[1]), true);
+  sc.eq('⑯ 심방 노트 care-core 에 셀 inside가 쓰는 두 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && /function buildModel\(/.test(cm[1]) && /function findResponsesTab\(/.test(cm[1]), true);
   sc.eq('⑯ (1108-A3) 출석 · 기도노트 색 읽기도 care-core 것을 그대로 — 세 함수가 있다', ['parseAttend', 'prayMarkIndex', 'prayJoin'].every(f => new RegExp('function ' + f + '\\(').test(cm[1])), true);
   sc.eq('⑯ (1108-A3) 기도노트 · 출석은 읽기만 — pray 문서에 쓰는 곳이 없다', /collection\('pray'\)\.doc\(FB\.user\.uid\)/.test(HTML) && !/collection\('pray'\)[^;]*\.(set|update|delete)\(/.test(HTML), true);
   { const att = [{ name: '이두리 집사', ymd: '2026-11-08' }, { name: '이 두리', ymd: '2026-11-01' }, { name: '처음손님', ymd: '2026-11-08' }];

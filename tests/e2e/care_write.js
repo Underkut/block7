@@ -38,6 +38,7 @@
 //  ㊲ (1112-N 2·3·4) 붙여넣어 채우기 — JSON(통화 · 셀모임) · 규격 오류 · 속성 대조 · 성도 연결(후보 여럿 · 이름 고치기 · 새 성도) · 언급만 · 할 일 체크 → 액션 탭 · 미채택은 상세 기록 끝 · 모임 탭 · 중복(원본ID · 해시 · 갱신) · Markdown · 저장 중 끊김 → 다시 시도
 //  ㊳ (1112-N 5) AI 입력대기함 — 탭에 넣은 줄 → 첫 화면 'N건' · 규격 오류는 '오류' + 사유 · 접수ID 붙임 · 열기 → 같은 미리보기 · 저장 → 다시 읽어 확인 뒤 '완료' + 기록ID · 빼기 → '취소' · ChatGPT 지시문 복사
 //  ㊴ (1112-N 6) 화면 — 카드 첫 줄 핵심 한줄 · 우선순위 · 전해 들음 · 남은 할 일 · 모임 ↔ 참석 기록 · 성도 화면 순서 · 같은 날 계획 잇기(가져오기 · 새 기록) · 상세 기록 안전하게(HTML 은 글자로)
+//  ㊵ (1113-D) 깔때기 · 할일/질문만 · 출석 이름 줄 · 대기함 줄 녹음 시각 · 지시문 아이콘
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -873,7 +874,7 @@ async function route(r) {
     await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
-  // 1109-E3 '셀' 단추 — 셀 한눈에 로그인을 읽기만 · 내 분파셀 · 셀원 골라 넣기
+  // 1109-E3 '셀' 단추 — 셀 inside 로그인을 읽기만 · 내 분파셀 · 셀원 골라 넣기
   {
     const cellCoreSrc = require('fs').readFileSync(path.join(__dirname, '..', '..', 'cell', 'index.html'), 'utf8').match(/<script id="cell-core">([\s\S]*?)<\/script>/)[1];
     await page.evaluate(src => { cellCore.c = new Function(src + '\n;return { pickMine };')(); }, cellCoreSrc);   // file:// 에선 ../cell/ 을 못 받아 미리 넣는다
@@ -882,7 +883,7 @@ async function route(r) {
     eq("㉗ '누구를' 최근 이름 줄 맨 앞에 '셀' 단추 — 이름 알약과 다른 모양(목록 아이콘 · ›)", [await page.$eval('.layer .recent > :first-child', e => e.className + '|' + e.textContent + '|' + !!e.querySelector('svg')), await page.$eval('.layer .recent .cellbtn', e => getComputedStyle(e).borderRadius !== getComputedStyle(document.querySelector('.layer .recent .rn')).borderRadius)], ['cellbtn|셀|true', true]);
     eq('㉗ › 는 이름 칸 밖 제자리(이름과 겹치지 않음)', await page.evaluate(() => { const m = document.querySelector('.layer .recent .rmore').getBoundingClientRect(), l = document.querySelector('.layer .recent .rlist').getBoundingClientRect(); return m.left >= l.right - 0.5; }), true);
     await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(400);
-    eq('㉗ 셀 한눈에 로그인이 없으면 안내 · 셀 한눈에 열기', [await page.$eval(LE + ' .empty', e => e.textContent.includes('로그인이 없습니다')), await page.$$eval(LE + ' a[href="../cell/"]', x => x.length)], [true, 1]);
+    eq('㉗ 셀 inside 로그인이 없으면 안내 · 셀 inside 열기', [await page.$eval(LE + ' .empty', e => e.textContent.includes('로그인이 없습니다')), await page.$$eval(LE + ' a[href="../cell/"]', x => x.length)], [true, 1]);
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     await page.evaluate(() => localStorage.setItem(CELL_SB_KEY, JSON.stringify({ access_token: 'tok', refresh_token: 'rt', expires_at: Math.floor(Date.now() / 1000) + 3600 })));
     const nCc = LOG.length;
@@ -1492,6 +1493,35 @@ async function route(r) {
     const pn2 = PT.rows.find(r => r[0] === 'PN2'), hn = RT.rows.find(r => col(r, '성도 이름') === '하노을' && col(r, '내용') === '손으로 적음');
     eq('㊴ 새 기록 → 같은 날 계획에 이음', [pn2[ph.indexOf('상태')], pn2[ph.indexOf('기록ID')] === col(hn, '기록ID')], ['기록됨', true]);
     await page.evaluate(() => { S.layers.length = 0; render(); });
+  }
+
+  // ㊵ (1113-D) 자잘이 — E 깔때기 · F G 할일/질문만 · I 출석 이름 줄 · B C 대기함 줄 · D1 아이콘 선
+  {
+    const LN = '.layer:last-child';
+    await page.evaluate(() => { S.layers.length = 0; S.view = 'list'; S.show = []; render(); }); await page.waitForTimeout(300);
+    eq('㊵ E 필터 단추는 글자 없는 동그란 깔때기 · 옆에 할일 · 질문 알약', [await page.$eval('.fline .fbtn.round', e => e.textContent.trim()), await page.$$eval('.fline .fbtn.show', x => x.map(e => e.textContent))], ['', ['할일', '질문']]);
+    await page.click('.fline [data-act="show"][data-v="act"]'); await page.waitForTimeout(200);
+    const only = await page.$$eval('#vlist .card', x => x.map(e => [!!e.querySelector('.c-only .ak'), !!e.querySelector('.c-txt')]));
+    eq('㊵ F 할일만 — 남은 할 일 있는 기록만 · 내용 대신 할 일', [only.length > 0, only.every(r => r[0] && !r[1])], [true, true]);
+    await page.click('.fline [data-act="show"][data-v="qn"]'); await page.waitForTimeout(200);
+    eq('㊵ G 할일 + 질문 둘 다 켬', await page.$$eval('.fline .fbtn.show.on', x => x.length), 2);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/only.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    await page.evaluate(() => { S.show = []; render(); });
+    eq('㊵ B C 대기함 줄 — 녹음 한국 시각 · 시각 뒤에 들어옴', await page.evaluate(() => inboxLabel({ packet: { source: { recorded_at: '2026-11-13T07:50:00Z', duration_ms: 180000 }, event: { kind: 'call' } }, names: ['가나다'], date: '2026-11-13', at: '2026-11-13T08:23:00Z' }).replace(/<[^>]+>/g, '|')),
+      '|가나다||11/13 금 16:50 · 통화 · 3분 · 11/13 17:23 들어옴|');
+    await page.evaluate(() => { openLayer('inbox'); }); await page.waitForTimeout(300);
+    eq('㊵ D1 지시문 복사 아이콘은 선으로(검은 네모 아님)', await page.$eval(LN + ' [data-act="guidecopy"] svg', e => getComputedStyle(e).fill), 'none');
+    await page.evaluate(() => { S.layers.length = 0; S.view = 'attend'; render(); }); await page.waitForTimeout(200);
+    await page.click('[data-act="attadd"]'); await page.waitForTimeout(300);
+    const rn = await page.$$eval(LN + ' .recent .rn', x => x.map(e => e.dataset.v));
+    eq('㊵ I 출석 — 이름 칸 아래 최근 이름 줄 · 셀 단추', [rn.length > 0, await page.$$eval(LN + ' .recent .cellbtn', x => x.length)], [true, 1]);
+    await page.click(LN + ' .recent .rn[data-v="' + rn[0] + '"]'); await page.waitForTimeout(150);
+    if (rn[1]) { await page.click(LN + ' .recent .rn[data-v="' + rn[1] + '"]'); await page.waitForTimeout(150); }
+    eq('㊵ I 누르면 이름 칸에 쉼표로 더해짐', await page.inputValue(LN + ' [data-f="name"]'), rn.slice(0, 2).join(', '));
+    await page.click(LN + ' .recent .rn[data-v="' + rn[0] + '"]'); await page.waitForTimeout(150);
+    eq('㊵ I 다시 누르면 빠짐', await page.inputValue(LN + ' [data-f="name"]'), rn.slice(1, 2).join(', '));
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/att.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    await page.evaluate(() => { topLayer().dirty = false; S.layers.length = 0; S.view = 'list'; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);

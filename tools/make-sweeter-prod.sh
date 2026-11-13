@@ -177,10 +177,10 @@ cp -r pray "$OUT/pray"
 # ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 심방 노트가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
 #    구글 연결이 돌아오는 자리(열쇠 서버 okRet)도 sweeter.my/care/ 하나뿐이다.
 cp -r care "$OUT/care"
-# 셀 한눈에(sweeter.my/cell/, 1106-L) — 같은 사정의 독립 앱 (셀 케어 보고서를 읽기만 해서 다시 정리).
-# ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 셀 한눈에가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
+# 셀 inside(sweeter.my/cell/, 1106-L) — 같은 사정의 독립 앱 (셀 케어 보고서를 읽기만 해서 다시 정리).
+# ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 셀 inside가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
 cp -r cell "$OUT/cell"
-# 사역 한눈에(sweeter.my/report/, 1106-W) — 같은 사정의 독립 앱 (부서 보고서 · 셀 한눈에와 로고로 겹 화면 전환).
+# 사역 한눈에(sweeter.my/report/, 1106-W) — 같은 사정의 독립 앱 (부서 보고서 · 셀 inside와 로고로 겹 화면 전환).
 # ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 사역 한눈에가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
 cp -r report "$OUT/report"
 # 헌금 계좌 안내(sweeter.my/bank/mission/) — 원본은 bank/ 한 벌. block7.my/bank/ 는 보조 주소.

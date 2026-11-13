@@ -42,7 +42,7 @@ console.log('\n① BLOCK7 이 보면');
   const apps = Object.fromEntries(r.apps);
   sc.eq('Sweeter 몫은 Sweeter 로 (상태 · 기준점 · 화면 기억 전부)', apps['Sweeter'], sz('b7v1_sweeter') + sz('b7v1_sweeter_syncbase') + sz('b7v1_sweeter_syncmeta') + sz('b7v1_sweeter_sgFold'));
   sc.eq('Sweeter 개발본은 따로', apps['Sweeter 개발본'], sz('b7v1_sweeter_dev'));
-  sc.eq('다른 앱 이름표', ['기도노트', '심방 노트', '셀 한눈에', '사역 한눈에', '타이머'].map(a => apps[a]),
+  sc.eq('다른 앱 이름표', ['기도노트', '심방 노트', '셀 inside', '사역 한눈에', '타이머'].map(a => apps[a]),
     [sz('pray.v1'), sz('b7care_v1'), sz('cell_pref_v1'), sz('report_book_v1'), sz('b7timer_v1')]);
   sc.eq('모르는 것은 그 밖', apps['그 밖'], sz('somethingElse'));
   sc.eq('합계 = 모든 키 + 값', r.tot, Object.keys(store).reduce((a, k) => a + sz(k), 0));
