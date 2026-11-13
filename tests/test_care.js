@@ -54,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
-  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N };`, ctx);
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, actLineText, actLinesOf, actLinesPlan, actLineRow, ACT_HINT, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -953,24 +953,25 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   // 저장할 것
   const acts = [{ text: '감사 인사, 짧게', auth: 'AI 제안', kind: '연락', on: true, prio: '이번주' }, { text: '찬양곡 찾아주기', auth: '실제 약속', kind: '연락', on: true, due: '2026-11-20', prio: '일반' },
     { text: '안내 보완, 다음에', auth: 'AI 제안', kind: '기타', on: true, prio: '일반' }, { text: '팀장과 이야기', auth: 'AI 제안', kind: '연결', on: false, owner: '목회자', prio: '일반' }];
-  sc.eq('㊲ 할 일 줄 — 같은 종류는 한 줄(세부 줄바꿈) · 기타는 글마다(쉼표는 ·) · 근거 · 기한 · 우선순위 표시', J(A.pkActRows(acts)),
-    [{ t: '연락', x: '', det: '(이번주) 감사 인사, 짧게\n찬양곡 찾아주기', due: '2026-11-20', why: 'AI 제안 채택 · 실제 약속' }, { t: '기타', x: '안내 보완 · 다음에', det: '안내 보완, 다음에', due: '', why: 'AI 제안 채택' }]);
+  sc.eq('㊲ (1113-E 4-1) 할 일 줄 — 한 줄 = 한 할 일(같은 종류도 따로) · 줄 글은 내용 · 우선순위는 세부 · 기타 쉼표는 · · 근거 · 기한', J(A.pkActRows(acts)),
+    [{ t: '연락', x: '감사 인사, 짧게', det: '(이번주) 감사 인사, 짧게', due: '', why: 'AI 제안 채택' }, { t: '연락', x: '찬양곡 찾아주기', det: '', due: '2026-11-20', why: '실제 약속' }, { t: '기타', x: '안내 보완 · 다음에', det: '안내 보완, 다음에', due: '', why: 'AI 제안 채택' }]);
+  sc.eq('㊲ (1113-E) 같은 종류 같은 글은 한 번만', A.pkActRows([{ text: '전화', kind: '연락', on: true }, { text: '전화 ', kind: '연락', on: true }]).length, 1);
   sc.eq('㊲ 체크 안 한 제안 → 상세 기록 끝 글', A.pkUnadopted(acts), '### AI 제안(미채택)\n- 팀장과 이야기 · 연결 · 담당 목회자');
   const res = A.pkResolve(d1, rows1)[0], out = A.pkRecordOut(d1, d1.recs[0], res, '', Date.parse('2026-11-12T08:00:00Z'));
   sc.eq('㊲ 기록 하나 — AI 제안 둘 안 체크 → 할 일 없음 · 상세 기록 끝에 글로만 · 출처 AI · 확인 시각 · 원본ID · 해시 · 언급', [out.acts, out.form.acts, out.form.detail.split('\n').slice(-3), out.extra['@출처'], !!out.extra['@확인'], out.extra['@원본ID'], out.extra['@가져오기 해시'] === res.hash, out.extra['@언급된 성도'], out.extra['@모임ID']],
     [[], [], ['### AI 제안(미채택)', '- 가미정 성도에게 감사 인사, 짧게 · 연락 · 담당 목회자', '- 다음 봉사 안내 보완'], 'AI', true, 'f_test_call', true, '박윤정, 차형만', '']);
   sc.eq('㊲ 다음 질문은 탭 항목으로', J(out.qn), [{ t: '마음이 어떻게 정리되었나?', done: false }, { t: '안내 방식을 보완할 수 있나?', done: false }]);
   const r2 = A.pkResolve(d2, A.pkLinkRows(d2, C)), o2 = A.pkRecordOut(d2, d2.recs[2], r2[2], 'G9', 0);
-  sc.eq('㊲ 셀모임 라요한 — 실제 약속은 할 일(연락)로 · 모임ID', [o2.form.acts, J(o2.acts), o2.extra['@모임ID']], [['연락'], [{ t: '연락', x: '', det: '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', due: '', why: '실제 약속' }], 'G9']);
+  sc.eq('㊲ 셀모임 라요한 — 실제 약속은 할 일(연락)로 · 모임ID', [o2.form.acts, J(o2.acts), o2.extra['@모임ID']], [['연락'], [{ t: '연락', x: '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', det: '', due: '', why: '실제 약속' }], 'G9']);
   const HD = ['Timestamp', '심방 날짜', '성도 이름', '구분', '전화 / 만남', '내용', '태그', '액션', '대화 깊이', '기록ID', '출처', '심방일', '수정', '확인', '보관'].concat(A.NX_COLS);
   const ir = A.importRowValues(HD, A.headerMap(HD).map, o2.form, 'C77', Date.parse('2026-11-12T08:00:00Z'), o2.extra), at = n => ir.row[HD.indexOf(n)];
   sc.eq('㊲ 새 줄 — 출처 AI · 확인 · 모임ID · 원본ID · 해시 · 핵심 한줄 · 내용(짧은 메모) · 액션 칸', [at('출처'), !!at('확인'), at('모임ID'), at('원본ID'), !!at('가져오기 해시'), at('핵심 한줄'), at('내용'), at('액션'), at('우선순위'), at('기록ID'), ir.lost],
     ['AI', true, 'G9', 'f_test_cell', true, '라요한 핵심', '라요한 짧은 메모', '연락', '장기관찰', 'C77', []]);
   sc.eq('㊲ 모임 줄 — 머리글 차례대로 · 미확인 화자', A.pkMeetRow(null, d2, 'G9', 0).slice(0, 9), ['G9', '2026-11-11', '셀모임 — 첫사랑', '모임', '기도 · 말씀 생활 나눔', '### 공동체 권면\n예배 · 기도', 'f_test_cell', '', '화자3: 말씀 읽기를 시도하겠다는 발언자. 실명 미확인.']);
   const AH = A.ACT_TAB_HEAD.concat(['실행근거']), arow = A.pkActTabRow(AH, o2.acts[0], 'C77', '라요한', 'A1');
-  sc.eq('㊲ 액션 탭 줄 — 세부 · 상태 할 일 · 실행근거(K)', arow, ['A1', 'C77', '라요한', '연락', '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', '', '', '할 일', '', '', '실제 약속']);
+  sc.eq('㊲ 액션 탭 줄 — 세부 · 상태 할 일 · 실행근거(K)', arow, ['A1', 'C77', '라요한', '연락', '', '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', '', '할 일', '', '', '실제 약속']);
   const st = A.parseActionTab([AH, arow]), vv = { id: 'C77', actions: [{ t: '연락', x: '', k: 'k4' }] }; A.attachExtras({ visits: [vv] }, st, {});
-  sc.eq('㊲ 기존 체크 화면이 그대로 이어받는다(열쇠 기록ID|종류|) · 세부 · 근거', [Object.keys(st), vv.actions[0].det, vv.actions[0].why, vv.actions[0].done], [['C77|연락|'], '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', '실제 약속', false]);
+  sc.eq('㊲ (1113-E) 줄 할 일이 기록 할 일로 — 종류만 있던 \'연락\' 은 줄로 바뀜 · 열쇠 기록ID|종류|글 · 근거', [Object.keys(st), J(vv.actions.map(a => [a.t, a.x])), vv.actions[0].why, vv.actions[0].done], [['C77|연락|라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기'], [['연락', '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기']], '실제 약속', false]);
   { const dc = A.pkDraft(Object.assign(J(P1), { records: [rec('가미정', { brief_note: '가족 건강을 돌봄. 주빌리가 아팠다고 함.\n형만 이야기는 없었음', detailed_note_markdown: '### 경위\n- 가족 모두 감기' })] }), 'json');
     sc.eq('㊲ 이름이 나온 문장 — 두 문장까지 · 소제목 기호 떼고 · 없으면 빈 목록', [A.pkContext(dc, '가족(성명 미확인)'), A.pkContext(dc, '주빌리'), A.pkContext(dc, '없는이')], [['가족 건강을 돌봄.', '가족 모두 감기'], ['주빌리가 아팠다고 함.'], []]);
     sc.eq('㊲ 기도노트 쪽지 — 이름뿐(내용 없음) · 빈 이름은 안 보냄', [A.prayNote(' 가미정 ', 5, 'N1'), A.prayNote('', 5, 'N2')], [{ id: 'N1', text: '가미정', at: 5, from: 'care', kind: 'person' }, null]); }
@@ -1073,6 +1074,25 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const r = A.recCalSync(vs, [], [old, other], { sheet: 'S', readOk: true });
   sc.eq('㊷ 기록 일정 제목에서 ✓ 빼기 · 남의 일정 그대로', J([r.patch, r.del]), [[{ evId: 'E1', body: { summary: '가나다' } }], []]);
   sc.eq('㊷ 새 일정 · 계획 일정도 ✓ 없음', [A.recEventBody(vs[0], '', '', 'S').summary, A.calEventBody({ id: 'P', name: '가나다', date: '2026-10-05' }, '', ' 심방', 'Asia/Seoul', true).summary], ['가나다', '가나다 심방']);
+}
+
+// ㊸ 1113-E 4 할 일 한 줄씩 — 예전 덩어리 줄은 그대로 · 줄 더하기/취소 계획
+{
+  const AH = A.ACT_TAB_HEAD.concat(['실행근거']);
+  const row = (id, rec, t, det, x, st) => [id, rec, '가나다', t, det, x, '', st || '할 일', '', '', ''];
+  const tabv = [AH, row('A1', 'C1', '연락', '옛 덩어리\n둘째 줄', ''), row('A2', 'C2', '연락', '', '화요일 통화'), row('A3', 'C2', '중보', '', '수술', '마침'), row('A4', 'C2', '연락', '', '지운 줄', '취소'), row('A5', 'C2', '기타', '', '병문안')];
+  const st = A.parseActionTab(tabv);
+  const v1 = { id: 'C1', actions: [{ t: '연락', x: '', k: 'k4' }] }, v2 = { id: 'C2', actions: [{ t: '연락', x: '', k: 'k4' }, { t: '중보', x: '', k: 'k1' }, { t: '기타', x: '병문안', k: 'k4' }] };
+  A.attachExtras({ visits: [v1, v2] }, st, {});
+  sc.eq('㊸ 예전 덩어리 줄(내용 빈 칸)은 그대로 하나 · 세부 글', [J(v1.actions.map(a => [a.t, a.x])), v1.actions[0].det], [[['연락', '']], '옛 덩어리\n둘째 줄']);
+  sc.eq('㊸ 새 꼴 — 종류만 있던 할 일 대신 줄마다 · 취소 줄 빠짐 · 마침은 체크됨 · 기타는 예전 그대로', J(v2.actions.map(a => [a.t, a.x, !!a.done])), [['기타', '병문안', false], ['연락', '화요일 통화', false], ['중보', '수술', true]]);
+  sc.eq('㊸ 기록의 줄 목록(탭 차례 · 취소 · 기타 빼고)', J(A.actLinesOf(st, 'C2').map(a => [a.t, a.x])), [['연락', '화요일 통화'], ['중보', '수술']]);
+  const pl = A.actLinesPlan(st, 'C2', { '연락': ['화요일 통화', '토요일 문자', '토요일 문자 '], '중보': [], '기타': ['무시'] });
+  sc.eq('㊸ 고치기 → 새 줄만 더하고 · 화면에서 뺀 줄은 취소(지우지 않음) · 겹친 글 하나 · 기타는 이 길로 안 감', J([pl.add, pl.cancel]), [[{ t: '연락', x: '토요일 문자' }], [4]]);
+  sc.eq('㊸ 새 기록 — 줄마다 한 줄씩', J(A.actLinesPlan({}, 'C9', { '보고': ['목사님께 공유'], '연결': ['청년부 담당자'] }).add), [{ t: '보고', x: '목사님께 공유' }, { t: '연결', x: '청년부 담당자' }]);
+  sc.eq('㊸ 줄 글 — 100자 · | 는 / 로(열쇠 깨짐 막기)', [A.actLineText('가|나'), A.actLineText('가'.repeat(150)).length], ['가/나', 100]);
+  sc.eq('㊸ 탭 줄 꼴 — 종류 · 내용 · 상태 할 일', A.actLineRow(AH, 'C9', '가나다', { t: '보고', x: '목사님께 공유' }, 'A9'), ['A9', 'C9', '가나다', '보고', '', '목사님께 공유', '', '할 일', '', '', '']);
+  sc.eq('㊸ 종류별 안내 글', [A.ACT_HINT['중보'], A.ACT_HINT['연락']], ['무엇을 위해 기도할까요', '언제 · 무엇으로']);
 }
 
 sc.done();

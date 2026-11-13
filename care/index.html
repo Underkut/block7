@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1114-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1114-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -135,6 +135,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .fbtn svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.7;fill:none}
 .fbtn.on{border-color:var(--ac);color:var(--ac)}
 .fbtn.round{width:32px;height:32px;padding:0;justify-content:center;position:relative}.fbtn.round svg.fill{width:14px;height:14px;fill:currentColor;stroke:none}.fbtn.round sup{position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;border-radius:8px;background:var(--ac);color:var(--paper);font-size:10px;line-height:15px;text-align:center;padding:0 3px}
+.alines{margin:6px 0 4px;display:flex;flex-direction:column;gap:8px}.al{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start}.al>.ak{margin-top:8px}.al-b{display:flex;flex-direction:column;gap:4px}.al-l{display:flex;align-items:center;gap:6px;font-size:14px;line-height:1.45;padding:4px 0;border-bottom:1px solid var(--line)}.al-l span{flex:1}.al-l .send svg{width:13px;height:13px;margin:0;opacity:.6}.al-in{font-size:16px}
+.rtabs{display:flex;gap:6px;overflow-x:auto;margin:10px -16px 2px;padding:0 16px;scrollbar-width:none}.rtabs::-webkit-scrollbar{display:none}.rtabs button{flex:none;padding:6px 12px;border-radius:999px;background:var(--s2);font-size:12.5px;color:var(--tx2);white-space:nowrap}.rtabs button small{color:var(--tx3);margin-left:2px}.rtabs button[aria-pressed="true"]{background:var(--ac);color:var(--on-ac);font-weight:600}.rtabs button[aria-pressed="true"] small{color:inherit;opacity:.7}
+.rhead{display:flex;align-items:center;gap:8px;margin:20px 0 4px}.rhead b{font-size:13px;font-weight:600;padding:4px 11px;border-radius:999px;background:var(--ac-soft);color:var(--ac)}.rhead.none b{background:var(--s2);color:var(--tx2)}.rhead span{font-size:12px;color:var(--tx3)}.rhead i{flex:1;height:1px;background:var(--line)}
 .favs{margin:4px 0 10px}.favs .opts{gap:6px}
 .wk-sort{display:flex;justify-content:flex-end;margin:-4px 0 2px}.wk-sort button{width:30px;height:26px;display:grid;place-items:center}.wk-sort svg{width:11px;height:13px;fill:var(--line2);stroke:none}.wk-sort svg .on{fill:var(--tx2)}
 .dt-tm{color:var(--tx3);font-size:.85em}
@@ -777,7 +780,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1114-1';
+const APP_VERSION = 'v. 26-1114-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1691,16 +1694,37 @@ function parseRosterTab(values) {
 }
 
 // ── 저장할 것 ──
+// ── 1113-E 4 할 일 한 줄씩 (HB 승인 11/14) ──
+// 응답 칸 '액션' 은 예전처럼 종류만(폼 체크박스 그대로). 줄 글은 '액션' 탭에 한 줄 = 한 할 일로(종류 · 내용 · 상태) — 새 칸 없음.
+// 예전에 종류마다 한 덩어리로 들어간 줄(내용 빈 칸)은 그대로 둔다(옮기지 않음).
+const ACT_LINE_MAX = 100, ACT_LINES_PER = 20;
+const ACT_HINT = { '중보': '무엇을 위해 기도할까요', '연결': '누구(어디)와 이을까요', '보고': '누구에게 무엇을', '연락': '언제 · 무엇으로' };
+function actLineText(s) { return norm(String(s == null ? '' : s).replace(/\|/g, '/')).slice(0, ACT_LINE_MAX); }
+// 액션 탭(parseActionTab) → 이 기록의 줄 할 일들 [{t, x, row, st}] (내용이 있는 것 · 기타 빼고 · 취소 빼고), 탭 차례대로
+function actLinesOf(statusMap, recId) {
+  const id = norm(recId), out = []; if (!id) return out;
+  Object.keys(statusMap || {}).forEach(k => { const i = k.indexOf('|'), j = k.indexOf('|', i + 1); if (k.slice(0, i) !== id) return;
+    const t = k.slice(i + 1, j), x = k.slice(j + 1), s = statusMap[k]; if (!x || t === '기타' || s.st === '취소') return; out.push({ t, x, row: s.row, st: s.st }); });
+  return out.sort((a, b) => a.row - b.row);
+}
+// 고치기 화면의 줄들({종류: [글]}) ↔ 지금 탭 → 더할 줄 · '취소' 로 바꿀 줄
+function actLinesPlan(statusMap, recId, lines) {
+  const want = [], seen = new Set();
+  Object.keys(lines || {}).forEach(t => (lines[t] || []).slice(0, ACT_LINES_PER).forEach(x0 => { const x = actLineText(x0), k = t + '|' + x; if (!x || t === '기타' || seen.has(k)) return; seen.add(k); want.push({ t, x }); }));
+  const have = actLinesOf(statusMap, recId), hk = new Set(have.map(a => a.t + '|' + a.x));
+  return { add: want.filter(a => !hk.has(a.t + '|' + a.x)), cancel: have.filter(a => !seen.has(a.t + '|' + a.x)).map(a => a.row) };
+}
+function actLineRow(head, recId, name, a, actId) { return pkActTabRow(head, { t: a.t, x: a.x, det: '', due: '', why: '' }, recId, name, actId); }
 function pkEtcText(s) { return norm(String(s || '').replace(/[,，]/g, ' ·')).slice(0, 100); }
-// 체크한 할 일 → 액션 탭 줄들(기록 · 종류 하나에 한 줄). 기타는 글마다 한 줄
+// 체크한 할 일 → 액션 탭 줄들 — 1113-E 부터 할 일 하나에 한 줄(예전: 종류 하나에 한 줄)
 function pkActRows(acts) {
   const out = [], by = {};
   (acts || []).filter(a => a.on && norm(a.text)).forEach(a => {
-    const kind = norm(a.kind) || '기타', det = (a.prio && a.prio !== '일반' ? '(' + a.prio + ') ' : '') + norm(a.text), why = ACT_WHY[a.auth] || '';
-    if (kind === '기타') { out.push({ t: '기타', x: pkEtcText(a.text), det, due: a.due || '', why }); return; }
-    const o = by[kind];
-    if (o) { o.det += '\n' + det; if (!o.due && a.due) o.due = a.due; if (why && !o.why.split(' · ').includes(why)) o.why = o.why ? o.why + ' · ' + why : why; return; }
-    by[kind] = { t: kind, x: '', det, due: a.due || '', why }; out.push(by[kind]);
+    // 1113-E 4-1 (HB) 한 줄 = 한 할 일 — 종류마다 한 덩어리로 합치지 않는다. 줄 글은 '내용'(체크 열쇠), 우선순위 · 넘친 글은 '세부'
+    const kind = norm(a.kind) || '기타', text = norm(a.text), x = kind === '기타' ? pkEtcText(text) : actLineText(text), pri = a.prio && a.prio !== '일반' ? '(' + a.prio + ') ' : '';
+    const det = pri || text !== x ? pri + text : '', k = kind + '|' + x;
+    if (by[k]) return; by[k] = 1;
+    out.push({ t: kind, x, det, due: a.due || '', why: ACT_WHY[a.auth] || '' });
   });
   return out;
 }
@@ -1885,6 +1909,10 @@ function parseAddenda(values) {
 // 읽어 둔 모양에 체크 · 덧붙임을 붙인다
 function attachExtras(model, statusMap, addenda) {
   (model.visits || []).forEach(v => {
+    if (v.id) { const L = actLinesOf(statusMap, v.id); if (L.length) {   // 1113-E 4 줄 할 일
+      const kinds = new Set(L.map(a => a.t)), keep = v.actions.filter(a => a.x || !kinds.has(a.t) || statusMap[actionKey(v.id, a)]);
+      L.forEach(a => { if (!keep.some(b => b.t === a.t && b.x === a.x)) keep.push({ t: a.t, x: a.x, k: ACT_KIND[a.t] || 'k4', line: true }); });
+      v.actions = keep; } }
     v.actions.forEach(a => { const s = v.id ? statusMap[actionKey(v.id, a)] : null; a.done = !!s && s.st === '마침'; a.doneAt = s ? s.done : ''; a.b7 = s ? s.b7 : ''; a.det = s ? s.det || '' : ''; a.due = s ? s.due || '' : ''; a.why = s ? s.why || '' : ''; });
     v.addn = (v.id && addenda[v.id]) || [];
   });
@@ -3524,7 +3552,7 @@ function onlyItems(v) {
   if (S.show.includes('qn')) qnItems(v).filter(q => !q.done).forEach(q => out.push({ k: 'qn', t: q.t }));
   return out;
 }
-function onlyHtml(v) { return '<div class="c-only">' + onlyItems(v).map(o => o.k === 'act' ? '<div class="oi">' + ak(o.a) + '</div>' : '<div class="oi q"><i>?</i>' + esc(o.t) + '</div>').join('') + '</div>'; }
+function onlyHtml(v) { return '<div class="c-only">' + onlyItems(v).map(o => o.k === 'act' ? '<div class="oi">' + (o.a.x && o.a.t !== '기타' ? '<span class="ak ' + o.a.k + '">' + esc(o.a.t) + '</span> ' + esc(o.a.x) : ak(o.a)) + '</div>' : '<div class="oi q"><i>?</i>' + esc(o.t) + '</div>').join('') + '</div>'; }
 function byKey(k) { return M().visits.find(v => v.key === k); }
 function fcount() { let n = 0; for (const k in S.filt) n += S.filt[k].length; return n; }
 
@@ -3787,7 +3815,7 @@ function qnSecHtml(v) {
 function todoRow(v, a, i, sub) {
   const lab = a.t === '기타' && a.x ? a.x : a.t + (a.x ? ' · ' + a.x : '');
   return '<div class="todo' + (a.done ? ' done' : '') + '"><button class="ck' + (a.done ? ' on' : '') + '" style="--k:var(--' + a.k + ')" data-act="tick" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-label="' + (a.done ? '다시 할 일로' : '마침 표시') + '"></button>' +
-    '<div class="lab"><b>' + esc(sub ? whoShort(v.name) : lab) + '</b>' + (sub ? ' · ' + esc(lab) : '') + (a.det ? '<span class="tdet">' + esc(a.det).replace(/\n/g, '<br>') + (a.why ? ' <em>' + esc(a.why) + '</em>' : '') + '</span>' : '') + '<small>' + (a.due ? '기한 ' + mdw(a.due) + ' · ' : '') + (a.done ? (a.doneAt ? mdw(a.doneAt) + ' 마침 · ' : '마침 · ') : '') + mdw(v.ymd) + ' 심방' + (sub ? ' · ' + esc(visitPreview(v)).slice(0, 30) : '') + '</small></div>' +
+    '<div class="lab"><b>' + esc(sub ? whoShort(v.name) : lab) + '</b>' + (sub ? ' · ' + esc(lab) : '') + (a.det ? '<span class="tdet">' + esc(a.det).replace(/\n/g, '<br>') + (a.why ? ' <em>' + esc(a.why) + '</em>' : '') + '</span>' : a.why ? '<span class="tdet"><em>' + esc(a.why) + '</em></span>' : '') + '<small>' + (a.due ? '기한 ' + mdw(a.due) + ' · ' : '') + (a.done ? (a.doneAt ? mdw(a.doneAt) + ' 마침 · ' : '마침 · ') : '') + mdw(v.ymd) + ' 심방' + (sub ? ' · ' + esc(visitPreview(v)).slice(0, 30) : '') + '</small></div>' +
     '<div class="tacts">' + (v.id && (!a.done || a.b7) ? '<button class="b7b' + (a.b7 ? ' sent' : '') + '" data-act="b7open" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-label="BLOCK7 할일로 보내기">' + (a.b7 ? 'BLOCK7 ' + md(a.b7) : 'BLOCK7 →') + '</button>' : '') +
     (sub ? '<button class="send" data-act="open" data-v="' + esc(v.key) + '">›</button>' : '') + '</div></div>';
 }
@@ -3840,16 +3868,25 @@ function vPeople() {
   const RO = (DATA.opts && DATA.opts.roles) || [];
   if (S.pSort === 'old') P.sort((a, b) => (a.last || '').localeCompare(b.last || ''));
   else if (S.pSort === 'recent') P.sort((a, b) => (b.last || '').localeCompare(a.last || ''));
-  else P.sort((a, b) => { const ia = RO.indexOf(a.roles[0]), ib = RO.indexOf(b.roles[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.name.localeCompare(b.name); });
+  else { const rkOf = p => p.roles[0] || '', rank = r => (!r ? 1e4 : RO.indexOf(r) >= 0 ? RO.indexOf(r) : 500);   // 1113-E 5 같은 구분은 한데 · 폼 차례 → 그 밖 가나다 → 구분 없음
+    P.sort((a, b) => rank(rkOf(a)) - rank(rkOf(b)) || rkOf(a).localeCompare(rkOf(b)) || a.name.localeCompare(b.name)); }
+  // 1113-E 5 구분별 — 위에 구분 알약(누르면 그 구분만) · 머리는 알약 + 몇 분 + 가는 줄 · 사람 줄의 구분 글자는 뺀다(머리와 겹침)
+  const rk = p => p.roles[0] || '구분 없음';
+  if (S.pSort === 'role') {
+    const cnt = {}; P.forEach(p => { cnt[rk(p)] = (cnt[rk(p)] || 0) + 1; }); const ks = Object.keys(cnt);
+    if (S.pRole && !cnt[S.pRole]) S.pRole = '';
+    h += '<div class="rtabs">' + [['', '전체', P.length]].concat(ks.map(k => [k, k, cnt[k]])).map(x => '<button data-act="prole" data-v="' + esc(x[0]) + '" aria-pressed="' + ((S.pRole || '') === x[0]) + '">' + esc(x[1]) + ' <small>' + x[2] + '</small></button>').join('') + '</div>';
+    if (S.pRole) P = P.filter(p => rk(p) === S.pRole);
+  }
   h += '<div class="muted" style="display:flex;justify-content:space-between;gap:8px;margin:6px 0 0"><span>막대: 최근 10주 (진할수록 깊은 대화)</span><span>점: 최근 4주 할 일</span></div>';
   if (!P.length) h += '<p class="empty">이 조건에 맞는 분이 없습니다.</p>';
   let lastR = null;
   const c4 = ymdAdd(weekStartOf(t), -21);
   P.forEach(p => {
-    if (S.pSort === 'role' && (p.roles[0] || '구분 없음') !== lastR) { lastR = p.roles[0] || '구분 없음'; h += '<div class="dhead"><b>' + esc(lastR) + '</b><span></span></div>'; }
+    if (S.pSort === 'role' && rk(p) !== lastR) { lastR = rk(p); const n = P.filter(x => rk(x) === lastR).length; h += '<div class="rhead' + (p.roles[0] ? '' : ' none') + '"><b>' + esc(lastR) + '</b><span>' + n + '분</span><i></i></div>'; }
     const strip = strip10(p.visits, t).map(lv => '<i class="v' + lv + '"></i>').join('');
     const dots = [].concat(...p.visits.filter(v => v.ymd >= c4).map(v => v.actions)).map(a => '<i style="--k:var(--' + a.k + ')"></i>').join('');
-    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
+    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(S.pSort === 'role' ? p.roles.slice(1).join(' · ') : p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
   });
   // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
   //   1108-C 고침: 심방 기록이 모두 보관(보관 기준 이전)된 분도 위 목록에선 빠지므로, 출석이 있으면 여기에 — 예전엔 어느 쪽에도 안 나왔다
@@ -4112,6 +4149,7 @@ function qnAddFrom(inp) {
   inp.value = ''; qnSet(vv, it.concat([{ t, done: false }]));
   const n = $('qnIn'); if (n) n.focus();
 }
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.target.dataset && /^al:/.test(e.target.dataset.f || '')) { e.preventDefault(); actLinesAdd(e.target); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.target.dataset && e.target.dataset.qnadd) { e.preventDefault(); qnAddFrom(e.target); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.optadd) { e.preventDefault(); attOptCommit(e.target); } });
 // 1112-M 이름 칸 — Enter 로 알약 (한글 조합 중에는 안 함)
@@ -4655,7 +4693,7 @@ function lEdit(L) {
   const depthF = '<div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
   const tagsF = multiHtml(L, 'tags', '태그', offer('tags', FO.tag, []), 'tagsEtc', '직접 적기 (쉼표로 여럿)', '#');
   const ttF = '';   // 1109-T6: 칸 태그는 정리 태그 알약에 켜져 보인다(따로 안내 줄 없음)
-  const actsF = multiHtml(L, 'acts', '할 일', offer('acts', FO.act.filter(x => x !== '기타'), []), 'actsEtc', '직접 적기 (예: 병문안 일정 잡기)', '', x => ACT_KIND[x] || 'k4');
+  const actsF = multiHtml(L, 'acts', '할 일', offer('acts', FO.act.filter(x => x !== '기타'), []), 'actsEtc', '직접 적기 (예: 병문안 일정 잡기)', '', x => ACT_KIND[x] || 'k4') + actLinesHtml(L);
   const planF = L.planWhy ? '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>' : '';
   const sec = (k, t, info) => '<div class="fsec">' + t + einfo(L, k, info) + '</div>' + einfoBody(L, k, info);
   // 1112-N 시트에 새 열이 있을 때만 — 핵심 한줄(위) · 상세 기록(접이식, 이야기 아래) · 우선순위 · 정보 성격 · 장기 관찰 · 다음 질문(정리 안)
@@ -4716,21 +4754,49 @@ async function loadTrash(L) {
   try { L.items = await readTrash(saved().sheet); } catch (e) { L.err = '휴지통을 읽지 못했습니다\n' + e.message; }
   L.loading = false; render();
 }
+// 1113-E 4-3 고른 할 일 종류마다 한 줄씩 적는 칸 — 종류에 맞는 안내 글 · Enter 로 한 줄 · × 로 빼기(시트에서는 '취소')
+function actLinesHtml(L) {
+  if (L.impSlot || !L.form.actLines) return '';
+  const AL = L.form.actLines, kinds = L.form.acts.filter(t => t !== '기타').concat(Object.keys(AL).filter(t => (AL[t] || []).length && !L.form.acts.includes(t)));
+  if (!kinds.length) return '';
+  return '<div class="alines">' + kinds.map(t => '<div class="al" data-k="' + esc(t) + '"><span class="ak ' + (ACT_KIND[t] || 'k4') + '">' + esc(t) + '</span><div class="al-b">' +
+    (AL[t] || []).map((x, i) => '<div class="al-l"><span>' + esc(x) + '</span><button class="send" data-act="alx" data-k="' + esc(t) + '" data-v="' + i + '" aria-label="이 줄 빼기">' + IC.x + '</button></div>').join('') +
+    '<input class="inp al-in" data-f="al:' + esc(t) + '" placeholder="' + esc(ACT_HINT[t] || '할 일 한 줄') + '" enterkeyhint="enter" autocomplete="off" aria-label="' + esc(t) + ' 할 일 한 줄"></div></div>').join('') + '</div>';
+}
+function actLinesAdd(inp) {
+  const L = topLayer(), t = (inp.dataset.f || '').slice(3), x = actLineText(inp.value); if (!L || L.type !== 'edit' || !L.form.actLines || !t) return;
+  if (x) { const a = L.form.actLines[t] = L.form.actLines[t] || []; if (!a.includes(x) && a.length < ACT_LINES_PER) a.push(x); if (!L.form.acts.includes(t)) L.form.acts.push(t); L.dirty = true; }
+  inp.value = ''; render(); const n = document.querySelector('.layer:last-child [data-f="al:' + CSS.escape(t) + '"]'); if (n) n.focus();
+}
+function linesOfVisit(v) { const o = {}; actLinesOf(DATA.actStatus || {}, v && v.id).forEach(a => { (o[a.t] = o[a.t] || []).push(a.x); }); return o; }
+// 저장 뒤 — 액션 탭을 새로 읽어 더할 줄 · 취소할 줄만 쓴다
+async function writeActLines(rec, lines) {
+  if (!rec.id || !lines) return 0;
+  const s = saved().sheet, av = await readTab(s.id, '액션'), h = (av[0] || []).map(norm);
+  if (h.indexOf('기록ID') < 0 || h.indexOf('종류') < 0 || h.indexOf('상태') < 0) throw new Error("'액션' 탭 첫 줄이 앱이 아는 머리글이 아닙니다 — 쓰지 않았습니다");
+  const pl = actLinesPlan(parseActionTab(av), rec.id, lines), now = Date.now();
+  if (pl.add.length) await gapi(SH + s.id + '/values/' + rng('액션', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: pl.add.map((a, i) => actLineRow(h, rec.id, rec.name, a, newId('A', now + i, Math.random()))) } });
+  if (pl.cancel.length) await batchValues(s.id, pl.cancel.map(r => ({ range: a1('액션', h.indexOf('상태'), r), values: [['취소']] })));
+  return pl.add.length + pl.cancel.length;
+}
 function openEdit(key) {
   if (CELLS.state === 'idle') loadCells();   // 1112-N 이름 후보에 셀 명단도 (읽기만 — 셀 inside 로그인이 이 브라우저에 있을 때)
-  if (key) { const v = byKey(key); if (!v) return; openLayer('edit', { key, row: v.row, form: Object.assign(recordFromVisit(v), { qn: qnText(qnItems(v)) }), detOpen: !!v.detail }); }
-  else { const last = null; openLayer('edit', { key: null, form: blankRecord(today(), last) }); }
+  if (key) { const v = byKey(key); if (!v) return; openLayer('edit', { key, row: v.row, form: Object.assign(recordFromVisit(v), { qn: qnText(qnItems(v)), actLines: linesOfVisit(v) }), detOpen: !!v.detail }); }
+  else { const last = null; openLayer('edit', { key: null, form: Object.assign(blankRecord(today(), last), { actLines: {} }) }); }
 }
 async function saveRecord(L) {
   if (L.impSlot) { impSlotSave(L); return; }   // 1112-N 붙여넣기 미리보기에서 연 고치기 — 시트가 아니라 미리보기로
   whoFlush(L);   // 1112-M 아직 알약이 안 된 이름도
+  if (L.form.actLines) document.querySelectorAll('.layer:last-child .al-in').forEach(i => { const t = i.dataset.f.slice(3), x = actLineText(i.value); if (!x) return; const a = L.form.actLines[t] = L.form.actLines[t] || []; if (!a.includes(x)) a.push(x); i.value = ''; });   // 1113-E 치다 만 줄도
   const errs = validateRecord(L.form); if (errs.length) { toast(errs.join('\n')); return; }
   if (!(await ensurePrepared())) return;
+  const AL = L.form.actLines; if (AL) Object.keys(AL).forEach(t => { if ((AL[t] || []).length && !L.form.acts.includes(t)) L.form.acts.push(t); });   // 1113-E 줄이 있는 종류는 응답 칸에도
   try {
     if (!L.key) {
       const pl0 = !L.planId && DATA.plans ? planForRecord(DATA.plans, L.form.name, L.form.ymd) : null;   // 1112-N 6 같은 날 계획이 있으면 이을지 묻는다
       const linkPl = pl0 && confirm(whoShort(pl0.name) + ' ' + md(pl0.date) + ' 계획이 있습니다.\n이 기록을 그 계획에 이을까요? (계획이 \'기록됨\' 으로 바뀝니다)');
       const r = await writeNew(L.form); L.dirty = false; closeLayer(true);
+      if (AL) { try { await writeActLines({ id: r.id, name: L.form.name }, AL); } catch (e) { toast('기록은 적었는데 할 일 줄을 적지 못했습니다\n' + e.message + '\n기록을 열어 다시 적어 주세요'); } }
       if (L.planId) await finishPlan(L.planId, r.id);
       else if (linkPl) await finishPlan(pl0.id, r.id);
       const qi = DATA.nx ? qnMerge([], L.form.qn) : [];   // 1112-N 다음 질문은 '다음 질문' 탭에 (기록이 먼저 생긴 뒤)
@@ -4743,8 +4809,9 @@ async function saveRecord(L) {
       const r = await writeEdit(v, L.form); if (r.cancel) return;
       let qnCh = false;
       if (DATA.nx && v.id) { const old = qnItems(v), qi = qnMerge(old, L.form.qn); if (qnEncode(qi) !== qnEncode(old)) { await writeQn(v, qi); qnCh = true; } }
+      if (AL && v.id && await writeActLines(v, AL)) qnCh = true;   // 1113-E 할 일 줄 — 바뀐 것만
       L.dirty = false; closeLayer(true);
-      if (r.none) { toast(qnCh ? '다음 질문을 고쳤습니다' : '바뀐 것이 없습니다'); if (qnCh) await loadData(true); return; }
+      if (r.none) { toast(qnCh ? '다음 질문 · 할 일 줄을 고쳤습니다' : '바뀐 것이 없습니다'); if (qnCh) await loadData(true); return; }
       toast('고쳤습니다\n' + r.cells.filter(c => c.k !== '@수정').length + '칸', 0, { label: '되돌리기', fn: () => busy(async () => {
         try { await undoEdit(r.id, r.cells); toast('되돌렸습니다'); await loadData(true); } catch (e) { toast('되돌리지 못했습니다\n' + e.message); } }) });
     }
@@ -5556,6 +5623,7 @@ document.addEventListener('input', e => {
   }
   if (L.type === 'edit' && f.startsWith('tk:')) { talkInput(L, f, e.target.value); if (e.target.tagName === 'TEXTAREA') talkGrow(e.target); return; }
   if (L.type === 'b7send') { L.form[f] = e.target.value; if (f === 'date') document.querySelectorAll('.layer:last-child [data-act="b7date"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value))); return; }
+  if (L.type === 'edit' && f.startsWith('al:')) { if (norm(e.target.value)) L.dirty = true; return; }   // 1113-E 할 일 줄 — Enter 로 더한다
   if (f === 'nameq') { whoTyping(L, e.target); return; }   // 1112-M 이름 알약 — 쉼표면 알약으로
   if (L.type === 'edit' && f.startsWith('pn:')) { const x = (L._pn || [])[+f.slice(3)]; if (x) { (L.form.pn = L.form.pn || {})[x.key] = { name: x.name, text: e.target.value }; L.dirty = true; } talkGrow(e.target); return; }
   L.form[f] = e.target.value; L.dirty = true;
@@ -5799,6 +5867,8 @@ document.addEventListener('click', e => {
   else if (a === 'clear') { for (const x in S.filt) S.filt[x] = []; S.quick = ''; }
   else if (a === 'hue') { hueSet(!hueOn()); toast(hueOn() ? '이름을 기도노트 표시색으로\n칠합니다' : '이름 색을 껐습니다'); }
   else if (a === 'hueinfo') S.hueInfo = !S.hueInfo;
+  else if (a === 'alx') { const L = topLayer(); if (L && L.type === 'edit' && L.form.actLines && L.form.actLines[k]) { L.form.actLines[k].splice(+v, 1); L.dirty = true; render(); } }
+  else if (a === 'prole') { S.pRole = v; render(); }
   else if (a === 'wksort') { save({ wkDesc: !saved().wkDesc }); render(); const p = $('pane'); if (p && !RM.matches) p.querySelectorAll('.day').forEach(d => d.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22,.8,.24,1)' })); }
   else if (a === 'lmode') { save({ lmode: listMode() === 'brief' ? 'full' : 'brief' }); render(); const vl = $('vlist'); if (vl && !RM.matches) vl.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' }); return; }
   else if (a === 'arch') { S.showArch = !S.showArch; toast(S.showArch ? '보관 기록도 함께 봅니다' : '보관 기록을 다시 감춥니다'); }
