@@ -39,6 +39,7 @@
 //  ㊳ (1112-N 5) AI 입력대기함 — 탭에 넣은 줄 → 첫 화면 'N건' · 규격 오류는 '오류' + 사유 · 접수ID 붙임 · 열기 → 같은 미리보기 · 저장 → 다시 읽어 확인 뒤 '완료' + 기록ID · 빼기 → '취소' · ChatGPT 지시문 복사
 //  ㊴ (1112-N 6) 화면 — 카드 첫 줄 핵심 한줄 · 우선순위 · 전해 들음 · 남은 할 일 · 모임 ↔ 참석 기록 · 성도 화면 순서 · 같은 날 계획 잇기(가져오기 · 새 기록) · 상세 기록 안전하게(HTML 은 글자로)
 //  ㊵ (1113-D) 깔때기 · 할일/질문만 · 출석 이름 줄 · 대기함 줄 녹음 시각 · 지시문 아이콘
+//  ㊶ (1113-D H2) 셀 inside 로그인이 없으면 계정에 맞춰 둔 셀 명단으로(읽기만 · 셀 케어 안 부름)
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -1522,6 +1523,22 @@ async function route(r) {
     eq('㊵ I 다시 누르면 빠짐', await page.inputValue(LN + ' [data-f="name"]'), rn.slice(1, 2).join(', '));
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/att.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.evaluate(() => { topLayer().dirty = false; S.layers.length = 0; S.view = 'list'; render(); });
+
+    // ㊶ (1113-D H2) 셀 inside 로그인이 없으면 계정(cellbook/{uid}.roster)에 맞춰 둔 명단으로 — 셀 케어엔 묻지 않음
+    const nCc2 = LOG.length;
+    await page.evaluate(() => { try { localStorage.removeItem(CELL_SB_KEY); } catch (e) { } CELLS.state = 'idle'; CELLS.groups = null; window.__db0 = DB; window.__dbGet = [];
+      DB = { doc: p => ({ get: async () => { window.__dbGet.push(p); return { exists: true, data: () => ({ phones: { m1: { p: '010' } }, roster: { at: Date.parse('2026-11-13T13:10:00Z'), groups: [{ id: 'c9', name: '바다셀', leader: '다리더', leaders: ['다리더'], lead: true, members: ['저장된분'] }] } }) }; }, set: async () => { window.__dbSet = (window.__dbSet || 0) + 1; } }) };
+      openEdit(null); }); await page.waitForTimeout(400);
+    await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(500);
+    eq('㊶ 로그인 없음 → 계정 명단(내 계정 문서 하나만 읽음 · 쓰지 않음 · 셀 케어 안 부름)', [await page.$$eval(LN + ' .cgrp b', x => x.map(e => e.textContent)), await page.$$eval(LN + ' [data-act="cellname"]', x => x.map(e => e.dataset.v)), await page.evaluate(() => window.__dbGet), await page.evaluate(() => window.__dbSet || 0), LOG.slice(nCc2).filter(x => /^cc/.test(x[0])).length],
+      [['바다셀'], ['다리더', '저장된분'], ['cellbook/u'], 0, 0]);
+    eq('㊶ 받아 둔 명단이라는 안내 · 날짜', await page.$eval(LN + ' .cell-saved', e => e.textContent.includes('셀 inside 에서 받아 둔 명단') && e.textContent.includes('11/13 22:10')), true);
+    await page.click(LN + ' [data-act="cellname"][data-v="저장된분"]'); await page.waitForTimeout(200);
+    eq('㊶ 고르면 이름 칸에', await page.evaluate(() => S.layers[S.layers.length - 2].form.name), '저장된분');
+    await page.evaluate(() => { S.layers.length = 0; CELLS.state = 'idle'; CELLS.groups = null; DB = { doc: () => ({ get: async () => ({ exists: false }) }) }; openEdit(null); }); await page.waitForTimeout(300);
+    await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(400);
+    eq('㊶ 계정에도 없으면 예전 안내 그대로', await page.$eval(LN + ' .empty', e => e.textContent.includes('로그인이 없습니다')), true);
+    await page.evaluate(() => { DB = window.__db0; CELLS.state = 'idle'; CELLS.groups = null; CELLS.saved = 0; S.layers.length = 0; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
