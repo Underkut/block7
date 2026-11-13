@@ -42,6 +42,7 @@
 //  ㊶ (1113-D H2) 셀 inside 로그인이 없으면 계정에 맞춰 둔 셀 명단으로(읽기만 · 셀 케어 안 부름)
 //  ㊷ (1113-E) 열람 시간 · ← → 이전 다음 · 주간 ▲▼ · 출석 '바로 적을 분' 알약
 //  ㊸ (1113-E) 할 일 종류마다 한 줄씩(액션 탭 한 줄 = 한 할 일 · 뺀 줄은 취소) · 성도 구분별 알약
+//  ㊹ (1113-E 4-4) 질문 = 말풍선 아이콘 · 성도 · 달력 할일/질문 줄
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -1489,7 +1490,7 @@ async function route(r) {
     await page.evaluate(() => { S.layers.length = 0; render(); openLayer('person', { name: '하새벽' }); }); await page.waitForTimeout(500);
     const secs = await page.$$eval(LN + ' .h-sec', x => x.map(e => e.childNodes[0].textContent.trim()));
     eq('㊴ 성도 화면 순서 — 최근 핵심 → (남은 할 일) → 장기 관찰 → 다음 질문 → … → 원본', [secs.indexOf('최근 핵심') === 0, secs.indexOf('장기 관찰') > secs.indexOf('최근 핵심'), secs.indexOf('다음 질문') > secs.indexOf('장기 관찰'), secs[secs.length - 1]], [true, true, true, '원본']);
-    eq('㊴ 다음 질문 — 기록의 것(계획은 기록됨이 되어 빠짐)', await page.$$eval(LN + ' .nx-qs li', x => x.map(e => e.childNodes[0].textContent.trim())), ['하새벽 다음 질문?']);
+    eq('㊴ 다음 질문 — 기록의 것(계획은 기록됨이 되어 빠짐)', await page.$$eval(LN + ' .nx-qs li', x => x.map(e => e.querySelector('span').childNodes[0].textContent.trim())), ['하새벽 다음 질문?']);
     // 새 기록(손으로)도 같은 날 계획이 있으면 묻는다 — 확인 창은 '예'
     await page.evaluate(() => { S.layers.length = 0; render(); openEdit(null); const L = topLayer(); L.form.name = '하노을'; L.form.ymd = '2026-11-14'; L.form.text = '손으로 적음'; L.dirty = true; render(); }); await page.waitForTimeout(400);
     await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2500);
@@ -1604,6 +1605,21 @@ async function route(r) {
     eq('㊸ 5 구분 알약 → 그 구분만', await page.$$eval('.rhead b', x => x.map(e => e.textContent)), [rt[1]]);
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.click('.rtabs button[data-v=""]'); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/roles.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.evaluate(() => { S.view = 'list'; S.pSort = 'old'; render(); });
+
+    // ㊹ (1113-E 4-4 · HB ①) 질문은 말풍선 선 아이콘(? 글자 없음) · 성도 · 달력에서 할일 · 질문 줄
+    await page.evaluate(() => { S.view = 'list'; S.show = ['act', 'qn']; render(); }); await page.waitForTimeout(200);
+    eq('㊹ 첫 화면 — 질문 줄 앞은 말풍선 아이콘 · 맨 앞 ? 글자 없음', await page.$$eval('#vlist .c-only .oi.q', x => [x.length > 0, x.every(e => !!e.querySelector('svg.qb') && !/^\s*\?/.test(e.textContent))]), [true, true]);
+    await page.evaluate(() => { S.view = 'people'; S.pSort = 'old'; render(); }); await page.waitForTimeout(200);
+    const pi = await page.$$eval('.prow .pitems', x => x.map(e => e.querySelectorAll('.oi:not(.more)').length));
+    eq('㊹ 성도 — 이름 아래 바로 할 일 · 질문(두 줄까지 · 넘치면 외 N)', [pi.length > 0, pi.every(n => n <= 2), await page.$$eval('.prow .pitems .oi.more', x => x.every(e => /^외 \d+$/.test(e.textContent)))], [true, true, true]);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/people-items.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    await page.evaluate(() => { S.view = 'week'; S.wk = 0; render(); }); await page.waitForTimeout(200);
+    eq('㊹ 달력 주간 — 기록 줄 아래 할 일 · 질문 줄(알약 대신)', await page.$$eval('#pane .wl .c-only', x => x.length > 0), true);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/week-items.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    const pk = await page.evaluate(() => { const v = M().visits.find(x => qnItems(x).some(q => !q.done)); return v ? vWho(v)[0] : ''; });
+    if (pk) { await page.evaluate(n => { S.show = []; openLayer('person', { name: n }); }, pk); await page.waitForTimeout(400);
+      eq('㊹ 성도 화면 다음 질문 — 말풍선 아이콘', await page.$$eval(LN + ' .nx-qs li', x => x.length > 0 && x.every(e => !!e.querySelector('svg.qb'))), true); }
+    await page.evaluate(() => { S.layers.length = 0; S.show = []; S.view = 'list'; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);

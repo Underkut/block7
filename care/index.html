@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1114-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1114-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -141,7 +141,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .favs{margin:4px 0 10px}.favs .opts{gap:6px}
 .wk-sort{display:flex;justify-content:flex-end;margin:-4px 0 2px}.wk-sort button{width:30px;height:26px;display:grid;place-items:center}.wk-sort svg{width:11px;height:13px;fill:var(--line2);stroke:none}.wk-sort svg .on{fill:var(--tx2)}
 .dt-tm{color:var(--tx3);font-size:.85em}
-.c-only{display:flex;flex-direction:column;gap:5px;margin-top:6px}.c-only .oi{font-size:14px;line-height:1.5}.c-only .oi.q{display:flex;gap:7px;color:var(--tx)}.c-only .oi.q i{font-style:normal;color:var(--ac);flex:none}
+.c-only{display:flex;flex-direction:column;gap:4px;margin-top:6px;text-align:left}.c-only .oi{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.5;color:var(--tx)}.c-only .oi.more{font-size:12px;color:var(--tx3);padding-left:22px}.c-only .oi .ak{margin-right:2px}
+.ck0{width:14px;height:14px;border:1.5px solid color-mix(in srgb,var(--k) 70%,var(--line2));border-radius:50%;flex:none;margin-top:3px}
+svg.qb{width:14px;height:14px;stroke:var(--ac);fill:none;stroke-width:1.6;stroke-linejoin:round;flex:none;margin-top:3px;vertical-align:-2px}
+.nx-qs{list-style:none;margin-left:0!important}.nx-qs li{display:flex;gap:8px;align-items:flex-start}
+.pitems{grid-column:1/-1;margin-top:-2px}
 .fchip{flex:none;display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:var(--ac-soft);color:var(--ac);font-size:12.5px}
 .fchip i{font-style:normal;opacity:.6}
 /* 1109-G1 목록 자세히 / 간략히 */
@@ -780,7 +784,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1114-2';
+const APP_VERSION = 'v. 26-1114-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -3552,7 +3556,13 @@ function onlyItems(v) {
   if (S.show.includes('qn')) qnItems(v).filter(q => !q.done).forEach(q => out.push({ k: 'qn', t: q.t }));
   return out;
 }
-function onlyHtml(v) { return '<div class="c-only">' + onlyItems(v).map(o => o.k === 'act' ? '<div class="oi">' + (o.a.x && o.a.t !== '기타' ? '<span class="ak ' + o.a.k + '">' + esc(o.a.t) + '</span> ' + esc(o.a.x) : ak(o.a)) + '</div>' : '<div class="oi q"><i>?</i>' + esc(o.t) + '</div>').join('') + '</div>'; }
+// 1113-E 4-4 할 일 · 질문 줄 — 할 일은 종류 알약(동그라미 든) + 글, 질문은 말풍선 선 아이콘 + 글(HB ① — 문장 끝 ? 와 겹치지 않게). max 넘으면 '외 N'
+function itemsHtml(items, max) {
+  const show = max ? items.slice(0, max) : items;
+  return '<div class="c-only">' + show.map(o => o.k === 'act' ? '<div class="oi"><span>' + (o.a.x && o.a.t !== '기타' ? '<span class="ak ' + o.a.k + '">' + esc(o.a.t) + '</span> ' + esc(o.a.x) : ak(o.a)) + '</span></div>'
+    : '<div class="oi q">' + IC.qb + '<span>' + esc(o.t) + '</span></div>').join('') + (max && items.length > max ? '<div class="oi more">외 ' + (items.length - max) + '</div>' : '') + '</div>';
+}
+function onlyHtml(v) { return itemsHtml(onlyItems(v)); }
 function byKey(k) { return M().visits.find(v => v.key === k); }
 function fcount() { let n = 0; for (const k in S.filt) n += S.filt[k].length; return n; }
 
@@ -3562,6 +3572,7 @@ const IC = {
   x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   menu: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
   filt: '<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
+  qb: '<svg class="qb" viewBox="0 0 16 16" aria-label="질문"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>',   // 1113-E 질문 표시(말풍선 선) — ? 글자 대신
   funnel: '<svg class="fill" viewBox="0 0 24 24"><path d="M3 4.5h18l-7 8.2V21.5l-4-2v-6.8z"/></svg>',   // 1113-D E BLOCK7 깔때기 단추와 같은 꼴
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>',
   l: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -3673,7 +3684,7 @@ function listBrief(L) {
     const d = ok ? (+v.ymd.slice(8)) + ' ' + DOW[dowOf(v.ymd)] : '—', open = v.actions.filter(a => !a.done).map(a => a.x ? (a.t === '기타' ? a.x : a.t) : a.t).filter(Boolean);
     const sub = [v.methodLabel || ''].concat(open).filter(Boolean).join(' · ');
     h += '<button class="card lrow' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><span class="bd' + (v.ymd === lastD ? ' same' : '') + (ok && dowOf(v.ymd) === 0 ? ' sun' : '') + '">' + d + '</span>' +
-      '<span class="nm">' + whoHtml(v.name) + '</span><span class="bt"><span class="bt1">' + esc(S.show.length ? onlyItems(v).map(o => o.k === 'act' ? (o.a.x ? (o.a.t === '기타' ? o.a.x : o.a.t + ' · ' + o.a.x) : o.a.t) : '? ' + o.t).join(' · ') : v.core || visitFlat(v) || '(내용 없음)') + '</span>' + (sub || v.review || nxBadges(v) ? '<span class="bt2">' + rv(v) + nxBadges(v) + esc(sub) + '</span>' : '') + '</span></button>';
+      '<span class="nm">' + whoHtml(v.name) + '</span><span class="bt"><span class="bt1">' + (S.show.length ? onlyItems(v).map(o => o.k === 'act' ? esc(o.a.x ? (o.a.t === '기타' ? o.a.x : o.a.t + ' · ' + o.a.x) : o.a.t) : IC.qb + esc(o.t)).join(' · ') : esc(v.core || visitFlat(v) || '(내용 없음)')) + '</span>' + (sub || v.review || nxBadges(v) ? '<span class="bt2">' + rv(v) + nxBadges(v) + esc(sub) + '</span>' : '') + '</span></button>';
     lastD = v.ymd;
   });
   return h;
@@ -3886,7 +3897,7 @@ function vPeople() {
     if (S.pSort === 'role' && rk(p) !== lastR) { lastR = rk(p); const n = P.filter(x => rk(x) === lastR).length; h += '<div class="rhead' + (p.roles[0] ? '' : ' none') + '"><b>' + esc(lastR) + '</b><span>' + n + '분</span><i></i></div>'; }
     const strip = strip10(p.visits, t).map(lv => '<i class="v' + lv + '"></i>').join('');
     const dots = [].concat(...p.visits.filter(v => v.ymd >= c4).map(v => v.actions)).map(a => '<i style="--k:var(--' + a.k + ')"></i>').join('');
-    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(S.pSort === 'role' ? p.roles.slice(1).join(' · ') : p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
+    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(S.pSort === 'role' ? p.roles.slice(1).join(' · ') : p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div>' + (S.show.length ? (it => it.length ? '<div class="pitems">' + itemsHtml(it, 2) + '</div>' : '')([].concat(...p.visits.map(onlyItems))) : '') + '</button>';   // 1113-E 4-4 A 이름 아래 바로 — 두 줄까지 · 외 N
   });
   // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
   //   1108-C 고침: 심방 기록이 모두 보관(보관 기준 이전)된 분도 위 목록에선 빠지므로, 출석이 있으면 여기에 — 예전엔 어느 쪽에도 안 나왔다
@@ -3910,7 +3921,7 @@ function lPerson(L) {
   const open = [].concat(...live.map(v => v.actions.map((a, i) => ({ a, v, i })).filter(o => !o.a.done)));
   if (open.length) h += '<div class="h-sec">남은 할 일<small>' + open.length + '</small></div>' + open.map(o => todoRow(o.v, o.a, o.i)).join('');
   if (sm.obs.length) h += '<div class="h-sec">장기 관찰</div>' + sm.obs.map(o => '<div class="nx-obs"><span>' + esc(o.text) + '</span><small>' + md(o.ymd) + '</small></div>').join('');
-  if (sm.qs.length) h += '<div class="h-sec">다음 질문<small>' + sm.qs.length + '</small></div><ul class="nx-qs">' + sm.qs.map(q => '<li>' + esc(q.t) + ' <small>' + (q.from === '계획' ? md(q.ymd) + ' 계획' : md(q.ymd) + ' 기록') + '</small></li>').join('') + '</ul>';
+  if (sm.qs.length) h += '<div class="h-sec">다음 질문<small>' + sm.qs.length + '</small></div><ul class="nx-qs">' + sm.qs.map(q => '<li>' + IC.qb + '<span>' + esc(q.t) + ' <small>' + (q.from === '계획' ? md(q.ymd) + ' 계획' : md(q.ymd) + ' 기록') + '</small></span></li>').join('') + '</ul>';
   h += personTopicsHtml(L, live);
   const att = attendOf(AT(), n);
   h += '<div class="h-sec">출석<small>' + (att.length ? att.length + '번 · 마지막 ' + relDay(att[0].date, t) : '기록 없음') + '</small></div>';
@@ -4269,7 +4280,8 @@ function openPlanEdit(id, preset) {
 // ───────────────────────────── 달력 ─────────────────────────────
 function wmSeg() { return '<div class="seg" role="group" aria-label="주간 · 월간"><button data-act="tab" data-v="week" aria-pressed="' + (S.view === 'week') + '">주간</button><button data-act="tab" data-v="month" aria-pressed="' + (S.view === 'month') + '">월간</button></div>'; }
 function wline(v) {
-  const acts = v.actions.map(ak).join('');
+  const acts = v.actions.map(ak).join(''), it = S.show.length ? onlyItems(v) : null;   // 1113-E 4-4 할일 · 질문을 켜면 알약 대신 줄로
+  if (it) return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + whoHtml(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (it.length ? itemsHtml(it, 3) : '') + '</button>';
   return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + whoHtml(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (acts ? '<div class="r2">' + acts + '</div>' : '') + '</button>';
 }
 function eline(e) {
