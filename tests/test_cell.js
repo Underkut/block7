@@ -24,7 +24,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
   catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiBodyKey, aiAlias, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX,
-  DAY_NAMES, meetDays, meetDaysText, dateInWeek, campusPass, CAMPUSES, sortNotes, issueSortKey, sliderVal, snapVal };`, ctx);
+  DAY_NAMES, meetDays, meetDaysText, dateInWeek, campusPass, CAMPUSES, sortNotes, issueSortKey, sliderVal, snapVal, VISIT_DOWN };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -467,6 +467,24 @@ sc.eq('㉒ 기도 표시는 작은 \'기도\' 알약 (HB 11/7 시안 B · 🙏 �
   sc.eq('㉓5 끄는 동안 값은 소수(부드럽게)', A.sliderVal(40, 0, 122, 2, 8, 22) % 1 !== 0, true);
   sc.eq('㉓5 놓으면 가까운 주로', [A.snapVal(4.49, 2, 8), A.snapVal(4.5, 2, 8), A.snapVal(9, 2, 8), A.snapVal(1.2, 2, 8)], [4, 5, 8, 2]);
   sc.eq('㉓5 기본 슬라이더는 손을 안 받고(칸이 받음) 한 칸씩 끊기지 않는다', /\.spanbox input\{[^}]*pointer-events:none/.test(HTML) && (HTML.match(/type="range" id="c?spanr" min="2" max="8" step="any"/g) || []).length === 2, true);
+}
+
+// ㉔ 1113-T3 심방 노트에서 최근 심방한 분은 '먼저 연락할 분' · '살필 분' 아래 층으로 (HB 11/14)
+{
+  const N = (id, extra) => Object.assign({ member_id: id, _cell: 'c1', _who: id, categories: [] }, extra);
+  const notes = [N('갑', { leadership_attention_required: true, categories: ['long_absence'] }), N('을', { leadership_attention_required: true }), N('병', { categories: ['family'] })];
+  const asks = [{ cellId: 'c9', kind: 'contact', note: '' }];
+  const base = A.careList(new Map(), [], notes, asks);
+  sc.eq('㉔ 심방 자료가 없으면 예전 그대로 (점수순)', J(base.map(x => x.id || x.cellId)), ['갑', '을', 'c9', '병']);
+  const vis = { '갑': { days: 6, last: '2026-11-08' }, '병': { days: 40, last: '2026-10-05' } };
+  const L = A.careList(new Map(), [], notes, asks, vis);
+  sc.eq('㉔ 6점이라도 6일 전 심방한 분은 심방 안 한 분들 아래로 · 40일 전은 그대로', J(L.map(x => x.id || x.cellId)), ['을', 'c9', '병', '갑']);
+  sc.eq('㉔ 내려간 분은 visited(며칠 전)를 갖고 목록에서 빠지지 않는다', J(L.map(x => x.visited == null ? null : x.visited)), [null, null, null, 6]);
+  sc.eq('㉔ 기준은 14일 · 경계 14일은 내림 · 15일은 그대로', [A.VISIT_DOWN, A.careList(new Map(), [], [N('갑', { leadership_attention_required: true })], [], { '갑': { days: 14 } })[0].visited, A.careList(new Map(), [], [N('갑', { leadership_attention_required: true })], [], { '갑': { days: 15 } })[0].visited], [14, 14, undefined]);
+  sc.eq('㉔ 심방 기록만으로 목록에 올리지 않는다', A.careList(new Map(), [], [], [], { '정': { days: 1 } }).length, 0);
+  sc.eq('㉔ 한 장 · 살필 분이 같은 careItems 에 심방 맞춤(CARE.link)을 넘긴다', /careList\(people, S\.weeks, notes, asks, CARE\.state === 'ok' \? CARE\.link : null\)/.test(HTML) && /visitedPill\(x\)/.test(HTML), true);
+  sc.eq('㉔(T4) 개인 카드 문구 \'심방 노트에 심방 기록이 없습니다\'', HTML.includes('심방 노트에 심방 기록이 없습니다') && !HTML.includes('심방 노트에 기록이 없습니다'), true);
+  sc.eq('㉔(T5) 오른쪽 위 아이콘 줄은 위 머리 밑에 붙는다(sticky) · 무대는 세로로 자르지 않는다', /\.aibar\{position:-webkit-sticky;position:sticky;top:var\(--hh,0px\)\}/.test(HTML) && /\.stage\{[^}]*overflow-y:visible/.test(HTML) && /hhWatch\(\);/.test(HTML), true);
 }
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
