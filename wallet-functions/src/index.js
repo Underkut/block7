@@ -176,5 +176,7 @@ exports.timerPing = require("./timer").timerPing;
 exports.b7push = require("./b7push").b7push;
 // 셀 inside 새 코멘트 알림 — HTTP 하나 (10분 묻기는 studyTick 이 함께 돈다)
 exports.cellpush = require("./cellpush").cellpush;
+// 심방 노트 ChatGPT 가 보낸 기록 알림 — HTTP 하나 (10분 읽기는 studyTick 이 함께 돈다)
+exports.carepush = require("./carepush").carepush;
 // BLOCK7 시리로 할일 넣기 — 아이폰 단축어가 부른다 (쪽지함 pray/{uid}/c/b7inbox 에 한 줄)
 exports.b7siri = require("./b7siri").b7siri;

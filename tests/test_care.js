@@ -54,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
-  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, mdSafe, personSummary, planForRecord };`, ctx);
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -970,6 +970,9 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊲ 액션 탭 줄 — 세부 · 상태 할 일 · 실행근거(K)', arow, ['A1', 'C77', '라요한', '연락', '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', '', '', '할 일', '', '', '실제 약속']);
   const st = A.parseActionTab([AH, arow]), vv = { id: 'C77', actions: [{ t: '연락', x: '', k: 'k4' }] }; A.attachExtras({ visits: [vv] }, st, {});
   sc.eq('㊲ 기존 체크 화면이 그대로 이어받는다(열쇠 기록ID|종류|) · 세부 · 근거', [Object.keys(st), vv.actions[0].det, vv.actions[0].why, vv.actions[0].done], [['C77|연락|'], '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', '실제 약속', false]);
+  { const dc = A.pkDraft(Object.assign(J(P1), { records: [rec('가미정', { brief_note: '가족 건강을 돌봄. 주빌리가 아팠다고 함.\n형만 이야기는 없었음', detailed_note_markdown: '### 경위\n- 가족 모두 감기' })] }), 'json');
+    sc.eq('㊲ 이름이 나온 문장 — 두 문장까지 · 소제목 기호 떼고 · 없으면 빈 목록', [A.pkContext(dc, '가족(성명 미확인)'), A.pkContext(dc, '주빌리'), A.pkContext(dc, '없는이')], [['가족 건강을 돌봄.', '가족 모두 감기'], ['주빌리가 아팠다고 함.'], []]);
+    sc.eq('㊲ 기도노트 쪽지 — 이름뿐(내용 없음) · 빈 이름은 안 보냄', [A.prayNote(' 가미정 ', 5, 'N1'), A.prayNote('', 5, 'N2')], [{ id: 'N1', text: '가미정', at: 5, from: 'care', kind: 'person' }, null]); }
   sc.eq('㊲ 성도 탭 → 이름 · 이름 후보에 성도 탭', [A.parseRosterTab([['성도ID', '이름'], ['P1', '가미정'], ['P2', ' 가미정 '], ['P3', '']]), A.nameCands({}, [], [], ['가미정'])[0].src], [['가미정'], ['성도']]);
 }
 

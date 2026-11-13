@@ -1295,6 +1295,9 @@ async function route(r) {
     const issues = await page.$$eval(LN + ' .imp-attr > div:first-child', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     eq('㊲ 속성에 없는 값 — 구분 부산 · 태그 돌봄 · 사역 · 할 일 종류 연락', issues, ['구분 · 부산 가미정', '태그 · 돌봄 가미정', '태그 · 사역 가미정', '액션 · 연락 가미정']);
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/imp-review.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    eq('㊲ (1113) 원본 번호 줄은 숨기고 ⓘ 안에 · 소제목 PLAUD', [await page.$$eval(LN + ' .einfo-b', x => x.length), await page.$$eval(LN + ' .imp-lab', x => x.map(e => e.textContent)), await page.$$eval(LN + ' .ph-head [data-act="impinfo"]', x => x.length)], [0, ['PLAUD'], 1]);
+    await page.click(LN + ' .ph-head [data-act="impinfo"]'); await page.waitForTimeout(150);
+    eq('㊲ (1113) ⓘ 를 누르면 받은 꼴 · 원본 번호', await page.$eval(LN + ' .einfo-b', e => e.textContent.includes('f_e2e_call')), true);
     await page.click(LN + ' [data-act="implink"]'); await tidy();
     eq('㊲ 속성을 다 고르기 전엔 다음으로 안 간다', await page.$$eval(LN + ' .imp-attr', x => x.length), 4);
     const pickAttr = async (val, mode, to) => { const ix = await page.evaluate(v => topLayer().issues.findIndex(x => x.val === v && !x.done), val); if (ix < 0) { eq('㊲ (시험 자료) 속성에 없는 값이어야 함: ' + val, false, true); return; } await page.click(LN + ' [data-act="impattr"][data-v="' + ix + '|' + mode + '|' + (to || '') + '"]'); await page.waitForTimeout(150); };
@@ -1311,7 +1314,11 @@ async function route(r) {
     await page.click(LN + ' [data-act="implink"]'); await tidy();
     const lk = async () => page.$$eval(LN + ' .lk-row', x => x.map(e => e.querySelector('.lk-raw').textContent + ' → ' + e.querySelector('.lk-to').textContent.trim() + ' | ' + e.querySelector('.lk-st').textContent));
     eq('㊲ 성도 연결 확인 — 기록 성도(명단에 없음 → 새 성도) · 윤정(후보 둘 → 고르기 전) · 형만(후보 하나 → 이름만 같아 붙임)', await lk(),
-      ['가미정 → 가미정 새 성도 | 새 성도로 추가', '윤정(성씨 미확인) → 후보 2분 중 고르기 | 골라 주세요', '형만(성씨 미확인) → 차형만 기도노트 · 심방 기록 없음 | 이름만 같아 붙임']);
+      ['가미정 → 가미정 새 성도 | 새 성도로 추가', '윤정(성씨 미확인) → 후보 2분 중 고르기 | 골라 주세요', '형만(성씨 미확인) → 차형만 기도노트에 있음 · 심방은 처음 | 이름만 같아 붙임']);
+    eq('㊲ (1113) 단계가 바뀌면 아래 단추도 그 단계 것', await page.$$eval(LN + ' .ph-foot button', x => x.map(e => e.textContent)), ['미리보기로', '저장']);
+    eq('㊲ (1113) 기도노트에 없는 분(가미정)에만 \'기도노트에도 추가\'', await page.$$eval(LN + ' .lk-row', x => x.map(e => e.querySelectorAll('[data-act="lkpray"]').length)), [1, 0, 0]);
+    await page.evaluate(() => { window.__prayIn = []; const d0 = DB.doc; DB.doc = p => (p.endsWith('/c/inbox') ? { set: async (o, m) => { window.__prayIn.push([p, o.items.__u, m]); } } : d0(p)); window.firebase.firestore.FieldValue.arrayUnion = (...x) => ({ __u: x.length === 1 ? x[0] : x }); });
+    await page.click(LN + ' .lk-row[data-lk="r0"] [data-act="lkpray"]'); await page.waitForTimeout(150);
     await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(300);
     eq('㊲ 고르기 전엔 저장 안 됨', [await page.$eval('.toast', e => e.textContent.split('\n')[0]), JSON.stringify(RT.rows) === before0], ['골라야 할 이름이 남았습니다', true]);
     // 이름 고치기 — 같은 명단에서 찾아 고르기
@@ -1324,8 +1331,9 @@ async function route(r) {
     
     await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(3000);
     eq('㊲ 저장 — 단계마다 ✓ · 다시 읽어 확인', await page.$$eval(LN + ' .imp-step', x => x.map(e => e.className.replace('imp-step ', '') + ':' + e.querySelector('span:last-child').firstChild.textContent.split(' — ')[0].trim())),
-      ['ok:\'속성\' 에 새 선택지 3개', 'ok:\'성도\' 탭에 새 성도 가미정', 'ok:가미정', 'ok:가미정', 'ok:시트를 다시 읽어 확인']);
+      ['ok:\'속성\' 에 새 선택지 3개', 'ok:\'성도\' 탭에 새 성도 가미정', 'ok:가미정', 'ok:가미정', 'ok:시트를 다시 읽어 확인', 'ok:기도노트에 추가']);
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/imp-done.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    eq('㊲ (1113) 기도노트 우체통에 이름만 든 쪽지 하나', await page.evaluate(() => window.__prayIn.map(x => [x[0], x[1].text, x[1].kind, x[1].from, Object.keys(x[1]).sort().join(',')])), [['pray/u/c/inbox', '가미정', 'person', 'care', 'at,from,id,kind,text']]);
     const g = RT.rows.filter(r => col(r, '성도 이름') === '가미정');
     eq('㊲ 가미정 — 개인 기록 한 줄 · 출처 AI · 정보 성격 전언 · 내용 칸은 짧은 메모 · 원본ID · 언급된 성도(연결만)', g.map(r => [col(r, '출처'), !!col(r, '확인'), col(r, '정보 성격'), col(r, '핵심 한줄'), col(r, '내용'), col(r, '원본ID'), col(r, '언급된 성도'), col(r, '모임ID') || '', col(r, '구분'), col(r, '태그')]),
       [['AI', true, '전언', '봉사 오해가 배움으로 이어졌다는 소식', '가미정 짧은 메모', 'f_e2e_call', '김윤정, 차형만', '', '부산', '돌봄, 교회']]);
@@ -1343,7 +1351,7 @@ async function route(r) {
     eq('㊲ 셀모임 미리보기 — 모임 카드(미확인 화자) · 기록 셋 · 실제 약속만 체크', [await page.$$eval(LN + ' .imp-card.meet .imp-unk', x => x.length), await page.$$eval(LN + ' .imp-card:not(.meet)', x => x.length), await page.$$eval(LN + ' .imp-act', x => x.map(e => e.getAttribute('aria-pressed')))], [1, 3, ['false', 'false', 'true']]);
     await pickAttr('셀모임', 'add');
     await page.click(LN + ' [data-act="implink"]'); await tidy();
-    eq('㊲ 셀모임 연결 — 있는 분은 자동 · 처음 분은 새 성도', await lk(), ['나호근 → 나호근 기도노트 · 심방 기록 없음 | 자동 연결', '다종만 → 다종만 새 성도 | 새 성도로 추가', '라요한 → 라요한 새 성도 | 새 성도로 추가']);
+    eq('㊲ 셀모임 연결 — 있는 분은 자동 · 처음 분은 새 성도', await lk(), ['나호근 → 나호근 기도노트에 있음 · 심방은 처음 | 자동 연결', '다종만 → 다종만 새 성도 | 새 성도로 추가', '라요한 → 라요한 새 성도 | 새 성도로 추가']);
     await page.click(LN + ' [data-act="impsave"]'); await page.waitForTimeout(3500);
     const mt = rowsOf('모임', r => r[6] === 'f_e2e_cell');
     eq('㊲ 모임 탭 한 줄 — 미확인 화자는 여기에만', mt.map(r => [r[1], r[2], r[3], r[8]]), [['2026-11-11', '셀모임 — 첫사랑', '모임', '화자3: 말씀 읽기를 하겠다는 분. 실명 미확인.']]);
@@ -1381,7 +1389,7 @@ async function route(r) {
     // Markdown 보고서
     const MDT = ['# 마하늘 짧은 통화', '성도: 마하늘', '날짜: 2026-11-10', '방식: 전화', '대화 깊이: 얕음', '## 핵심 한줄', '이사 준비로 바쁨', '## 내용', '이번 주 이사.', '## 상세 기록', '### 경과', '- 짐 정리 중', '우선순위: 이번주', '정보 성격: 직접', '## 다음 질문', '- 이사는 잘 마쳤나요?', '## 실제 약속', '- [중보] 이사 위해 기도 (기한 2026-11-15)'].join('\n');
     await paste(MDT);
-    eq('㊲ Markdown — 칸이 채워짐(핵심 한줄 · 우선순위 · 실제 약속 체크)', [await page.$eval(LN + ' .imp-src', e => e.textContent.split(' · ')[0]), await page.$eval(LN + ' .imp-card .imp-core', e => e.textContent), await page.$eval(LN + ' .imp-card .nx-prio', e => e.textContent), await page.$$eval(LN + ' .imp-act', x => x.map(e => e.getAttribute('aria-pressed')))],
+    eq('㊲ Markdown — 칸이 채워짐(핵심 한줄 · 우선순위 · 실제 약속 체크)', [await page.evaluate(() => topLayer().d.kind === 'md' ? 'Markdown 보고서' : 'JSON'), await page.$eval(LN + ' .imp-card .imp-core', e => e.textContent), await page.$eval(LN + ' .imp-card .nx-prio', e => e.textContent), await page.$$eval(LN + ' .imp-act', x => x.map(e => e.getAttribute('aria-pressed')))],
       ['Markdown 보고서', '이사 준비로 바쁨', '이번주', ['true']]);
     // 저장 중 끊김 → 다시 시도 (액션 탭 쓰기가 한 번 실패)
     await page.click(LN + ' [data-act="implink"]'); await tidy();
