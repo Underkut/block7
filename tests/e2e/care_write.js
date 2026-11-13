@@ -40,6 +40,7 @@
 //  ㊴ (1112-N 6) 화면 — 카드 첫 줄 핵심 한줄 · 우선순위 · 전해 들음 · 남은 할 일 · 모임 ↔ 참석 기록 · 성도 화면 순서 · 같은 날 계획 잇기(가져오기 · 새 기록) · 상세 기록 안전하게(HTML 은 글자로)
 //  ㊵ (1113-D) 깔때기 · 할일/질문만 · 출석 이름 줄 · 대기함 줄 녹음 시각 · 지시문 아이콘
 //  ㊶ (1113-D H2) 셀 inside 로그인이 없으면 계정에 맞춰 둔 셀 명단으로(읽기만 · 셀 케어 안 부름)
+//  ㊷ (1113-E) 열람 시간 · ← → 이전 다음 · 주간 ▲▼ · 출석 '바로 적을 분' 알약
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -400,7 +401,7 @@ async function route(r) {
   await talk(page, [['n', '계획대로 만남']]);
   await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
   const gr = R.rows.find(r => r[2] === '거거거') || [];
-  eq('⑫ 기록 저장 → 계획 기록됨 · 기록ID 이어짐 · 일정 제목에 ✓', [!!gr.length, prow('거거거')['상태'], prow('거거거')['기록ID'] === gr[9], evOf('evcut').summary], [true, '기록됨', true, '✓ 심방 · 거거거']);
+  eq('⑫ 기록 저장 → 계획 기록됨 · 기록ID 이어짐 · 일정 제목(✓ 없음, 1113-E)', [!!gr.length, prow('거거거')['상태'], prow('거거거')['기록ID'] === gr[9], evOf('evcut').summary], [true, '기록됨', true, '심방 · 거거거']);
   // 캘린더에만 있는 일정 → 계획으로
   CAL.events.push({ id: 'evx', status: 'confirmed', summary: '심방 · 더더더', start: { dateTime: D1 + 'T19:00:00+09:00' }, end: { dateTime: D1 + 'T20:00:00+09:00' }, htmlLink: 'https://example.invalid/evx' });
   for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
@@ -499,7 +500,7 @@ async function route(r) {
   R.rows.push(['11/8/2026 11:00:00', '11/1', '폼사람', '셀원', '식사', '폼으로 적은 기록(기록ID 는 앱이 붙임)', '', '', '중간']);
   await reload(); await reload();
   const want = await page.evaluate(() => { const cov = new Set((DATA.plans || []).filter(p => p.recId && p.evId && p.evId !== '없음').map(p => p.recId)); return M().visits.filter(v => v.id && v.ymd >= '2026-10-01' && !v.archived && !cov.has(v.id)).map(v => [v.id, v.name, v.ymd]).sort(); });
-  eq('⑭ 2026-10-01 부터의 기록마다 일정 하나 — ✓ 제목 · 그날 하루 종일', recEv().map(e => [e.extendedProperties.private.careRec, e.summary, e.start.date]).sort(), want.map(w => [w[0], '✓ 심방 · ' + w[1], w[2]]));
+  eq('⑭ 2026-10-01 부터의 기록마다 일정 하나 — 제목(✓ 없음) · 그날 하루 종일', recEv().map(e => [e.extendedProperties.private.careRec, e.summary, e.start.date]).sort(), want.map(w => [w[0], '심방 · ' + w[1], w[2]]));
   eq('⑭ 폼으로 들어온 기록도 들어간다 · 기준 날짜 앞(9/20)은 안 들어간다', [want.some(w => w[1] === '폼사람'), evFor('C960').length], [true, 0]);
   const ggId = prow('거거거')['기록ID'];
   eq('⑭ 계획에서 온 기록(거거거)은 계획 일정이 있어 따로 안 만든다', [!!ggId, evFor(ggId).length], [true, 0]);
@@ -1539,6 +1540,38 @@ async function route(r) {
     await page.click('.layer .recent .cellbtn'); await page.waitForTimeout(400);
     eq('㊶ 계정에도 없으면 예전 안내 그대로', await page.$eval(LN + ' .empty', e => e.textContent.includes('로그인이 없습니다')), true);
     await page.evaluate(() => { DB = window.__db0; CELLS.state = 'idle'; CELLS.groups = null; CELLS.saved = 0; S.layers.length = 0; render(); });
+
+    // ㊷ (1113-E) 3 시간 · 6 주간 정렬 · 2 옆으로 넘기기 · 1 출석 바로 적을 분
+    await page.evaluate(() => { S.view = 'list'; S.show = []; render(); }); await page.waitForTimeout(200);
+    const k0 = await page.$eval('#vlist .card', e => e.dataset.v);
+    await page.click('#vlist .card'); await page.waitForTimeout(400);
+    eq('㊷ 3 열람 — 날짜 옆 시간(녹음 · 입력)', await page.$eval(LN + ' .dt-when', e => /\d{2}:\d{2} (녹음|입력)/.test(e.textContent)), true);
+    const nb = await page.evaluate(() => detNeighbors());
+    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(600);
+    eq('㊷ 2 → 다음 기록(목록 차례) · ← 로 돌아옴', [await page.evaluate(() => topLayer().key), nb.prev], [nb.next, '']);
+    await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(600);
+    eq('㊷ 2 ← 처음 기록으로', await page.evaluate(() => topLayer().key), k0);
+    await page.evaluate(() => { S.layers.length = 0; S.view = 'week'; S.wk = 0; save({ wkDesc: false }); render(); }); await page.waitForTimeout(200);
+    const asc = await page.$$eval('#pane .day .dn b', x => x.map(e => +e.textContent));
+    await page.click('[data-act="wksort"]'); await page.waitForTimeout(300);
+    eq('㊷ 6 주간 ▲▼ — 날짜 역순 · 다시 누르면 날짜순', [await page.$$eval('#pane .day .dn b', x => x.map(e => +e.textContent)), asc.slice().reverse().join() === (await page.$$eval('#pane .day .dn b', x => x.map(e => +e.textContent))).join()], [asc.slice().reverse(), true]);
+    await page.click('[data-act="wksort"]'); await page.waitForTimeout(300);
+    await page.evaluate(() => { S.view = 'attend'; render(); }); await page.waitForTimeout(200);
+    await page.click('.favs [data-act="aoptadd"]'); await page.waitForTimeout(150);
+    await page.fill('.favs [data-optadd]', '머머머'); await page.press('.favs [data-optadd]', 'Enter'); await page.waitForTimeout(600);
+    await page.click('.favs [data-act="aoptadd"]'); await page.waitForTimeout(150);
+    await page.fill('.favs [data-optadd]', '거거거'); await page.press('.favs [data-optadd]', 'Enter'); await page.waitForTimeout(600);
+    const ot = tab('출석 선택지');
+    eq('㊷ 1 바로 적을 분 — 알약 둘 · 시트 \'출석 선택지\' 탭에 칸 \'바로 적을 분\'', [await page.$$eval('.favs [data-act="favgo"]', x => x.map(e => e.dataset.v)), ot.rows.filter(r => r[0] === '바로 적을 분').map(r => r[1])], [['머머머', '거거거'], ['머머머', '거거거']]);
+    await page.click('.favs [data-act="favgo"][data-v="거거거"]'); await page.waitForTimeout(400);
+    eq('㊷ 1 누르면 그 이름이 든 출석 입력', [await page.evaluate(() => topLayer().type), await page.inputValue(LN + ' [data-f="name"]')], ['attedit', '거거거']);
+    await page.evaluate(() => { topLayer().dirty = false; S.layers.length = 0; render(); }); await page.waitForTimeout(200);
+    await page.click('.favs [data-act="favgo"][data-v="머머머"]', { button: 'right' }); await page.waitForTimeout(200);
+    eq('㊷ 1 오른쪽 단추(폰은 길게) → 이름 바꾸기 · 지우기 메뉴', await page.$$eval('.omenu button', x => x.map(e => e.textContent)), ['이름 바꾸기', '지우기', '취소']);
+    await page.click('.omenu [data-act="aoptdel"]'); await page.waitForTimeout(600);
+    eq('㊷ 1 지우기 → 알약 · 시트에서 빠짐', [await page.$$eval('.favs [data-act="favgo"]', x => x.map(e => e.dataset.v)), tab('출석 선택지').rows.filter(r => r[0] === '바로 적을 분').map(r => r[1])], [['거거거'], ['거거거']]);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/favs.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    await page.evaluate(() => { S.view = 'list'; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
