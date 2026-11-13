@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-title" content="셀 inside">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
-// ⚠️ 셀 한눈에의 집은 sweeter.my/cell/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
+// ⚠️ 셀 inside의 집은 sweeter.my/cell/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
 //    block7.my/cell/ 에도 같은 파일이 생긴다 → 로그인이 두 곳에 갈라지지 않게 sweeter.my 로 넘긴다.
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/cell/' + location.search + location.hash);
@@ -399,7 +399,7 @@ input[type=tel]{font-size:16px}
 <div class="wrap" id="root"><div class="loading">불러오는 중…</div></div>
 <div class="toast" id="toast" hidden></div>
 <script id="cell-core">
-// 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
+// 셀 inside — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
 const APP_VERSION = 'v. 26-1113-1';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
@@ -2016,7 +2016,7 @@ addEventListener('resize', () => { for (const el of document.querySelectorAll('.
 /* ---------- L17 AI 요약 (HB 11/7) ----------
    접힌 긴 글의 오른쪽 끝 별(✦)을 누르면 제미나이(무료 단계)가 설정한 길이(처음값 두 문장)로 요약한다. 보내기 전에 아는 이름은 '셀원 A' 로 바꾼다(anonText).
    열쇠와 한 번 만든 요약은 HB 계정 cellbook/{uid} 의 ai 칸에 두고(HB 결정 11/7 — 기기끼리 맞춤) 이 기기에도 사본을 둔다.
-   ⚠️ 셀 한눈에의 '성도 내용은 화면 메모리에만' 규칙의 예외다 — 저장소 · users/{uid} 에는 두지 말 것. */
+   ⚠️ 셀 inside의 '성도 내용은 화면 메모리에만' 규칙의 예외다 — 저장소 · users/{uid} 에는 두지 말 것. */
 // 1109-K3 '보내기' 뜻 아이콘: 네모의 오른쪽 위가 열리고 그 틈으로 화살표가 나간다 (HB 참고 그림)
 const SENDOUT = '<svg viewBox="0 0 24 24"><path d="M11 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V13"/><path d="M10.5 13.5L20 4"/><path d="M14 4h6v6"/></svg>';
 function sendRowHtml() { return `<div class="sendrow"><span class="sendico" aria-hidden="true" title="기도노트로 보내기">${SENDOUT}</span></div>`; }
@@ -2566,7 +2566,7 @@ function careRelink() {
   const lm = leaderMembers(); CARE.lm = lm; CARE.lres = linkVisits(lm, CARE.visits, today);
   CARE.alink = linkVisits([...S.members.values()], (CARE.attend || []).map(a => ({ name: a.name, ymd: a.date, att: a })), today);   // 출석도 같은 이름 맞추기 규칙으로
 }
-// 기도노트 표시색 (원본은 기도노트 · 여기선 읽기만) — 셀 한눈에의 이름 다듬기(직분 · 호칭 떼기)로 맞춘다
+// 기도노트 표시색 (원본은 기도노트 · 여기선 읽기만) — 셀 inside의 이름 다듬기(직분 · 호칭 떼기)로 맞춘다
 async function prayLoad(core) {
   CARE.pmark = CARE.pmark || new Map(); if (!core.prayMarkIndex || !FB.db || !FB.user) return;
   try {

@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#111312" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex, nofollow">
 <title>사역 한눈에</title>
-<!-- 홈 화면 앱 · 파비콘 — 아이콘은 임시(셀 한눈에 것). HB 가 디자인을 주면 icon-192/512 · apple-touch-icon · favicon 네 장만 바꾼다 -->
+<!-- 홈 화면 앱 · 파비콘 — 아이콘은 임시(셀 inside 것). HB 가 디자인을 주면 icon-192/512 · apple-touch-icon · favicon 네 장만 바꾼다 -->
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -25,7 +25,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* 셀 한눈에와 같은 색 · 글꼴 — 로고로 오가도 한 앱처럼 보이게 */
+/* 셀 inside와 같은 색 · 글꼴 — 로고로 오가도 한 앱처럼 보이게 */
 :root{
   --bg:#f3f3f0; --paper:#ffffff; --s1:#f7f7f4; --s2:#ebebe6; --line:#e4e4de; --line2:#cfcfc7;
   --tx:#1c1f1e; --tx2:#5b625f; --tx3:#8c928f;
@@ -257,7 +257,7 @@ function chores(book, ws, today, hm, done) {
 <script>
 'use strict';
 const DEMO = /[?&]demo=1\b/.test(location.search);
-const EMBED = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();   // 셀 한눈에 안 겹 화면으로 열렸나
+const EMBED = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();   // 셀 inside 안 겹 화면으로 열렸나
 const TOUCH = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (_) { return false; } })();
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -269,7 +269,7 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = fal
 document.addEventListener('click', () => { const t = $('#toast'); if (!t.hidden && Date.now() - (toast.at || 0) > 300) t.hidden = true; }, true);
 function todayYmd() { return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' }); }
 function md(ymd) { return (+ymd.slice(5, 7)) + '/' + (+ymd.slice(8, 10)); }
-// 아이폰 홈 화면 앱: 손가락을 뗄 때 직접 커서를 넣어 키보드를 띄운다 (셀 한눈에와 같은 까닭)
+// 아이폰 홈 화면 앱: 손가락을 뗄 때 직접 커서를 넣어 키보드를 띄운다 (셀 inside와 같은 까닭)
 document.addEventListener('touchend', (e) => { const t = e.target; if (t && t.matches && t.matches('input:not([type=checkbox]):not([disabled]),select,textarea') && document.activeElement !== t) t.focus(); }, { passive: true });
 
 /* ---------- 상태 ---------- */
@@ -280,9 +280,9 @@ const S = { book: normBook(lsGet(BOOK_KEY, null)), week: weekStartSun(todayYmd()
 function nowHm() { return new Date().toLocaleTimeString('sv-SE', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' }); }
 const TABS = [{ id: 'week', label: '이번 주' }, { id: 'depts', label: '내 부서' }];
 
-/* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호, 셀 한눈에와 같은 로그인 칸 'cell') ----------
-   ⚠️ 앱 이름을 셀 한눈에와 같은 'cell' 로 둔다 — 같은 sweeter.my 라 한 번 로그인하면 두 앱이 같이 로그인된다.
-   시간표는 셀 한눈에의 전화번호 문서 cellbook/{uid} 의 'report' 칸에 둔다 (보안 규칙을 새로 붙일 필요가 없다).
+/* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호, 셀 inside와 같은 로그인 칸 'cell') ----------
+   ⚠️ 앱 이름을 셀 inside와 같은 'cell' 로 둔다 — 같은 sweeter.my 라 한 번 로그인하면 두 앱이 같이 로그인된다.
+   시간표는 셀 inside의 전화번호 문서 cellbook/{uid} 의 'report' 칸에 둔다 (보안 규칙을 새로 붙일 필요가 없다).
    성도 정보는 여기 없다 — 부서 이름 · 요일 · 시각뿐. users/{uid} 는 건드리지 않는다. */
 const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
   storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
@@ -546,7 +546,7 @@ function nextDow(dow) { const t = todayYmd(); return addDays(t, (dow - dowOf(t) 
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'pk-new') { e.preventDefault(); if (e.target.value.trim()) addDept(e.target.value, S.pick); } if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin(); if (e.key === 'Escape') { if ($('#layer')) return closeLayer(false); const m = $('#menu'); if (m) m.remove(); } });
 addEventListener('resize', () => markTab());
 
-/* ---------- 새 버전 (셀 한눈에와 같은 방법) ---------- */
+/* ---------- 새 버전 (셀 inside와 같은 방법) ---------- */
 async function checkUpdate(manual) {
   try {
     const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' });

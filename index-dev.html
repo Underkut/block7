@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1112-14  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1113-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1112-14";
+const APP_VERSION = "v. 26-1113-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -25686,7 +25686,7 @@ function _lsdFamily(k){       // b7v1 집안: 가장 긴 앞머리 = 그 키의 
 function _lsdAppName(k){
   const f=_lsdFamily(k);
   if(f)return {b7v1:'BLOCK7',b7v1_dev:'BLOCK7 개발본',b7v1_sweeter:'Sweeter',b7v1_sweeter_dev:'Sweeter 개발본'}[f];
-  const t=[[/^pray/,'기도노트'],[/^b7care/,'심방 노트'],[/^cell_/,'셀 한눈에'],[/^report_/,'사역 한눈에'],[/^b7timer/,'타이머'],[/^(b7wallet|wallet)/,'용돈 친구들'],[/^(b7study|study)/,'공부 친구들']];
+  const t=[[/^pray/,'기도노트'],[/^b7care/,'심방 노트'],[/^cell_/,'셀 inside'],[/^report_/,'사역 한눈에'],[/^b7timer/,'타이머'],[/^(b7wallet|wallet)/,'용돈 친구들'],[/^(b7study|study)/,'공부 친구들']];
   for(const [re,n] of t)if(re.test(k))return n;
   return '그 밖';
 }

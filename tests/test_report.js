@@ -7,7 +7,7 @@
 //  ③ 시간표 다듬기: 모르는 값은 버리고 기본값 · 빈 부서는 버림
 //  ④ 기기 사본 ↔ 계정: 나중에 고친 쪽(at) · 계정이 비면 기기 것을 올린다
 //  ⑤ 한 주 일정: 날짜순 · 같은 날은 끝나는 시각순 · 쓰는/봐 주는 부서 모두
-//  ⑥ 셀 한눈에와 로고로 겹 화면 전환 · 같은 로그인 칸('cell') · 시간표는 cellbook 문서의 report 칸 · users 는 안 건드림
+//  ⑥ 셀 inside와 로고로 겹 화면 전환 · 같은 로그인 칸('cell') · 시간표는 cellbook 문서의 report 칸 · users 는 안 건드림
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -71,11 +71,11 @@ sc.eq('⑤ 시간칸 글', A.slotText(book.depts[1].slots[0]), '1째 주 일요�
   sc.eq('⑤-2 자주 있는 이름 목록이 있다', A.PRESET.includes('조명팀') && A.PRESET.includes('성찬위원'), true);
 }
 
-// ⑥ 셀 한눈에와 잇기 · 저장 자리
+// ⑥ 셀 inside와 잇기 · 저장 자리
 sc.eq('⑥ 사역 → 셀: 로고가 /cell/ 을 겹 화면으로', /case 'switch': return openLayer\('\/cell\/'/.test(HTML), true);
 sc.eq('⑥ 셀 → 사역: 로고가 /report/ 를 겹 화면으로', /case 'switch': return openLayer\('\/report\/'/.test(CELL), true);
 sc.eq('⑥ 겹 안에서 로고를 누르면 겹이 걷힌다 (두 앱 모두)', [HTML, CELL].every(h => /parent\.postMessage\(\{ type: 'b7-layer-close' \}/.test(h) && /b7-layer-close'\) closeLayer\(false\)/.test(h)), true);
-sc.eq('⑥ 셀 한눈에와 같은 로그인 칸(앱 이름 cell)', /firebase\.initializeApp\(FB_CFG, 'cell'\)/.test(HTML), true);
+sc.eq('⑥ 셀 inside와 같은 로그인 칸(앱 이름 cell)', /firebase\.initializeApp\(FB_CFG, 'cell'\)/.test(HTML), true);
 sc.eq('⑥ 시간표는 cellbook/{uid} 의 report 칸에만 · users 는 안 건드림', /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.set\(\{ report: S\.book \}, \{ merge: true \}\)/.test(HTML) && !/collection\('users'\)/.test(HTML), true);
 
 // ⑦ 집 주소 · 버전
