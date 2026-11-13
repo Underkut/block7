@@ -43,6 +43,7 @@
 //  ㊷ (1113-E) 열람 시간 · ← → 이전 다음 · 주간 ▲▼ · 출석 '바로 적을 분' 알약
 //  ㊸ (1113-E) 할 일 종류마다 한 줄씩(액션 탭 한 줄 = 한 할 일 · 뺀 줄은 취소) · 성도 구분별 알약
 //  ㊹ (1113-E 4-4) 질문 = 말풍선 아이콘 · 성도 · 달력 할일/질문 줄
+//  ㊺ (1114) 목록에서 바로 체크 — 할 일 알약 · 질문 말풍선 → 액션 · 다음 질문 탭, 그 자리에 회색 · 알약 밖은 열람
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -1619,6 +1620,34 @@ async function route(r) {
     const pk = await page.evaluate(() => { const v = M().visits.find(x => qnItems(x).some(q => !q.done)); return v ? vWho(v)[0] : ''; });
     if (pk) { await page.evaluate(n => { S.show = []; openLayer('person', { name: n }); }, pk); await page.waitForTimeout(400);
       eq('㊹ 성도 화면 다음 질문 — 말풍선 아이콘', await page.$$eval(LN + ' .nx-qs li', x => x.length > 0 && x.every(e => !!e.querySelector('svg.qb'))), true); }
+    await page.evaluate(() => { S.layers.length = 0; S.show = []; S.view = 'list'; render(); });
+
+    // ㊺ (1114) 목록에서 바로 체크 — 할 일 알약 · 질문 말풍선을 누르면 열람으로 가지 않고 마침 / 물어봄 · 그 자리에 회색으로
+    await page.evaluate(() => { save({ lmode: 'full' }); render(); }); await page.waitForTimeout(200);
+    const t1 = await page.evaluate(() => { const v = M().visits.find(x => !x.archived && x.id && x.actions.some(a => !a.done)); const i = v.actions.findIndex(a => !a.done); return { key: v.key, id: v.id, i, t: v.actions[i].t, x: v.actions[i].x }; });
+    const sel = '#vlist .ak.tk[data-v="' + t1.key + '"][data-k="' + t1.i + '"]', n0 = await page.$eval('.today .a b', e => +e.textContent);
+    const arow = () => tab('액션').rows.find(r => r[1] === t1.id && r[3] === t1.t && (r[5] || '') === t1.x) || [];
+    await page.click(sel); await page.waitForTimeout(1200);
+    eq('㊺ 알약 누름 → 열람 안 열림 · 알약 마침(채운 동그라미 · 회색) · 남은 할 일 −1', [await page.$$eval('.layer', x => x.length), await page.$eval(sel, e => e.classList.contains('done') && e.getAttribute('aria-pressed')), await page.$eval('.today .a b', e => +e.textContent)], [0, 'true', n0 - 1]);
+    eq('㊺ 액션 탭에 마침 · 완료일', [arow()[7], !!arow()[8]], ['마침', true]);
+    await page.click(sel); await page.waitForTimeout(1200);
+    eq('㊺ 다시 누름 → 할 일로 · 완료일 비움', [arow()[7], arow()[8] || '', await page.$eval(sel, e => e.classList.contains('done'))], ['할 일', '', false]);
+    await page.click('.card[data-v="' + t1.key + '"] .c-top .nm'); await page.waitForTimeout(500);
+    eq('㊺ 알약 밖(이름)을 누르면 그대로 열람', await page.$$eval('.layer', x => x.length), 1);
+    await page.evaluate(() => { S.layers.length = 0; S.show = ['act', 'qn']; render(); }); await page.waitForTimeout(300);
+    const q1 = await page.evaluate(() => { const v = M().visits.find(x => !x.archived && qnItems(x).some(q => !q.done)); const i = qnItems(v).findIndex(q => !q.done); return { key: v.key, id: v.id, i, t: qnItems(v)[i].t }; });
+    const qs = '#vlist .qtk[data-v="' + q1.key + '"][data-k="' + q1.i + '"]';
+    await page.click(qs); await page.waitForTimeout(1200);
+    eq('㊺ 질문 말풍선 → 물어봄 · 그 자리에 남아 회색(채운 말풍선)', [await page.$$eval('.layer', x => x.length), await page.$eval(qs, e => e.closest('.oi').classList.contains('done') && !!e.querySelector('svg.qb.on'))], [0, true]);
+    const QT = tab('다음 질문'), qh = QT.rows[0].indexOf('질문');
+    eq('㊺ 다음 질문 탭에 [x]', String((QT.rows.find(r => r[0] === q1.id) || [])[qh] || '').split('\n').includes('[x] ' + q1.t), true);
+    const a2 = await page.evaluate(() => { const v = M().visits.find(x => !x.archived && x.id && x.actions.some(a => !a.done)); return v ? { key: v.key, i: v.actions.findIndex(a => !a.done) } : null; });
+    if (a2) { const s2 = '#vlist .c-only .ak.tk[data-v="' + a2.key + '"][data-k="' + a2.i + '"]';
+      await page.click(s2); await page.waitForTimeout(1200);
+      eq('㊺ 할일 줄에서도 알약 → 마침 · 줄은 그 자리에 회색', await page.$eval(s2, e => e.classList.contains('done') && e.closest('.oi').classList.contains('done')), true); }
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/tick-only.png' }); await page.evaluate(() => { S.show = []; render(); }); await page.waitForTimeout(300); await page.screenshot({ path: process.env.SHOT + '/tick-full.png' }); await page.evaluate(() => { S.show = ['act', 'qn']; render(); }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
+    await page.evaluate(() => loadData(true)); await page.waitForTimeout(1200);
+    eq('㊺ 시트를 다시 읽어도 체크한 것은 회색으로 그 자리에(앱을 연 동안)', await page.$eval(qs, e => e.closest('.oi').classList.contains('done')), true);
     await page.evaluate(() => { S.layers.length = 0; S.show = []; S.view = 'list'; render(); });
   }
 
