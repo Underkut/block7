@@ -992,6 +992,9 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊳ 오류 사유 — 어디가 왜', [ck.patches[1].cells['오류'], ck.patches[2].cells['오류']], ['records[0].priority — "급함" 는 허용 값(긴급 · 이번주 · 장기관찰 · 일반)이 아닙니다', '패킷JSON 칸이 JSON 이 아닙니다']);
   sc.eq('㊳ 붙인 접수ID 가 기다림 목록에도', ck.waiting[1].id, ck.patches[0].id);
   sc.eq('㊳ 오류 목록 — 이미 오류인 줄 + 이번에 오류로 잡은 줄(사유와 함께)', J(ck.bad.map(x => [x.row, !!x.err])), [[4, true], [6, true]]);
+  const V2 = [H, ['Q3', '', '', JSON.stringify(bad), '오류', '옛 사유', 'f3', '', ''], ['Q7', '', '', pk('나쁨', 'f3'), '대기', '', 'f3', '', ''], ['Q8', '', '', '{', '오류', '사유', 'f9', '', '']];
+  const ck2 = A.inboxCheck(A.parseInbox(V2), 0);
+  sc.eq('㊳ 같은 녹음을 고쳐 다시 보내면 옛 오류 줄은 저절로 취소 · 다른 오류 줄은 남는다', [J(ck2.patches.map(p => [p.row, p.cells['상태']])), ck2.bad.map(x => x.row), ck2.waiting.length], [[[2, '취소']], [4], 1]);
   sc.eq('㊳ 고치는 줄 상한', A.inboxCheck(items, 0, 1).patches.length, 1);
   sc.eq('㊳ 줄 다시 찾기 — 접수ID 로 · 앞줄이 지워져 밀려도', A.inboxFind([H, V[2], V[1]], items[0]).row, 3);
   sc.eq('㊳ 접수ID 가 없던 줄은 같은 패킷 글로 · 같은 접수ID 가 둘이면 쓰지 않음', [A.inboxFind(V, items[1]).row, A.inboxFind([H, V[1], V[1]], items[0])], [3, null]);
