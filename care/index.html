@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1114-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1114-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -117,8 +117,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .roles{font-size:12px;color:var(--tx3)}
 .ak{--k:var(--k4);display:inline-flex;align-items:center;gap:5px;font-size:12.5px;line-height:1;padding:5px 9px 5px 7px;border-radius:999px;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--tx);font-weight:500;white-space:nowrap}
 .ak::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid var(--k);flex:none}
-.ak.done{background:transparent;color:var(--tx3);font-weight:400;text-decoration:line-through}
-.ak.done::before{background:var(--tx3);border-color:var(--tx3)}
+.ak.done{background:color-mix(in srgb,var(--tx3) 11%,transparent);color:var(--tx3);font-weight:400}
+.ak.done::before{background:var(--k) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2l2 1.9 4-4.2' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;opacity:.7}
+/* 1114 목록에서 바로 체크 — 알약(할 일) · 말풍선(질문)을 누르면 마침 / 물어봄. 누를 자리는 보이는 것보다 넉넉히 */
+.tk{cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent;transition:background-color .2s,color .2s}
+.tk::after{content:"";position:absolute;inset:-8px -5px}
+.ak.tk:active,.qtk:active svg{transform:scale(.94)}
+.qtk{display:inline-flex;flex:none}
+svg.qb.on path:first-child{fill:var(--tx3);stroke:var(--tx3)}
+svg.qb .ck2{stroke:var(--paper);stroke-width:1.7;stroke-linecap:round;fill:none}
+.c-only .oi.done{color:var(--tx3)}
+.c-only .oi.done>span:last-child{opacity:.8}
 .k1{--k:var(--k1)}.k2{--k:var(--k2)}.k3{--k:var(--k3)}.k4{--k:var(--k4)}
 .rv{font-size:11px;font-weight:500;color:var(--warn);background:var(--warn-soft);padding:2px 7px;border-radius:999px;white-space:nowrap}
 
@@ -784,7 +793,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1114-3';
+const APP_VERSION = 'v. 26-1114-4';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2968,7 +2977,7 @@ async function loadData(quiet) {
     if (DATA.prepared) await patchIds(s.id, tab.title, vals);
     DATA.actStatus = parseActionTab(V('액션'));
     DATA.addenda = parseAddenda(V('덧붙임'));
-    DATA.qn = parseQnTab(V(QN_TAB));
+    DATA.qn = parseQnTab(V(QN_TAB)); qnOverlay();
     DATA.plans = parsePlans(V(PLAN_TAB));
     DATA.attend = parseAttend(V(ATT_TAB));
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
@@ -2983,7 +2992,7 @@ async function loadData(quiet) {
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
     opts.recAt = DATA.recAt || {};
-    DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda);
+    DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda); tkOverlay(DATA.model);
     DATA.state = 'ok'; DATA.err = ''; DATA.at = Date.now();
     if (!DATA.inboxAsked && /[?&]inbox=1/.test(location.search)) { DATA.inboxAsked = true; setTimeout(() => { if (DATA.nx && !S.layers.length) openLayer('inbox'); try { history.replaceState(null, '', location.pathname); } catch (e) { } }, 0); }   // 알림을 눌러 들어옴 → 대기함부터
     if (DATA.prepared && saved().form) setTimeout(autoSyncAttrs, 0);   // 폼 ↔ '속성' 탭 맞추기 (조용히, 바뀐 것만 알림)
@@ -3156,13 +3165,42 @@ async function writeQn(v, items) {
 }
 // 화면은 먼저 바꾸고, 시트 쓰기는 차례대로(빠르게 여러 번 눌러도 순서가 뒤바뀌지 않게). 실패하면 시트를 다시 읽어 되돌린다
 let QN_Q = Promise.resolve();
+const QN_PEND = {};   // 1114 아직 시트에 다 적지 못한 질문 체크 — 그사이 시트를 다시 읽어도 화면이 옛 값으로 튀지 않게(qnOverlay)
 function qnItems(v) { return ((DATA.qn || {})[v.id] || {}).items || []; }
 function qnSet(v, items) {
   if (!v || !v.id) { toast('이 기록은 아직 시트 준비 전이라 적을 수 없습니다'); return; }
   DATA.qn = DATA.qn || {}; DATA.qn[v.id] = Object.assign({}, DATA.qn[v.id], { items: items.slice(0, QN_MAX) });
   render();
-  const snap = items.slice(0, QN_MAX);
-  QN_Q = QN_Q.then(() => writeQn(v, snap)).catch(e => { toast('다음 심방 질문을 시트에 적지 못했습니다\n' + e.message); return loadData(true); });
+  const snap = items.slice(0, QN_MAX), tok = {}; QN_PEND[v.id] = { items: snap, tok };
+  QN_Q = QN_Q.then(() => writeQn(v, snap)).then(() => { if (QN_PEND[v.id] && QN_PEND[v.id].tok === tok) delete QN_PEND[v.id]; })
+    .catch(e => { delete QN_PEND[v.id]; toast('다음 심방 질문을 시트에 적지 못했습니다\n' + e.message); return loadData(true); });
+}
+function qnOverlay() { Object.keys(QN_PEND).forEach(id => { DATA.qn[id] = Object.assign({}, DATA.qn[id], { items: QN_PEND[id].items.slice() }); }); }
+// ── 1114 목록에서 바로 체크 — 할 일 알약 · 질문 말풍선. 화면을 먼저 바꾸고 시트는 차례대로 뒤에서 적는다(빠르게 여러 개 눌러도 기다리지 않게) ──
+// 실패하면 알리고 시트를 다시 읽어 되돌린다. 적는 길은 열람 화면의 체크와 같은 writeCheck('액션' 탭 한 줄)
+const TK = { q: Promise.resolve(), pend: {} };   // pend: actionKey → { to, tok } (아직 적는 중)
+function tkOverlay(model) { (model.visits || []).forEach(v => { if (v.id) v.actions.forEach(a => { const p = TK.pend[actionKey(v.id, a)]; if (p) a.done = p.to; }); }); }
+function tkPop(act, key, i) {
+  if (RM.matches) return;
+  document.querySelectorAll('[data-act="' + act + '"][data-k="' + i + '"]').forEach(el => { if (el.dataset.v === key) el.animate([{ transform: 'scale(.86)' }, { transform: 'scale(1.06)', offset: .6 }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' }); });
+}
+function actTick(v, i) {
+  const a = v && v.actions[i]; if (!a) return;
+  if (!DATA.prepared) { busy(ensurePrepared).then(() => render()); return; }
+  if (!v.id) { toast('이 기록은 아직 기록ID 가 없어\n표시할 수 없습니다'); return; }
+  const to = !a.done, k = actionKey(v.id, a), tok = {};
+  a.done = to; a.doneAt = to ? today() : '';
+  if (to) S.keep.add(keepKey(v, { k: 'act', a }));
+  TK.pend[k] = { to, tok };
+  render(); tkPop('atick', v.key, i);
+  TK.q = TK.q.then(() => writeCheck(v, a, to)).then(ok => { if (!ok) throw new Error('시트가 준비되지 않았습니다'); if (TK.pend[k] && TK.pend[k].tok === tok) delete TK.pend[k]; })
+    .catch(e => { delete TK.pend[k]; toast('마침 표시를 시트에 적지 못했습니다\n' + e.message); return loadData(true); });
+}
+function qnTick(v, i) {
+  const it = v ? qnItems(v).slice() : []; if (!it[i]) return;
+  const to = !it[i].done; it[i] = { t: it[i].t, done: to };
+  if (to) S.keep.add(keepKey(v, { k: 'qn', t: it[i].t }));
+  qnSet(v, it); tkPop('qtick', v.key, i);
 }
 // ── 할 일 → BLOCK7 할일 (C3b-1) — 기도노트 · 시리와 같은 쪽지함. BLOCK7 은 그대로 받는다 ──
 async function inboxPush(note) { if (trialOn()) throw new Error('시험 시트에서는 BLOCK7 로 보내지 않습니다'); await DB.doc('pray/' + USER.uid + '/c/b7inbox').set({ items: firebase.firestore.FieldValue.arrayUnion(note) }, { merge: true }); }
@@ -3544,23 +3582,25 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // ───────────────────────────── 화면 상태 ─────────────────────────────
-const S = { attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
+const S = { keep: new Set(), attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
   wk: 0, mo: today().slice(0, 7), mday: today(), grp: 'dash', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
 const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
 function M() { return DATA.model; }
 function V() { const L = filterVisits(M().visits, S.filt, S.quick, S.showArch, S.q); return S.show.length ? L.filter(v => onlyItems(v).length) : L; }
 // 1113-D F · G '할일' · '질문' 알약 — 켜면 기록 내용 대신 그것만(남은 할 일 · 아직 안 물어본 질문). 둘 다 켜도 된다
+// 1114 목록에서 체크한 것은 이번에 앱을 연 동안 그 자리에 회색으로 남는다(다시 눌러 되돌릴 수 있게). 예전에 마친 것은 그대로 감춘다
+function keepKey(v, o) { return v.key + (o.k === 'act' ? '|a|' + o.a.t + '|' + o.a.x : '|q|' + o.t); }
 function onlyItems(v) {
-  const out = [];
-  if (S.show.includes('act')) v.actions.filter(a => !a.done).forEach(a => out.push({ k: 'act', a }));
-  if (S.show.includes('qn')) qnItems(v).filter(q => !q.done).forEach(q => out.push({ k: 'qn', t: q.t }));
+  const out = [], keep = o => !o.done || S.keep.has(keepKey(v, o));
+  if (S.show.includes('act')) v.actions.forEach((a, i) => { const o = { k: 'act', a, v, i, done: !!a.done }; if (keep(o)) out.push(o); });
+  if (S.show.includes('qn')) qnItems(v).forEach((q, i) => { const o = { k: 'qn', t: q.t, v, i, done: !!q.done }; if (keep(o)) out.push(o); });
   return out;
 }
 // 1113-E 4-4 할 일 · 질문 줄 — 할 일은 종류 알약(동그라미 든) + 글, 질문은 말풍선 선 아이콘 + 글(HB ① — 문장 끝 ? 와 겹치지 않게). max 넘으면 '외 N'
 function itemsHtml(items, max) {
   const show = max ? items.slice(0, max) : items;
-  return '<div class="c-only">' + show.map(o => o.k === 'act' ? '<div class="oi"><span>' + (o.a.x && o.a.t !== '기타' ? '<span class="ak ' + o.a.k + '">' + esc(o.a.t) + '</span> ' + esc(o.a.x) : ak(o.a)) + '</span></div>'
-    : '<div class="oi q">' + IC.qb + '<span>' + esc(o.t) + '</span></div>').join('') + (max && items.length > max ? '<div class="oi more">외 ' + (items.length - max) + '</div>' : '') + '</div>';
+  return '<div class="c-only">' + show.map(o => o.k === 'act' ? '<div class="oi' + (o.done ? ' done' : '') + '"><span>' + (o.a.x && o.a.t !== '기타' ? akTag(o.a, o.v, o.i, esc(o.a.t)) + ' ' + esc(o.a.x) : ak(o.a, o.v, o.i)) + '</span></div>'
+    : '<div class="oi q' + (o.done ? ' done' : '') + '"><span class="qtk tk" role="button" data-act="qtick" data-v="' + esc(o.v.key) + '" data-k="' + o.i + '" aria-pressed="' + o.done + '" aria-label="' + (o.done ? '아직 안 물어봄으로' : '물어봄 표시') + '">' + (o.done ? IC.qbd : IC.qb) + '</span><span>' + esc(o.t) + '</span></div>').join('') + (max && items.length > max ? '<div class="oi more">외 ' + (items.length - max) + '</div>' : '') + '</div>';
 }
 function onlyHtml(v) { return itemsHtml(onlyItems(v)); }
 function byKey(k) { return M().visits.find(v => v.key === k); }
@@ -3572,7 +3612,8 @@ const IC = {
   x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   menu: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
   filt: '<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
-  qb: '<svg class="qb" viewBox="0 0 16 16" aria-label="질문"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>',   // 1113-E 질문 표시(말풍선 선) — ? 글자 대신
+  qb: '<svg class="qb" viewBox="0 0 16 16" aria-label="질문"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>',
+  qbd: '<svg class="qb on" viewBox="0 0 16 16" aria-label="물어본 질문"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/><path class="ck2" d="M5.6 7.1l1.7 1.6 3.2-3.3"/></svg>',   // 1114 물어봄 — 채운 말풍선 + 체크   // 1113-E 질문 표시(말풍선 선) — ? 글자 대신
   funnel: '<svg class="fill" viewBox="0 0 24 24"><path d="M3 4.5h18l-7 8.2V21.5l-4-2v-6.8z"/></svg>',   // 1113-D E BLOCK7 깔때기 단추와 같은 꼴
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>',
   l: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -3614,7 +3655,12 @@ function dayLabel(y) {
 function dm(d) { return '<span class="dm d' + (d || 0) + '" aria-hidden="true"><i></i><i></i><i></i></span>'; }
 function depth(d) { return d ? '<span class="depth">' + dm(d) + DEPTH_NAME[d] + '</span>' : '<span class="depth muted">깊이 없음</span>'; }
 function meth(v) { const l = v.methodLabel || v.m || ''; if (!l) return ''; return '<span class="meth">' + (MI[l] || MI['기타']) + esc(l) + '</span>'; }
-function ak(a) { return '<span class="ak ' + a.k + '">' + esc(a.x ? (a.t === '기타' ? a.x : a.t + ' · ' + a.x) : a.t) + '</span>'; }
+// 할 일 알약 — 기록(v)과 자리(i)를 주면 누르는 알약(누르면 마침 ⇄ 할 일). 마친 것은 동그라미를 채우고 회색으로
+function akTag(a, v, i, inner) {
+  const on = v && v.key != null && i != null;
+  return '<span class="ak ' + a.k + (a.done ? ' done' : '') + (on ? ' tk" role="button" data-act="atick" data-v="' + esc(v.key) + '" data-k="' + i + '" aria-pressed="' + !!a.done + '" aria-label="' + (a.done ? '다시 할 일로' : '마침 표시') : '') + '">' + inner + '</span>';
+}
+function ak(a, v, i) { return akTag(a, v, i, esc(a.x ? (a.t === '기타' ? a.x : a.t + ' · ' + a.x) : a.t)); }
 function tags(v) { return v.allTags.map(t => '<span class="tg">#' + esc(t) + '</span>').join(''); }
 function rv(v) { return v.review ? '<span class="rv">확인 필요</span>' : ''; }
 function firstLine(t) { return String(t || '').split('\n').find(x => x.trim()) || '(내용 없음)'; }
@@ -3653,7 +3699,7 @@ function nxBadges(v) {
   return (v.prio && v.prio !== '일반' ? '<span class="nx-prio p' + Math.max(0, NX_PRIO.indexOf(v.prio)) + '">' + esc(v.prio) + '</span>' : '') + (v.basis === '전언' ? '<span class="nx-heard">전해 들음</span>' : '') + (left && v.core ? '<span class="nx-left">할 일 ' + left + '</span>' : '');
 }
 function card(v) {
-  const acts = v.actions.map(ak).join('');
+  const acts = v.actions.map((a, i) => ak(a, v, i)).join('');
   const top = '<button class="card' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><div class="c-top"><span class="nm">' + whoHtml(v.name) + '</span>' + '<span class="roles">' + esc(v.allRoles.join(' · ')) + '</span>' + rv(v) + nxBadges(v) + '<span class="sp"></span>' + meth(v) + '</div>';
   if (S.show.length) return top + onlyHtml(v) + '</button>';
   return top +
@@ -3684,7 +3730,7 @@ function listBrief(L) {
     const d = ok ? (+v.ymd.slice(8)) + ' ' + DOW[dowOf(v.ymd)] : '—', open = v.actions.filter(a => !a.done).map(a => a.x ? (a.t === '기타' ? a.x : a.t) : a.t).filter(Boolean);
     const sub = [v.methodLabel || ''].concat(open).filter(Boolean).join(' · ');
     h += '<button class="card lrow' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><span class="bd' + (v.ymd === lastD ? ' same' : '') + (ok && dowOf(v.ymd) === 0 ? ' sun' : '') + '">' + d + '</span>' +
-      '<span class="nm">' + whoHtml(v.name) + '</span><span class="bt"><span class="bt1">' + (S.show.length ? onlyItems(v).map(o => o.k === 'act' ? esc(o.a.x ? (o.a.t === '기타' ? o.a.x : o.a.t + ' · ' + o.a.x) : o.a.t) : IC.qb + esc(o.t)).join(' · ') : esc(v.core || visitFlat(v) || '(내용 없음)')) + '</span>' + (sub || v.review || nxBadges(v) ? '<span class="bt2">' + rv(v) + nxBadges(v) + esc(sub) + '</span>' : '') + '</span></button>';
+      '<span class="nm">' + whoHtml(v.name) + '</span><span class="bt"><span class="bt1">' + (S.show.length ? onlyItems(v).filter(o => !o.done).map(o => o.k === 'act' ? esc(o.a.x ? (o.a.t === '기타' ? o.a.x : o.a.t + ' · ' + o.a.x) : o.a.t) : IC.qb + esc(o.t)).join(' · ') : esc(v.core || visitFlat(v) || '(내용 없음)')) + '</span>' + (sub || v.review || nxBadges(v) ? '<span class="bt2">' + rv(v) + nxBadges(v) + esc(sub) + '</span>' : '') + '</span></button>';
     lastD = v.ymd;
   });
   return h;
@@ -4280,7 +4326,7 @@ function openPlanEdit(id, preset) {
 // ───────────────────────────── 달력 ─────────────────────────────
 function wmSeg() { return '<div class="seg" role="group" aria-label="주간 · 월간"><button data-act="tab" data-v="week" aria-pressed="' + (S.view === 'week') + '">주간</button><button data-act="tab" data-v="month" aria-pressed="' + (S.view === 'month') + '">월간</button></div>'; }
 function wline(v) {
-  const acts = v.actions.map(ak).join(''), it = S.show.length ? onlyItems(v) : null;   // 1113-E 4-4 할일 · 질문을 켜면 알약 대신 줄로
+  const acts = v.actions.map((a, i) => ak(a, v, i)).join(''), it = S.show.length ? onlyItems(v) : null;   // 1113-E 4-4 할일 · 질문을 켜면 알약 대신 줄로
   if (it) return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + whoHtml(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (it.length ? itemsHtml(it, 3) : '') + '</button>';
   return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + whoHtml(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (acts ? '<div class="r2">' + acts + '</div>' : '') + '</button>';
 }
@@ -5702,6 +5748,8 @@ document.addEventListener('click', e => {
   if (a === 'tvfold') { tvFold(v, +k); return; }
   if (a === 'tvall') { tvAll(v); return; }
   if (a === 'ptag') { const L = topLayer(); if (L && L.type === 'person') { L.ptag = L.ptag === v ? '' : v; render(); } return; }
+  if (a === 'atick') { actTick(byKey(v), +k); return; }   // 1114 목록 · 달력의 할 일 알약
+  if (a === 'qtick') { qnTick(byKey(v), +k); return; }   // 1114 목록 · 성도 · 달력의 질문 말풍선
   if (a === 'tick') {
     const vv = byKey(v), act = vv && vv.actions[+k]; if (!act) return;
     busy(async () => {
