@@ -1282,7 +1282,7 @@ async function route(r) {
     const rowsOf = (t, f) => (tab(t) ? tab(t).rows.slice(1).filter(f) : []);
     const col = (r, n) => r[RT.rows[0].indexOf(n)];
     await page.evaluate(() => { DATA.pray = { idx: {}, people: ['김윤정', '박윤정', '차형만', '나호근'], at: Date.now() }; });
-    eq('㊲ 새 기록 화면 위에 \'붙여넣어 채우기\'', await page.evaluate(() => { openEdit(null); render(); const n = document.querySelectorAll('.layer:last-child [data-act="impopen"]').length; topLayer().dirty = false; closeLayer(true); return n; }), 1);
+    eq('㊲ 새 기록 화면 좌상단에 작은 \'붙여넣어 채우기\' 단추', await page.evaluate(() => { openEdit(null); render(); const n = document.querySelectorAll('.layer:last-child .ph-head [data-act="impopen"]').length; topLayer().dirty = false; closeLayer(true); return n; }), 1);
     await page.waitForTimeout(300);
     // 규격 오류 — 붙이기 화면에 남고 이유를 보인다
     const badP = JSON.parse(JSON.stringify(P1)); badP.records[0].priority = '급함';
@@ -1405,11 +1405,11 @@ async function route(r) {
     const bad = JSON.parse(pk('바오류', 'f_q3')); bad.records[0].depth = '아주 깊음';
     QT.rows.push(['Q1', '2026-11-12 10:00', 'hb-care.v1', pk('바대기', 'f_q1'), '대기', '', 'f_q1', '', ''], ['', '2026-11-12 10:05', 'hb-care.v1', pk('사대기', 'f_q2'), '대기', '', 'f_q2', '', ''], ['Q3', '2026-11-12 10:06', 'hb-care.v1', JSON.stringify(bad), '대기', '', 'f_q3', '', '']);
     await reload(); await page.waitForTimeout(800);
-    eq('㊳ 첫 화면 — 새로 들어온 기록 2건 · 규격 오류 1건', await page.$eval('.inbox-bar', e => e.textContent), '새로 들어온 기록 2건규격 오류 1건');
+    eq('㊳ 첫 화면 — 새로 들어온 기록 2건 · 규격 오류 1건', await page.$eval('.inbox-bar', e => e.textContent), 'ChatGPT 가 보낸 기록 2건읽지 못한 것 1건');
     eq('㊳ 열 때 — 규격 오류 줄은 \'오류\' + 사유 · 접수ID 없던 줄에 붙임 · 맞는 줄은 그대로 대기', [QT.rows[QT.rows.length - 1][4], QT.rows[QT.rows.length - 1][5], /^Q/.test(QT.rows[QT.rows.length - 2][0]), QT.rows[QT.rows.length - 3][4]],
       ['오류', 'records[0].depth — "아주 깊음" 는 허용 값(얕음 · 중간 · 깊음)이 아닙니다', true, '대기']);
     await page.click('.inbox-bar'); await tidy();
-    eq('㊳ 대기함 — 대기 둘 · 오류 하나(사유)', [await page.$$eval(LN + ' .inbox-row', x => x.length), await page.$eval(LN + ' .inbox-bad div', e => e.textContent)], [2, 'records[0].depth — "아주 깊음" 는 허용 값(얕음 · 중간 · 깊음)이 아닙니다']);
+    eq('㊳ 대기함 — 대기 둘 · 오류 하나(사유)', [await page.$$eval(LN + ' .inbox-row', x => x.length), await page.$eval(LN + ' .inbox-bad div', e => e.textContent), await page.$eval(LN + ' .inbox-row', e => e.textContent.includes('f_q1'))], [2, 'records[0].depth — "아주 깊음" 는 허용 값(얕음 · 중간 · 깊음)이 아닙니다', false]);
     await page.evaluate(() => { window.__clip = ''; Object.defineProperty(navigator, 'clipboard', { value: { writeText: async t => { window.__clip = t; } }, configurable: true }); });
     await page.click(LN + ' [data-act="guidecopy"]'); await page.waitForTimeout(200);
     eq('㊳ ChatGPT 지시문 복사 — 지금 시트 주소 · 대기함 탭', await page.evaluate(() => [window.__clip.startsWith('[심방노트 입력]'), window.__clip.includes("'AI 입력대기' 탭"), window.__clip.endsWith('/spreadsheets/d/S/edit')]), [true, true, true]);
@@ -1423,12 +1423,12 @@ async function route(r) {
       [['ok', 'ok'], '완료', true, true, 'AI']);
     const shut = () => page.evaluate(() => { S.layers.length = 0; render(); }).then(() => page.waitForTimeout(300));
     await shut();
-    eq('㊳ 첫 화면 — 남은 1건', await page.$eval('.inbox-bar b', e => e.textContent), '새로 들어온 기록 1건');
+    eq('㊳ 첫 화면 — 남은 1건', await page.$eval('.inbox-bar b', e => e.textContent), 'ChatGPT 가 보낸 기록 1건');
     await page.click('.inbox-bar'); await tidy(); await page.click(LN + ' .inbox-row'); await tidy();
     const n0 = RT.rows.length;
     await page.click(LN + ' [data-act="impcancel"]'); await page.waitForTimeout(1500);
     const q2 = QT.rows.find(r => r[6] === 'f_q2');
-    eq('㊳ 대기함에서 빼기 → \'취소\' · 기록은 안 생김 · 첫 화면 알림은 오류만', [q2[4], RT.rows.length, await page.$eval('.inbox-bar', e => e.textContent)], ['취소', n0, '들어온 기록 없음규격 오류 1건']);
+    eq('㊳ 대기함에서 빼기 → \'취소\' · 기록은 안 생김 · 첫 화면 알림은 오류만', [q2[4], RT.rows.length, await page.$eval('.inbox-bar', e => e.textContent)], ['취소', n0, 'ChatGPT 가 보낸 기록 없음읽지 못한 것 1건']);
     // 같은 녹음이 다시 들어오면 — 미리보기에서 중복으로 잡힌다(대기함은 기록 저장 전이라 따로 막지 않음)
     await shut();
     QT.rows.push(['Q9', '', 'hb-care.v1', pk('바대기', 'f_q1'), '대기', '', 'f_q1', '', '']);
