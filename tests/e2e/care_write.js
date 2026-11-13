@@ -1604,6 +1604,16 @@ async function route(r) {
     eq('㊸ 5 구분별 — 위에 전체 + 구분 알약 · 머리는 알약 + 몇 분 + 줄', [rt[0], rt.length > 1, await page.$$eval('.rhead', x => x.length) === rt.length - 1], ['', true, true]);
     await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
     eq('㊸ 5 구분 알약 → 그 구분만', await page.$$eval('.rhead b', x => x.map(e => e.textContent)), [rt[1]]);
+    eq('㊻ 구분 머리 옆 인원은 N명(분 아님)', await page.$$eval('.rhead span', x => x.length > 0 && x.every(e => /^\d+명$/.test(e.textContent))), true);
+    if (rt.length > 2) {
+      await page.click('.rtabs button[data-v="' + rt[2] + '"]'); await page.waitForTimeout(200);
+      eq('㊻ 구분 알약 복수 선택 — 둘 다 눌림 · 두 구분이 함께', [await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), await page.$$eval('.rhead b', x => x.map(e => e.textContent))], [[rt[1], rt[2]], [rt[1], rt[2]]]);
+      await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
+      eq('㊻ 눌린 알약 다시 누르면 빠짐', await page.$$eval('.rhead b', x => x.map(e => e.textContent)), [rt[2]]);
+      await page.click('.rtabs button[data-v="' + rt[2] + '"]'); await page.waitForTimeout(200);
+      eq('㊻ 다 빼면 전체', [await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), await page.$$eval('.rhead', x => x.length) === rt.length - 1], [[''], true]);
+      await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
+    }
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.click('.rtabs button[data-v=""]'); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/roles.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.evaluate(() => { S.view = 'list'; S.pSort = 'old'; render(); });
 
