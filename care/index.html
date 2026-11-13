@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1113-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1114-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -135,6 +135,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .fbtn svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.7;fill:none}
 .fbtn.on{border-color:var(--ac);color:var(--ac)}
 .fbtn.round{width:32px;height:32px;padding:0;justify-content:center;position:relative}.fbtn.round svg.fill{width:14px;height:14px;fill:currentColor;stroke:none}.fbtn.round sup{position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;border-radius:8px;background:var(--ac);color:var(--paper);font-size:10px;line-height:15px;text-align:center;padding:0 3px}
+.favs{margin:4px 0 10px}.favs .opts{gap:6px}
+.wk-sort{display:flex;justify-content:flex-end;margin:-4px 0 2px}.wk-sort button{width:30px;height:26px;display:grid;place-items:center}.wk-sort svg{width:11px;height:13px;fill:var(--line2);stroke:none}.wk-sort svg .on{fill:var(--tx2)}
+.dt-tm{color:var(--tx3);font-size:.85em}
 .c-only{display:flex;flex-direction:column;gap:5px;margin-top:6px}.c-only .oi{font-size:14px;line-height:1.5}.c-only .oi.q{display:flex;gap:7px;color:var(--tx)}.c-only .oi.q i{font-style:normal;color:var(--ac);flex:none}
 .fchip{flex:none;display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:var(--ac-soft);color:var(--ac);font-size:12.5px}
 .fchip i{font-style:normal;opacity:.6}
@@ -774,7 +777,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1113-7';
+const APP_VERSION = 'v. 26-1114-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2013,7 +2016,7 @@ const PLAN_TAB = '계획';
 const PLAN_NOCAL = '없음';                 // '캘린더에 안 넣음' 을 고른 계획의 일정ID 칸
 const PLAN_ST = { todo: '예정', done: '기록됨', cancel: '취소됨' };
 const CAL_DEL_MAX = 5, CAL_CREATE_MAX = 10;
-const DONE_MARK = '✓ ';
+const DONE_MARK = '';   // 1113-E 7 (HB 11/13) ✓ 를 붙이지 않는다 — 자리만 차지. 이미 들어간 일정은 다음 맞춤에서 제목을 고쳐 ✓ 가 빠진다
 function parsePlans(values) {
   const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [];
   const ci = { id: c('계획ID'), name: c('성도'), date: c('날짜'), time: c('시간'), method: c('방식'), place: c('장소'), why: c('물어볼 것'), st: c('상태'), ev: c('캘린더 일정ID'), rec: c('기록ID') };
@@ -2287,13 +2290,13 @@ function prayJoin(meta, parts) {
 // ───────── 1108-B3 출석 선택지 ('출석 선택지' 탭) ─────────
 // 칸마다 알약 목록. 탭 한 줄 = [칸, 값], 줄 차례 = 알약 차례. 탭이 없으면 기본값(자리 · 함께는 지난 출석에서 자주 쓴 것).
 const ATT_OPT_TAB = '출석 선택지';
-const ATT_OPT_FIELDS = [['svc', '예배 · 모임'], ['from', '언제 왔나'], ['seen', '언제 보였나'], ['to', '언제 갔나'], ['seat', '자리'], ['with', '함께 온 분']];
+const ATT_OPT_FIELDS = [['svc', '예배 · 모임'], ['from', '언제 왔나'], ['seen', '언제 보였나'], ['to', '언제 갔나'], ['seat', '자리'], ['with', '함께 온 분'], ['fav', '바로 적을 분']];   // fav: 1113-E 1 출석 탭 위 이름 알약(HB 가 고른 분)
 const ATT_SEEN = ['찬양 때', '기도 때', '말씀 때', '헌금 때', '광고 때'];
 const ATT_OPT_MAX = 30;   // 한 칸 알약 상한
 function attOptLabel(k) { const f = ATT_OPT_FIELDS.find(x => x[0] === k); return f ? f[1] : k; }
 function attOptDefaults(list) {
   const top = k => { const c = {}; (list || []).forEach(a => { const v = norm(a[k]); if (v) c[v] = (c[v] || 0) + 1; }); return Object.keys(c).sort((x, y) => c[y] - c[x]).slice(0, 6); };
-  return { svc: ATT_SVC.slice(), from: ATT_FROM.slice(), seen: ATT_SEEN.slice(), to: ATT_TO.slice(), seat: top('seat'), with: top('with') };
+  return { svc: ATT_SVC.slice(), from: ATT_FROM.slice(), seen: ATT_SEEN.slice(), to: ATT_TO.slice(), seat: top('seat'), with: top('with'), fav: [] };
 }
 // 탭 → { svc: [...], ... }. 탭이 없거나 비면 null (기본값을 쓰라는 뜻). 모르는 칸 이름 · 빈 값 · 겹친 값은 버린다.
 function optsParse(values, fields) {
@@ -2307,7 +2310,7 @@ function attOptsParse(values) { return optsParse(values, ATT_OPT_FIELDS); }
 // 쓸 목록 — 탭에 있는 칸은 탭 것, 탭에 없는 칸(나중에 생긴 '언제 보였나' 같은)은 기본값
 function attOptsUse(parsed, list) {
   const d = attOptDefaults(list); if (!parsed) return d;
-  const o = {}; ATT_OPT_FIELDS.forEach(f => { o[f[0]] = parsed[f[0]] && parsed[f[0]].length ? parsed[f[0]].slice() : d[f[0]]; });
+  const o = {}; ATT_OPT_FIELDS.forEach(f => { o[f[0]] = parsed[f[0]] && parsed[f[0]].length ? parsed[f[0]].slice() : d[f[0]]; });   // fav 기본값은 [] 라 비면 비운 채
   return o;
 }
 function optsRows(o, fields) { const rows = [['칸', '값']]; fields.forEach(f => (o[f[0]] || []).forEach(v => rows.push([f[1], v]))); return rows; }
@@ -3509,7 +3512,7 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // ───────────────────────────── 화면 상태 ─────────────────────────────
-const S = { show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
+const S = { attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
   wk: 0, mo: today().slice(0, 7), mday: today(), grp: 'dash', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
 const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
 function M() { return DATA.model; }
@@ -3729,6 +3732,8 @@ function personTopicsHtml(L, live) {
   }).join('') + '</div>';
   return h;
 }
+// 1113-E 3 날짜 옆 시간 — 녹음 시각이 있으면 그것(녹음), 없으면 입력 시각(입력)
+function whenTime(v) { const r = v.recAt ? v.recAt.slice(11, 16) : ''; return r ? ' · ' + r + ' <small class="dt-tm">녹음</small>' : v.clock ? ' · ' + esc(v.clock) + ' <small class="dt-tm">입력</small>' : ''; }
 function lDetail(L) {
   const v = byKey(L.key); if (!v) return lhead('', L) + '<div class="ph-body"><p class="empty">이 기록을 찾지 못했습니다.</p></div>';
   const dv = esc(v.key), url = sheetRowUrl(v);
@@ -3740,8 +3745,8 @@ function lDetail(L) {
   const vw = parseWho(v.name);
   if (vw.names.length > 1 || vw.groups.length) {   // 1112-M 여러 분 — 이름마다 그 분 화면으로. 셀 표시는 사람이 없을 때만 누를 수 있다
     h += '<div class="dt-name dt-who">' + vw.groups.map(g => vw.names.length ? '<span class="grp">' + esc(g) + '</span>' : '<button data-act="person" data-v="' + esc(g) + '"><span class="grp">' + esc(g) + '</span></button>').join('') +
-      vw.names.map(n => '<button data-act="person" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + '</div><div class="dt-when">' + dayLabel(v.ymd) + (vw.names.length > 1 ? ' · ' + vw.names.length + '분' : '') + '</div>';
-  } else h += '<button data-act="person" data-v="' + esc(vWho(v)[0] || v.name) + '"><div class="dt-name">' + (v.name ? nm(vWho(v)[0] || v.name) : '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
+      vw.names.map(n => '<button data-act="person" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + '</div><div class="dt-when">' + dayLabel(v.ymd) + whenTime(v) + (vw.names.length > 1 ? ' · ' + vw.names.length + '분' : '') + '</div>';
+  } else h += '<button data-act="person" data-v="' + esc(vWho(v)[0] || v.name) + '"><div class="dt-name">' + (v.name ? nm(vWho(v)[0] || v.name) : '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + whenTime(v) + '</div>';
   if (v.core || v.prio || v.basis) h += '<div class="nx-core-v">' + (v.prio ? '<span class="nx-prio p' + Math.max(0, NX_PRIO.indexOf(v.prio)) + '">' + esc(v.prio) + '</span>' : '') + (v.basis === '전언' ? '<span class="nx-heard">전해 들음</span>' : v.basis && v.basis !== '직접' ? '<span class="nx-heard soft">' + esc(v.basis) + '</span>' : '') + (v.core ? '<b>' + esc(v.core) + '</b>' : '') + '</div>';
   h += '<div class="attrs">' +
     '<div><span class="k">구분</span><span>' + (esc(v.allRoles.join(' · ')) || '<span class="muted">—</span>') + '</span></div>' +
@@ -3910,6 +3915,9 @@ function attSuggHtml(L) {
 function vAttend() {
   const all = AT(), n = S.attN || 60, list = all.slice(0, n);
   let h = head('출석', null, ['attpaste', '붙여 넣기', 'paste']) + '<div class="ph-body">';
+  { const T = S.attTab, fav = ATTO().fav || [];   // 1113-E 1 바로 적을 분 — 누르면 그 이름이 든 출석 입력. 길게 눌러 끌면 순서 · 그대로 떼면 이름 바꾸기 · 지우기
+    h += '<div class="favs"><div class="opts pills" data-k="fav">' + fav.map(n => '<button class="opt" data-act="favgo" data-k="fav" data-v="' + esc(n) + '">' + nm(n) + '</button>').join('') + plusHtml(T, 'fav', '바로 적을 분', false, true) + '</div>' +
+      (fav.length ? '' : '<p class="muted" style="margin:4px 0 0;font-size:12px">+ 로 자주 적는 분을 더해 두면 눌러서 바로 출석을 적습니다.</p>') + '</div>' + omenuHtml(T); }
   const quiet = attQuiet(all, today());
   if (quiet.length) h += '<div class="h-sec" style="margin-top:6px">요즘 안 보이는 분<small>' + ATT_QUIET_DAYS / 7 + '주 넘게 · 늘 오던 분</small></div>' + quiet.map(o => '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(o.name) + '">' + nm(o.name) + '<small>마지막 ' + md(o.last) + (o.svc ? ' ' + esc(o.svc) : '') + ' · ' + Math.floor(o.days / 7) + '주째 · 출석 ' + o.n + '번</small></button><button class="send" data-act="b7person" data-v="' + esc(o.name) + '">BLOCK7</button></div>').join('');
   if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+" 로 한 분씩 적거나, 오른쪽 위 붙여 넣기로 메모를 그대로 넣어 보세요.<br>예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
@@ -3949,8 +3957,11 @@ async function attrRename(title, val, nv) {   // 이름 바꾸기 = 새 이름 �
   return true;
 }
 // 겹 화면마다 알약 목록 · 이름 · 시트에 쓰기 (1109-D2: 심방 입력도 출석과 같은 알약)
+// 1113-E 1 출석 탭(겹 화면 아님)의 알약도 같은 길로 — 가짜 겹 S.attTab
+function optL() { return topLayer() || (S.view === 'attend' ? S.attTab : null); }
 function optCtx(L) {
   if (!L) return null;
+  if (L.type === 'atttab') return { opts: ATTO, label: attOptLabel, change: attOptChange, note: '지난 출석 기록은 그대로입니다.' };
   if (L.type === 'attedit') return { opts: ATTO, label: attOptLabel, change: attOptChange, note: '지난 출석 기록은 그대로입니다.' };
   if (L.type === 'edit') return { opts: VISO, label: visOptLabel, change: visOptChange, note: '지난 심방 기록은 그대로입니다.' };
   return null;
@@ -4035,7 +4046,7 @@ function attOptChange(fnc, msg) {   // 화면 먼저 바꾸고 시트에 쓴다.
   return true;
 }
 function attOptCommit(inp) {
-  const L = topLayer(), k = inp.dataset.optadd, v = norm(inp.value), C = optCtx(L); if (!C) return;
+  const L = optL(), k = inp.dataset.optadd, v = norm(inp.value), C = optCtx(L); if (!C) return;
   L.adding = null;
   if (L.type === 'edit' && ATTR_KEY[k]) {   // 구분 · 태그 · 할 일 — 바로 고르고, 속성 탭 · 폼에 더한다
     if (v) { if (!L.form[k].includes(v)) L.form[k].push(v); L.dirty = true; }
@@ -4050,9 +4061,9 @@ function attOptCommit(inp) {
 const DR = { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, x: 0, y: 0, eat: false };
 function drReset() { clearTimeout(DR.t); if (DR.el) DR.el.classList.remove('lift'); Object.assign(DR, { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, fixed: false }); document.body.classList.remove('dragging'); }
 function drLift() { if (!DR.el) return; DR.lifted = true; DR.el.classList.add('lift'); document.body.classList.add('dragging'); try { navigator.vibrate && navigator.vibrate(8); } catch (e) { } }
-function attOptMenu(k, v) { const L = topLayer(); if (!optCtx(L)) return; L.omenu = { k, v }; render(); }
+function attOptMenu(k, v) { const L = optL(); if (!optCtx(L)) return; L.omenu = { k, v }; render(); }
 document.addEventListener('pointerdown', e => {
-  const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"]'); if (!el || e.button === 2) return;
+  const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"], .pills .opt[data-act="favgo"]'); if (!el || e.button === 2) return;
   drReset(); Object.assign(DR, { el, k: el.dataset.k, x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse', fixed: el.dataset.act === 'ftog' });
   if (DR.fixed && DR.mouse) { drReset(); return; }   // 마우스는 오른쪽 단추로만 메뉴
   if (!DR.mouse) DR.t = setTimeout(drLift, 450);
@@ -4063,7 +4074,7 @@ document.addEventListener('pointermove', e => {
   if (!DR.lifted) { if (DR.mouse && d > 6) drLift(); else if (!DR.mouse && d > 8) { drReset(); return; } if (!DR.lifted) return; }
   if (DR.fixed) return;   // 구분 · 태그 · 할 일은 옮기지 않는다
   if (d > 6) DR.moved = true;
-  const t = document.elementFromPoint(e.clientX, e.clientY), over = t && t.closest && t.closest('.pills[data-k="' + DR.k + '"] .opt[data-act="aone"]');
+  const t = document.elementFromPoint(e.clientX, e.clientY), over = t && t.closest && t.closest('.pills[data-k="' + DR.k + '"] .opt[data-act="' + DR.el.dataset.act + '"]');
   if (over && over !== DR.el && !over.getAnimations().length) {   // 밀려 움직이는 중인 알약 위에서는 기다린다(왔다 갔다 떨림 막기)
     const box = over.parentElement, kids = [...box.children], a = kids.indexOf(DR.el), b = kids.indexOf(over);
     flipMove(box, () => box.insertBefore(DR.el, a < b ? over.nextSibling : over));
@@ -4087,14 +4098,14 @@ document.addEventListener('pointerup', () => {
   if (!lifted) return;
   DR.eat = true; setTimeout(() => { DR.eat = false; }, 400);   // 뒤따르는 '누름' 은 먹는다
   if (moved) {
-    const order = [...el.parentElement.querySelectorAll('.opt[data-act="aone"]')].map(x => x.dataset.v);
-    const C = optCtx(topLayer()); if (C) C.change(o => { if (JSON.stringify(o[k]) === JSON.stringify(order)) return false; o[k] = order; return true; }, '알약 순서를 바꿨습니다');
+    const order = [...el.parentElement.querySelectorAll('.opt[data-act="' + el.dataset.act + '"]')].map(x => x.dataset.v);
+    const C = optCtx(optL()); if (C) C.change(o => { if (JSON.stringify(o[k]) === JSON.stringify(order)) return false; o[k] = order; return true; }, '알약 순서를 바꿨습니다');
   } else attOptMenu(k, el.dataset.v);
 });
 document.addEventListener('pointercancel', drReset);
 document.addEventListener('touchmove', e => { if (DR.lifted) e.preventDefault(); }, { passive: false });   // 들린 동안엔 화면이 굴러가지 않게
 document.addEventListener('click', e => { if (DR.eat && e.target.closest && e.target.closest('.pills')) { DR.eat = false; e.preventDefault(); e.stopPropagation(); } }, true);   // 알약에 떨어진 누름만 먹는다 (메뉴 '취소' 를 바로 눌러도 되게)
-document.addEventListener('contextmenu', e => { const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"]'); if (!el) return; e.preventDefault(); drReset(); attOptMenu(el.dataset.k, el.dataset.v); });
+document.addEventListener('contextmenu', e => { const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"], .pills .opt[data-act="favgo"]'); if (!el) return; e.preventDefault(); drReset(); attOptMenu(el.dataset.k, el.dataset.v); });
 function qnAddFrom(inp) {
   if (!inp) return; const vv = byKey(inp.dataset.qnadd), t = norm(inp.value).slice(0, QN_LEN); if (!vv || !t) return;
   const it = qnItems(vv); if (it.length >= QN_MAX) { toast('질문은 ' + QN_MAX + '개까지 적을 수 있습니다'); return; }
@@ -4239,9 +4250,10 @@ function vWeek() {
   const ppl = new Set([].concat(...L.map(vWho))), deep = L.filter(v => v.depthN === 3).length, na = [].concat(...L.map(v => v.actions)).length;
   const wkName = S.wk === 0 ? '이번 주' : S.wk === -1 ? '지난주' : S.wk === 1 ? '다음 주' : '이 주', attN = new Set(AA.map(a => nameKey(a.name))).size;
   h += '<p class="sentence">' + wkName + (C.v ? ' <b>' + ppl.size + '명</b>을 만났습니다' + (L.length ? ' · 깊은 대화 <b>' + deep + '번</b> · 할 일 <b>' + na + '개</b>' : '') + (EV.length ? ' · \'심방\' 일정 <b>' + EV.length + '개</b>' : '') : '') + (C.a ? (C.v ? ' · ' : ' ') + '출석 <b>' + attN + '명</b>' + (AA.length > attN ? '(' + AA.length + '번)' : '') : '') + '.</p>';
+  { const dsc = !!saved().wkDesc; h += '<div class="wk-sort"><button data-act="wksort" aria-label="' + (dsc ? '날짜 역순 — 누르면 날짜순' : '날짜순 — 누르면 날짜 역순') + '"><svg viewBox="0 0 12 14"><path class="' + (dsc ? '' : 'on') + '" d="M6 1l4 5H2z"/><path class="' + (dsc ? 'on' : '') + '" d="M6 13l4-5H2z"/></svg></button></div>'; }   // 1113-E 6 날짜순 ▲ / 역순 ▼
   for (let i = 0; i < 7; i++) {
-    const k = ymdAdd(s, i), dv = L.filter(v => v.ymd === k), de = EV.filter(x => x.ymd === k), da = AA.filter(a => a.date === k);
-    h += '<div class="day' + (i === 0 ? ' sun' : '') + (k === today() ? ' now' : '') + '"><div class="dn">' + DOW[i] + '<b>' + (+k.slice(8)) + '</b></div><div>' + (dv.length || de.length || da.length ? dv.map(wline).join('') + de.map(eline).join('') + da.map(aline).join('') : '<div class="empty" style="padding-top:12px">—</div>') + '</div></div>';
+    const wd = saved().wkDesc ? 6 - i : i, k = ymdAdd(s, wd), dv = L.filter(v => v.ymd === k), de = EV.filter(x => x.ymd === k), da = AA.filter(a => a.date === k);
+    h += '<div class="day' + (wd === 0 ? ' sun' : '') + (k === today() ? ' now' : '') + '"><div class="dn">' + DOW[wd] + '<b>' + (+k.slice(8)) + '</b></div><div>' + (dv.length || de.length || da.length ? dv.map(wline).join('') + de.map(eline).join('') + da.map(aline).join('') : '<div class="empty" style="padding-top:12px">—</div>') + '</div></div>';
   }
   return h + '</div></div>' + nav();
 }
@@ -5172,7 +5184,7 @@ function settingsPane(L, t) {
       '<div class="srow"><span class="t">보관 기록 함께 보기</span><button class="tgl' + (S.showArch ? ' on' : '') + '" data-act="arch" aria-label="보관 기록 함께 보기"></button></div></div>';
   } else if (t === 1) {
     h += '<div class="set"><div class="srow"><span class="t">\'심방\' 일정 제목</span><span></span><div class="title-ed"><input id="calPre" placeholder="앞 글자" value="' + esc(sv.calPre || '') + '" aria-label="이름 앞 글자"><span class="nmv">성도 이름</span><input id="calSuf" placeholder="뒤 글자" value="' + esc(sv.calSuf || '') + '" aria-label="이름 뒤 글자"></div><div class="d">미리 보기: <b id="calPrev">' + esc(calTitle('김하늘', sv.calPre, sv.calSuf)) + '</b> · 바꾸면 이미 넣은 일정 제목도 고칩니다</div></div>' +
-      '<div class="srow"><span class="t">지난 기록도 캘린더에</span><span></span><div class="d">' + REC_CAL_FROM.slice(0, 4) + '년 ' + (+REC_CAL_FROM.slice(5, 7)) + '월 ' + (+REC_CAL_FROM.slice(8)) + '일부터의 기록은 그날 \'심방\' 캘린더에 \'✓ 이름\' 으로 들어갑니다(계획 없이 적은 것 · 폼으로 적은 것 모두). 날짜는 기록을 따릅니다 — 옮기려면 기록을 고쳐 주세요.</div></div>' +
+      '<div class="srow"><span class="t">지난 기록도 캘린더에</span><span></span><div class="d">' + REC_CAL_FROM.slice(0, 4) + '년 ' + (+REC_CAL_FROM.slice(5, 7)) + '월 ' + (+REC_CAL_FROM.slice(8)) + '일부터의 기록은 그날 \'심방\' 캘린더에 \'이름\' 으로 들어갑니다(계획 없이 적은 것 · 폼으로 적은 것 모두). 날짜는 기록을 따릅니다 — 옮기려면 기록을 고쳐 주세요.</div></div>' +
       '<div class="srow"><span class="t">BLOCK7 주간 · 월간에서 보기</span><span></span><div class="d">BLOCK7 설정 › 계정 › 구글 캘린더 › 가져올 캘린더에서 \'심방\' 을 켜면 BLOCK7 에도 계획이 보입니다. 거기서 옮기면 여기도 따라 옮겨집니다. (일정 제목 = 이름만 BLOCK7 계정에 들어갑니다)</div></div></div>';
   } else if (t === 2) {
     h += '<div class="set">' +
@@ -5627,6 +5639,7 @@ document.addEventListener('click', e => {
   if (a === 'calsw') { const c = calShow(); c[v] = !c[v]; if (!c.v && !c.a) c[v === 'v' ? 'a' : 'v'] = true; save({ calShow: c }); render(); return; }
   if (a === 'attlist') { S.layers = []; goTab('attend'); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
+  if (a === 'favgo') { openAttEdit(null, v); return; }
   if (a === 'attopen') { if (v) openAttEdit(v); return; }
   if (a === 'attpaste') { openLayer('attpaste', { form: { paste: '' } }); return; }
   if (a === 'attmore') { S.attN = (S.attN || 60) + 60; render(); return; }
@@ -5668,10 +5681,10 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'recentmore') { const L = topLayer(); if (L && (L.type === 'edit' || L.type === 'planedit' || L.type === 'attedit')) { L.recentAll = !L.recentAll; render(); } return; }
-  if (a === 'aoptadd') { const L = topLayer(); if (optCtx(L)) { L.adding = k; L.plus = null; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
-  if (a === 'aoptx') { const L = topLayer(); if (optCtx(L)) { L.omenu = null; render(); } return; }
+  if (a === 'aoptadd') { const L = optL(); if (optCtx(L)) { L.adding = k; L.plus = null; render(); const i = document.querySelector(L.type === 'atttab' ? '.favs [data-optadd]' : '.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
+  if (a === 'aoptx') { const L = optL(); if (optCtx(L)) { L.omenu = null; render(); } return; }
   if (a === 'aoptren' || a === 'aoptdel') {
-    const L = topLayer(), C = optCtx(L); if (!C || !L.omenu) return; const { k: kk, v: vv } = L.omenu; L.omenu = null;
+    const L = optL(), C = optCtx(L); if (!C || !L.omenu) return; const { k: kk, v: vv } = L.omenu; L.omenu = null;
     if (L.type === 'edit' && ATTR_KEY[kk]) {   // 구분 · 태그 · 할 일 — 속성 탭 · 구글폼에서
       const T = ATTR_KEY[kk];
       if (a === 'aoptdel') {
@@ -5786,6 +5799,7 @@ document.addEventListener('click', e => {
   else if (a === 'clear') { for (const x in S.filt) S.filt[x] = []; S.quick = ''; }
   else if (a === 'hue') { hueSet(!hueOn()); toast(hueOn() ? '이름을 기도노트 표시색으로\n칠합니다' : '이름 색을 껐습니다'); }
   else if (a === 'hueinfo') S.hueInfo = !S.hueInfo;
+  else if (a === 'wksort') { save({ wkDesc: !saved().wkDesc }); render(); const p = $('pane'); if (p && !RM.matches) p.querySelectorAll('.day').forEach(d => d.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22,.8,.24,1)' })); }
   else if (a === 'lmode') { save({ lmode: listMode() === 'brief' ? 'full' : 'brief' }); render(); const vl = $('vlist'); if (vl && !RM.matches) vl.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' }); return; }
   else if (a === 'arch') { S.showArch = !S.showArch; toast(S.showArch ? '보관 기록도 함께 봅니다' : '보관 기록을 다시 감춥니다'); }
   else if (a === 'mday') S.mday = v;
@@ -5854,7 +5868,8 @@ document.addEventListener('touchstart', e => {
   const el = e.target.closest && e.target.closest('#layers > .layer'); if (!el || el !== $('layers').lastElementChild || e.touches.length !== 1) return;
   if (e.target.closest('input,textarea,.pills,.omenu,.rlist')) return;
   const t = e.touches[0], head = e.target.closest('.ph-head');
-  const mode = t.clientX <= 24 ? 'x' : (head || el.scrollTop <= 0) && !e.target.closest('.sugg,[data-noswipe]') ? 'y' : '';   // 1113-D A 머리줄 · 또는 맨 위에 올려 둔 때면 어디서든
+  const top = topLayer(), nav = top && top.type === 'detail' && !e.target.closest('.sugg,[data-noswipe]');   // 1113-E 2 열람: 옆으로 밀면 이전 · 다음 기록
+  const mode = t.clientX <= 24 ? 'x' : (head || el.scrollTop <= 0) && !e.target.closest('.sugg,[data-noswipe]') ? (nav ? 'hy' : 'y') : nav ? 'h' : '';   // 1113-D A 머리줄 · 또는 맨 위에 올려 둔 때면 어디서든
   if (!mode) return;
   Object.assign(SW, { el, mode, x0: t.clientX, y0: t.clientY, t0: Date.now(), d: 0, on: false });
 }, { passive: true });
@@ -5863,20 +5878,48 @@ document.addEventListener('touchmove', e => {
   const t = e.touches[0], dx = t.clientX - SW.x0, dy = t.clientY - SW.y0;
   if (!SW.on) {
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-    if (SW.mode === 'x' ? Math.abs(dy) > Math.abs(dx) || dx < 0 : Math.abs(dx) > Math.abs(dy) || dy < 0 || SW.el.scrollTop > 0) { SW.el = null; return; }   // 다른 방향이면 손 뗀다(굴리기 등)
+    if (SW.mode === 'hy' || SW.mode === 'h') { if (Math.abs(dx) > Math.abs(dy)) SW.mode = 'h'; else if (SW.mode === 'hy' && dy > 0) SW.mode = 'y'; else { SW.el = null; return; } SW.nb = detNeighbors(); }
+    if (SW.mode === 'h') { /* 옆으로 — 아래에서 따라간다 */ }
+    else if (SW.mode === 'x' ? Math.abs(dy) > Math.abs(dx) || dx < 0 : Math.abs(dx) > Math.abs(dy) || dy < 0 || SW.el.scrollTop > 0) { SW.el = null; return; }   // 다른 방향이면 손 뗀다(굴리기 등)
     SW.on = true;
   }
   e.preventDefault();
+  if (SW.mode === 'h') {   // 손가락을 따라 옆으로(옅어지며) · 더 갈 데 없는 쪽은 고무줄
+    const end = dx < 0 ? !SW.nb.next : !SW.nb.prev; SW.d = end ? dx / 3 : dx;
+    SW.el.style.transform = 'translateX(' + SW.d + 'px)'; SW.el.style.opacity = String(1 - Math.min(.5, Math.abs(SW.d) / SW.el.clientWidth * .6)); return;
+  }
   SW.d = Math.max(0, SW.mode === 'x' ? dx : dy);
   SW.el.style.transform = SW.mode === 'x' ? 'translateX(' + SW.d + 'px)' : 'translateY(' + SW.d + 'px)';
 }, { passive: false });
 document.addEventListener('touchend', () => {
   if (!SW.el) return;
   const { el, mode, d, t0, on } = SW; SW.el = null; if (!on) return;
+  if (mode === 'h') { const nb = SW.nb || {}, to = d < 0 ? nb.next : nb.prev, far = Math.abs(d) > el.clientWidth / 4 || (Math.abs(d) > 40 && Date.now() - t0 < 260); return detGo(el, far ? to : null, d < 0 ? 1 : -1); }
   const size = mode === 'x' ? el.clientWidth : el.clientHeight, fast = d > 40 && Date.now() - t0 < 260;
   swEnd(el, RM.matches ? d > size / 4 : (d > size / 4 || fast), mode);
 });
-document.addEventListener('touchcancel', () => { if (SW.el && SW.on) swEnd(SW.el, false); SW.el = null; });
+document.addEventListener('touchcancel', () => { if (SW.el && SW.on) { if (SW.mode === 'h') detGo(SW.el, null, 0); else swEnd(SW.el, false); } SW.el = null; });
+// 1113-E 2 열람 화면의 이전 · 다음 — 목록에 보이는 차례(V()) 그대로. 목록 밖에서 연 기록이면 모든 기록 차례
+function detNeighbors() {
+  const L = topLayer(); if (!L || L.type !== 'detail') return {};
+  let list = V(); if (!list.some(v => v.key === L.key)) list = M().visits.filter(v => !v.archived || v.key === L.key);
+  const i = list.findIndex(v => v.key === L.key); return i < 0 ? {} : { prev: list[i - 1] ? list[i - 1].key : '', next: list[i + 1] ? list[i + 1].key : '' };
+}
+// 나가고(≈150ms) → 다음 기록으로 그리고 → 반대쪽에서 들어온다(≈300ms). to 가 없으면 제자리로
+function detGo(el, to, dir) {
+  if (!to) { el.style.transition = 'transform .26s cubic-bezier(.22,.8,.24,1),opacity .26s'; el.style.transform = ''; el.style.opacity = ''; setTimeout(() => { el.style.transition = ''; }, 280); return; }
+  const L = topLayer(), w = el.clientWidth, q = RM.matches;
+  const swap = () => {
+    L.key = to; render();
+    const nl = $('layers').lastElementChild; if (!nl) return; nl.scrollTop = 0;
+    if (q) { nl.style.transform = ''; nl.style.opacity = ''; return; }
+    nl.style.transition = ''; nl.style.transform = 'translateX(' + (dir * w * .35) + 'px)'; nl.style.opacity = '0';
+    requestAnimationFrame(() => { nl.style.transition = 'transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s'; nl.style.transform = ''; nl.style.opacity = ''; setTimeout(() => { nl.style.transition = ''; }, 320); });
+  };
+  if (q) return swap();
+  el.style.transition = 'transform .15s ease-in,opacity .15s ease-in'; el.style.transform = 'translateX(' + (-dir * w * .5) + 'px)'; el.style.opacity = '0';
+  setTimeout(swap, 150);
+}
 // 1108-C1 보기 조건(필터) 시트 끌어내려 닫기 — 손잡이 · 머리줄은 언제든, 안쪽은 맨 위까지 올려 둔 때만.
 //   손가락을 따라 내려가고(위로는 고무줄처럼 뻑뻑하게), 높이의 ¼ 넘게 또는 빠르게 튕기면 닫히고, 못 미치면 제자리로.
 const SD = { el: null, y0: 0, x0: 0, t0: 0, d: 0, on: false };
@@ -5917,7 +5960,8 @@ function sdEnd(cancel) {
 document.addEventListener('touchend', () => sdEnd(false));
 document.addEventListener('touchcancel', () => sdEnd(true));
 // PC: ESC 는 × 와 같은 일 — 가장 위 것부터
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', e => {   // 1113-E 2 PC: 열람 화면에서 ← → 로 이전 · 다음 기록
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isField(document.activeElement)) { const L = topLayer(); if (L && L.type === 'detail') { const nb = detNeighbors(), d = e.key === 'ArrowRight' ? 1 : -1, to = d > 0 ? nb.next : nb.prev; if (to) detGo($('layers').lastElementChild, to, d); return; } }
   if (e.key !== 'Escape') return;
   if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
 });

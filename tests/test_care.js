@@ -434,8 +434,8 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('⑰ 계획 줄 — 빈 상태는 예정 · 시트 날짜 숫자 · 시간 숫자 · 계획ID 없는 줄 버림', J(P.map(p => [p.id, p.date, p.time, p.status, p.evId])), [['P1', '2026-11-10', '14:00', '예정', 'E1'], ['P2', '2026-11-14', '13:30', '예정', '없음'], ['P3', '2026-11-12', '', '기록됨', 'E3']]);
   sc.eq('⑰ 일정 제목 = 앞 글자 + 이름 + 뒤 글자', J([A.calTitle('가나다'), A.calTitle(' 가나다 ', '심방 · ', ''), A.calTitle('가나다', '', ' 심방')]), ['가나다', '심방 · 가나다', '가나다 심방']);
   const b1 = A.calEventBody(P[0], '', '', 'Asia/Seoul'), b2 = A.calEventBody(Object.assign({}, P[0], { time: '' })), b3 = A.calEventBody(Object.assign({}, P[0], { time: '23:30' }), '', '', 'Asia/Seoul', true);
-  sc.eq('⑰ 일정 — 시간 있으면 한 시간 · 없으면 하루 종일 · 자정 넘김 · 기록됨은 ✓', J([b1.start, b1.end, b2.start, b2.end, b3.end.dateTime, b3.summary]),
-    [{ dateTime: '2026-11-10T14:00:00', timeZone: 'Asia/Seoul' }, { dateTime: '2026-11-10T15:00:00', timeZone: 'Asia/Seoul' }, { date: '2026-11-10' }, { date: '2026-11-11' }, '2026-11-11T00:30:00', '✓ 가나다']);
+  sc.eq('⑰ 일정 — 시간 있으면 한 시간 · 없으면 하루 종일 · 자정 넘김 · 기록됨도 ✓ 없음', J([b1.start, b1.end, b2.start, b2.end, b3.end.dateTime, b3.summary]),
+    [{ dateTime: '2026-11-10T14:00:00', timeZone: 'Asia/Seoul' }, { dateTime: '2026-11-10T15:00:00', timeZone: 'Asia/Seoul' }, { date: '2026-11-10' }, { date: '2026-11-11' }, '2026-11-11T00:30:00', '가나다']);
   sc.eq('⑰ 일정엔 표식만 — 장소 · 물어볼 것은 안 싣는다', J([b1.extendedProperties.private, Object.keys(b1).sort()]), [{ careApp: 'care', careId: 'P1' }, ['end', 'extendedProperties', 'start', 'summary']]);
   sc.eq('⑰ 일정 시각 읽기 (이 기기 시각)', J([A.evWhen({ start: { dateTime: '2026-11-10T05:00:00Z' } }), A.evWhen({ start: { date: '2026-11-11' } })]), [{ date: '2026-11-10', time: '14:00' }, { date: '2026-11-11', time: '' }]);
   const ev = (id, care, when, extra) => Object.assign({ id, status: 'confirmed', summary: '가나다', start: when.includes('T') ? { dateTime: when } : { date: when }, extendedProperties: { private: { careApp: 'care', careId: care } } }, extra || {});
@@ -459,8 +459,9 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const other = A.planCalSync([P[0]], [E1, { id: 'Z', status: 'confirmed', summary: '남의 일정', start: { date: '2026-11-10' } }]);
   sc.eq('⑰ 우리 표식이 없는 일정은 절대 안 지운다', J(other.del), []);
   sc.eq('⑰ 제목이 다르면(앞뒤 글자를 바꿈) 일정 제목을 고친다', J(A.planCalSync([P[0]], [E1], '심방 · ', '').patch), [{ evId: 'E1', body: { summary: '심방 · 가나다' } }]);
-  const dn = A.planCalSync([P[2]], [ev('E3', 'P3', '2026-11-12', { summary: '사아자' })]);
-  sc.eq('⑰ 기록됨 → 일정 제목 앞 ✓', J(dn.patch), [{ evId: 'E3', body: { summary: '✓ 사아자' } }]);
+  const dn = A.planCalSync([P[2]], [ev('E3', 'P3', '2026-11-12', { summary: '✓ 사아자' })]);
+  sc.eq('⑰ (1113-E 7) 기록됨도 ✓ 없이 — 예전에 ✓ 를 붙인 일정은 제목을 고쳐 뺀다', J(dn.patch), [{ evId: 'E3', body: { summary: '사아자' } }]);
+  sc.eq('⑰ (1113-E 7) 이미 ✓ 없는 기록됨 일정은 그대로', J(A.planCalSync([P[2]], [ev('E3', 'P3', '2026-11-12', { summary: '사아자' })]).patch), []);
   const cc = A.planCalSync([Object.assign({}, P[0], { status: '취소됨' })], [E1]);
   sc.eq('⑰ 앱에서 취소했는데 일정이 남아 있으면 지운다', J(cc.del), ['E1']);
   sc.eq('⑰ 계획 탭 줄 — 머리글 이름으로 자리', J(A.planRow(['상태', '계획ID', '성도', '메모'], { id: 'P9', name: '가나다', status: '예정' })), ['예정', 'P9', '가나다', '']);
@@ -491,13 +492,13 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
 // ⑲ 기록도 '심방' 캘린더에
 {
   const vs = [{ id: 'C1', name: '가나다', ymd: '2026-10-05' }, { id: 'C2', name: '라마바', ymd: '2026-09-30' }, { id: 'C3', name: '사아자', ymd: '2026-11-02' }, { id: '', name: '준비 전', ymd: '2026-11-03' }, { id: 'C5', name: '보관', ymd: '2026-11-04', archived: true }];
-  const rev = (id, rec, date, o) => Object.assign({ id, status: 'confirmed', summary: '✓ ' + ({ C1: '가나다', C3: '사아자' }[rec] || rec), start: { date }, end: { date }, extendedProperties: { private: { careApp: 'care', careRec: rec, careSheet: 'S' } } }, o || {});
+  const rev = (id, rec, date, o) => Object.assign({ id, status: 'confirmed', summary: '' + ({ C1: '가나다', C3: '사아자' }[rec] || rec), start: { date }, end: { date }, extendedProperties: { private: { careApp: 'care', careRec: rec, careSheet: 'S' } } }, o || {});
   const O = (o) => Object.assign({ sheet: 'S', readOk: true }, o || {});
   sc.eq('⑲ 기준 날짜는 HB 결정대로 2026-10-01', A.REC_CAL_FROM, '2026-10-01');
   const r0 = A.recCalSync(vs, [], [], O());
   sc.eq('⑲ 2026-10-01 부터 · 기록ID 있는 것 · 보관 아닌 것만 만든다', J(r0.create), ['C1', 'C3']);
   const b = A.recEventBody(vs[0], '심방 · ', '', 'S');
-  sc.eq('⑲ 일정 — ✓ + 제목(앞뒤 글자) · 그날 하루 종일 · 표식 careRec', J([b.summary, b.start, b.end, b.extendedProperties.private]), ['✓ 심방 · 가나다', { date: '2026-10-05' }, { date: '2026-10-06' }, { careApp: 'care', careRec: 'C1', careSheet: 'S' }]);
+  sc.eq('⑲ 일정 — (1113-E ✓ 없음) 제목(앞뒤 글자) · 그날 하루 종일 · 표식 careRec', J([b.summary, b.start, b.end, b.extendedProperties.private]), ['심방 · 가나다', { date: '2026-10-05' }, { date: '2026-10-06' }, { careApp: 'care', careRec: 'C1', careSheet: 'S' }]);
   sc.eq('⑲ 기록 일정은 계획 표식(careId)이 아니다 · 그래도 우리 것', [A.evCareId(b), A.evRecId(b), A.evOurs(b), A.evOurs({ summary: '남의 것' })], ['', 'C1', true, false]);
   const plans = [{ id: 'P1', recId: 'C3', evId: 'E9', status: '기록됨' }];
   sc.eq('⑲ 계획에서 온 기록(계획 일정이 있음)은 건너뛴다', J(A.recCalSync(vs, plans, [], O()).create), ['C1']);
@@ -505,7 +506,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const same = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')], O());
   sc.eq('⑲ 같으면 할 일 없음', J([same.create, same.patch, same.del]), [[], [], []]);
   const mv = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-09'), rev('E3', 'C3', '2026-11-02', { summary: '사아자 메모' })], O());
-  sc.eq('⑲ 날짜 · 제목은 시트가 이긴다 — 옮긴 일정은 기록 날짜로 · 고친 제목은 되돌림', J(mv.patch), [{ evId: 'E1', body: { start: { date: '2026-10-05' }, end: { date: '2026-10-06' } } }, { evId: 'E3', body: { summary: '✓ 사아자' } }]);
+  sc.eq('⑲ 날짜 · 제목은 시트가 이긴다 — 옮긴 일정은 기록 날짜로 · 고친 제목은 되돌림', J(mv.patch), [{ evId: 'E1', body: { start: { date: '2026-10-05' }, end: { date: '2026-10-06' } } }, { evId: 'E3', body: { summary: '사아자' } }]);
   sc.eq('⑲ 시간 있는 일정으로 바뀌었으면 하루 종일로 되돌림', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05', { start: { dateTime: '2026-10-05T10:00:00+09:00' } }), rev('E3', 'C3', '2026-11-02')], O()).patch.map(x => Object.keys(x.body))), [['start', 'end']]);
   const gone = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EX', 'C99', '2026-10-20'), rev('EO', 'C2', '2026-09-30')], O());
   sc.eq('⑲ 지운 기록 · 기준 날짜 앞 기록의 일정은 지운다', J(gone.del.sort()), ['EO', 'EX']);
@@ -1062,6 +1063,16 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊶ 상한 — 셀 수 · 셀마다 이름 수 · 이상한 값은 버림', [A.rosterClean(Array.from({ length: 60 }, (_, i) => ({ id: i, name: '셀' + i }))).length, A.rosterClean([{ id: 1, name: '셀', members: Array.from({ length: 300 }, (_, i) => 'n' + i) }])[0].members.length, A.rosterClean([null, { name: '' }, { id: 2, name: ' 셀 ', members: 'x', leaders: [' 가 ', '가', ''] }])],
     [A.ROSTER_MAX_G, A.ROSTER_MAX_N, [{ id: '2', name: '셀', leader: '', leaders: ['가'], lead: false, members: [] }]]);
   sc.eq('㊶ 계정 문서 읽기 — 없거나 빈 것은 null', J([A.rosterUse(null), A.rosterUse({ groups: [] }), A.rosterUse({ groups: G, at: 123 }).at, A.rosterUse({ groups: G, at: 123 }).groups.length]), [null, null, 123, 2]);
+}
+
+// ㊷ 1113-E 7 — 예전에 '✓ 이름' 으로 들어간 기록 일정은 다음 맞춤에서 ✓ 를 뺀다(남의 일정 · 다른 시트 것은 안 건드림)
+{
+  const vs = [{ id: 'C1', name: '가나다', ymd: '2026-10-05' }];
+  const old = { id: 'E1', status: 'confirmed', summary: '✓ 가나다', start: { date: '2026-10-05' }, end: { date: '2026-10-06' }, extendedProperties: { private: { careApp: 'care', careRec: 'C1', careSheet: 'S' } } };
+  const other = { id: 'E9', status: 'confirmed', summary: '✓ 남의 일정', start: { date: '2026-10-05' } };
+  const r = A.recCalSync(vs, [], [old, other], { sheet: 'S', readOk: true });
+  sc.eq('㊷ 기록 일정 제목에서 ✓ 빼기 · 남의 일정 그대로', J([r.patch, r.del]), [[{ evId: 'E1', body: { summary: '가나다' } }], []]);
+  sc.eq('㊷ 새 일정 · 계획 일정도 ✓ 없음', [A.recEventBody(vs[0], '', '', 'S').summary, A.calEventBody({ id: 'P', name: '가나다', date: '2026-10-05' }, '', ' 심방', 'Asia/Seoul', true).summary], ['가나다', '가나다 심방']);
 }
 
 sc.done();
