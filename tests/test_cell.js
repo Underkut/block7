@@ -24,7 +24,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
   catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiBodyKey, aiAlias, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX,
-  DAY_NAMES, meetDays, meetDaysText, dateInWeek, campusPass, CAMPUSES, sortNotes, issueSortKey, sliderVal, snapVal, VISIT_DOWN };`, ctx);
+  DAY_NAMES, meetDays, meetDaysText, dateInWeek, campusPass, CAMPUSES, sortNotes, issueSortKey, sliderVal, snapVal, VISIT_DOWN, streakShort, meetState, meetSay, LATE_DAYS, dayGap };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -485,6 +485,21 @@ sc.eq('㉒ 기도 표시는 작은 \'기도\' 알약 (HB 11/7 시안 B · 🙏 �
   sc.eq('㉔ 한 장 · 살필 분이 같은 careItems 에 심방 맞춤(CARE.link)을 넘긴다', /careList\(people, S\.weeks, notes, asks, CARE\.state === 'ok' \? CARE\.link : null\)/.test(HTML) && /visitedPill\(x\)/.test(HTML), true);
   sc.eq('㉔(T4) 개인 카드 문구 \'심방 노트에 심방 기록이 없습니다\'', HTML.includes('심방 노트에 심방 기록이 없습니다') && !HTML.includes('심방 노트에 기록이 없습니다'), true);
   sc.eq('㉔(T5) 오른쪽 위 아이콘 줄은 위 머리 밑에 붙는다(sticky) · 무대는 세로로 자르지 않는다', /\.aibar\{position:-webkit-sticky;position:sticky;top:var\(--hh,0px\)\}/.test(HTML) && /\.stage\{[^}]*overflow-y:visible/.test(HTML) && /hhWatch\(\);/.test(HTML), true);
+}
+
+// ㉕ 1113-T1 · T2 · T6 탭 아이콘 · 이번 주 모임 날 색 · 짧은 연속 (HB 11/14: 1-A · 2-B1 · 6-A · 주황 하루)
+{
+  const sub = { report_id: 'r', status: 'submitted', members_present: 3, members_absent: 1 }, off = { report_id: 'r', status: 'submitted', members_present: null }, no = { report_id: null, status: null };
+  const T = '2026-11-14';   // 토요일
+  sc.eq('㉕ 낸 셀은 날짜 상관없이 제출 · 쉼', [A.meetState(sub, '2026-11-11', T), A.meetState(off, '2026-11-11', T), A.meetState(sub, '', T)], ['ok', 'rest', 'ok']);
+  sc.eq('㉕ 아직: 앞으로 · 오늘 · 하루 지남 주황 · 이틀부터 빨강', [A.meetState(no, '2026-11-15', T), A.meetState(no, T, T), A.meetState(no, '2026-11-13', T), A.meetState(no, '2026-11-12', T), A.meetState(no, '2026-11-11', T)], ['wait', 'today', 'late', 'bad', 'bad']);
+  sc.eq('㉕ 주황 기간은 하루 (HB 11/14)', A.LATE_DAYS, 1);
+  sc.eq('㉕ 모임 날을 모르면 색 없음', [A.meetState(no, '', T), A.meetState(null, '', T)], ['', '']);
+  sc.eq('㉕ 짧은 말', [A.meetSay('bad', '2026-11-11', T), A.meetSay('late', '2026-11-13', T), A.meetSay('today', T, T), A.meetSay('wait', '2026-11-15', T), A.meetSay('wait', '2026-11-17', T), A.meetSay('ok', '', T), A.meetSay('rest', '', T)], ['3일 지남', '어제', '오늘', '내일', '3일 뒤', '제출', '쉼']);
+  sc.eq('㉕ 짧은 연속 — ✓ · ✕ 뒤 한 칸 (HB 11/14)', [A.streakShort({ kind: 'sub', run: 4 }), A.streakShort({ kind: 'miss', run: 2 }), A.streakShort({ kind: 'miss', run: 12, capped: true }), A.streakShort({ kind: null })], ['✓ 4주', '✕ 2주', '✕ 12주+', '']);
+  sc.eq('㉕ 위 탭 여섯 다 아이콘 · 기도제목은 기도손 · 코멘트 새 글 수는 글자 칸(.tl)에', /<span class="ti">\$\{tabIcon\(t\.id\)\}<\/span><span class="tl">/.test(HTML) && /id === 'prayer' \? PRAY_HANDS/.test(HTML) && (HTML.match(/\.tab\[data-tab="comment"\] \.tl'/g) || []).length === 2, true);
+  sc.eq('㉕ 이번 주 줄: 점 띠 + 짧은 연속(긴 글은 title)', /\$\{weekStrip\(c, w, r\)\}/.test(HTML) && /title="\$\{esc\(txt\)\}">\$\{esc\(streakShort\(s\)\)\}/.test(HTML), true);
+  sc.eq('㉕ 대시보드 이번 주: 회색 납작 사각 · 칸 바탕 대신 점선 빈 막대', /class="b ghost"/.test(HTML) && !/b flat wait/.test(HTML) && !/\.bar\.now\{background/.test(HTML), true);
 }
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)

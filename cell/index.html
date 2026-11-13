@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1114-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1114-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -69,6 +69,23 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:1 0 auto;padding:9px 10px 10px;font-size:14px;color:var(--tx3);position:relative;white-space:nowrap}
 .tab.on{color:var(--tx);font-weight:500}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab .ti{display:flex;height:20px;align-items:center}
+.tab .ti svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tab .ti svg.ph{width:19px;height:19px;fill:currentColor;stroke:none}
+/* 1113-T2 이번 주 모임 날 색 — 제출 초록 · 쉼 노랑 · 앞으로 회색 · 오늘 하늘 · 하루 지남 주황 · 더 지남 빨강 */
+.ms-ok{--mc:var(--ok)} .ms-rest{--mc:var(--rest)} .ms-wait{--mc:var(--tx3)} .ms-today{--mc:var(--ac)} .ms-late{--mc:var(--warn)} .ms-bad{--mc:var(--bad)}
+.wstrip{display:inline-flex;gap:3px;align-items:flex-end}
+.wstrip b{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:400;font-size:9.5px;line-height:1;color:var(--tx3);width:14px}
+.wstrip b i{width:8px;height:8px;border-radius:50%;background:var(--s2)}
+.wstrip b.m i{background:var(--mc,var(--tx3));width:10px;height:10px}
+.wstrip b.m{color:var(--mc,var(--tx3));font-weight:600}
+.wstrip b.m2 i{background:var(--mc,var(--tx3));opacity:.35}
+.wstrip b.t i{box-shadow:0 0 0 1.5px var(--tx2)}
+.wstrip b.t{color:var(--tx)}
+.wright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:86px}
+.skk{font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.skk.sub{color:var(--ok)} .skk.miss{color:var(--bad)}
 .tab .dot{display:inline-block;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--mine);color:#fff;font-size:10.5px;line-height:16px;margin-left:4px;vertical-align:1px}
 .tabbar{position:absolute;bottom:-1px;height:2px;background:var(--tx);border-radius:2px;transition:transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1)}
 .sub{color:var(--tx2);font-size:13px;margin:10px 0 12px}
@@ -194,7 +211,9 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .bar .b.v{background:var(--ac-soft)}
 .bar .b.flat{height:6px!important;border-radius:3px}
 .bar .b.off{background:var(--rest)} .bar .b.miss{background:var(--bad)} .bar .b.wait{background:var(--s2)} .bar .b.none{background:transparent}
-.bar.now{background:var(--ac-soft);border-radius:7px 7px 3px 3px;box-shadow:0 -3px 0 var(--ac-soft)}
+.bar .b.ghost{background:transparent;border:1.5px dashed var(--mc,var(--tx3));border-bottom-width:1.5px;opacity:.9}
+.bar .n.ghn{color:var(--mc,var(--tx3));font-weight:500;white-space:nowrap}
+.barx span.now[class*="ms-"]{color:var(--mc)}
 .barx span i{display:block;font-style:normal;font-size:9.5px;line-height:1.2}
 .barx span.guess{opacity:.75}
 .bar.gray .b.flat:not(.none){background:var(--tx3)}
@@ -404,7 +423,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 inside — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1114-1';
+const APP_VERSION = 'v. 26-1114-2';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -488,6 +507,27 @@ function streakText(s) {
   const pre = s.thisDone ? '' : '지난주까지 ';
   if (s.kind === 'sub') return pre + s.run + (s.capped ? '주 넘게' : '주') + ' 연속 제출';
   return pre + (s.capped ? s.run + '주 넘게 미제출' : s.run + '주째 미제출');
+}
+// 1113-T2 짧은 연속 표시 (HB 11/14 '2-B1', ✓ · ✕ 뒤 한 칸): '✓ 4주' · '✕ 2주' · 끝까지 이어지면 '+'. 긴 글은 title 로.
+function streakShort(s) {
+  if (!s || !s.kind) return '';
+  return (s.kind === 'sub' ? '✓ ' : '✕ ') + s.run + '주' + (s.capped ? '+' : '');
+}
+// 1113-T2 이번 주 모임 날 × 제출 — 대시보드 막대 · 이번 주 탭 점 띠가 같은 색을 쓴다 (HB 11/14).
+// row: 그 주 셀 줄 · meet: 그 주 모임 날 'YYYY-MM-DD'(낸 보고서의 실제 날짜, 아니면 많이 모이는 요일로 셈 · 모르면 '') · today: 'YYYY-MM-DD'
+// → 'ok' 제출 · 'rest' 쉼(냈는데 모임 못 함) · 'wait' 아직 · 앞으로 · 'today' 아직 · 오늘 · 'late' 아직 · LATE_DAYS 일 안 지남 · 'bad' 그보다 더 지남 · '' 모름
+const LATE_DAYS = 1;   // HB 11/14: 주황은 하루(모임 다음 날)까지, 이틀째부터 빨강
+function dayGap(a, b) { return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 864e5); }
+function meetState(row, meet, today) {
+  if (row && isSubmitted(row)) return attTaken(row) ? 'ok' : 'rest';
+  if (!meet || !today) return '';
+  const g = dayGap(today, meet);
+  return g < 0 ? 'wait' : g === 0 ? 'today' : g <= LATE_DAYS ? 'late' : 'bad';
+}
+function meetSay(st, meet, today) {
+  if (st === 'ok') return '제출'; if (st === 'rest') return '쉼'; if (!st) return '';
+  const g = dayGap(today, meet);
+  return g === 0 ? '오늘' : g === 1 ? '어제' : g === -1 ? '내일' : g > 0 ? g + '일 지남' : (-g) + '일 뒤';
 }
 
 function catsOf(n) { const c = (n && n.categories && n.categories.length) ? n.categories : (n && n.category ? [n.category] : []); return c.length ? c : ['other']; }
@@ -1185,6 +1225,15 @@ const TABS = [
   { id: 'week', label: '이번 주' }, { id: 'care', label: '살필 분' }, { id: 'issue', label: '이슈' },
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '대시보드' },
 ];
+// 1113-T1 위 탭 글자 위 아이콘 (HB 11/14 '1-A 가는 선'). 기도제목은 이슈 탭의 기도손(PRAY_HANDS) 그대로. 글자는 .tl 안 — 코멘트 새 글 수도 거기에.
+const TAB_ICON = {
+  week: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M7.5 14.5h9" stroke-width="2.2"/></svg>',
+  care: '<svg viewBox="0 0 24 24"><circle cx="9.5" cy="7.5" r="3.5"/><path d="M3 20c.5-3.6 3.1-5.6 6.5-5.6 1.2 0 2.3.3 3.2.8"/><path d="M17.5 21s-4-2.3-4-4.9a2 2 0 0 1 4-.6 2 2 0 0 1 4 .6c0 2.6-4 4.9-4 4.9z"/></svg>',
+  issue: '<svg viewBox="0 0 24 24"><path d="M5.5 21V3.8"/><path d="M5.5 4.2h12l-2.4 4.4 2.4 4.4h-12"/></svg>',
+  comment: '<svg viewBox="0 0 24 24"><path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V17h-2A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5z"/></svg>',
+  cell: '<svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><rect x="5.5" y="12" width="3" height="5.5" rx="1"/><rect x="10.5" y="6" width="3" height="11.5" rx="1"/><rect x="15.5" y="9" width="3" height="8.5" rx="1"/></svg>',
+};
+function tabIcon(id) { return id === 'prayer' ? PRAY_HANDS.replace('<svg ', '<svg class="ph" ') : TAB_ICON[id] || ''; }
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', wspan: 4, cspan: 4, cinfo: false, issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
 if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-14 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
@@ -1320,7 +1369,7 @@ function refreshBadge() {
   if (seen == null) { seen = mergeSeen([], list); lsSet(SEEN_KEY, seen); }   // 처음 여는 기기: 지금 것은 '본 것'
   S.newIds = new Set(unseenComments(list, seen).map(c => String(c.id)));
   const n = S.newIds.size;
-  const t = document.querySelector('.tab[data-tab="comment"]');
+  const t = document.querySelector('.tab[data-tab="comment"] .tl');
   if (t) t.innerHTML = '코멘트' + (n ? `<span class="dot">${n}</span>` : '');
   if (n && !refreshBadge.told) { refreshBadge.told = true; toast('담임 목사님 · 사모님\n새 코멘트 ' + n + '개'); toast.at = Date.now(); }
 }
@@ -1340,7 +1389,7 @@ function renderShell() {
       <button class="iconbtn" data-act="print" title="인쇄 · PDF">${ICON.print}</button>
       <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
       ${DEMO ? '<div class="demo">미리보기 — 지어낸 자료입니다. 셀 케어와 연결되지 않았습니다.</div>' : ''}
-      <nav class="tabs" id="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
+      <nav class="tabs" id="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}"><span class="ti">${tabIcon(t.id)}</span><span class="tl">${t.label}</span></button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
     <div class="stage" id="stage"><div class="aibar noprint" id="aibar"></div><div class="panel" id="panel"></div></div>
     <p class="ver"><button class="verbtn" data-act="upd" title="새 버전 확인">${esc(APP_VERSION)} · 새 버전 확인</button><br>셀 케어 보고서를 읽기만 합니다</p>
     <div class="cv" id="cv" hidden></div><div class="cv pv" id="pv" hidden></div><div class="cv bk" id="bk" hidden></div><div class="callmenu" id="callmenu" hidden></div><div class="tip" id="tip" hidden></div><div class="thrwrap" id="thr" hidden></div>`;
@@ -1357,7 +1406,7 @@ function rerender() {
   const fn = { week: viewWeek, care: viewCare, prayer: viewPrayer, issue: viewIssue, comment: viewComment, cell: viewCellTab }[PREF.tab];
   p.innerHTML = fn();
   if (PREF.tab === 'cell') for (const el of p.querySelectorAll('.barscroll')) el.scrollLeft = el.scrollWidth;   // 막대는 이번 주(오른쪽 끝)부터 보인다
-  if (PREF.tab === 'comment' && S.newIds.size) { markCommentsSeen(); setTimeout(() => { S.newIds = new Set(); const t = document.querySelector('.tab[data-tab="comment"]'); if (t) t.textContent = '코멘트'; }, 400); }
+  if (PREF.tab === 'comment' && S.newIds.size) { markCommentsSeen(); setTimeout(() => { S.newIds = new Set(); const t = document.querySelector('.tab[data-tab="comment"] .tl'); if (t) t.textContent = '코멘트'; }, 400); }
   if (PREF.tab === 'week' && PREF.weekMode === 'page') fillPage();
   drawAiBar();
 }
@@ -1543,6 +1592,19 @@ function cellMeetDays(c) {
   for (const w of S.weeks) { const r = cellRow(c, w); const d = r && r.report_id && S.det.get(r.report_id); if (d && d.rep && d.rep.meeting_held !== false && d.rep.meeting_date) dates.push(String(d.rep.meeting_date).slice(0, 10)); }
   return meetDays(dates);
 }
+// 1113-T2 한 주 점 띠 (HB 11/14 '2-B'): 월~주일 일곱 점. 모임 날 점 = 상태 색, 2순위 요일은 옅게, 오늘은 고리.
+function weekMeet(c, w, md) {   // 그 주 모임 날 — 낸 보고서의 실제 날짜, 아니면 1순위 요일로 셈, 그것도 모르면 ''
+  const b = barDate(c, w, md); return b.real || (md && md.top != null) ? b.d : '';
+}
+function weekStrip(c, w, r) {
+  const md = cellMeetDays(c), today = (S.ctx && S.ctx.today) || '';
+  const meet = weekMeet(c, w, md), st = meetState(r, meet, today);
+  const md2 = md.second != null && md.second !== (meet ? dowOf(meet) : -1) ? md.second : null;
+  const inWk = today && dayGap(today, w) >= 0 && dayGap(today, w) < 7;
+  const tip = [meetDaysText(md) ? '많이 모이는 요일 ' + meetDaysText(md) : '', meet ? '이번 모임 ' + mdLabel(meet) + ' ' + DAY_NAMES[dowOf(meet)] + (st ? ' · ' + meetSay(st, meet, today) : '') : ''].filter(Boolean).join(' · ');
+  return `<span class="wstrip ms-${st || 'wait'}" title="${esc(tip)}">${[1, 2, 3, 4, 5, 6, 0].map(k => { const dt = dateInWeek(w, k);
+    return `<b class="${meet && dt === meet ? 'm' : k === md2 ? 'm2' : ''}${inWk && dt === today ? ' t' : ''}"><i></i>${k ? DAY_NAMES[k] : '주'}</b>`; }).join('')}</span>`;
+}
 function mdayHtml(c) { const t = meetDaysText(cellMeetDays(c)); return t ? `<span class="mday" title="많이 모이는 요일 (괄호는 다음으로 많은 요일)">${esc(t)}</span>` : ''; }
 function viewWeek() {
   const w = S.weeks[S.weekIdx]; const ids = sortedCells();
@@ -1574,11 +1636,11 @@ function viewWeek() {
     const txt = streakText(s);
     const hot = s.kind === 'miss' && s.run >= 2;
     const meta = r.submitted_at && isSubmitted(r) ? dateTime(r.submitted_at) : '';
-    return `<div class="cellrow" data-flip="wc:${esc(c)}" data-act="open-cell" data-cell="${esc(c)}" role="button"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}${r.i_am_leader ? '<span class="pill mine">내 셀</span>' : ''}${mdayHtml(c)}</div>
+    return `<div class="cellrow" data-flip="wc:${esc(c)}" data-act="open-cell" data-cell="${esc(c)}" role="button"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}${r.i_am_leader ? '<span class="pill mine">내 셀</span>' : ''}</div>
       ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null, sqN(info(c).fw))}${fwLine(info(c).fw)}</div>
-      <div style="text-align:right;font-size:12.5px;min-width:86px" class="${hot ? '' : 'muted'}">${hot ? '<span style="color:var(--bad)">' + esc(txt) + '</span>' : esc(txt)}</div><span class="chev">›</span></div>`;
+      <div class="wright">${weekStrip(c, w, r)}${txt ? `<span class="skk ${s.kind}" title="${esc(txt)}">${esc(streakShort(s))}</span>` : ''}</div><span class="chev">›</span></div>`;
   }).join('') + '</div>';
-  h += '<p class="tiny muted" style="text-align:center">네모 = 위 슬라이더로 고른 주 수 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 노랑 모임 없이 제출(쉼) · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
+  h += '<p class="tiny muted" style="text-align:center">네모 = 위 슬라이더로 고른 주 수 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 노랑 모임 없이 제출(쉼) · 주황 수정 요청/고치는 중 · 빨강 미제출<br>오른쪽 점 = 그 주 모임 날(옅은 점은 2순위 요일 · 고리는 오늘): 초록 제출 · 노랑 쉼 · 회색 아직 앞으로 · 하늘 오늘 · 주황 하루 지남 · 빨강 이틀 넘게 지남<br>✓ 연속 제출 · ✕ 연속 미제출 (지난주까지 · 이번 주를 냈으면 이번 주까지)</p>';
   return h;
 }
 /* ---------- 셀 하나 · 주차별 (전체화면) ---------- */
@@ -1928,6 +1990,9 @@ function cellCardsHtml() {
     const hl = ready ? cellHealth(rows8, reps, periodStats(cm, S.weeks, cn, true), PREF.thr) : null;
     const sig = ready ? leaderSignals(rows8, reps) : [];
     const md = cellMeetDays(c);
+    // 1113-T6 이번 주 칸 (HB 11/14 '6-A'): 아직이면 평균 높이의 점선 빈 막대 · 글자와 날짜를 이번 주 모임 날 색으로
+    const today = (S.ctx && S.ctx.today) || '', nowMeet = weekMeet(c, S.weeks[0], md), nowSt = meetState(cm.get(S.weeks[0]) || null, nowMeet, today);
+    const ghostH = Math.max(12, Math.min(52, (sm.avg || 0) / max * 52));
     const light = (k, label) => `<div class="lt" title="${esc(hl[k].text)}"><i class="${hl[k].lv}"></i><span>${label}</span></div>`;
     h += `<div class="card"><div class="row"><button class="lnk" data-act="open-cell" data-cell="${esc(c)}"><h3 style="margin:0">${esc(cellName(c))}</h3></button><span class="tiny muted">${esc(leaderOf(c))}</span><span class="spacer"></span><span class="small muted">${sm.avg == null ? '기록 없음' : '평균 ' + sm.avg + '명 · 최근 ' + sm.last + '명' + (sm.delta ? (sm.delta > 0 ? ' ▲' + sm.delta : ' ▼' + (-sm.delta)) : '') + (sm.rate != null ? ' · ' + sm.rate + '%' : '')}</span></div>
       ${hl ? `<div class="lights">${light('att', '출석')}${light('sub', '제출')}${light('rest', '쉼')}${light('issue', '이슈')}${light('req', '요청')}</div><div class="tiny muted" style="margin-top:2px">${esc([hl.att.text, hl.sub.text, hl.rest.text, hl.issue.text, hl.req.text].join(' · '))}</div>` : '<div class="tiny muted" style="margin-top:6px">신호를 계산하는 중…</div>'}
@@ -1938,11 +2003,11 @@ function cellCardsHtml() {
         const r = cm.get(x.week);
         if (x.has) return `<div class="bar${gray}${now}" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>`;
         if (x.off) return `<div class="bar${gray}${now}" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}" title="모임 못 함"><span class="n">쉼</span><div class="b flat off"></div></div>`;
-        if (r && !isSubmitted(r)) return idxOf(k) < pend ? `<div class="bar${now}" title="아직 안 냄"><span class="n">아직</span><div class="b flat wait"></div></div>` : `<div class="bar${gray}${now}" title="미제출"><span class="n">미제출</span><div class="b flat miss"></div></div>`;
+        if (r && !isSubmitted(r)) return idxOf(k) < pend ? `<div class="bar${now} ms-${nowSt || 'wait'}" title="아직 안 냄${nowMeet ? ' · 모임 ' + mdLabel(nowMeet) : ''}"><span class="n ghn">${esc(meetSay(nowSt, nowMeet, today) || '아직')}</span><div class="b ghost" style="height:${ghostH}px"></div></div>` : `<div class="bar${gray}${now}" title="미제출"><span class="n">미제출</span><div class="b flat miss"></div></div>`;
         return `<div class="bar${now}"><div class="b flat none"></div></div>`;
       }).join('')}</div>
       <div class="barx">${ser.map((x, i) => { const dt = barDate(c, x.week, md); const prev = i ? barDate(c, ser[i - 1].week, md) : null;
-        return `<span class="${i === ser.length - 1 ? 'now' : ''}${dt.real ? '' : ' guess'}" title="${dt.real ? '모임 날짜' : '많이 모이는 요일로 셈'}">${esc(prev && prev.d.slice(5, 7) === dt.d.slice(5, 7) ? String(+dt.d.slice(8, 10)) : mdLabel(dt.d))}<i>${esc(DAY_NAMES[dowOf(dt.d)])}</i></span>`; }).join('')}</div></div></div></div>`;
+        return `<span class="${i === ser.length - 1 ? 'now' + (nowSt ? ' ms-' + nowSt : '') : ''}${dt.real ? '' : ' guess'}" title="${dt.real ? '모임 날짜' : '많이 모이는 요일로 셈'}">${esc(prev && prev.d.slice(5, 7) === dt.d.slice(5, 7) ? String(+dt.d.slice(8, 10)) : mdLabel(dt.d))}<i>${esc(DAY_NAMES[dowOf(dt.d)])}</i></span>`; }).join('')}</div></div></div></div>`;
   }
   return h;
 }
