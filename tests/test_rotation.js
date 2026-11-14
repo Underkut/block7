@@ -16,6 +16,7 @@
 //  ⑬ 낡은 앱과 함께: 새 앱은 b2 칸에만 쓰고 book · b2 를 합쳐 읽는다 · 같은 때면 긴 사본이 이긴다
 //  ⑭ 시트 기록 가져오기: 이름 → 사람 · 이미 적은 칸은 그대로 · 지운 것 안 살아남 · 두 번 해도 같음 · 지우지 않음
 //  ⑮ 화요예배(옛 기록) · 지난 주 노랑 안 깔기
+//  ⑰ 자동 배열 제안(R4): 빈 칸만 · 지운 칸 · 잠근 칸 그대로 · 부산 오래 안 간 분 먼저 · 두 주 연속 피함 · 겹침 피함 · 헌금 두 사람 · 인도 둘 다르게
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -29,7 +30,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -264,6 +265,39 @@ sc.eq('⑯ 2판의 사람 구분은 가져오기로 생긴 사람만 (앱에서 
 const edited = J(v1); A.put(edited, 'visits', Object.assign({}, edited.visits.find(v => v.id === 'v|2026-11-15'), { staff: 'HB 가 고침' }), 'u', 900);
 sc.eq('⑯ 앱에서 고친 방문은 2판이 덮지 않는다', A.importBook(edited, imp2, 'u').book.visits.find(v => v.id === 'v|2026-11-15').staff, 'HB 가 고침');
 sc.eq('⑯ 모르는 판(3)은 안 받는다', A.importBook(hb, Object.assign(J(imp), { v: 3 }), 'u'), null);
+
+// ⑰ 자동 배열 제안 — 2026년 11월 (주일 11/1 · 8 · 15 · 22 · 29), 지어낸 이름
+const ab = A.normBook(null);
+const P4 = ['가가', '나나', '다다', '라라', '마마'];
+P4.forEach((n, i) => A.put(ab, 'people', { id: 'q' + i, name: n, roles: ['preach', 'offer', 'lead', 'busan'] }, 'u', 1));
+A.put(ab, 'people', { id: 'qL', name: '바바', kind: 'lay', roles: ['lead'] }, 'u', 1);
+A.put(ab, 'visits', { id: 'v|2026-10-25', who: ['q0'] }, 'u', 1);          // 가가: 바로 앞 주에 다녀옴
+A.put(ab, 'visits', { id: 'v|2026-10-04', who: ['q1'] }, 'u', 1);          // 나나: 오래전
+A.put(ab, 'visits', { id: 'v|2026-11-15', who: ['q3'] }, 'u', 1);          // 11/15 은 이미 정함
+A.put(ab, 'visits', { id: 'v|2026-11-22', who: ['q2'] }, 'u', 1); A.drop(ab, 'visits', 'v|2026-11-22', 'u', 2);   // 11/22 은 사람이 비움
+A.put(ab, 'slots', { id: '2026-11-01|sun1|offer', who: ['q4'] }, 'u', 1);  // 마마: 11/1 분당 헌금 → 11/1 부산 못 감
+A.put(ab, 'slots', { id: '2026-11-08|sun2|lead', who: ['q2'], lock: true }, 'u', 1);
+const pr = A.propose(ab, '2026-11');
+const vby = Object.fromEntries(pr.visits.map(v => [v.date, v.pid]));
+sc.eq('⑰ 부산 제안은 비어 있는 주일만 (11/15 정함 · 11/22 사람이 비움은 건너뜀)', Object.keys(vby), ['2026-11-01', '2026-11-08', '2026-11-29']);
+sc.eq('⑰ 11/1: 바로 앞 주 다녀온 가가 · 분당 자리 있는 마마는 빼고, 기록 없는 분(다다) → 그다음 나나', [vby['2026-11-01'] !== 'q0' && vby['2026-11-01'] !== 'q4', vby['2026-11-01']], [true, 'q2']);
+sc.eq('⑰ 성도 인도자는 부산 제안에 안 들어감', pr.visits.some(v => v.pid === 'qL' || (v.alts || []).includes('qL')), false);
+sc.eq('⑰ 앞 주일 제안도 셈에 넣어 같은 분이 연달아 나오지 않음', new Set(Object.values(vby)).size, 3);
+sc.eq('⑰ 이유 글', typeof pr.visits[0].why === 'string' && pr.visits[0].why.length > 0, true);
+const sl = Object.fromEntries(pr.slots.map(s => [s.id, s.pid]));
+sc.eq('⑰ 이미 적힌 칸 · 잠근 칸은 제안하지 않음', ['2026-11-01|sun1|offer', '2026-11-08|sun2|lead'].some(id => id in sl), false);
+sc.eq('⑰ 주일 설교는 제안하지 않음', Object.keys(sl).some(id => id.includes('|preach') && /sun|ll/.test(id.split('|')[1])), false);
+sc.eq('⑰ 주일 헌금: 1 · 3부 같은 분, 2부 · LL 같은 분, 두 무리는 다른 분 (11/8)', (k => [sl[k + 'sun1|offer'] === sl[k + 'sun3|offer'], sl[k + 'sun2|offer'] === sl[k + 'll|offer'], sl[k + 'sun1|offer'] !== sl[k + 'sun2|offer']])('2026-11-08|'), [true, true, true]);
+sc.eq('⑰ 11/1 은 1부가 이미 마마 → 3부만 채우고, 2부 · LL 은 마마가 아닌 분', [!!sl['2026-11-01|sun3|offer'], sl['2026-11-01|sun2|offer'] !== 'q4'], [true, true]);
+sc.eq('⑰ 2부 · LL 인도는 서로 다른 분 (잠근 2부 인도 다다와도 다름, 11/8)', sl['2026-11-08|ll|lead'] !== 'q2', true);
+sc.eq('⑰ 성도 인도자도 인도 후보', Object.entries(sl).some(([k, v]) => k.endsWith('|lead') && v === 'qL'), true);
+sc.eq('⑰ 금요 · 수요 설교와 헌금은 다른 분', pr.slots.filter(s => /fri|wed/.test(s.id)).every(s => { const [d, sv, r] = s.id.split('|'); const o = sl[d + '|' + sv + '|' + (r === 'preach' ? 'offer' : 'preach')]; return !o || o !== s.pid; }), true);
+sc.eq('⑰ 제안한 부산 방문자는 그 주 분당 자리에 안 들어감 (겹침 없음)', (() => { const nb = A.normBook(J(ab)); A.applyProposal(nb, pr, 'u', 9); return A.conflicts(nb, '2026-10-26', '2026-11-29', '').filter(c => c.level === 'bad').length; })(), 0);
+const ap = A.normBook(J(ab)); A.put(ap, 'slots', { id: '2026-11-08|sun1|offer', who: ['q1'] }, 'u', 5);   // 그 사이 다른 기기가 채움
+const pr2 = J(pr); pr2.slots.find(s => s.id === '2026-11-01|sun3|offer').on = false;
+const nApplied = A.applyProposal(ap, pr2, 'u', 9);
+sc.eq('⑰ 적용: 끈 줄 · 그 사이 채워진 칸은 건너뜀', [ap.slots.find(s => s.id === '2026-11-08|sun1|offer').who, ap.slots.some(s => s.id === '2026-11-01|sun3|offer'), nApplied], [['q1'], false, pr.visits.filter(v => v.pid).length + pr.slots.length - 2]);
+sc.eq('⑰ 제안은 원래 책을 바꾸지 않는다', A.live(ab.visits).length, 3);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
