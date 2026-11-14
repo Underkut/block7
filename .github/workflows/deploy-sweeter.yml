@@ -28,6 +28,7 @@ on:
       - 'care/**'           # 심방 노트 (sweeter.my/care/) — 같은 사정
       - 'cell/**'           # 셀 inside (sweeter.my/cell/) — 같은 사정
       - 'report/**'         # 사역 한눈에 (sweeter.my/report/) — 같은 사정
+      - 'rotation/**'       # 교역자 로테이션 (sweeter.my/rotation/) — 같은 사정
       - 'firebase-messaging-sw.js'
       - 'tools/make-sweeter-prod.sh'
       - 'firebase.json'
@@ -72,6 +73,7 @@ jobs:
           test -f build-sweeter/care/index.html || { echo "심방 노트(care/)가 빠졌습니다 — 이대로 올리면 sweeter.my/care/ 가 사라집니다"; exit 1; }
           test -f build-sweeter/cell/index.html || { echo "셀 inside(cell/)가 빠졌습니다 — 이대로 올리면 sweeter.my/cell/ 가 사라집니다"; exit 1; }
           test -f build-sweeter/report/index.html || { echo "사역 한눈에(report/)가 빠졌습니다 — 이대로 올리면 sweeter.my/report/ 가 사라집니다"; exit 1; }
+          test -f build-sweeter/rotation/index.html || { echo "교역자 로테이션(rotation/)이 빠졌습니다 — 이대로 올리면 sweeter.my/rotation/ 이 사라집니다"; exit 1; }
           echo "확인 완료"
 
       - name: 파이어베이스 호스팅으로 올리기
