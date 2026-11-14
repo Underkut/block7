@@ -19,6 +19,7 @@
 //  ⑰ 자동 배열 제안(R4): 빈 칸만 · 지운 칸 · 잠근 칸 그대로 · 부산 오래 안 간 분 먼저 · 두 주 연속 피함 · 겹침 피함 · 헌금 두 사람 · 인도 둘 다르게
 //  ⑱ 보기 틀(R4b) 읽기: 사람 × 주 · 내 일정 · 하루
 //  ⑲ R5: 부재(빨강) · 고정 조건(노랑) · 자동 배열이 피함 · 챙길 것 · 지난 방문 복사 · 시트로 내보내기 · 사람 한눈에
+//  ⑳ HB 3차(R5b): 금요 이름 · WN 광고(마지막 금요일만) · 설교 접기(빈 칸 무시) · 담임 · 초청 사람 · 글 → 사람 · 계정 이메일 · 월 달력 줄 · 금요 · 수요 표 날들
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -32,7 +33,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -122,8 +123,8 @@ const two = A.normBook({ visits: [{ id: 'v|2025-12-25', days: '목' }, { id: 'v|
 sc.eq('⑦ 한 주에 방문이 여럿 — 월~주일로 묶는다 (시트 2025-12 성탄 · 송구영신 실제 모양)', [A.weekVisits(two, '2025-12-28').map(v => v.date), A.weekVisits(two, '2026-01-04').map(v => v.date)], [['2025-12-25', '2025-12-28'], ['2025-12-31', '2026-01-04']]);
 A.drop(wk, 'people', 'p1', 'u', 2);
 sc.eq('⑦ 지운 사람이 맡은 자리는 이름 대신 (지운 사람)', A.whoText(wk, ['p1', 'p2'], ''), '(지운 사람) · 나나');
-sc.eq('⑦ 칸 이름', [A.slotLabel('sun2', 'lead'), A.slotLabel('fri', 'offer'), A.slotLabel('ll', 'offer')], ['2부 예배인도', '금요 헌금 · 광고', 'LL 헌금인도']);
-sc.eq('⑦ 시트 예배 구성의 칸은 열넷 + 옛 화요예배 둘', A.GRID.length, 16);
+sc.eq('⑦ 칸 이름', [A.slotLabel('sun2', 'lead'), A.slotLabel('fri', 'offer'), A.slotLabel('ll', 'offer'), A.slotLabel('wed', 'offer'), A.slotLabel('fri', 'notice')], ['2부 예배인도', '금요 헌금', 'LL 헌금인도', '수요 헌금', 'WN 광고']);
+sc.eq('⑦ 시트 예배 구성의 칸은 열넷 + 옛 화요예배 둘 + WN 광고', A.GRID.length, 17);
 
 // ⑨ 머무는 날
 const V = (date, days) => A.normBook({ visits: [{ id: 'v|' + date, days }] }).visits[0];
@@ -195,19 +196,19 @@ sc.eq('⑫ 고르기 판: 네 예배 모두 같게 고를 때 빠진 예배를 �
 const full = A.normBook({ people: [{ id: 'x', name: '가가', roles: ['preach'], no: ['sun1|preach'], at: 5 }], visits: [{ id: 'v|2025-12-31', days: '수목', who: ['x'], at: 5 }, { id: 'v|2025-12-28', who: ['x'], at: 5 }] });
 const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripped.visits.filter(v => v.date !== '2025-12-31');   // R1 이 떨군 모양 (같은 at)
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
-const d1 = A.pickDoc(full, { b4: J(full), b3: stripped, b2: stripped, book: stripped });
-sc.eq('⑬ 낡은 앱이 옛 칸(book · b2 · b3)을 떨군 채 써도 b4 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b4: J(full) });
-sc.eq('⑬ b4 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1 = A.pickDoc(full, { b5: J(full), b4: stripped, b3: stripped, b2: stripped, book: stripped });
+sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b4)을 떨군 채 써도 b5 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
+const d1b = A.pickDoc(full, { b5: J(full) });
+sc.eq('⑬ b5 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
-sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b4 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
+sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b5 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
-sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b4 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
+sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b5 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
 const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [], at: 9 });
-const d3 = A.pickDoc(full, { b3: old2, b4: J(full) });
-sc.eq('⑬ 낡은 앱(b3)에서 새로 적은 줄도 받아 b4 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
+const d3 = A.pickDoc(full, { b4: old2, b5: J(full) });
+sc.eq('⑬ 낡은 앱(b4)에서 새로 적은 줄도 받아 b5 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b4'/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b5'/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -348,9 +349,37 @@ A.put(tb, 'slots', { id: '2026-11-01|sun1|offer', who: ['a'] }, 'u', 1); A.put(t
 A.put(tb, 'visits', { id: 'v|2026-11-01', who: ['b'] }, 'u', 1); A.put(tb, 'slots', { id: '2026-11-06|fri|preach', who: ['a', 'b'] }, 'u', 1);
 const tsv = A.sheetTSV(tb, '2026-11').split('\n');
 sc.eq('⑲ 내보내기: 머리 · 첫 주 설교 줄(인도 · 부산 포함) · 헌금 줄', [tsv[1].split('\t').length, tsv[2], tsv[3]], [9, '11/1\t설교\t담임목사님\t담임목사님\t담임목사님\t담임목사님\t나나\t\t나나', '\t헌금인도\t가가\t\t\t\t\t\t']);
-sc.eq('⑲ 내보내기: 금요 표 (여럿은 · 로, 부산 금n)', tsv.find(r => r.startsWith('11/6\t')), '11/6\t가가 · 나나\t\t금1');
+sc.eq('⑲ 내보내기: 금요 표 (여럿은 · 로, 부산 금요 이름)', tsv.find(r => r.startsWith('11/6\t')), '11/6\t가가 · 나나\t\t\tAWAKE');
 const ps1 = A.personStats(Object.assign(A.normBook(J(rb)), {}), 'a', '2026-11-14');
 sc.eq('⑲ 사람 한눈에: 다가오는 자리 · 앞으로의 부재', [ps1.next.map(r => r.date), ps1.away.length], [['2026-11-22', '2026-12-05'], 2]);
+
+// ⑳ HB 3차 (지어낸 이름)
+sc.eq('⑳ 금요 이름: 첫째 AWAKE · 둘째 REVIVED · 셋째 ENCOUNTER · 넷째 없음', ['2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29'].map(A.friName), ['AWAKE', 'REVIVED', 'ENCOUNTER', '']);
+sc.eq('⑳ 마지막 금요일', ['2026-11-27', '2026-11-20', '2026-10-30', '2026-11-29'].map(A.isLastFri), [true, false, true, false]);
+sc.eq('⑳ WN 광고 칸은 마지막 금요일에만 (다른 금요일 칸은 버림)', A.normBook({ slots: [{ id: '2026-11-27|fri|notice' }, { id: '2026-11-20|fri|notice' }, { id: '2026-11-29|sun1|notice' }] }).slots.map(s => s.id), ['2026-11-27|fri|notice']);
+const nb2 = A.normBook({ people: [{ id: 'p', name: '가가', roles: ['offer'] }, { id: 'q', name: '나나', roles: ['preach'] }] });
+sc.eq('⑳ WN 광고는 헌금 맡는 분이', [A.canDo(nb2.people[0], 'fri', 'notice'), A.canDo(nb2.people[1], 'fri', 'notice')], [true, false]);
+sc.eq('⑳ WN 광고 고르기 판 표시도 헌금 기준', [A.pickNote(nb2, 'p', '2026-11-27', 'notice'), A.pickNote(nb2, 'q', '2026-11-27', 'notice')], [null, { level: 'warn', text: "'헌금' 안 맡음" }]);
+const fb = A.normBook(null);
+A.put(fb, 'slots', { id: '2026-11-01|sun2|preach', txt: '담임목사님' }, 'u', 1); A.put(fb, 'slots', { id: '2026-11-01|sun3|preach', txt: '담임목사님' }, 'u', 1);
+const fp = A.weekPlan(fb, '2026-11-01');
+sc.eq('⑳ 설교 접기: 빈 칸(1부)이 있어도 나머지가 같으면 접는다', A.preachFold(fb, fp), true);
+A.put(fb, 'slots', { id: '2026-11-01|ll|preach', txt: '초청 강사' }, 'u', 1);
+sc.eq('⑳ 설교 접기: 다른 설교자가 있으면 안 접는다', A.preachFold(fb, A.weekPlan(fb, '2026-11-01')), false);
+const tp = A.normBook({ people: [{ id: 'pastor', name: '담임 목사님', kind: 'other', roles: ['preach'], alias: ['목사님 (영상)', ''], email: ' Someone@Example.COM ' }, { id: 'x', name: '가가', roles: [], email: 'nope' }] });
+sc.eq('⑳ 담임 · 초청 구분 · 다른 이름 · 계정 이메일(소문자, 모양 틀리면 버림)', [tp.people[0].kind, tp.people[0].alias, tp.people[0].email, 'email' in tp.people[1]], ['other', ['목사님 (영상)'], 'someone@example.com', false]);
+for (const [id, txt] of [['2026-11-01|sun1|preach', '담임목사님'], ['2026-11-01|sun2|preach', '담임목사님(녹화)'], ['2026-11-01|sun3|preach', '담임목사님 / 가가 나나'], ['2026-11-06|fri|preach', '초청 강사'], ['2026-11-08|ll|preach', '목사님(영상)']]) A.put(tp, 'slots', { id, txt }, 'u', 1);
+sc.eq('⑳ 글 → 사람: 옮길 칸 셈', A.countTextFor(tp, 'pastor'), 3);
+sc.eq('⑳ 글 → 사람: 옮긴 수', A.textToPerson(tp, 'pastor', 'u', 5), 3);
+sc.eq('⑳ 글 → 사람: 이름만이면 글 비움 · 괄호는 남김 · 다른 글이 붙은 칸 · 초청 강사는 그대로', A.live(tp.slots).map(s => [s.id.split('|')[1], s.who, s.txt]),
+  [['sun1', ['pastor'], ''], ['sun2', ['pastor'], '(녹화)'], ['sun3', [], '담임목사님 / 가가 나나'], ['fri', [], '초청 강사'], ['ll', ['pastor'], '']]);
+sc.eq('⑳ 글 → 사람: 두 번 해도 같다', A.textToPerson(tp, 'pastor', 'u', 6), 0);
+const dl = A.normBook({ people: [{ id: 'a', name: '가가', roles: [] }, { id: 'b', name: '나나', roles: [] }],
+  slots: [{ id: '2026-11-29|sun2|offer', who: ['b'] }, { id: '2026-11-29|sun1|offer', who: ['a'] }, { id: '2026-11-29|sun2|lead', who: ['a'] }, { id: '2026-11-27|fri|notice', who: ['b'] }, { id: '2026-11-27|fri|offer', who: ['a'] }],
+  visits: [{ id: 'v|2026-11-29', who: ['b'], days: '금토일' }] });
+sc.eq('⑳ 월 달력 줄: 헌금(주일은 예배마다, 시트 순서) · WN 광고도 헌금에', [A.dayLines(dl, '2026-11-29', 'offer').map(x => x.label + ' ' + x.text), A.dayLines(dl, '2026-11-27', 'offer').map(x => x.label + ' ' + x.text)], [['1부 가가', '2부 나나'], ['금요 가가', 'WN 나나']]);
+sc.eq('⑳ 월 달력 줄: 예배인도 · 부산(머무는 날마다)', [A.dayLines(dl, '2026-11-29', 'lead').map(x => x.text), A.dayLines(dl, '2026-11-27', 'busan').map(x => x.text)], [['가가'], ['나나']]);
+sc.eq('⑳ 금요 · 수요 표의 날: 그 달 안만 · 앞 · 뒤 주 펼치기', [A.weekdayRows('2026-11', 'fri', 0, 0), A.weekdayRows('2026-11', 'wed', 1, 1)], [['2026-11-06', '2026-11-13', '2026-11-20', '2026-11-27'], ['2026-10-28', '2026-11-04', '2026-11-11', '2026-11-18', '2026-11-25', '2026-12-02']]);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
@@ -360,6 +389,9 @@ sc.eq('⑧ block7.my 로 열리면 sweeter.my/rotation/ 으로', HTML.includes("
 sc.eq('⑧ 버전 두 곳이 같다(2번째 줄 주석 · APP_VERSION)', HTML.split('\n')[1].includes(A.APP_VERSION), true);
 sc.eq('⑧ 미리보기는 따로 저장 칸(rota_demo_v1) — 진짜 사본을 덮지 않는다', /DEMO \? 'rota_demo_v1' : 'rota_book_v1'/.test(HTML), true);
 sc.eq('⑧ 가져오기 파일 칸은 메뉴 밖에 한 번만 (메뉴가 다시 그려져도 고른 파일을 잃지 않게, 11/14)', (HTML.match(/id="imp-file"/g) || []).length === 1 && !/renderMenu\(\)[\s\S]{0,1500}id="imp-file"/.test(HTML.split('function renderMenu')[1].slice(0, 1600)), true);
-sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘림 11/14)', /html\{overflow-x:hidden/.test(HTML) && /\.stage\{overflow:hidden/.test(HTML), true);
+// 판 종류마다 그리는 함수가 다 있어야 한다 (11/14: 다시 쓰다 내보내기 함수를 빠뜨려 모든 판이 안 열렸다)
+{ const m2 = HTML.match(/\{ (pick: panePick[^}]*)\}\[S\.pane\.kind\]/); const fns = m2 ? m2[1].split(',').map(x => x.split(':')[1].trim()) : ['?'];
+  sc.eq('⑧ 판 그리는 함수가 모두 있다', fns.filter(f => !new RegExp('function ' + f + '\\(').test(HTML)), []); }
+sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘림 11/14) · 표 가로 스크롤은 막지 않는다(touch-action 없음)', /html\{overflow-x:hidden/.test(HTML) && /\.stage\{overflow:hidden/.test(HTML) && !/touch-action:pan-y/.test(HTML), true);
 
 sc.done();
