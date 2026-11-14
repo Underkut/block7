@@ -16,9 +16,16 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
     // ── 교역자 로테이션(rota) — 여기서부터 ──
     match /rota/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /img/{id} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
     // ── 교역자 로테이션 — 여기까지 ──
 ```
+
+> **2026-11-14 바뀜 (v. 26-1114-5)**: 숙소 '예약 화면' 사진 칸 때문에 `match /img/{id}` 세 줄이 안에 더해졌다.
+> 이미 예전 덩어리를 붙였다면, 그 덩어리(여기서부터 ~ 여기까지)를 **통째로 지우고 위 것으로 바꿔 붙인 뒤** 게시한다.
+> 안 바꾸면 다른 것은 다 되고 사진만 '사진 칸 권한이 아직 없습니다' 가 뜬다.
 
 로그인 방법(이메일/비밀번호)은 BLOCK7 이 이미 쓰고 있어서 따로 켤 것이 없다.
 
@@ -30,8 +37,9 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
 
 ## 클라우드 모양 (참고)
 
-- `rota/{uid}` — `b2`: { v, at, people[], slots[], visits[], marks[] } · `v`(앱 버전) · `at`
-  - `book` 칸은 R1(v. 26-1114-1) 앱이 쓰던 같은 모양이다. 지금 앱은 읽어서 합치기만 하고 쓰지 않는다(낡은 앱이 모르는 칸을 떨군 채 덮어쓰지 못하게). 같은 규칙에 덮여 새 규칙이 필요 없다.
+- `rota/{uid}` — `b3`: { v, at, people[], slots[], visits[], marks[] } · `v`(앱 버전) · `at`
+  - 옛 칸 `book`(R1) · `b2`(R2 ~ v. 26-1114-4)는 읽어 합친 뒤 지운다(같은 책이 여러 벌 쌓여 1MB 를 넘지 않게).
+- `rota/{uid}/img/{id}` — 숙소 예약 화면 사진 한 장(`d`: 줄인 JPEG, `visit`, `at`). 책에는 사진 id 만 들어 있다.
   - 줄마다 `at`(고친 때) · `by`(누가). 지우면 내용을 비운 표지(`del: true`)만 남는다.
   - 모양과 맞추는 규칙은 `rotation/index.html` 의 `rotation-core`, 시험은 `tests/test_rotation.js`.
 - 문서 한 장은 1MB 까지다. 앱은 900KB 를 넘기면 올리지 않고 알린다(몇 해 치를 담아도 한참 남는다).
