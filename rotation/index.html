@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<!-- 교역자 로테이션 v. 26-1114-1 — 부산 방문 순번 · 판교 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R1 뼈대 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex, nofollow">
+<title>교역자 로테이션</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="로테이션">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>
+// ⚠️ 집은 sweeter.my/rotation/ 하나다. 깃헙 페이지가 block7.my/rotation/ 에도 같은 파일을 내보내므로 넘긴다.
+if (/^(www\.)?block7\.my$/.test(location.hostname)) {
+  location.replace('https://sweeter.my/rotation/' + location.search + location.hash);
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 색은 '장소' 를 뜻한다: 판교 = 파랑(--pg), 부산 = 주황(--bs). 충돌 = 빨강, 주의 = 노랑 (R2 부터) */
+:root{
+  --bg:#f7f6f2; --paper:#ffffff; --s1:#f2f1ec; --s2:#e9e8e2; --line:#e3e2dc; --line2:#cfcec6;
+  --tx:#1d2128; --tx2:#59606b; --tx3:#8a9099;
+  --pg:#2f6fb5; --pg-soft:rgba(47,111,181,.10); --bs:#c8691f; --bs-soft:rgba(208,115,42,.12);
+  --ok:#2e7d5b; --ok-soft:rgba(46,125,91,.11); --warn:#a87a06; --warn-soft:rgba(168,122,6,.12);
+  --bad:#b83a3a; --bad-soft:rgba(184,58,58,.10); --on:#fff;
+  --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121417; --paper:#1a1d21; --s1:#1e2125; --s2:#262a2f; --line:#2c3036; --line2:#3d424a;
+  --tx:#e6e8eb; --tx2:#a6adb6; --tx3:#7a818a;
+  --pg:#7fb0e8; --pg-soft:rgba(127,176,232,.13); --bs:#eb9b5c; --bs-soft:rgba(235,155,92,.14);
+  --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13); --warn:#e2b74a; --warn-soft:rgba(226,183,74,.13);
+  --bad:#ea8080; --bad-soft:rgba(234,128,128,.12); --on:#121417; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.6 var(--sans);word-break:keep-all;overflow-wrap:anywhere;
+  padding:0 max(16px,env(safe-area-inset-right)) 80px max(16px,env(safe-area-inset-left));-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+input{font:inherit;color:inherit}
+.wrap{max-width:680px;margin:0 auto}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 0 0}
+.topline{display:flex;align-items:center;gap:8px;min-height:36px}
+.topline h1{font-size:19px;font-weight:500;margin:0;flex:1;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.topline h1 img{width:24px;height:24px;border-radius:6px}
+.iconbtn{width:36px;height:36px;display:grid;place-items:center;color:var(--tx2);border-radius:10px}
+.iconbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabs{display:flex;margin:8px 0 0;border-bottom:1px solid var(--line);position:relative}
+.tab{flex:1 0 auto;padding:9px 6px 10px;font-size:14px;color:var(--tx3)}
+.tab.on{color:var(--tx);font-weight:500}
+.tabbar{position:absolute;bottom:-1px;height:2px;background:var(--tx);border-radius:2px;transition:transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1)}
+.stage{overflow-x:clip;touch-action:pan-y}
+#panel{will-change:transform,opacity;padding-top:4px}
+.note{color:var(--tx2);font-size:13px;margin:10px 2px}
+.muted{color:var(--tx3)} .small{font-size:13px} .tiny{font-size:12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.card .h{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.card .h b{font-weight:500;font-size:15px}
+.card .h .spacer{flex:1}
+.kv{margin:0;display:grid;grid-template-columns:78px 1fr;gap:2px 10px;font-size:14px}
+.kv dt{color:var(--tx3)} .kv dd{margin:0;min-width:0}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--tx2);white-space:nowrap;vertical-align:1px}
+.pill.pg{background:var(--pg-soft);color:var(--pg)} .pill.bs{background:var(--bs-soft);color:var(--bs)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:1px;margin-right:6px}
+.dot.pg{background:var(--pg)} .dot.bs{background:var(--bs)}
+.nav{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 8px}
+.nav b{font-weight:500;min-width:150px;text-align:center}
+.nav button{width:36px;height:36px;border-radius:10px;color:var(--tx2);font-size:18px}
+.nav .now{font-size:12px;color:var(--tx3);width:auto;padding:0 6px}
+.banner{background:var(--s1);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--tx2);margin:10px 0}
+.banner button{color:var(--pg);font-weight:500}
+.empty{color:var(--tx3);font-size:14px;padding:18px 4px;text-align:center}
+/* 달력표 */
+.tblwrap{overflow-x:auto;margin:0 -2px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+table.grid{border-collapse:collapse;font-size:13px;min-width:100%}
+table.grid th,table.grid td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:center}
+table.grid th{font-weight:500;color:var(--tx3);font-size:12px;background:var(--s1)}
+table.grid td.rl{text-align:left;color:var(--tx3);font-size:12px;background:var(--s1);position:sticky;left:0}
+table.grid tr.sep td{border-top:2px solid var(--line2)}
+table.grid td.bs{color:var(--bs);font-weight:500;background:var(--bs-soft)}
+table.grid tr:last-child td{border-bottom:0}
+table.grid td.now,table.grid th.now{box-shadow:inset 0 0 0 1px var(--line2)}
+/* 부산 목록 */
+.vrow{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:baseline;padding:9px 2px;border-bottom:1px solid var(--line)}
+.vrow b{font-weight:500}
+.vrow .sub{grid-column:2/4;font-size:12px;color:var(--tx3);margin-top:-6px}
+.vrow.past{opacity:.6}
+details.more summary{cursor:pointer;color:var(--tx2);font-size:13px;padding:10px 2px;list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+/* 사람 */
+.prow{border-bottom:1px solid var(--line)}
+.prow > button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 2px}
+.prow .nm{font-weight:500;min-width:64px}
+.prow .chips{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.ped{padding:0 2px 14px;display:grid;gap:10px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--tx3)}
+.inp{width:100%;border:1px solid var(--line2);background:var(--paper);border-radius:10px;padding:8px 10px;font-size:15px}
+.inp:focus{outline:2px solid var(--pg-soft);border-color:var(--pg)}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.tg{border:1px solid var(--line2);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--tx2)}
+.tg[aria-pressed="true"]{background:var(--tx);border-color:var(--tx);color:var(--bg)}
+.tg.bsr[aria-pressed="true"]{background:var(--bs);border-color:var(--bs);color:var(--on)}
+.btnrow{display:flex;gap:8px;align-items:center}
+.btn{border-radius:10px;padding:8px 14px;font-size:14px;font-weight:500;background:var(--tx);color:var(--bg)}
+.btn.ghost{background:none;color:var(--tx2);border:1px solid var(--line2)}
+.btn.danger{background:none;color:var(--bad);padding:8px 4px}
+.addrow{display:flex;gap:8px;margin:14px 0 4px}
+.addrow .inp{flex:1}
+/* 메뉴 판 */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:20}
+.sheet{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:max(12px,env(safe-area-inset-right));z-index:21;width:min(340px,calc(100vw - 24px));
+  background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:grid;gap:12px}
+.sheet .sh{display:flex;align-items:center}
+.sheet .sh b{flex:1;text-align:center;font-weight:500}
+.sheet .gap{width:36px}
+.ver{font-size:12px;color:var(--tx3);text-align:center}
+.ver button{color:var(--tx3);text-decoration:underline;text-underline-offset:2px}
+.err{color:var(--bad);font-size:13px;white-space:pre-line}
+#toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;background:var(--tx);color:var(--bg);padding:12px 18px;border-radius:14px;
+  font-size:14px;text-align:center;white-space:pre-line;max-width:calc(100vw - 48px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+@media (prefers-reduced-motion: reduce){.tabbar{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="topline">
+      <h1><img src="favicon.png" alt="">교역자 로테이션</h1>
+      <button class="iconbtn" data-act="menu" aria-label="메뉴"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+  <div class="stage" id="stage"><div id="panel"></div></div>
+</div>
+<div id="toast" hidden></div>
+
+<script id="rotation-core">
+// 교역자 로테이션 — 화면 없이 도는 판단. tests/test_rotation.js 가 이것만 떼어 시험한다.
+// ⚠️ 여기 이름 · 숙소는 넣지 말 것(공개 저장소). 실제 자료는 HB 파이어베이스 rota/{uid} 에만 산다.
+//
+// 자료 모양(book) — 1114-R '정해 둔 것':
+//   people : 교역자          { id, name, roles:['preach','offer','lead','busan'], at, by, del? }
+//   slots  : 판교 예배 자리   { id:'날짜|예배|역할', date, svc, role, who:[사람 id], txt:'담임목사님' 같은 글, lock, at, by, del? }
+//   visits : 부산 방문       { id:'v|주일', sun, who:[사람 id], days:'토일', fri:bool, stay:[], travel:[], staff, group, edu, note, at, by, del? }
+//   marks  : 그 주 교회 일정 { id:'m|주일', sun, tags:['성찬주'], note, at, by, del? }
+// 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
+// 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
+const APP_VERSION = 'v. 26-1114-1';
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+// 예배 — off: 그 주 주일에서 며칠 떨어졌나
+const SVC = {
+  sun1: { label: '1부', short: '1부', off: 0 }, sun2: { label: '2부', short: '2부', off: 0 }, sun3: { label: '3부', short: '3부', off: 0 },
+  ll: { label: '라이프라인', short: 'LL', off: 0 }, fri: { label: '금요예배', short: '금요', off: -2 }, wed: { label: '수요예배', short: '수요', off: -4 },
+};
+const ROLE = { preach: '설교', offer: '헌금인도', lead: '예배인도' };
+// 시트 '예배 구성' 에 실제 있는 칸만 (예배 × 역할)
+const GRID = [
+  ['sun1', 'preach'], ['sun2', 'preach'], ['sun3', 'preach'], ['ll', 'preach'],
+  ['sun1', 'offer'], ['sun2', 'offer'], ['sun3', 'offer'], ['ll', 'offer'],
+  ['sun2', 'lead'], ['ll', 'lead'],
+  ['fri', 'preach'], ['fri', 'offer'],
+  ['wed', 'preach'], ['wed', 'offer'],
+];
+const PROLES = { preach: '설교', offer: '헌금', lead: '예배인도', busan: '부산' };
+const DAYS = ['토일', '토일월', '금토일', '금토일월', '목금토일', '수목', '목'];
+const MARK_TAGS = ['성찬주', '극동방송', '종려주일', '부활주일', '성탄', '송구영신'];
+
+function slotLabel(svc, role) {
+  if (svc === 'fri' && role === 'offer') return '금요 헌금 · 광고';
+  return SVC[svc].short + ' ' + (role === 'lead' ? '예배인도' : ROLE[role]);
+}
+
+/* ---- 날짜 (서울 날짜 문자열 'YYYY-MM-DD' 만 다룬다) ---- */
+const isYmd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + 'T00:00:00Z'));
+function ymdUTC(d) { return d.toISOString().slice(0, 10); }
+function addDays(ymd, n) { const d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return ymdUTC(d); }
+function dowOf(ymd) { return new Date(ymd + 'T00:00:00Z').getUTCDay(); }
+// 그 날이 속한 주의 주일 (월~주일을 한 주로 — 수요 · 금요 · 주일이 한 묶음)
+function sunOf(ymd) { return addDays(ymd, (7 - dowOf(ymd)) % 7); }
+function nthOf(ymd) { return Math.ceil(+ymd.slice(8, 10) / 7); }
+function svcDate(sun, svc) { return addDays(sun, SVC[svc].off); }
+// 그 주 부산 금요예배 — 그 달의 첫째 · 둘째 · 셋째 금요일에만 있다 (시트 '금1 · 금2 · 금3', 2025-01 ~ 2026-05 모두 맞음)
+function busanFri(sun) { const n = nthOf(addDays(sun, -2)); return n <= 3 ? n : 0; }
+// 그 달의 주일들
+function monthSundays(ym) {
+  let d = ym + '-01'; d = addDays(d, (7 - dowOf(d)) % 7);
+  const out = []; while (d.slice(0, 7) === ym) { out.push(d); d = addDays(d, 7); }
+  return out;
+}
+function addMonths(ym, n) { const y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + n; const d = new Date(Date.UTC(y, m, 1)); return ymdUTC(d).slice(0, 7); }
+
+/* ---- 다듬기: 모르는 값은 버린다. 클라우드 · 기기 어느 쪽에서 와도 같은 모양이 되게 ---- */
+const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+const num = (v) => (typeof v === 'number' && isFinite(v) && v > 0 ? Math.floor(v) : 0);
+const ids = (v) => (Array.isArray(v) ? [...new Set(v.filter(x => typeof x === 'string' && x).map(x => x.slice(0, 40)))].slice(0, 6) : []);
+function base(o) { const b = { id: str(o.id, 80), at: num(o.at), by: str(o.by, 64) }; if (o.del) b.del = true; return b; }
+function normPerson(o) {
+  if (!o || typeof o !== 'object' || !str(o.id, 80)) return null;
+  const b = base(o); if (b.del) return b;
+  b.name = str(o.name, 30); if (!b.name) return null;
+  b.roles = Array.isArray(o.roles) ? Object.keys(PROLES).filter(r => o.roles.includes(r)) : [];
+  return b;
+}
+function slotId(date, svc, role) { return date + '|' + svc + '|' + role; }
+function normSlot(o) {
+  if (!o || typeof o !== 'object') return null;
+  const [date, svc, role] = String(o.id || '').split('|');
+  if (!isYmd(date) || !SVC[svc] || !ROLE[role] || !GRID.some(g => g[0] === svc && g[1] === role)) return null;
+  if (svcDate(sunOf(date), svc) !== date) return null;   // 수요 자리가 수요일이 아니면 버린다
+  const b = base(o); b.date = date; b.svc = svc; b.role = role; if (b.del) return b;
+  b.who = ids(o.who); b.txt = str(o.txt, 30); if (o.lock) b.lock = true;
+  return b;
+}
+function visitId(sun) { return 'v|' + sun; }
+function normStay(o) { return o && typeof o === 'object' ? { kind: o.kind === 'home' ? 'home' : 'hotel', name: str(o.name, 60), status: ['', 'ask', 'done', 'cancel'].includes(o.status) ? o.status : '', cost: num(o.cost), nights: num(o.nights), for: str(o.for, 20) } : null; }
+function normTravel(o) { return o && typeof o === 'object' ? { dir: o.dir === 'up' ? 'up' : 'down', mode: str(o.mode, 20), time: str(o.time, 30), who: str(o.who, 40) } : null; }
+function normVisit(o) {
+  if (!o || typeof o !== 'object') return null;
+  const sun = String(o.id || '').slice(2); if (String(o.id).slice(0, 2) !== 'v|' || !isYmd(sun) || dowOf(sun) !== 0) return null;
+  const b = base(o); b.sun = sun; if (b.del) return b;
+  b.who = ids(o.who); b.days = str(o.days, 10); b.fri = !!o.fri;
+  b.stay = (Array.isArray(o.stay) ? o.stay : []).map(normStay).filter(Boolean).slice(0, 8);
+  b.travel = (Array.isArray(o.travel) ? o.travel : []).map(normTravel).filter(Boolean).slice(0, 8);
+  for (const k of ['staff', 'group', 'edu']) b[k] = str(o[k], 120);
+  b.note = str(o.note, 1000);
+  return b;
+}
+function markId(sun) { return 'm|' + sun; }
+function normMark(o) {
+  if (!o || typeof o !== 'object') return null;
+  const sun = String(o.id || '').slice(2); if (String(o.id).slice(0, 2) !== 'm|' || !isYmd(sun) || dowOf(sun) !== 0) return null;
+  const b = base(o); b.sun = sun; if (b.del) return b;
+  b.tags = Array.isArray(o.tags) ? [...new Set(o.tags.map(t => str(t, 20)).filter(Boolean))].slice(0, 6) : [];
+  b.note = str(o.note, 300);
+  return b;
+}
+const LISTS = { people: normPerson, slots: normSlot, visits: normVisit, marks: normMark };
+function normBook(o) {
+  const b = { v: 1, at: num(o && o.at) };
+  for (const [k, fn] of Object.entries(LISTS)) {
+    const seen = new Map();
+    for (const x of (o && Array.isArray(o[k]) ? o[k] : [])) { const n = fn(x); if (n) seen.set(n.id, newer(seen.get(n.id), n)); }
+    b[k] = [...seen.values()].sort((a, c) => (a.id < c.id ? -1 : a.id > c.id ? 1 : 0));
+  }
+  return b;
+}
+
+/* ---- 기기 사본 ↔ 계정 맞추기 ----
+   줄마다 따로: 같은 id 면 나중에 고친 것(at)이 이긴다. 한쪽에만 있는 줄은 그대로 남는다 — 그래서 **맞추기는 아무것도 지우지 않는다.**
+   지우는 것은 사람이 누른 '지우기' 표지(del)뿐이다. 표지는 버리지 않는다(버리면 낡은 기기의 줄이 되살아난다).
+   at 이 같으면 글자로 비교해 큰 쪽 — 두 기기가 어느 순서로 맞춰도 같은 답이 나오게. */
+function newer(a, b) {
+  if (!a) return b; if (!b) return a;
+  if (a.at !== b.at) return a.at > b.at ? a : b;
+  return JSON.stringify(a) >= JSON.stringify(b) ? a : b;
+}
+function mergeBook(x, y) {
+  const a = normBook(x), c = normBook(y);
+  return normBook({ at: Math.max(a.at, c.at), people: [...a.people, ...c.people], slots: [...a.slots, ...c.slots], visits: [...a.visits, ...c.visits], marks: [...a.marks, ...c.marks] });
+}
+function sameBook(x, y) { const a = normBook(x), c = normBook(y); a.at = c.at = 0; return JSON.stringify(a) === JSON.stringify(c); }
+function isEmptyBook(x) { const b = normBook(x); return !Object.keys(LISTS).some(k => b[k].length); }
+// 계정에서 받은 것과 이 기기 것 — 합친 결과와, 계정에 다시 올려야 하는지
+function pickBook(local, cloud) {
+  if (!cloud) return { book: normBook(local), push: !isEmptyBook(local) };
+  const m = mergeBook(local, cloud);
+  return { book: m, push: !sameBook(m, cloud) };
+}
+
+/* ---- 한 줄 바꾸기 (화면이 부른다) ---- */
+function put(book, list, item, by, now) {
+  const fn = LISTS[list]; const n = fn(Object.assign({}, item, { at: now, by }));
+  if (!n) return false;
+  book[list] = book[list].filter(x => x.id !== n.id).concat(n).sort((a, c) => (a.id < c.id ? -1 : 1));
+  book.at = Math.max(book.at || 0, now);
+  return true;
+}
+function drop(book, list, id, by, now) {
+  const cur = book[list].find(x => x.id === id); if (!cur || cur.del) return false;
+  const t = { id, del: true, at: now, by };
+  if (list === 'slots') { const [date, svc, role] = id.split('|'); Object.assign(t, { date, svc, role }); }
+  if (list === 'visits' || list === 'marks') t.sun = id.slice(2);
+  book[list] = book[list].map(x => (x.id === id ? t : x)); book.at = Math.max(book.at || 0, now);
+  return true;
+}
+const live = (list) => (list || []).filter(x => !x.del);
+function newPersonId(now, rnd) { return 'p' + now.toString(36) + Math.floor(rnd * 1e6).toString(36); }
+
+/* ---- 읽기 ---- */
+function peopleMap(book) { const m = {}; for (const p of book.people) m[p.id] = p; return m; }
+function whoText(book, ids, txt, pm) {
+  pm = pm || peopleMap(book);
+  const names = (ids || []).map(id => (pm[id] && !pm[id].del ? pm[id].name : '(지운 사람)'));
+  if (txt) names.push(txt);
+  return names.join(' · ');
+}
+// 한 주(그 주일 기준)의 모든 것
+function weekPlan(book, sun) {
+  const slots = {};
+  for (const [svc, role] of GRID) { const s = book.slots.find(x => x.id === slotId(svcDate(sun, svc), svc, role) && !x.del); if (s) slots[svc + '|' + role] = s; }
+  const visit = book.visits.find(x => x.id === visitId(sun) && !x.del) || null;
+  const mark = book.marks.find(x => x.id === markId(sun) && !x.del) || null;
+  return { sun, wed: svcDate(sun, 'wed'), fri: svcDate(sun, 'fri'), busanFri: busanFri(sun), slots, visit, mark };
+}
+// 같은 역할을 여러 예배가 같은 사람으로 맡으면 한 줄로 묶는다: '담임목사님 (1부 · 2부 · 3부 · LL)'
+function groupRole(book, plan, role, svcs, pm) {
+  const out = [];
+  for (const svc of svcs) {
+    const s = plan.slots[svc + '|' + role]; if (!s) continue;
+    const t = whoText(book, s.who, s.txt, pm); if (!t) continue;
+    const g = out.find(x => x.text === t); if (g) g.svcs.push(svc); else out.push({ text: t, svcs: [svc] });
+  }
+  return out;
+}
+// 부산 방문 한 줄 요약
+function stayText(v) {
+  if (!v || !v.stay.length) return '';
+  return v.stay.map(s => (s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도 댁' : '호텔'))).join(' · ');
+}
+function stayState(v) {
+  if (!v || !v.stay.length) return 'none';
+  if (v.stay.some(s => s.status === '' || s.status === 'ask')) return 'open';
+  return 'done';
+}
+</script>
+
+<script>
+'use strict';
+const DEMO = /[?&]demo=1\b/.test(location.search);
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const quiet = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (_) { return false; } }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; toast.at = Date.now(); clearTimeout(toast.t);
+  toast.t = setTimeout(() => { t.hidden = true; }, Math.max(3000, Math.min(9000, String(msg).replace(/\s/g, '').length * 200))); }
+document.addEventListener('click', () => { const t = $('#toast'); if (!t.hidden && Date.now() - (toast.at || 0) > 300) t.hidden = true; }, true);
+function todayYmd() { return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' }); }
+function md(ymd) { return (+ymd.slice(5, 7)) + '/' + (+ymd.slice(8, 10)); }
+function mdd(ymd) { return md(ymd) + '(' + DOW[dowOf(ymd)] + ')'; }
+document.addEventListener('touchend', (e) => { const t = e.target; if (t && t.matches && t.matches('input:not([type=checkbox]):not([disabled])') && document.activeElement !== t) t.focus(); }, { passive: true });
+
+/* ---------- 상태 ---------- */
+const PREF_KEY = 'rota_pref_v1', BOOK_KEY = DEMO ? 'rota_demo_v1' : 'rota_book_v1';
+const PREF = Object.assign({ tab: 'week' }, lsGet(PREF_KEY, {}));
+const savePref = () => lsSet(PREF_KEY, PREF);
+const S = { book: normBook(DEMO ? null : lsGet(BOOK_KEY, null)), sun: sunOf(todayYmd()), ym: todayYmd().slice(0, 7), open: null };
+const TABS = [{ id: 'week', label: '이번 주' }, { id: 'month', label: '달력표' }, { id: 'busan', label: '부산' }, { id: 'people', label: '사람' }];
+
+/* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호) ----------
+   자료는 rota/{uid} 문서의 book 칸 한 장에 둔다 (새 보안 규칙 한 덩어리 — docs/rotation/firestore-rules.md).
+   ⚠️ users/{uid}(BLOCK7 · Sweeter) · cellbook/{uid}(셀 inside) 는 건드리지 않는다.
+   R6(교역자 각자 입력) 때는 rota/{uid}/avail/{교역자 uid} 처럼 따로 쓰는 칸을 더한다 — book 모양은 그대로. */
+const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
+  storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsub: null, loading: null, synced: false };
+function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); setTimeout(() => rej(new Error('시간 초과')), 20000); document.head.appendChild(el); }); }
+async function fbInit() {
+  if (DEMO) { FB.ready = true; FB.user = { email: '미리보기 (저장 안 됨)', uid: 'demo' }; return; }
+  if (FB.app) return; if (FB.loading) return FB.loading;
+  FB.loading = (async () => {
+    for (const s of FB_JS) await loadJs(s);
+    FB.app = firebase.apps.find(a => a.name === 'rota') || firebase.initializeApp(FB_CFG, 'rota');
+    FB.auth = FB.app.auth(); FB.db = FB.app.firestore();
+    setTimeout(() => { if (!FB.ready) { FB.ready = true; rerender(); } }, 10000);
+    FB.auth.onAuthStateChanged(u => {
+      FB.user = u; FB.ready = true; FB.synced = false;
+      if (FB.unsub) { FB.unsub(); FB.unsub = null; }
+      if (u) FB.unsub = FB.db.collection('rota').doc(u.uid).onSnapshot(d => {
+        const r = pickBook(S.book, d.exists ? d.data().book : null);
+        S.book = r.book; lsSet(BOOK_KEY, S.book); FB.synced = true; FB.err = '';
+        if (r.push) cloudSave();
+        if (!editing()) rerender();
+      }, e => { FB.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 넣어야 합니다.' : '자료를 불러오지 못했습니다.'; rerender(); });
+      rerender();
+    });
+  })();
+  try { await FB.loading; } catch (e) { FB.err = '로그인 도구를 불러오지 못했습니다.\n인터넷 연결을 확인해 주세요.'; FB.loading = null; rerender(); }
+}
+async function fbLogin() {
+  const em = ($('#fb-em') || {}).value, pw = ($('#fb-pw') || {}).value;
+  if (!em || !pw) { FB.err = '이메일과 비밀번호를 넣어 주세요.'; return renderMenu(); }
+  FB.busy = true; FB.err = ''; renderMenu();
+  try { await fbInit(); await FB.auth.signInWithEmailAndPassword(em.trim(), pw); closeMenu(); toast('로그인했습니다\n자료를 맞춥니다'); }
+  catch (e) { FB.err = /wrong-password|invalid-credential|user-not-found|invalid-login/i.test(e.code || e.message) ? '이메일이나 비밀번호가 맞지 않습니다.' : '로그인하지 못했습니다.\n' + (e.message || ''); }
+  FB.busy = false; renderMenu();
+}
+async function fbLogout() { try { await FB.auth.signOut(); } catch (_) { } closeMenu(); toast('로그아웃했습니다\n이 기기 사본은 남아 있습니다'); rerender(); }
+function byNow() { return FB.user ? FB.user.uid : 'local'; }
+function saveBook() {
+  if (!lsSet(BOOK_KEY, S.book)) toast('이 기기에 저장하지 못했습니다\n저장 공간을 확인해 주세요');
+  clearTimeout(saveBook.t); saveBook.t = setTimeout(cloudSave, 600);
+}
+function cloudSave() {
+  if (DEMO || !FB.user || !FB.db) return;
+  const size = JSON.stringify(S.book).length;
+  if (size > 900000) { toast('자료가 너무 커져 계정에 올리지 못했습니다\nHB 께 알려 주세요'); return; }
+  FB.db.collection('rota').doc(FB.user.uid).set({ book: S.book, v: APP_VERSION, at: Date.now() }, { merge: true })
+    .catch(e => { toast(e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다\n이 기기에는 남아 있습니다' : '계정에 저장하지 못했습니다\n이 기기에는 남아 있습니다'); });
+}
+function editing() { const a = document.activeElement; return !!(a && a.closest && a.closest('#panel') && a.tagName === 'INPUT'); }
+
+/* ---------- 껍데기 · 탭 ---------- */
+function renderShell() {
+  $('#tabs').innerHTML = TABS.map(t => `<button class="tab${PREF.tab === t.id ? ' on' : ''}" data-tab="${t.id}">${t.label}</button>`).join('') + '<span class="tabbar" id="tabbar"></span>';
+  render(); markTab();
+}
+function markTab() {
+  const on = $('#tabs .tab.on'), bar = $('#tabbar'); if (!on || !bar) return;
+  bar.style.width = on.offsetWidth + 'px'; bar.style.transform = `translateX(${on.offsetLeft}px)`;
+}
+function tabIndex() { return TABS.findIndex(t => t.id === PREF.tab); }
+function rerender() { if (!editing()) render(); }
+function render() {
+  const p = $('#panel');
+  p.innerHTML = ({ week: viewWeek, month: viewMonth, busan: viewBusan, people: viewPeople }[PREF.tab] || viewWeek)();
+  if ($('#menu')) renderMenu();
+}
+// 버튼으로 바꿀 때: 나가고(150ms) → 그리고 → 들어온다(300ms). 앞(오른쪽 · 다음)은 왼쪽으로 나간다.
+function slide(dir, change) {
+  const p = $('#panel');
+  if (quiet() || !p.animate) { change(); render(); markTab(); return; }
+  const out = p.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${-dir * 36}px)`, opacity: 0 }], { duration: 150, easing: 'ease-in', fill: 'forwards' });
+  out.onfinish = () => { change(); render(); markTab(); out.cancel();
+    p.animate([{ transform: `translateX(${dir * 36}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); };
+}
+function goTab(id) { const from = tabIndex(), to = TABS.findIndex(t => t.id === id); if (to < 0 || to === from) return;
+  slide(to > from ? 1 : -1, () => { PREF.tab = id; savePref(); $('#tabs').querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('on', i === to)); }); }
+
+/* 손가락을 따라가는 탭 넘기기 — 4분의 1 넘게(빠른 튕김은 40px) 밀면 다음 탭, 못 미치면 제자리, 끝에서는 고무줄 */
+(function swipe() {
+  const st = $('#stage'); let x0 = 0, y0 = 0, t0 = 0, dx = 0, on = false, locked = null;
+  st.addEventListener('touchstart', e => { if (e.touches.length !== 1 || e.target.closest('input,.tblwrap')) { on = false; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0; on = true; locked = null; }, { passive: true });
+  st.addEventListener('touchmove', e => {
+    if (!on) return; const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+    if (locked === null && Math.abs(mx) + Math.abs(my) > 10) locked = Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y';
+    if (locked !== 'x') return;
+    const i = tabIndex(), edge = (mx > 0 && i === 0) || (mx < 0 && i === TABS.length - 1);
+    dx = edge ? mx * 0.25 : mx;
+    const w = st.clientWidth || 1; $('#panel').style.transform = `translateX(${dx}px)`; $('#panel').style.opacity = String(1 - Math.min(Math.abs(dx) / w, 1) * 0.6);
+  }, { passive: true });
+  st.addEventListener('touchend', () => {
+    if (!on || locked !== 'x') { on = false; return; } on = false;
+    const p = $('#panel'), w = st.clientWidth || 1, fast = Date.now() - t0 < 250 && Math.abs(dx) > 40;
+    const i = tabIndex(), dir = dx < 0 ? 1 : -1, j = i + dir;
+    if ((Math.abs(dx) > w / 4 || fast) && j >= 0 && j < TABS.length) {
+      const a = p.animate([{ transform: `translateX(${dx}px)`, opacity: p.style.opacity }, { transform: `translateX(${-dir * w * 0.5}px)`, opacity: 0 }], { duration: 140, easing: 'ease-in', fill: 'forwards' });
+      a.onfinish = () => { PREF.tab = TABS[j].id; savePref(); p.style.transform = ''; p.style.opacity = ''; renderShell(); a.cancel();
+        if (!quiet()) p.animate([{ transform: `translateX(${dir * 48}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); };
+    } else {
+      p.animate([{ transform: `translateX(${dx}px)`, opacity: p.style.opacity }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.22,.8,.24,1)' });
+      p.style.transform = ''; p.style.opacity = '';
+    }
+  });
+})();
+
+/* ---------- 화면: 이번 주 ---------- */
+function syncBanner() {
+  if (DEMO) return `<div class="banner">미리보기입니다. 이름은 모두 지어낸 것이고 저장되지 않습니다.</div>`;
+  if (FB.err) return `<div class="banner err">${esc(FB.err)}</div>`;
+  if (FB.ready && !FB.user) return `<div class="banner">로그인하면 기기끼리 맞춥니다. <button data-act="menu">로그인</button></div>`;
+  return '';
+}
+function viewWeek() {
+  const sun = S.sun, plan = weekPlan(S.book, sun), pm = peopleMap(S.book), thisSun = sunOf(todayYmd());
+  const v = plan.visit, mk = plan.mark;
+  const row = (k, val) => `<dt>${esc(k)}</dt><dd>${val ? esc(val) : '<span class="muted">—</span>'}</dd>`;
+  const groups = (role, svcs) => groupRole(S.book, plan, role, svcs, pm).map(g => esc(g.text) + (svcs.length > 1 ? ` <span class="muted tiny">${g.svcs.map(s => SVC[s].short).join(' · ')}</span>` : '')).join('<br>');
+  const sunBody = [
+    ['설교', groups('preach', ['sun1', 'sun2', 'sun3', 'll'])], ['헌금인도', groups('offer', ['sun1', 'sun2', 'sun3', 'll'])],
+    ['2부 인도', groups('lead', ['sun2'])], ['LL 인도', groups('lead', ['ll'])],
+  ].map(([k, h]) => `<dt>${k}</dt><dd>${h || '<span class="muted">—</span>'}</dd>`).join('');
+  const busan = v ? `<dl class="kv">
+      ${row('교역자', whoText(S.book, v.who, '', pm))}
+      ${row('머무는 날', [v.days, v.fri && plan.busanFri ? '금' + plan.busanFri + ' 금요예배' : ''].filter(Boolean).join(' · '))}
+      ${row('숙소', stayText(v))}
+      ${row('교통', v.travel.map(t => (t.dir === 'down' ? '내려감 ' : '올라옴 ') + [t.mode, t.time].filter(Boolean).join(' ')).join(' · '))}
+      ${row('동행', v.staff)}${row('주일모임', v.group)}${v.edu ? row('교육', v.edu) : ''}${v.note ? row('메모', v.note) : ''}
+    </dl>` : `<p class="muted small" style="margin:0">아직 정하지 않았습니다.</p>`;
+  const stPill = v ? ({ none: '<span class="pill warn">숙소 없음</span>', open: '<span class="pill warn">숙소 미정</span>', done: '<span class="pill ok">숙소 완료</span>' })[stayState(v)] : '';
+  const two = (svc) => [['설교', plan.slots[svc + '|preach']], [svc === 'fri' ? '헌금 · 광고' : '헌금인도', plan.slots[svc + '|offer']]]
+    .map(([k, s]) => row(k, s ? whoText(S.book, s.who, s.txt, pm) : '')).join('');
+  return `${syncBanner()}
+  <div class="nav"><button data-week="-1" aria-label="지난 주">‹</button><b>${md(sun)} 주일${sun === thisSun ? ' · 이번 주' : ''}</b><button data-week="1" aria-label="다음 주">›</button>
+    ${sun !== thisSun ? '<button class="now" data-week="0">오늘</button>' : ''}</div>
+  ${mk ? `<div class="note">${mk.tags.map(t => `<span class="pill">${esc(t)}</span>`).join(' ')} ${esc(mk.note)}</div>` : ''}
+  <div class="card"><div class="h"><span class="dot bs"></span><b>부산</b><span class="muted small">${md(sun)} 주일</span><span class="spacer"></span>${stPill}</div>${busan}</div>
+  <div class="card"><div class="h"><span class="dot pg"></span><b>판교 주일</b><span class="muted small">${md(sun)}</span></div><dl class="kv">${sunBody}</dl></div>
+  <div class="card"><div class="h"><span class="dot pg"></span><b>금요예배</b><span class="muted small">${mdd(plan.fri)}</span><span class="spacer"></span>${plan.busanFri ? `<span class="pill bs">부산 금${plan.busanFri}</span>` : ''}</div><dl class="kv">${two('fri')}</dl></div>
+  <div class="card"><div class="h"><span class="dot pg"></span><b>수요예배</b><span class="muted small">${mdd(plan.wed)}</span></div><dl class="kv">${two('wed')}</dl></div>
+  <p class="note tiny">칸을 눌러 고치기와 겹침 검사는 다음 업데이트(R2)에서 열립니다.</p>`;
+}
+
+/* ---------- 화면: 달력표 (예배 구성 시트 한 달 표) ---------- */
+function viewMonth() {
+  const suns = monthSundays(S.ym), pm = peopleMap(S.book), thisSun = sunOf(todayYmd());
+  const plans = suns.map(s => weekPlan(S.book, s));
+  const short = (t) => t.length > 9 ? t.slice(0, 8) + '…' : t;
+  let prev = '';
+  const rows = GRID.map(([svc, role]) => {
+    const grp = SVC[svc].off === 0 ? role : svc; const sep = prev && grp !== prev ? ' class="sep"' : ''; prev = grp;
+    return `<tr${sep}><td class="rl">${esc(slotLabel(svc, role))}</td>${plans.map(p => { const s = p.slots[svc + '|' + role]; const t = s ? whoText(S.book, s.who, s.txt, pm) : '';
+      return `<td${p.sun === thisSun ? ' class="now"' : ''} title="${esc(t)}">${t ? esc(short(t)) : '<span class="muted">·</span>'}</td>`; }).join('')}</tr>`;
+  }).join('');
+  const busan = `<tr class="sep"><td class="rl">부산</td>${plans.map(p => { const t = p.visit ? whoText(S.book, p.visit.who, '', pm) : '';
+    return `<td class="${t ? 'bs' : ''}${p.sun === thisSun ? ' now' : ''}">${t ? esc(short(t)) : '<span class="muted">·</span>'}</td>`; }).join('')}</tr>`;
+  const head = `<tr><th></th>${plans.map(p => `<th class="${p.sun === thisSun ? 'now' : ''}">${md(p.sun)}${p.busanFri ? `<br><span class="tiny">금${p.busanFri}</span>` : ''}${p.mark && p.mark.tags.length ? `<br><span class="tiny">${esc(p.mark.tags[0])}</span>` : ''}</th>`).join('')}</tr>`;
+  return `${syncBanner()}
+  <div class="nav"><button data-month="-1" aria-label="지난 달">‹</button><b>${S.ym.slice(0, 4)}년 ${+S.ym.slice(5, 7)}월</b><button data-month="1" aria-label="다음 달">›</button>
+    ${S.ym !== todayYmd().slice(0, 7) ? '<button class="now" data-month="0">오늘</button>' : ''}</div>
+  <div class="tblwrap"><table class="grid">${head}${rows}${busan}</table></div>
+  <p class="note tiny">금요 · 수요 칸은 그 주의 금요일 · 수요일입니다. '금1 · 금2 · 금3' 은 그 주 부산 금요예배가 있는 주입니다.</p>`;
+}
+
+/* ---------- 화면: 부산 ---------- */
+function viewBusan() {
+  const pm = peopleMap(S.book), thisSun = sunOf(todayYmd());
+  const vs = live(S.book.visits).slice().sort((a, b) => (a.sun < b.sun ? -1 : 1));
+  const up = vs.filter(v => v.sun >= thisSun), past = vs.filter(v => v.sun < thisSun).reverse();
+  const line = (v, cls) => { const bf = busanFri(v.sun); const st = stayState(v);
+    return `<div class="vrow${cls}"><b>${md(v.sun)}</b><span>${esc(whoText(S.book, v.who, '', pm)) || '<span class="muted">비어 있음</span>'}${bf && v.fri ? ` <span class="pill bs">금${bf}</span>` : ''}</span>
+      <span>${st === 'done' ? '<span class="pill ok">숙소 완료</span>' : st === 'open' ? '<span class="pill warn">숙소 미정</span>' : '<span class="pill">숙소 없음</span>'}</span>
+      <span class="sub">${esc([v.days, stayText(v), v.staff].filter(Boolean).join(' · '))}</span></div>`; };
+  return `${syncBanner()}
+  <p class="note">다가오는 방문 ${up.length}번</p>
+  ${up.length ? up.map(v => line(v, '')).join('') : '<p class="empty">정해 둔 방문이 없습니다.</p>'}
+  ${past.length ? `<details class="more"><summary>지난 방문 ${past.length}번 보기</summary>${past.map(v => line(v, ' past')).join('')}</details>` : ''}
+  <p class="note tiny">방문 적기 · 숙소 · 교통 · 동행 입력은 다음 업데이트(R2)에서 열립니다.</p>`;
+}
+
+/* ---------- 화면: 사람 (R1 에서 고칠 수 있는 곳) ---------- */
+function viewPeople() {
+  const ps = live(S.book.people).slice().sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const chips = (p) => p.roles.length ? p.roles.map(r => `<span class="pill${r === 'busan' ? ' bs' : ' pg'}">${PROLES[r]}</span>`).join('') : '<span class="muted tiny">맡는 일 없음</span>';
+  const editor = (p) => `<div class="ped">
+      <div class="field"><label for="pe-name">이름</label><input class="inp" id="pe-name" data-pid="${esc(p.id)}" value="${esc(p.name)}" maxlength="30" autocomplete="off"></div>
+      <div class="field"><label>맡는 일</label><div class="toggles">${Object.entries(PROLES).map(([r, l]) => `<button class="tg${r === 'busan' ? ' bsr' : ''}" data-role="${r}" data-pid="${esc(p.id)}" aria-pressed="${p.roles.includes(r)}">${l}</button>`).join('')}</div></div>
+      <div class="btnrow"><button class="btn danger" data-delp="${esc(p.id)}">지우기</button><span style="flex:1"></span><button class="btn ghost" data-open="">닫기</button></div>
+    </div>`;
+  return `${syncBanner()}
+  <p class="note">교역자 ${ps.length}명 · 누르면 고칩니다</p>
+  ${ps.map(p => `<div class="prow"><button data-open="${esc(p.id)}"><span class="nm">${esc(p.name)}</span><span class="chips">${chips(p)}</span></button>${S.open === p.id ? editor(p) : ''}</div>`).join('') || '<p class="empty">아직 아무도 없습니다. 아래에서 이름을 더해 주세요.</p>'}
+  <div class="addrow"><input class="inp" id="pe-new" placeholder="이름 더하기" maxlength="30" autocomplete="off"><button class="btn" data-act="addp">더하기</button></div>
+  <p class="note tiny">처음 더하면 설교 · 헌금 · 예배인도 · 부산 모두 맡는 것으로 둡니다. 안 맡는 일은 눌러 끄세요.</p>`;
+}
+function addPerson() {
+  const el = $('#pe-new'); const name = (el && el.value || '').trim(); if (!name) return;
+  if (live(S.book.people).some(p => p.name === name)) { toast('같은 이름이 이미 있습니다\n' + name); return; }
+  const now = Date.now(); const id = newPersonId(now, Math.random());
+  put(S.book, 'people', { id, name, roles: Object.keys(PROLES) }, byNow(), now); saveBook();
+  S.open = null; render(); const n = $('#pe-new'); if (n) n.focus();
+}
+
+/* ---------- 메뉴 (로그인 · 버전) — 우상단 × 로 닫는다 ---------- */
+function openMenu() { if ($('#menu')) return; const bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.id = 'menu-bg'; bg.dataset.act = 'close';
+  const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'menu'; document.body.append(bg, sh); renderMenu(); }
+function closeMenu() { const a = $('#menu'), b = $('#menu-bg'); if (a) a.remove(); if (b) b.remove(); }
+function renderMenu() {
+  const m = $('#menu'); if (!m) return;
+  const acct = DEMO ? `<p class="small muted" style="margin:0;text-align:center">미리보기 — 로그인 없이 지어낸 자료로 봅니다.<br><a href="./">미리보기 끄기</a></p>`
+    : FB.user ? `<p class="small" style="margin:0;text-align:center">${esc(FB.user.email)}<br><span class="muted tiny">${FB.synced ? '계정과 맞춰져 있습니다' : '맞추는 중…'}</span></p><button class="btn ghost" data-act="logout">로그아웃</button>`
+    : `<div class="field"><label for="fb-em">이메일 (BLOCK7 과 같은 계정)</label><input class="inp" id="fb-em" type="email" autocomplete="username"></div>
+       <div class="field"><label for="fb-pw">비밀번호</label><input class="inp" id="fb-pw" type="password" autocomplete="current-password"></div>
+       <button class="btn" data-act="login"${FB.busy ? ' disabled' : ''}>${FB.busy ? '로그인 중…' : '로그인'}</button>`;
+  m.innerHTML = `<div class="sh"><span class="gap"></span><b>계정</b><button class="iconbtn" data-act="close" aria-label="닫기"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke-width:1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    ${acct}${FB.err ? `<p class="err" style="margin:0">${esc(FB.err)}</p>` : ''}
+    ${DEMO ? '' : '<p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>'}
+    <p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>`;
+}
+
+/* ---------- 누르기 ---------- */
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button,[data-act]'); if (!t) return;
+  if (t.dataset.tab) return goTab(t.dataset.tab);
+  if (t.dataset.week !== undefined) { const n = +t.dataset.week; const to = n === 0 ? sunOf(todayYmd()) : addDays(S.sun, 7 * n); if (to === S.sun) return;
+    return slide(to > S.sun ? 1 : -1, () => { S.sun = to; }); }
+  if (t.dataset.month !== undefined) { const n = +t.dataset.month; const to = n === 0 ? todayYmd().slice(0, 7) : addMonths(S.ym, n); if (to === S.ym) return;
+    return slide(to > S.ym ? 1 : -1, () => { S.ym = to; }); }
+  if (t.dataset.open !== undefined) { S.open = S.open === t.dataset.open ? null : (t.dataset.open || null); return render(); }
+  if (t.dataset.role) { const p = S.book.people.find(x => x.id === t.dataset.pid); if (!p) return;
+    const roles = p.roles.includes(t.dataset.role) ? p.roles.filter(r => r !== t.dataset.role) : p.roles.concat(t.dataset.role);
+    put(S.book, 'people', Object.assign({}, p, { roles }), byNow(), Date.now()); saveBook(); return render(); }
+  if (t.dataset.delp) { const p = S.book.people.find(x => x.id === t.dataset.delp); if (!p) return;
+    if (t.dataset.sure !== '1') { t.dataset.sure = '1'; t.textContent = '한 번 더 누르면 지웁니다'; return; }
+    drop(S.book, 'people', p.id, byNow(), Date.now()); saveBook(); S.open = null; render(); return toast(p.name + ' 님을 지웠습니다\n이미 정한 자리에는 \'(지운 사람)\' 으로 남습니다'); }
+  const a = t.dataset.act;
+  if (a === 'menu') return openMenu();
+  if (a === 'close') return closeMenu();
+  if (a === 'login') return fbLogin();
+  if (a === 'logout') return fbLogout();
+  if (a === 'upd') return checkUpdate(true);
+  if (a === 'addp') return addPerson();
+});
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'pe-name') { const p = S.book.people.find(x => x.id === t.dataset.pid); const name = t.value.trim();
+    if (!p || !name || name === p.name) { t.value = p ? p.name : ''; return; }
+    put(S.book, 'people', Object.assign({}, p, { name }), byNow(), Date.now()); saveBook(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.id === 'pe-new') { e.preventDefault(); addPerson(); }
+  if (e.key === 'Enter' && e.target.id === 'pe-name') { e.preventDefault(); e.target.blur(); }
+  if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin();
+  if (e.key === 'Escape') { if ($('#menu')) return closeMenu(); if (S.open) { S.open = null; render(); } }
+});
+addEventListener('resize', () => markTab());
+
+/* ---------- 새 버전 (사역 한눈에와 같은 방법) ---------- */
+async function checkUpdate(manual) {
+  try {
+    const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' });
+    const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/); if (!m) throw new Error('x');
+    if (m[1] === APP_VERSION) { if (manual) toast('지금이 최신입니다\n' + APP_VERSION); return; }
+    toast('새 버전 ' + m[1] + '\n받아서 다시 엽니다');
+    setTimeout(() => location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]) + (DEMO ? '&demo=1' : '')), 900);
+  } catch (_) { if (manual) toast('새 버전을 확인하지 못했습니다\n인터넷 연결을 확인해 주세요'); }
+}
+setTimeout(() => checkUpdate(false), 4000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 600000) { checkUpdate.at = Date.now(); checkUpdate(false); } });
+
+/* ---------- 미리보기 자료 (지어낸 이름 · 숙소) ---------- */
+function demoBook() {
+  const b = normBook(null), now = 1, by = 'demo';
+  const names = ['한도윤', '서민재', '윤하람', '정은솔', '백시우', '문지호', '오세린', '강다온'];
+  const P = names.map((n, i) => { const id = 'pdemo' + i; put(b, 'people', { id, name: n, roles: ['preach', 'offer', 'lead', 'busan'] }, by, now); return id; });
+  const sun0 = sunOf(todayYmd()); const start = addDays(sun0, -14);
+  const order = [3, 6, 2, 1, 7, 4, 0, 2, 5, 1];
+  for (let i = 0; i < 10; i++) {
+    const sun = addDays(start, 7 * i), w = P[order[i]], bf = busanFri(sun);
+    for (const svc of ['sun1', 'sun2', 'sun3', 'll']) {
+      put(b, 'slots', { id: slotId(sun, svc, 'preach'), txt: '담임목사님', lock: true }, by, now);
+      put(b, 'slots', { id: slotId(sun, svc, 'offer'), who: [(i + (svc === 'sun2' || svc === 'll' ? 1 : 0)) % 2 ? P[0] : P[5]] }, by, now);
+    }
+    put(b, 'slots', { id: slotId(sun, 'sun2', 'lead'), who: [P[[1, 4, 1, 4, 5][i % 5]]] }, by, now);
+    put(b, 'slots', { id: slotId(sun, 'll', 'lead'), who: [P[[4, 3, 3, 5, 1][i % 5]]] }, by, now);
+    put(b, 'slots', { id: slotId(svcDate(sun, 'fri'), 'fri', 'preach'), who: i % 3 === 1 ? [] : [P[(i + 2) % 8]], txt: i % 3 === 1 ? '초청 강사' : '' }, by, now);
+    put(b, 'slots', { id: slotId(svcDate(sun, 'fri'), 'fri', 'offer'), who: [P[1]] }, by, now);
+    put(b, 'slots', { id: slotId(svcDate(sun, 'wed'), 'wed', 'preach'), who: [P[i % 2 ? 0 : 3]] }, by, now);
+    put(b, 'slots', { id: slotId(svcDate(sun, 'wed'), 'wed', 'offer'), who: [P[5]] }, by, now);
+    put(b, 'visits', { id: visitId(sun), who: [w], days: bf ? '금토일' : '토일', fri: !!bf,
+      stay: i < 6 ? [{ kind: 'hotel', name: '센텀 호텔 A', status: 'done', nights: bf ? 2 : 1, cost: 100000 }] : i === 6 ? [{ kind: 'home', name: '성도 가정 1', status: 'ask', for: '여' }, { kind: 'hotel', name: '호텔 B', status: 'done', for: '남' }] : [],
+      travel: i === 2 ? [{ dir: 'down', mode: 'KTX', time: '토 14:38' }, { dir: 'up', mode: 'KTX', time: '주일 19:10' }] : [],
+      staff: i === 2 ? '류하은 · 임서진' : i === 6 ? '남궁별(기타)' : '', group: ['청년셀', '희남셀', '여장년', '남장년'][i % 4], edu: i === 3 ? '새가족 2주차 · 토 13:30' : '', note: '' }, by, now);
+    if (dowOf(sun) === 0 && nthOf(sun) === 1) put(b, 'marks', { id: markId(sun), tags: ['성찬주'] }, by, now);
+  }
+  put(b, 'marks', { id: markId(addDays(sun0, 7)), tags: ['극동방송'], note: '동행 스텝 필요' }, by, now);
+  // 일부러 하나 겹치게: 이번 주 부산 가는 사람이 판교 2부 헌금에도 (R2 겹침 검사가 잡을 것)
+  put(b, 'slots', { id: slotId(sun0, 'sun2', 'offer'), who: [P[order[2]]] }, by, now);
+  return b;
+}
+
+/* ---------- 시작 ---------- */
+if (DEMO) S.book = demoBook();
+renderShell();
+fbInit().then(rerender).catch(() => {});
+</script>
+</body>
+</html>

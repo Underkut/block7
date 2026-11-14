@@ -1,0 +1,16 @@
+{
+  "name": "교역자 로테이션",
+  "short_name": "로테이션",
+  "description": "부산 방문 순번 · 판교 예배 자리 · 숙소와 동행을 한 곳에서",
+  "lang": "ko",
+  "start_url": "/rotation/",
+  "scope": "/rotation/",
+  "id": "/rotation/",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#f7f6f2",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

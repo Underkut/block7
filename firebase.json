@@ -39,6 +39,15 @@
           ]
         },
         {
+          "source": "/rotation/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
           "source": "/care/**",
           "headers": [
             {

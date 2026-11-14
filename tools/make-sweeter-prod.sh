@@ -183,6 +183,9 @@ cp -r cell "$OUT/cell"
 # 사역 한눈에(sweeter.my/report/, 1106-W) — 같은 사정의 독립 앱 (부서 보고서 · 셀 inside와 로고로 겹 화면 전환).
 # ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 사역 한눈에가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
 cp -r report "$OUT/report"
+# 교역자 로테이션(sweeter.my/rotation/, 1114-R) — 같은 사정의 독립 앱 (부산 방문 순번 · 판교 예배 자리).
+# ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 로테이션이 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
+cp -r rotation "$OUT/rotation"
 # 헌금 계좌 안내(sweeter.my/bank/mission/) — 원본은 bank/ 한 벌. block7.my/bank/ 는 보조 주소.
 # ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 계좌 안내가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
 # 바자회 달란트 부스(sweeter.my/bank/bazaar/) · 팝업 코너(/bank/bazaar-popup/) 는 bank/ 아래 폴더 — ../logos 를 쓰므로 bank/ 를 통째로 함께 싣는다.

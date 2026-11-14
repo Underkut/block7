@@ -186,6 +186,21 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 - ⚠️ 교회 보고서 앱의 자료 구조를 **바깥에서 들여다보지 말 것**(2026-11-06 안전장치가 막음). 구조는 만든 분께 받는다(W3).
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r report`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
+### 교역자 로테이션(`rotation/`)도 따로 돈다 — 주소는 `sweeter.my/rotation/`
+
+사역 한눈에와 같은 사정이다: `rotation/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+개발본 두 파일·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+부산 방문 순번 · 판교 예배 자리(설교 · 헌금 · 예배인도) · 숙소 · 교통 · 동행을 한 곳에서. 계획과 까닭은 `docs/ROADMAP.md` '1114-R'.
+판단(자료 모양 · 맞추기 · 한 주 보기)은 `<script id="rotation-core">` 에 모았고 `tests/test_rotation.js` 가 시험한다 — 고치면 시험부터 고친다.
+
+- 저장은 HB 파이어베이스 `rota/{uid}` 한 장(`book` 칸, 로그인 칸 이름 `rota`). 규칙 붙이기는 `docs/rotation/firestore-rules.md`.
+  `users/{uid}` · `cellbook/{uid}` 는 건드리지 않는다.
+- ⚠️ **맞추기는 아무것도 지우지 않는다** — 줄마다 나중에 고친 것이 이기고, 지우는 것은 사람이 누른 표지(`del`)뿐이다. 표지를 버리지 말 것(버리면 낡은 기기의 줄이 되살아난다).
+- **부산 교역자는 `visits` 한 곳에만** 적는다. 예배 구성의 '부산 교역자' 줄은 거기서 읽어 보여 준다(두 시트가 어긋나던 까닭).
+- ⚠️ 공개 저장소 — 시험 · 미리보기(`?demo=1`) · 커밋 메시지에 **실제 교역자 · 성도 · 숙소 호스트 가정 이름을 넣지 말 것.**
+- ⚠️ 교회 보고서 · 셀 케어 · 예배인도 시스템 구조를 **바깥에서 들여다보지 말 것.** 구조는 만든 분들께 받는다(R7, 세 분이 각각 다른 개발자).
+- sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r rotation`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).

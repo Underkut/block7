@@ -261,6 +261,10 @@ console.log('\n시나리오 6 — 무엇을 올리는가');
   sc.eq('⭐ 빌드가 사역 한눈에(report/)를 함께 담는다', /^cp -r report "\$OUT\/report"$/m.test(mk), true);
   sc.eq('사역 한눈에를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'report/**'"), true);
   sc.eq('올리기 전에 report/ 가 담겼는지 본다', pwf.includes('test -f build-sweeter/report/index.html'), true);
+  // 교역자 로테이션(sweeter.my/rotation/, 1114-R) — 같은 사정. 빠지면 다음 Sweeter 배포 때 사라진다.
+  sc.eq('⭐ 빌드가 교역자 로테이션(rotation/)을 함께 담는다', /^cp -r rotation "\$OUT\/rotation"$/m.test(mk), true);
+  sc.eq('로테이션을 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'rotation/**'"), true);
+  sc.eq('올리기 전에 rotation/ 이 담겼는지 본다', pwf.includes('test -f build-sweeter/rotation/index.html'), true);
 
   // 배포 워크플로 — 열쇠가 없어도 빨개지지 않아야 한다
   const wf=fs.readFileSync(path.join(__dirname,'..','.github','workflows','deploy-sweeter.yml'),'utf8');
