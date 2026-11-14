@@ -2,7 +2,7 @@
 // 사람 이름은 지어낸 것이다 (공개 저장소). 날짜는 실제 달력.
 //
 // 지키는 것:
-//  ① 한 주 = 월~주일. 수요 · 금요 · 주일이 그 주일 하나로 묶인다
+//  ① 한 주 = **주일~토**(HB 11/14). 주일 · 화 · 수 · 금이 그 주일 하나로 묶인다. 부산 방문(금토일)은 방문 주일 기준(visitSun)
 //  ② 부산 금요예배(금1 · 금2 · 금3) = 그 달 첫째~셋째 금요일 — 시트 실제 표시와 맞춘다
 //  ③ 다듬기: 모르는 예배 · 역할 · 날짜가 안 맞는 자리는 버린다 · 방문은 주일이 아니어도 된다(성탄 목 · 송구영신 수)
 //  ④ 맞추기: 줄마다 나중에 고친 것이 이긴다 · 한쪽에만 있는 줄은 남는다(지우지 않는다) · 순서와 상관없이 같은 답
@@ -33,14 +33,17 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
-sc.eq('① 수요일(11/11)의 주일은 11/15', A.sunOf('2026-11-11'), '2026-11-15');
+sc.eq('① 수요일(11/11)의 주는 11/8 주일에 시작', A.sunOf('2026-11-11'), '2026-11-08');
+sc.eq('① 토요일(11/14)도 11/8 주', A.sunOf('2026-11-14'), '2026-11-08');
 sc.eq('① 주일은 그 날 자신', A.sunOf('2026-11-15'), '2026-11-15');
-sc.eq('① 월요일(11/16)은 다음 주일(11/22)에 묶인다', A.sunOf('2026-11-16'), '2026-11-22');
-sc.eq('① 그 주 금요 · 수요 날짜', [A.svcDate('2026-11-15', 'fri'), A.svcDate('2026-11-15', 'wed')], ['2026-11-13', '2026-11-11']);
+sc.eq('① 월요일(11/16)은 11/15 주', A.sunOf('2026-11-16'), '2026-11-15');
+sc.eq('① 부산 방문의 주일: 금(11/13) → 11/15 · 주일은 그 날', [A.visitSun('2026-11-13'), A.visitSun('2026-11-15')], ['2026-11-15', '2026-11-15']);
+sc.eq('① 그 주 금요일의 부산 금요예배 이름 (11/15 주의 금요일 11/20 = 셋째)', A.weekFriName('2026-11-15'), 'ENCOUNTER');
+sc.eq('① 그 주 금요 · 수요 날짜', [A.svcDate('2026-11-15', 'fri'), A.svcDate('2026-11-15', 'wed'), A.svcDate('2026-11-15', 'tue')], ['2026-11-20', '2026-11-18', '2026-11-17']);
 sc.eq('① 2026년 11월 주일 다섯', A.monthSundays('2026-11'), ['2026-11-01', '2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29']);
 sc.eq('① 달 넘기기 (해 넘김 포함)', [A.addMonths('2026-12', 1), A.addMonths('2026-01', -1)], ['2027-01', '2025-12']);
 
@@ -110,17 +113,18 @@ for (const s of ['sun1', 'sun2', 'sun3', 'll']) A.put(wk, 'slots', { id: A.slotI
 A.put(wk, 'slots', { id: A.slotId('2026-11-15', 'sun1', 'offer'), who: ['p1'] }, 'u', 1);
 A.put(wk, 'slots', { id: A.slotId('2026-11-15', 'sun2', 'offer'), who: ['p2'] }, 'u', 1);
 A.put(wk, 'slots', { id: A.slotId('2026-11-15', 'sun3', 'offer'), who: ['p1'] }, 'u', 1);
-A.put(wk, 'slots', { id: A.slotId('2026-11-13', 'fri', 'preach'), who: ['p2'] }, 'u', 1);
+A.put(wk, 'slots', { id: A.slotId('2026-11-20', 'fri', 'preach'), who: ['p2'] }, 'u', 1);
 A.put(wk, 'visits', { id: A.visitId('2026-11-15'), who: ['p2'], stay: [{ name: '호텔 A', status: 'done' }, { kind: 'home', status: 'ask' }] }, 'u', 1);
 const pl = A.weekPlan(wk, '2026-11-15');
-sc.eq('⑦ 한 주에 금요 · 수요 날짜와 부산 금n', [pl.fri, pl.wed, pl.busanFri], ['2026-11-13', '2026-11-11', 2]);
+sc.eq('⑦ 한 주에 금요 · 수요 날짜와 그 금요일의 부산 금n', [pl.fri, pl.wed, pl.busanFri], ['2026-11-20', '2026-11-18', 3]);
 sc.eq('⑦ 그 주 금요 자리를 찾는다', A.whoText(wk, pl.slots['fri|preach'].who, ''), '나나');
 sc.eq('⑦ 같은 사람이 여러 예배 → 한 줄로 묶음', J(A.groupRole(wk, pl, 'preach', ['sun1', 'sun2', 'sun3', 'll'])), [{ text: '담임목사님', svcs: ['sun1', 'sun2', 'sun3', 'll'] }]);
 sc.eq('⑦ 헌금: 가가(1 · 3부) · 나나(2부)', J(A.groupRole(wk, pl, 'offer', ['sun1', 'sun2', 'sun3', 'll'])), [{ text: '가가', svcs: ['sun1', 'sun3'] }, { text: '나나', svcs: ['sun2'] }]);
 sc.eq('⑦ 숙소 하나라도 대화 중이면 미정', A.stayState(pl.visits[0]), 'open');
 sc.eq('⑦ 취소한 숙소는 셈하지 않는다', A.stayState(A.normBook({ visits: [{ id: 'v|2026-11-15', stay: [{ status: 'cancel' }, { status: 'done' }] }] }).visits[0]), 'done');
 const two = A.normBook({ visits: [{ id: 'v|2025-12-25', days: '목' }, { id: 'v|2025-12-28' }, { id: 'v|2025-12-31', days: '수목' }, { id: 'v|2026-01-04' }] });
-sc.eq('⑦ 한 주에 방문이 여럿 — 월~주일로 묶는다 (시트 2025-12 성탄 · 송구영신 실제 모양)', [A.weekVisits(two, '2025-12-28').map(v => v.date), A.weekVisits(two, '2026-01-04').map(v => v.date)], [['2025-12-25', '2025-12-28'], ['2025-12-31', '2026-01-04']]);
+sc.eq('⑦ 한 주에 방문이 여럿 — 주일~토로 묶는다 (시트 2025-12 성탄 · 송구영신 실제 모양)', [A.weekVisits(two, '2025-12-21').map(v => v.date), A.weekVisits(two, '2025-12-28').map(v => v.date), A.weekVisits(two, '2026-01-04').map(v => v.date)], [['2025-12-25'], ['2025-12-28', '2025-12-31'], ['2026-01-04']]);
+sc.eq('⑦ 머무는 날이 걸친 방문: 토일 방문(12/28)은 앞 주(토 12/27)에도 보인다', [A.weekStays(two, '2025-12-21').map(v => v.date), A.weekStays(two, '2025-12-28').map(v => v.date)], [['2025-12-25', '2025-12-28'], ['2025-12-28', '2025-12-31', '2026-01-04']]);
 A.drop(wk, 'people', 'p1', 'u', 2);
 sc.eq('⑦ 지운 사람이 맡은 자리는 이름 대신 (지운 사람)', A.whoText(wk, ['p1', 'p2'], ''), '(지운 사람) · 나나');
 sc.eq('⑦ 칸 이름', [A.slotLabel('sun2', 'lead'), A.slotLabel('fri', 'offer'), A.slotLabel('ll', 'offer'), A.slotLabel('wed', 'offer'), A.slotLabel('fri', 'notice')], ['2부 예배인도', '금요 헌금', 'LL 헌금인도', '수요 헌금', 'WN 광고']);
@@ -240,7 +244,7 @@ sc.eq('⑭ 가져온 뒤 앱에서 고치면 그게 이긴다 (다시 가져와�
 
 // ⑮ 화요예배 · 지난 주 노랑
 sc.eq('⑮ 화요 자리는 화요일만', [A.normBook({ slots: [{ id: '2026-05-12|tue|offer' }, { id: '2026-05-13|tue|offer' }] }).slots.map(s => s.id)], [['2026-05-12|tue|offer']]);
-sc.eq('⑮ 화요는 그 달에 자료가 있을 때만 보인다', [A.svcShown(ir.book, 'tue', ['2026-05-17']), A.svcShown(ir.book, 'tue', ['2026-11-15']), A.svcShown(ir.book, 'wed', ['2026-11-15'])], [true, false, true]);
+sc.eq('⑮ 화요는 그 달에 자료가 있을 때만 보인다', [A.svcShown(ir.book, 'tue', ['2026-05-10']), A.svcShown(ir.book, 'tue', ['2026-11-15']), A.svcShown(ir.book, 'wed', ['2026-11-15'])], [true, false, true]);
 const pastB = A.normBook(null);
 A.put(pastB, 'people', { id: 'o', name: '옛분', roles: [] }, 'u', 1);
 A.put(pastB, 'slots', { id: '2026-10-04|sun1|offer', who: ['o'] }, 'u', 1);
@@ -254,7 +258,7 @@ sc.eq('⑯ 요일 순서는 방문 날짜 기준 (주일 방문: 목 금 토 일
 sc.eq('⑯ 띄엄띄엄 고른 요일도 그 날짜들 (금 · 일)', A.stayDates(V('2026-11-15', '금일')), ['2026-11-13', '2026-11-15']);
 sc.eq('⑯ 주일 방문 + 수 → 그 주 수요일', A.stayDates(V('2026-11-15', '수토일')), ['2026-11-11', '2026-11-14', '2026-11-15']);
 sc.eq('⑯ 고를 요일 판 (주일 방문 → 화 ~ 월)', A.dayChoices('2026-11-15'), ['화', '수', '목', '금', '토', '일', '월']);
-sc.eq('⑯ 주간 이름', [A.weekLabel('2026-11-15'), A.weekLabel('2026-12-06'), A.weekLabel('2027-01-03')], ['11/9~15', '11/30~12/6', '12/28~1/3']);
+sc.eq('⑯ 주간 이름 (주일~토, 달이 넘어가면 달도)', [A.weekLabel('2026-11-29'), A.weekLabel('2026-11-15'), A.weekLabel('2026-12-06'), A.weekLabel('2027-01-03')].slice(1), ['11/15~21', '12/6~12', '1/3~9']);
 const st = A.normBook({ visits: [{ id: 'v|2026-11-15', stay: [{ name: '호텔 가', cancelBy: '2026-11-12', cancelAt: '18:00', nofree: 1, imgs: ['abc123xyz', 'BAD!', 7] }, { name: '호텔 나', cancelBy: 'x', cancelAt: '18:00' }] }] }).visits[0].stay;
 sc.eq('⑯ 숙소: 취소 기한 · 시각(기한 있을 때만) · 환불 불가 · 사진 id', J(st), [{ kind: 'hotel', name: '호텔 가', status: '', cost: 0, nights: 0, for: '', cancelBy: '2026-11-12', cancelAt: '18:00', nofree: true, imgs: ['abc123xyz'] }, { kind: 'hotel', name: '호텔 나', status: '', cost: 0, nights: 0, for: '' }]);
 sc.eq('⑯ 성도 인도자 구분 (없으면 교역자 — 예전 자료 그대로)', A.normBook({ people: [{ id: 'a', name: '가', kind: 'lay' }, { id: 'b', name: '나', kind: 'x' }] }).people.map(p => p.kind || '교역자'), ['lay', '교역자']);
@@ -310,8 +314,9 @@ A.put(vb, 'slots', { id: '2026-11-15|sun2|lead', who: ['a'] }, 'u', 1);
 A.put(vb, 'slots', { id: '2026-11-13|fri|preach', who: ['a'] }, 'u', 1);
 A.put(vb, 'slots', { id: '2026-11-18|wed|offer', who: ['a'] }, 'u', 1);
 A.put(vb, 'visits', { id: 'v|2026-11-22', who: ['a'], days: '금토일' }, 'u', 1);
-sc.eq('⑱ 사람 × 주: 금요 설교 · 주일 헌금(1 · 3부 하나로) · 주일 인도', J(A.weekTags(vb, 'a', '2026-11-15').map(t => [t.t, t.svc])), [['설', 'fri'], ['헌', 'sun'], ['인', 'sun']]);
-sc.eq('⑱ 사람 × 주: 부산 방문', J(A.weekTags(vb, 'a', '2026-11-22').map(t => [t.t, t.svc])), [['헌', 'wed'], ['부', 'bs']]);
+sc.eq('⑱ 사람 × 주(주일~토): 주일 헌금(1 · 3부 하나로) · 주일 인도 · 그 주 수요 헌금', J(A.weekTags(vb, 'a', '2026-11-15').map(t => [t.t, t.svc])), [['헌', 'sun'], ['인', 'sun'], ['헌', 'wed']]);
+sc.eq('⑱ 사람 × 주: 금요일(11/13)은 앞 주(11/8)에', J(A.weekTags(vb, 'a', '2026-11-08').map(t => [t.t, t.svc])), [['설', 'fri']]);
+sc.eq('⑱ 사람 × 주: 부산 방문', J(A.weekTags(vb, 'a', '2026-11-22').map(t => [t.t, t.svc])), [['부', 'bs']]);
 const mi = A.myItems(vb, 'a', '2026-11-01', '2026-11-30');
 sc.eq('⑱ 내 일정: 날짜순(같은 날은 설교 → 헌금 → 인도), 같은 날 같은 일의 주일 예배는 한 줄, 부산은 머무는 첫날에', J(mi.map(r => [r.kind, r.date, r.svcs || r.end])), [['slot', '2026-11-13', ['fri']], ['slot', '2026-11-15', ['sun1', 'sun3']], ['slot', '2026-11-15', ['sun2']], ['slot', '2026-11-18', ['wed']], ['visit', '2026-11-20', '2026-11-22']]);
 sc.eq('⑱ 하루: 그 날 자리 · 그 날 부산에 머무는 방문', [A.dayItems(vb, '2026-11-15').slots.map(s => s.id), A.dayItems(vb, '2026-11-21').visits.map(v => v.id)], [['2026-11-15|sun1|offer', '2026-11-15|sun3|offer', '2026-11-15|sun2|lead'], ['v|2026-11-22']]);
@@ -380,6 +385,10 @@ const dl = A.normBook({ people: [{ id: 'a', name: '가가', roles: [] }, { id: '
 sc.eq('⑳ 월 달력 줄: 헌금(주일은 예배마다, 시트 순서) · WN 광고도 헌금에', [A.dayLines(dl, '2026-11-29', 'offer').map(x => x.label + ' ' + x.text), A.dayLines(dl, '2026-11-27', 'offer').map(x => x.label + ' ' + x.text)], [['1부 가가', '2부 나나'], ['금요 가가', 'WN 나나']]);
 sc.eq('⑳ 월 달력 줄: 예배인도 · 부산(머무는 날마다)', [A.dayLines(dl, '2026-11-29', 'lead').map(x => x.text), A.dayLines(dl, '2026-11-27', 'busan').map(x => x.text)], [['가가'], ['나나']]);
 sc.eq('⑳ 금요 · 수요 표의 날: 그 달 안만 · 앞 · 뒤 주 펼치기', [A.weekdayRows('2026-11', 'fri', 0, 0), A.weekdayRows('2026-11', 'wed', 1, 1)], [['2026-11-06', '2026-11-13', '2026-11-20', '2026-11-27'], ['2026-10-28', '2026-11-04', '2026-11-11', '2026-11-18', '2026-11-25', '2026-12-02']]);
+
+// ㉑ 칠할 칸 · 금요일에 부산에 있는 분
+sc.eq('㉑ 오늘 = tdy, 뒤 엿새 안 = soon, 어제 · 이레 뒤 = 없음', ['2026-11-14', '2026-11-15', '2026-11-20', '2026-11-21', '2026-11-13'].map(d => A.nearCls(d, '2026-11-14')), ['tdy', 'soon', 'soon', '', '']);
+sc.eq('㉑ 그 금요일에 부산에 있는 방문 (금토일 방문의 금요일)', [A.busanOn(vb, '2026-11-20').map(v => v.id), A.busanOn(vb, '2026-11-13').length], [['v|2026-11-22'], 0]);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
