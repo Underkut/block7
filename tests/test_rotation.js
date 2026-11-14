@@ -14,6 +14,8 @@
 //  ⑪ 자리 넣고 빼기: 비면 지우기 표지 · 같은 값이면 안 씀
 //  ⑫ 예배마다 들어가는지(HB 11/14): 일을 맡아도 빼 둔 예배가 있다 · 예전 자료는 '모두'
 //  ⑬ 낡은 앱과 함께: 새 앱은 b2 칸에만 쓰고 book · b2 를 합쳐 읽는다 · 같은 때면 긴 사본이 이긴다
+//  ⑭ 시트 기록 가져오기: 이름 → 사람 · 이미 적은 칸은 그대로 · 지운 것 안 살아남 · 두 번 해도 같음 · 지우지 않음
+//  ⑮ 화요예배(옛 기록) · 지난 주 노랑 안 깔기
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -27,7 +29,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -77,7 +79,7 @@ sc.eq('④ 맞춘 책의 at 은 둘 중 큰 것', m1.at, 300);
 // ⑤ 지우기 표지
 const del = J(m1);
 sc.eq('⑤ 지우기는 한 번만', [A.drop(del, 'people', 'pb', 'u', 400), A.drop(del, 'people', 'pb', 'u', 401)], [true, false]);
-sc.eq('⑤ 표지는 내용 없이 남는다', J(del.people.find(p => p.id === 'pb')), { id: 'pb', del: true, at: 400, by: 'u' });
+sc.eq('⑤ 표지는 내용 없이 남는다', J(del.people.find(p => p.id === 'pb')), { id: 'pb', at: 400, by: 'u', del: true });
 sc.eq('⑤ 낡은 기기(지우기 전 사본)와 맞춰도 되살아나지 않는다', A.live(A.mergeBook(m1, del).people).map(p => p.id), ['pa']);
 sc.eq('⑤ 지운 뒤 다시 고치면(더 나중) 살아난다 — 사람이 한 일이 이긴다', A.live(A.mergeBook(del, A.normBook({ people: [{ id: 'pb', name: '나나', at: 500 }] })).people).map(p => p.id), ['pa', 'pb']);
 const delSlot = J(m1); A.drop(delSlot, 'slots', '2026-11-15|sun1|offer', 'u', 400);
@@ -118,7 +120,7 @@ sc.eq('⑦ 한 주에 방문이 여럿 — 월~주일로 묶는다 (시트 2025-
 A.drop(wk, 'people', 'p1', 'u', 2);
 sc.eq('⑦ 지운 사람이 맡은 자리는 이름 대신 (지운 사람)', A.whoText(wk, ['p1', 'p2'], ''), '(지운 사람) · 나나');
 sc.eq('⑦ 칸 이름', [A.slotLabel('sun2', 'lead'), A.slotLabel('fri', 'offer'), A.slotLabel('ll', 'offer')], ['2부 예배인도', '금요 헌금 · 광고', 'LL 헌금인도']);
-sc.eq('⑦ 시트 예배 구성의 칸은 열넷', A.GRID.length, 14);
+sc.eq('⑦ 시트 예배 구성의 칸은 열넷 + 옛 화요예배 둘', A.GRID.length, 16);
 
 // ⑨ 머무는 날
 const V = (date, days) => A.normBook({ visits: [{ id: 'v|' + date, days }] }).visits[0];
@@ -170,7 +172,7 @@ const sb = A.normBook(null);
 sc.eq('⑪ 넣기', [A.setSlot(sb, '2026-11-15|sun1|offer', ['a'], '', 'u', 1), A.live(sb.slots).length], [true, 1]);
 sc.eq('⑪ 같은 값이면 안 씀(고친 때가 바뀌지 않는다)', [A.setSlot(sb, '2026-11-15|sun1|offer', ['a'], '', 'u', 2), sb.slots[0].at], [false, 1]);
 sc.eq('⑪ 글만 넣기', [A.setSlot(sb, '2026-11-15|sun1|preach', [], '담임목사님', 'u', 3), sb.slots.find(s => s.id === '2026-11-15|sun1|preach').txt], [true, '담임목사님']);
-sc.eq('⑪ 다 빼면 지우기 표지', [A.setSlot(sb, '2026-11-15|sun1|offer', [], '', 'u', 4), J(sb.slots.find(s => s.id === '2026-11-15|sun1|offer'))], [true, { id: '2026-11-15|sun1|offer', del: true, at: 4, by: 'u', date: '2026-11-15', svc: 'sun1', role: 'offer' }]);
+sc.eq('⑪ 다 빼면 지우기 표지', [A.setSlot(sb, '2026-11-15|sun1|offer', [], '', 'u', 4), J(sb.slots.find(s => s.id === '2026-11-15|sun1|offer'))], [true, { id: '2026-11-15|sun1|offer', at: 4, by: 'u', del: true, date: '2026-11-15', svc: 'sun1', role: 'offer' }]);
 sc.eq('⑪ 없는 자리를 비우면 아무 일 없음', A.setSlot(sb, '2026-11-22|sun1|offer', [], '', 'u', 5), false);
 
 // ⑫ 예배마다
@@ -199,6 +201,45 @@ const d3 = A.pickDoc(full, { book: old2, b2: J(full) });
 sc.eq('⑬ 낡은 앱에서 새로 적은 줄도 받아 b2 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
 sc.eq('⑬ 새 앱은 book 칸에 쓰지 않는다', /\.set\(\{ b2: S\.book/.test(HTML) && !/\.set\(\{ book:/.test(HTML), true);
+
+// ⑭ 가져오기 (지어낸 이름)
+const hb = A.normBook(null);
+A.put(hb, 'people', { id: 'p1', name: '가가가', roles: ['preach', 'offer', 'lead', 'busan'] }, 'u', 500);
+A.put(hb, 'people', { id: 'p2', name: '나나나', roles: ['offer'] }, 'u', 500);
+A.put(hb, 'slots', { id: '2026-11-15|sun1|offer', who: ['p2'] }, 'u', 600);         // 앱에서 이미 적은 칸
+A.put(hb, 'visits', { id: 'v|2026-11-22', who: ['p1'] }, 'u', 600); A.drop(hb, 'visits', 'v|2026-11-22', 'u', 700);   // 앱에서 지운 방문
+const imp = { kind: 'rota-import', v: 1, from: '시험',
+  visits: [{ date: '2026-11-15', names: ['가가가'], days: '금토일', fri: true, stay: [{ kind: 'hotel', name: '호텔 가', status: 'done', cost: 80000, nights: 1 }], staff: '스텝', note: '메모' },
+           { date: '2026-11-22', names: ['다다다'] }, { date: '2025-12-31', names: ['라라라', '가가가'], days: '수목' }],
+  slots: [{ id: '2026-11-15|sun1|offer', names: ['가가가'], txt: '' }, { id: '2026-11-15|sun2|offer', names: ['다다다'], txt: '' },
+          { id: '2026-11-15|sun1|preach', names: [], txt: '담임목사님' }, { id: '2026-05-12|tue|preach', names: ['나나나'], txt: '' }, { id: '2026-11-15|zz|preach', names: ['가가가'] }],
+  marks: [{ sun: '2026-11-15', tags: ['성찬주'], note: '성찬주' }] };
+const ir = A.importBook(hb, imp, 'u');
+sc.eq('⑭ 가져오기 파일이 아니면 아무것도 안 함', [A.importBook(hb, { kind: 'x' }, 'u'), A.importBook(hb, null, 'u')], [null, null]);
+sc.eq('⑭ 없는 이름은 새 사람(맡는 일 없음), 있는 이름은 그 사람', [ir.created, A.live(ir.book.people).filter(p => !p.roles.length).map(p => p.name)], [['다다다', '라라라'], ['다다다', '라라라']]);
+sc.eq('⑭ 새 사람 id 는 이름에서 정해진다(두 기기가 따로 가져와도 한 사람)', ir.book.people.some(p => p.id === A.personIdFor('다다다')), true);
+sc.eq('⑭ 앱에서 이미 적은 칸은 그대로 (시트 값으로 안 바뀜)', ir.book.slots.find(s => s.id === '2026-11-15|sun1|offer').who, ['p2']);
+sc.eq('⑭ 앱에서 지운 방문은 되살아나지 않는다', A.live(ir.book.visits).some(v => v.date === '2026-11-22'), false);
+sc.eq('⑭ 새 칸은 들어온다 (방문 · 자리 · 글 · 화요 · 일정), 모르는 칸은 버림', [A.live(ir.book.visits).map(v => v.date), A.live(ir.book.slots).map(s => s.id), A.live(ir.book.marks).length],
+  [['2025-12-31', '2026-11-15'], ['2026-05-12|tue|preach', '2026-11-15|sun1|offer', '2026-11-15|sun1|preach', '2026-11-15|sun2|offer'], 1]);
+sc.eq('⑭ 방문의 숙소 · 머무는 날 · 금요 · 메모도 들어온다', (v => [v.days, v.fri, v.stay[0].name, v.stay[0].cost, v.staff, v.note])(ir.book.visits.find(v => v.id === 'v|2026-11-15')), ['금토일', true, '호텔 가', 80000, '스텝', '메모']);
+sc.eq('⑭ 셈: 새로 · 이미 있음', ir.counts, { visits: 2, visitsKept: 1, slots: 3, slotsKept: 1, marks: 1, marksKept: 0 });
+const ir2 = A.importBook(ir.book, imp, 'u');
+sc.eq('⑭ 두 번 가져와도 같다', [A.sameBook(ir.book, ir2.book), ir2.created, ir2.counts.slots], [true, [], 0]);
+sc.eq('⑭ 가져오기는 아무것도 지우지 않는다 (가져오기 전 줄이 모두 남음)', hb.people.concat(hb.slots, hb.visits).every(x => ir.book[x.id.startsWith('v|') ? 'visits' : x.id.includes('|') ? 'slots' : 'people'].some(y => y.id === x.id && JSON.stringify(y) === JSON.stringify(x))), true);
+const later = J(ir.book); A.put(later, 'slots', { id: '2026-11-15|sun2|offer', who: ['p1'] }, 'u', 800);
+sc.eq('⑭ 가져온 뒤 앱에서 고치면 그게 이긴다 (다시 가져와도)', A.importBook(later, imp, 'u').book.slots.find(s => s.id === '2026-11-15|sun2|offer').who, ['p1']);
+
+// ⑮ 화요예배 · 지난 주 노랑
+sc.eq('⑮ 화요 자리는 화요일만', [A.normBook({ slots: [{ id: '2026-05-12|tue|offer' }, { id: '2026-05-13|tue|offer' }] }).slots.map(s => s.id)], [['2026-05-12|tue|offer']]);
+sc.eq('⑮ 화요는 그 달에 자료가 있을 때만 보인다', [A.svcShown(ir.book, 'tue', ['2026-05-17']), A.svcShown(ir.book, 'tue', ['2026-11-15']), A.svcShown(ir.book, 'wed', ['2026-11-15'])], [true, false, true]);
+const pastB = A.normBook(null);
+A.put(pastB, 'people', { id: 'o', name: '옛분', roles: [] }, 'u', 1);
+A.put(pastB, 'slots', { id: '2026-10-04|sun1|offer', who: ['o'] }, 'u', 1);
+A.put(pastB, 'slots', { id: '2026-11-15|sun1|offer', who: ['o'] }, 'u', 1);
+A.put(pastB, 'visits', { id: 'v|2026-10-04', who: ['o'] }, 'u', 1);
+const pcf = A.conflicts(pastB, '2026-10-01', '2026-11-15', '2026-11-12');
+sc.eq('⑮ 지난 주들의 노랑은 깔지 않고(옛 기록), 이번 주부터 · 빨강은 지난 것도', [pcf.filter(c => c.level === 'warn').map(c => c.date), pcf.filter(c => c.level === 'bad').map(c => c.date)], [['2026-11-15'], ['2026-10-04']]);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);

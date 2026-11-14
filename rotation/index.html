@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1114-2 — 부산 방문 순번 · 판교 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R2 입력 · 겹침 검사 -->
+<!-- 교역자 로테이션 v. 26-1114-3 — 부산 방문 순번 · 판교 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R3 시트 기록 가져오기 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -165,6 +165,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
 .sheet .sh{display:flex;align-items:center}
 .sheet .sh b{flex:1;text-align:center;font-weight:500}
 .sheet .gap{width:36px}
+/* 개발자(HB)에게만 보이는 버전 · 새 버전 확인 — 다른 앱(심방 노트 .verbadge)과 같은 결 */
+.verbadge{padding:6px 4px;font-size:10px;line-height:1.2;color:var(--tx3);letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.verbadge.busy{opacity:.4}
 .ver{font-size:12px;color:var(--tx3);text-align:center}
 .ver button{color:var(--tx3);text-decoration:underline;text-underline-offset:2px}
 .err{color:var(--bad);font-size:13px;white-space:pre-line}
@@ -177,12 +180,14 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
 <div class="wrap">
   <header class="top">
     <div class="topline">
+      <span id="ver-top"></span>
       <h1><img src="favicon.png" alt="">교역자 로테이션</h1>
       <button class="iconbtn" data-act="menu" aria-label="메뉴"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></button>
     </div>
     <nav class="tabs" id="tabs"></nav>
   </header>
   <div class="stage" id="stage"><div id="panel"></div></div>
+  <div id="ver-bottom" style="text-align:center;margin-top:18px"></div>
 </div>
 <div id="toast" hidden></div>
 
@@ -199,12 +204,13 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
 //   marks  : 그 주 교회 일정 { id:'m|주일', sun, tags:['성찬주'], note, at, by, del? }
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1114-2';
+const APP_VERSION = 'v. 26-1114-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 예배 — off: 그 주 주일에서 며칠 떨어졌나
 const SVC = {
   sun1: { label: '1부', short: '1부', off: 0 }, sun2: { label: '2부', short: '2부', off: 0 }, sun3: { label: '3부', short: '3부', off: 0 },
   ll: { label: '라이프라인', short: 'LL', off: 0 }, fri: { label: '금요예배', short: '금요', off: -2 }, wed: { label: '수요예배', short: '수요', off: -4 },
+  tue: { label: '화요예배', short: '화요', off: -5, past: true },   // 2026-05 까지 (그 뒤 수요예배로) — 옛 기록을 담으려고만 둔다
 };
 const SUN4 = ['sun1', 'sun2', 'sun3', 'll'];
 const ROLE = { preach: '설교', offer: '헌금인도', lead: '예배인도' };
@@ -215,6 +221,7 @@ const GRID = [
   ['sun2', 'lead'], ['ll', 'lead'],
   ['fri', 'preach'], ['fri', 'offer'],
   ['wed', 'preach'], ['wed', 'offer'],
+  ['tue', 'preach'], ['tue', 'offer'],
 ];
 const PROLES = { preach: '설교', offer: '헌금', lead: '예배인도', busan: '부산' };
 // 일마다 있는 예배 (시트 '예배 구성' 칸 그대로)
@@ -264,6 +271,8 @@ function normPerson(o) {
 }
 // 그 사람이 그 예배의 그 일을 맡나 — 일(roles)을 맡고, 그 예배를 빼 두지(no) 않았으면
 function canDo(p, svc, role) { return !!p && !p.del && p.roles.includes(role) && !(role !== 'busan' && (p.no || []).includes(svc + '|' + role)); }
+// 그 달에 자료가 있을 때만 보이는 예배 (화요예배 — 옛 기록)
+function svcShown(book, svc, dates) { return !SVC[svc].past || live(book.slots).some(x => x.svc === svc && dates.includes(sunOf(x.date))); }
 function slotId(date, svc, role) { return date + '|' + svc + '|' + role; }
 function normSlot(o) {
   if (!o || typeof o !== 'object') return null;
@@ -354,7 +363,7 @@ function put(book, list, item, by, now) {
 }
 function drop(book, list, id, by, now) {
   const cur = book[list].find(x => x.id === id); if (!cur || cur.del) return false;
-  const t = { id, del: true, at: now, by };
+  const t = { id, at: now, by, del: true };   // 다듬은 줄과 같은 칸 순서 — 기기마다 글자까지 같게
   if (list === 'slots') { const [date, svc, role] = id.split('|'); Object.assign(t, { date, svc, role }); }
   if (list === 'visits') t.date = id.slice(2);
   if (list === 'marks') t.sun = id.slice(2);
@@ -370,6 +379,32 @@ function setSlot(book, id, who, txt, by, now) {
   if (!who.length && !txt) return cur ? drop(book, 'slots', id, by, now) : false;
   if (cur && JSON.stringify(cur.who) === JSON.stringify(who) && cur.txt === txt) return false;
   return put(book, 'slots', Object.assign({}, cur || {}, { id, who, txt }), by, now);
+}
+
+/* ---- 시트 기록 가져오기 (R3) ----
+   가져오기 파일(JSON, kind 'rota-import')은 HB 의 두 구글 시트에서 뽑은 것이다 — ⚠️ 실제 이름이 들어 있어 저장소에 두지 않는다.
+   이름 → 사람: 같은 이름이 있으면 그 사람, 없으면 새로(맡는 일 없음 — 옛 교역자 · 다른 분이라 고르기 판에는 아래에 선다).
+   새 사람 id 는 이름에서 정해지게(pn+해시) — 두 기기에서 따로 가져와도 한 사람이 된다.
+   모든 줄은 at = 1 로 넣는다 → 이미 앱에서 적은 칸(at 이 더 큼)은 그대로 이기고, 지운 칸도 되살아나지 않는다.
+   맞추기와 같은 길(mergeBook)이라 **가져오기는 아무것도 지우지 않는다.** 두 번 가져와도 같다. */
+const IMPORT_AT = 1;
+function personIdFor(name) { let h = 2166136261; for (const c of name) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return 'pn' + h.toString(36); }
+function importBook(book, imp, by) {
+  if (!imp || imp.kind !== 'rota-import' || imp.v !== 1) return null;
+  book = normBook(book);
+  const add = { people: [], slots: [], visits: [], marks: [] }, byName = {}, created = [];
+  for (const p of live(book.people)) byName[p.name] = p.id;
+  const idOf = (n) => { n = str(n, 30); if (!n) return null;
+    if (!byName[n]) { const id = personIdFor(n); byName[n] = id;
+      if (!book.people.some(p => p.id === id)) { add.people.push({ id, name: n, roles: [], at: IMPORT_AT, by }); created.push(n); } }
+    return byName[n]; };
+  const names = (a) => (Array.isArray(a) ? a : []).map(idOf).filter(Boolean);
+  for (const v of imp.visits || []) if (isYmd(v.date)) add.visits.push(Object.assign({}, v, { id: visitId(v.date), who: names(v.names), at: IMPORT_AT, by }));
+  for (const x of imp.slots || []) add.slots.push({ id: x.id, who: names(x.names), txt: x.txt, at: IMPORT_AT, by });
+  for (const m of imp.marks || []) if (isYmd(m.sun)) add.marks.push({ id: markId(m.sun), tags: m.tags, note: m.note, at: IMPORT_AT, by });
+  const nb = normBook(add), counts = {};
+  for (const k of ['visits', 'slots', 'marks']) { const have = new Set(book[k].map(x => x.id)); counts[k] = nb[k].filter(x => !have.has(x.id)).length; counts[k + 'Kept'] = nb[k].length - counts[k]; }
+  return { book: mergeBook(book, nb), created, counts };
 }
 
 /* ---- 읽기 ---- */
@@ -431,17 +466,19 @@ function busyOn(book, pid, date) { return live(book.visits).find(v => v.who.incl
    부재(R5) · 고정 조건은 아직 없다. */
 function conflicts(book, from, to, today) {
   const out = [], pm = peopleMap(book), vs = live(book.visits), ss = live(book.slots);
-  const inR = (d) => d >= from && d <= to;
+  // 노랑(확인 거리)은 이번 주부터만 — 지난 기록(시트에서 가져온 옛 자리)에 노랑을 깔지 않는다. 빨강은 지난 것도 보인다.
+  const mon = today ? addDays(sunOf(today), -6) : '';
+  const inR = (d) => d >= from && d <= to, inW = (d) => inR(d) && (!mon || d >= mon);
   for (const v of vs) {
     const ds = stayDates(v);
     for (const pid of v.who) for (const d of ds) if (inR(d)) for (const s of ss) if (s.date === d && s.who.includes(pid)) out.push({ level: 'bad', kind: 'overlap', date: d, pid, slot: s.id, visit: v.id });
   }
-  for (const s of ss) if (inR(s.date)) for (const pid of s.who) {
+  for (const s of ss) if (inW(s.date)) for (const pid of s.who) {
     const p = pm[pid];
     if (!p || p.del) out.push({ level: 'warn', kind: 'gone', date: s.date, pid, slot: s.id });
     else if (!canDo(p, s.svc, s.role)) out.push({ level: 'warn', kind: 'role', date: s.date, pid, slot: s.id });
   }
-  for (const v of vs) if (inR(v.date)) {
+  for (const v of vs) if (inW(v.date)) {
     for (const pid of v.who) {
       const p = pm[pid];
       if (!p || p.del) out.push({ level: 'warn', kind: 'gone', date: v.date, pid, visit: v.id });
@@ -451,7 +488,7 @@ function conflicts(book, from, to, today) {
     }
     if (today && v.date >= today && v.date <= addDays(today, 14) && stayState(v) !== 'done') out.push({ level: 'warn', kind: 'stay', date: v.date, visit: v.id });
   }
-  for (const m of live(book.marks)) if (inR(m.sun) && m.tags.includes('극동방송')) {
+  for (const m of live(book.marks)) if (inW(m.sun) && m.tags.includes('극동방송')) {
     const wv = vs.filter(v => sunOf(v.date) === m.sun);
     if (!wv.length || wv.every(v => !v.staff)) out.push({ level: 'warn', kind: 'staff', date: m.sun, visit: wv.length ? wv[0].id : visitId(m.sun) });
   }
@@ -513,6 +550,16 @@ addEventListener('pageshow', () => { if (scrollX) scrollTo(0, scrollY); });
 addEventListener('scroll', () => { if (scrollX) scrollTo(0, scrollY); }, { passive: true });
 
 /* ---------- 상태 ---------- */
+/* 개발자(HB)만 버전 표시를 본다 — BLOCK7 _isDevAccount · 심방 노트 isDevEmail 과 같은 판정.
+   VER_SPOT: 개발 초기엔 'top'(머리 왼쪽), 안정되면 'bottom'(맨 아래)로 바꾼다 (HB 11/14). */
+const DEV_EMAIL = 'denartist@gmail.com', VER_SPOT = 'top';
+function isDev() { return DEMO || !!(FB.user && String(FB.user.email || '').toLowerCase() === DEV_EMAIL); }
+function renderVer() {
+  const html = isDev() ? `<button class="verbadge" data-act="upd" aria-label="새 버전 확인">${esc(APP_VERSION.replace(/^v\.\s*/, 'v'))}</button>` : '';
+  const t = $('#ver-top'), b = $('#ver-bottom');
+  if (t) t.innerHTML = VER_SPOT === 'top' ? html : '';
+  if (b) b.innerHTML = VER_SPOT === 'bottom' ? html : '';
+}
 const PREF_KEY = 'rota_pref_v1', BOOK_KEY = DEMO ? 'rota_demo_v1' : 'rota_book_v1';
 const PREF = Object.assign({ tab: 'week' }, lsGet(PREF_KEY, {}));
 const savePref = () => lsSet(PREF_KEY, PREF);
@@ -589,6 +636,7 @@ function render() {
   const p = $('#panel');
   p.innerHTML = ({ week: viewWeek, month: viewMonth, busan: viewBusan, people: viewPeople }[PREF.tab] || viewWeek)();
   if ($('#menu')) renderMenu();
+  renderVer();
 }
 // 버튼으로 바꿀 때: 나가고(150ms) → 그리고 → 들어온다(300ms). 앞(오른쪽 · 다음)은 왼쪽으로 나간다.
 function slide(dir, change) {
@@ -687,6 +735,8 @@ function viewWeek() {
     ${line('설교', 'sun1', 'preach', SUN4)}${line('헌금인도', 'sun1', 'offer', SUN4)}${line('2부 인도', 'sun2', 'lead')}${line('LL 인도', 'll', 'lead')}</div>
   <div class="card"><div class="h"><span class="dot pg"></span><b>금요예배</b><span class="muted small">${mdd(plan.fri)}</span><span class="spacer"></span>${plan.busanFri ? `<span class="pill bs">부산 금${plan.busanFri}</span>` : ''}</div>
     ${line('설교', 'fri', 'preach')}${line('헌금 · 광고', 'fri', 'offer')}</div>
+  ${svcShown(S.book, 'tue', [sun]) ? `<div class="card"><div class="h"><span class="dot pg"></span><b>화요예배</b><span class="muted small">${mdd(svcDate(sun, 'tue'))}</span></div>
+    ${line('설교', 'tue', 'preach')}${line('헌금인도', 'tue', 'offer')}</div>` : ''}
   <div class="card"><div class="h"><span class="dot pg"></span><b>수요예배</b><span class="muted small">${mdd(plan.wed)}</span></div>
     ${line('설교', 'wed', 'preach')}${line('헌금인도', 'wed', 'offer')}</div>`;
 }
@@ -698,7 +748,7 @@ function viewMonth() {
   const cf = suns.length ? conflicts(S.book, addDays(suns[0], -6), suns[suns.length - 1], todayYmd()) : [], lv = levelMap(cf);
   const short = (t) => t.length > 9 ? t.slice(0, 8) + '…' : t;
   let prev = '';
-  const rows = GRID.map(([svc, role]) => {
+  const rows = GRID.filter(([svc]) => svcShown(S.book, svc, suns)).map(([svc, role]) => {
     const grp = SVC[svc].off === 0 ? role : svc; const sep = prev && grp !== prev ? ' class="sep"' : ''; prev = grp;
     return `<tr${sep}><td class="rl">${esc(slotLabel(svc, role))}</td>${plans.map(p => { const id = slotId(svcDate(p.sun, svc), svc, role); const s = p.slots[svc + '|' + role]; const t = s ? whoText(S.book, s.who, s.txt, pm) : '';
       return `<td class="${[lv[id] || '', p.sun === thisSun ? 'now' : ''].join(' ').trim()}"><button data-pick="${id}" title="${esc(t)}">${t ? esc(short(t)) : '<span class="muted">·</span>'}</button></td>`; }).join('')}</tr>`;
@@ -785,7 +835,7 @@ const xBtn = `<button class="iconbtn modal-x" data-act="closepane" aria-label="�
 function renderPane() {
   const el = $('#pane'); if (!el || !S.pane) return;
   const top = el.scrollTop;
-  el.innerHTML = ({ pick: panePick, visit: paneVisit, mark: paneMark }[S.pane.kind])();
+  el.innerHTML = ({ pick: panePick, visit: paneVisit, mark: paneMark, imp: paneImport }[S.pane.kind])();
   el.scrollTop = top;
 }
 
@@ -900,6 +950,28 @@ function markApply(fn) {
   saveBook(); renderPane();
 }
 
+/* 가져오기 판 — 파일을 읽어 무엇이 들어오는지 먼저 보여 주고, '가져오기' 를 눌러야 들어간다 */
+function paneImport() {
+  const r = S.pane.res, c = r.counts;
+  const cnt = (k, lab) => `<dt>${lab}</dt><dd>${c[k]}건 새로${c[k + 'Kept'] ? ` <span class="muted tiny">· ${c[k + 'Kept']}건은 이미 있어 그대로</span>` : ''}</dd>`;
+  return `<div class="phead"><span></span><b>시트 기록 가져오기<span class="sub">${esc(S.pane.from || '')}</span></b>${xBtn}</div>
+  <div class="pbody">
+    <dl class="kv">${cnt('visits', '부산 방문')}${cnt('slots', '판교 자리')}${cnt('marks', '교회 일정')}</dl>
+    ${r.created.length ? `<p class="small" style="margin:0">새로 생길 사람 ${r.created.length}명: ${esc(r.created.join(' · '))}<br><span class="muted tiny">맡는 일이 꺼진 채로 들어옵니다(옛 기록용). 지금 함께하는 분이면 '사람' 탭에서 켜 주세요.</span></p>` : ''}
+    <p class="note" style="margin:0">앱에서 이미 적은 칸은 바꾸지 않고, 아무것도 지우지 않습니다. 두 번 가져와도 같습니다.</p>
+    <button class="btn" data-act="importgo">가져오기</button>
+  </div>`;
+}
+function importFile(f) {
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { let imp = null; try { imp = JSON.parse(rd.result); } catch (_) { }
+    const res = importBook(S.book, imp, byNow());
+    if (!res) return toast('가져오기 파일이 아닙니다\n받으신 .json 파일을 골라 주세요');
+    openPane({ kind: 'imp', res, imp, from: imp.from || f.name }); };
+  rd.readAsText(f);
+}
+
 /* ---------- 메뉴 (로그인 · 버전) — 우상단 × 로 닫는다 ---------- */
 function openMenu() { if ($('#menu')) return; const bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.id = 'menu-bg'; bg.dataset.act = 'close';
   const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'menu'; document.body.append(bg, sh); renderMenu(); }
@@ -913,8 +985,9 @@ function renderMenu() {
        <button class="btn" data-act="login"${FB.busy ? ' disabled' : ''}>${FB.busy ? '로그인 중…' : '로그인'}</button>`;
   m.innerHTML = `<div class="sh"><span class="gap"></span><b>계정</b><button class="iconbtn modal-x" data-act="close" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     ${acct}${FB.err ? `<p class="err" style="margin:0">${esc(FB.err)}</p>` : ''}
-    ${DEMO ? '' : '<p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>'}
-    <p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>`;
+    ${DEMO ? '' : `<button class="btn ghost" data-act="importpick">시트 기록 가져오기 (파일)</button><input type="file" id="imp-file" accept=".json,application/json" hidden>
+      <p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>`}
+    ${isDev() ? `<p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>` : ''}`;
 }
 
 /* ---------- 누르기 ---------- */
@@ -963,6 +1036,11 @@ document.addEventListener('click', (e) => {
   if (a === 'addp') return addPerson();
   if (a === 'newvisit') return newVisit(($('#nv-date') || {}).value);
   if (a === 'pickall') { S.pane.all = !S.pane.all; return renderPane(); }
+  if (a === 'importpick') { const f = $('#imp-file'); if (f) f.click(); return; }
+  // ⚠️ 미리 본 결과(res.book)를 쓰지 않고 **지금의 자료**로 다시 셈한다 — 그 사이 다른 기기에서 온 것을 잃지 않게
+  if (a === 'importgo') { const res = importBook(S.book, S.pane && S.pane.imp, byNow()); if (!res) return closePane();
+    S.book = res.book; saveBook(); closePane();
+    return toast(`시트 기록을 가져왔습니다\n방문 ${res.counts.visits} · 자리 ${res.counts.slots} · 일정 ${res.counts.marks}`); }
   if (a === 'pickclear') return pickApply(() => ({ who: [], txt: '' }));
   if (a === 'vfri') return visitApply(v => { v.fri = !v.fri; if (v.fri && !v.days.includes('금')) v.days = '금토일'; }, true);
   if (a === 'addstay') return visitApply(v => { v.stay.push({ kind: 'hotel', status: '' }); }, true);
@@ -980,6 +1058,7 @@ function isEmptyFour(id) { return fourOf(id).every(x => !x); }
 // 글자 칸: 칸을 벗어날 때(change) 저장. 방문 판은 칠 때마다(input) 잠깐 모아 저장한다.
 document.addEventListener('change', (e) => {
   const t = e.target;
+  if (t.id === 'imp-file') { const f = t.files && t.files[0]; t.value = ''; return importFile(f); }
   if (t.id === 'pe-name') { const p = S.book.people.find(x => x.id === t.dataset.pid); const name = t.value.trim();
     if (!p || !name || name === p.name) { t.value = p ? p.name : ''; return; }
     put(S.book, 'people', Object.assign({}, p, { name }), byNow(), Date.now()); saveBook(); return; }
@@ -1006,6 +1085,7 @@ addEventListener('resize', () => markTab());
 
 /* ---------- 새 버전 (사역 한눈에와 같은 방법) ---------- */
 async function checkUpdate(manual) {
+  const vb = document.querySelector('.verbadge'); if (manual && vb) vb.classList.add('busy');
   try {
     const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' });
     const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/); if (!m) throw new Error('x');
@@ -1014,6 +1094,7 @@ async function checkUpdate(manual) {
     toast('새 버전 ' + m[1] + '\n받아서 다시 엽니다');
     setTimeout(() => location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]) + (DEMO ? '&demo=1' : '')), 900);
   } catch (_) { if (manual) toast('새 버전을 확인하지 못했습니다\n인터넷 연결을 확인해 주세요'); }
+  finally { if (vb) vb.classList.remove('busy'); }
 }
 setTimeout(() => checkUpdate(false), 4000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 600000) { checkUpdate.at = Date.now(); checkUpdate(false); } });
