@@ -18,6 +18,7 @@
 //  ⑮ 화요예배(옛 기록) · 지난 주 노랑 안 깔기
 //  ⑰ 자동 배열 제안(R4): 빈 칸만 · 지운 칸 · 잠근 칸 그대로 · 부산 오래 안 간 분 먼저 · 두 주 연속 피함 · 겹침 피함 · 헌금 두 사람 · 인도 둘 다르게
 //  ⑱ 보기 틀(R4b) 읽기: 사람 × 주 · 내 일정 · 하루
+//  ⑲ R5: 부재(빨강) · 고정 조건(노랑) · 자동 배열이 피함 · 챙길 것 · 지난 방문 복사 · 시트로 내보내기 · 사람 한눈에
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -31,7 +32,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -194,19 +195,19 @@ sc.eq('⑫ 고르기 판: 네 예배 모두 같게 고를 때 빠진 예배를 �
 const full = A.normBook({ people: [{ id: 'x', name: '가가', roles: ['preach'], no: ['sun1|preach'], at: 5 }], visits: [{ id: 'v|2025-12-31', days: '수목', who: ['x'], at: 5 }, { id: 'v|2025-12-28', who: ['x'], at: 5 }] });
 const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripped.visits.filter(v => v.date !== '2025-12-31');   // R1 이 떨군 모양 (같은 at)
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
-const d1 = A.pickDoc(full, { b3: J(full), b2: stripped, book: stripped });
-sc.eq('⑬ 낡은 앱이 옛 칸(book · b2)을 떨군 채 써도 b3 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b3: J(full) });
-sc.eq('⑬ b3 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1 = A.pickDoc(full, { b4: J(full), b3: stripped, b2: stripped, book: stripped });
+sc.eq('⑬ 낡은 앱이 옛 칸(book · b2 · b3)을 떨군 채 써도 b4 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
+const d1b = A.pickDoc(full, { b4: J(full) });
+sc.eq('⑬ b4 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
-sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b3 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
+sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b4 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
-sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b3 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
+sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b4 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
 const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [], at: 9 });
-const d3 = A.pickDoc(full, { b2: old2, b3: J(full) });
-sc.eq('⑬ 낡은 앱에서 새로 적은 줄도 받아 b3 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
+const d3 = A.pickDoc(full, { b3: old2, b4: J(full) });
+sc.eq('⑬ 낡은 앱(b3)에서 새로 적은 줄도 받아 b4 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 b3 하나, 옛 칸(book · b2)은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2):/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b4'/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -313,6 +314,43 @@ sc.eq('⑱ 사람 × 주: 부산 방문', J(A.weekTags(vb, 'a', '2026-11-22').ma
 const mi = A.myItems(vb, 'a', '2026-11-01', '2026-11-30');
 sc.eq('⑱ 내 일정: 날짜순(같은 날은 설교 → 헌금 → 인도), 같은 날 같은 일의 주일 예배는 한 줄, 부산은 머무는 첫날에', J(mi.map(r => [r.kind, r.date, r.svcs || r.end])), [['slot', '2026-11-13', ['fri']], ['slot', '2026-11-15', ['sun1', 'sun3']], ['slot', '2026-11-15', ['sun2']], ['slot', '2026-11-18', ['wed']], ['visit', '2026-11-20', '2026-11-22']]);
 sc.eq('⑱ 하루: 그 날 자리 · 그 날 부산에 머무는 방문', [A.dayItems(vb, '2026-11-15').slots.map(s => s.id), A.dayItems(vb, '2026-11-21').visits.map(v => v.id)], [['2026-11-15|sun1|offer', '2026-11-15|sun3|offer', '2026-11-15|sun2|lead'], ['v|2026-11-22']]);
+
+// ⑲ R5 (지어낸 이름)
+const rb = A.normBook({ people: [
+  { id: 'a', name: '가가', roles: ['preach', 'offer', 'lead', 'busan'], away: [{ from: '2026-11-20', to: '2026-11-23', note: '수술' }, { from: 'x' }, { from: '2026-12-01' }], pin: ['성찬주', '성찬주', ''] },
+  { id: 'b', name: '나나', roles: ['preach', 'offer', 'lead', 'busan'] }, { id: 'c', name: '다다', roles: ['preach', 'offer', 'lead', 'busan'] }] });
+sc.eq('⑲ 부재 다듬기: 날짜 없는 것 버림 · 끝 없으면 하루 · 고정 표시 한 번씩', [J(rb.people[0].away), rb.people[0].pin], [[{ from: '2026-11-20', to: '2026-11-23', note: '수술' }, { from: '2026-12-01', to: '2026-12-01' }], ['성찬주']]);
+sc.eq('⑲ 부재 · 고정이 없으면 칸도 없다 (예전 자료 그대로)', ['away' in rb.people[1], 'pin' in rb.people[1]], [false, false]);
+A.put(rb, 'slots', { id: '2026-11-22|sun1|offer', who: ['a'] }, 'u', 1);
+A.put(rb, 'marks', { id: 'm|2026-12-06', tags: ['성찬주'] }, 'u', 1);
+A.put(rb, 'visits', { id: 'v|2026-12-06', who: ['a'] }, 'u', 1);
+const rc = A.conflicts(rb, '2026-11-16', '2026-12-06', '');
+sc.eq('⑲ 부재인 날 자리 = 빨강, 고정 조건 주의 부산 = 노랑', rc.filter(c => c.kind === 'away' || c.kind === 'pin').map(c => [c.level, c.kind, c.date]), [['bad', 'away', '2026-11-22'], ['warn', 'pin', '2026-12-06']]);
+sc.eq('⑲ 글', rc.filter(c => c.kind === 'away' || c.kind === 'pin').map(c => A.conflictText(rb, c)), ['가가 — 11/22 부재(수술)인데 분당 1부 헌금인도', '가가 — 성찬주 주에는 분당에 있어야 하는데 부산 방문 (12/6)']);
+sc.eq('⑲ 고르기 판: 부재가 먼저 보인다', A.pickNote(rb, 'a', '2026-11-21', 'offer'), { level: 'bad', text: '부재 · 수술' });
+const rp = A.propose(A.normBook(Object.assign(J(rb), { visits: [] , slots: [] })), '2026-11');
+sc.eq('⑲ 자동 배열: 부재인 주(11/22) 부산 · 그 날 분당 자리에 가가를 넣지 않는다', [rp.visits.find(v => v.date === '2026-11-22').pid !== 'a', rp.slots.filter(x => x.id.startsWith('2026-11-22') && x.pid === 'a').length], [true, 0]);
+const rp2 = A.propose(A.normBook(Object.assign(J(rb), { visits: [], slots: [] })), '2026-12');
+sc.eq('⑲ 자동 배열: 성찬주(12/6)에 분당 고정인 가가는 부산 후보에서 빠진다', rp2.visits.find(v => v.date === '2026-12-06').pid !== 'a', true);
+const cb2 = A.normBook({ visits: [
+  { id: 'v|2026-11-22', stay: [] }, { id: 'v|2026-11-29', stay: [{ status: 'done', name: '호텔 가', cancelBy: '2026-11-16', cancelAt: '18:00' }] },
+  { id: 'v|2026-12-27', stay: [] }, { id: 'v|2026-11-08', stay: [] }] });
+sc.eq('⑲ 챙길 것: 3주 안 숙소 미정 · 사흘 안 취소 기한 (지난 것 · 먼 것 빼고), 날짜순', J(A.chores(cb2, '2026-11-14').map(c => [c.kind, c.date])), [['cancel', '2026-11-16'], ['stay', '2026-11-22']]);
+const src = A.normBook({ visits: [{ id: 'v|2026-11-08', stay: [{ kind: 'hotel', name: '호텔 가', status: 'done', cost: 80000, nights: 1, cancelBy: '2026-11-05', imgs: ['abc123def'] }, { name: '취소한 곳', status: 'cancel' }], travel: [{ dir: 'down', mode: 'KTX', time: '토 14:38' }], staff: '스텝', group: '청년셀' }] }).visits[0];
+const dst = A.normBook({ visits: [{ id: 'v|2026-11-29', who: ['b'], days: '토일', note: '그대로', group: '희남셀' }] }).visits[0];
+const cv = A.copyVisit(src, dst);
+sc.eq('⑲ 복사: 숙소는 상태 미정으로(기한 · 사진 · 취소한 곳 빼고) · 교통 · 동행, 사람 · 날짜 · 메모 · 이미 적힌 모임은 그대로', [J(cv.stay), cv.travel[0].mode, cv.staff, cv.group, cv.who, cv.date, cv.note],
+  [[{ kind: 'hotel', name: '호텔 가', status: '', cost: 80000, nights: 1, for: '' }], 'KTX', '스텝', '희남셀', ['b'], '2026-11-29', '그대로']);
+const tb = A.normBook(null);
+A.put(tb, 'people', { id: 'a', name: '가가', roles: [] }, 'u', 1); A.put(tb, 'people', { id: 'b', name: '나나', roles: [] }, 'u', 1);
+for (const sv of ['sun1', 'sun2', 'sun3', 'll']) A.put(tb, 'slots', { id: '2026-11-01|' + sv + '|preach', txt: '담임목사님' }, 'u', 1);
+A.put(tb, 'slots', { id: '2026-11-01|sun1|offer', who: ['a'] }, 'u', 1); A.put(tb, 'slots', { id: '2026-11-01|sun2|lead', who: ['b'] }, 'u', 1);
+A.put(tb, 'visits', { id: 'v|2026-11-01', who: ['b'] }, 'u', 1); A.put(tb, 'slots', { id: '2026-11-06|fri|preach', who: ['a', 'b'] }, 'u', 1);
+const tsv = A.sheetTSV(tb, '2026-11').split('\n');
+sc.eq('⑲ 내보내기: 머리 · 첫 주 설교 줄(인도 · 부산 포함) · 헌금 줄', [tsv[1].split('\t').length, tsv[2], tsv[3]], [9, '11/1\t설교\t담임목사님\t담임목사님\t담임목사님\t담임목사님\t나나\t\t나나', '\t헌금인도\t가가\t\t\t\t\t\t']);
+sc.eq('⑲ 내보내기: 금요 표 (여럿은 · 로, 부산 금n)', tsv.find(r => r.startsWith('11/6\t')), '11/6\t가가 · 나나\t\t금1');
+const ps1 = A.personStats(Object.assign(A.normBook(J(rb)), {}), 'a', '2026-11-14');
+sc.eq('⑲ 사람 한눈에: 다가오는 자리 · 앞으로의 부재', [ps1.next.map(r => r.date), ps1.away.length], [['2026-11-22', '2026-12-05'], 2]);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
