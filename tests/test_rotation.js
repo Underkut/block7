@@ -248,6 +248,7 @@ sc.eq('⑧ 로그인 칸 이름은 rota (다른 앱 로그인과 섞이지 않�
 sc.eq('⑧ block7.my 로 열리면 sweeter.my/rotation/ 으로', HTML.includes("location.replace('https://sweeter.my/rotation/'"), true);
 sc.eq('⑧ 버전 두 곳이 같다(2번째 줄 주석 · APP_VERSION)', HTML.split('\n')[1].includes(A.APP_VERSION), true);
 sc.eq('⑧ 미리보기는 따로 저장 칸(rota_demo_v1) — 진짜 사본을 덮지 않는다', /DEMO \? 'rota_demo_v1' : 'rota_book_v1'/.test(HTML), true);
+sc.eq('⑧ 가져오기 파일 칸은 메뉴 밖에 한 번만 (메뉴가 다시 그려져도 고른 파일을 잃지 않게, 11/14)', (HTML.match(/id="imp-file"/g) || []).length === 1 && !/renderMenu\(\)[\s\S]{0,1500}id="imp-file"/.test(HTML.split('function renderMenu')[1].slice(0, 1600)), true);
 sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘림 11/14)', /html\{overflow-x:hidden/.test(HTML) && /\.stage\{overflow:hidden/.test(HTML), true);
 
 sc.done();

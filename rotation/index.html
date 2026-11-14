@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1114-3 — 부산 방문 순번 · 판교 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R3 시트 기록 가져오기 -->
+<!-- 교역자 로테이션 v. 26-1114-4 — 부산 방문 순번 · 판교 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R3 시트 기록 가져오기 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -190,6 +190,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
   <div id="ver-bottom" style="text-align:center;margin-top:18px"></div>
 </div>
 <div id="toast" hidden></div>
+<!-- 가져오기 파일 칸은 메뉴 밖에 **한 번만** 둔다: 메뉴 안에 두면 파일 창이 열리는 사이 메뉴가 다시 그려져
+     칸이 바뀌고, 고른 파일이 사라진 칸으로 가 아무 일도 안 일어났다 (11/14 HB 맥미니). -->
+<input type="file" id="imp-file" accept=".json,application/json" hidden>
 
 <script id="rotation-core">
 // 교역자 로테이션 — 화면 없이 도는 판단. tests/test_rotation.js 가 이것만 떼어 시험한다.
@@ -204,7 +207,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
 //   marks  : 그 주 교회 일정 { id:'m|주일', sun, tags:['성찬주'], note, at, by, del? }
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1114-3';
+const APP_VERSION = 'v. 26-1114-4';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 예배 — off: 그 주 주일에서 며칠 떨어졌나
 const SVC = {
@@ -962,9 +965,11 @@ function paneImport() {
     <button class="btn" data-act="importgo">가져오기</button>
   </div>`;
 }
+$('#imp-file').addEventListener('change', (e) => { const t = e.target, f = t.files && t.files[0]; t.value = ''; closeMenu(); importFile(f); });
 function importFile(f) {
   if (!f) return;
   const rd = new FileReader();
+  rd.onerror = () => toast('파일을 읽지 못했습니다\n다시 골라 주세요');
   rd.onload = () => { let imp = null; try { imp = JSON.parse(rd.result); } catch (_) { }
     const res = importBook(S.book, imp, byNow());
     if (!res) return toast('가져오기 파일이 아닙니다\n받으신 .json 파일을 골라 주세요');
@@ -985,7 +990,7 @@ function renderMenu() {
        <button class="btn" data-act="login"${FB.busy ? ' disabled' : ''}>${FB.busy ? '로그인 중…' : '로그인'}</button>`;
   m.innerHTML = `<div class="sh"><span class="gap"></span><b>계정</b><button class="iconbtn modal-x" data-act="close" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     ${acct}${FB.err ? `<p class="err" style="margin:0">${esc(FB.err)}</p>` : ''}
-    ${DEMO ? '' : `<button class="btn ghost" data-act="importpick">시트 기록 가져오기 (파일)</button><input type="file" id="imp-file" accept=".json,application/json" hidden>
+    ${DEMO ? '' : `<button class="btn ghost" data-act="importpick">시트 기록 가져오기 (파일)</button>
       <p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>`}
     ${isDev() ? `<p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>` : ''}`;
 }
@@ -1058,7 +1063,6 @@ function isEmptyFour(id) { return fourOf(id).every(x => !x); }
 // 글자 칸: 칸을 벗어날 때(change) 저장. 방문 판은 칠 때마다(input) 잠깐 모아 저장한다.
 document.addEventListener('change', (e) => {
   const t = e.target;
-  if (t.id === 'imp-file') { const f = t.files && t.files[0]; t.value = ''; return importFile(f); }
   if (t.id === 'pe-name') { const p = S.book.people.find(x => x.id === t.dataset.pid); const name = t.value.trim();
     if (!p || !name || name === p.name) { t.value = p ? p.name : ''; return; }
     put(S.book, 'people', Object.assign({}, p, { name }), byNow(), Date.now()); saveBook(); return; }
