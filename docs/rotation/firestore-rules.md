@@ -30,7 +30,8 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
 
 ## 클라우드 모양 (참고)
 
-- `rota/{uid}` — `book`: { v, at, people[], slots[], visits[], marks[] } · `v`(앱 버전) · `at`
+- `rota/{uid}` — `b2`: { v, at, people[], slots[], visits[], marks[] } · `v`(앱 버전) · `at`
+  - `book` 칸은 R1(v. 26-1114-1) 앱이 쓰던 같은 모양이다. 지금 앱은 읽어서 합치기만 하고 쓰지 않는다(낡은 앱이 모르는 칸을 떨군 채 덮어쓰지 못하게). 같은 규칙에 덮여 새 규칙이 필요 없다.
   - 줄마다 `at`(고친 때) · `by`(누가). 지우면 내용을 비운 표지(`del: true`)만 남는다.
   - 모양과 맞추는 규칙은 `rotation/index.html` 의 `rotation-core`, 시험은 `tests/test_rotation.js`.
 - 문서 한 장은 1MB 까지다. 앱은 900KB 를 넘기면 올리지 않고 알린다(몇 해 치를 담아도 한참 남는다).
