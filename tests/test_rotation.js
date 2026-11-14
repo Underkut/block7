@@ -20,6 +20,7 @@
 //  ⑱ 보기 틀(R4b) 읽기: 사람 × 주 · 내 일정 · 하루
 //  ⑲ R5: 부재(빨강) · 고정 조건(노랑) · 자동 배열이 피함 · 챙길 것 · 지난 방문 복사 · 시트로 내보내기 · 사람 한눈에
 //  ⑳ HB 3차(R5b): 금요 이름 · WN 광고(마지막 금요일만) · 설교 접기(빈 칸 무시) · 담임 · 초청 사람 · 글 → 사람 · 계정 이메일 · 월 달력 줄 · 금요 · 수요 표 날들
+//  ㉒ 부산 입력 A안(R5b-C): 고르는 목록(숙소 · 교통편 · 특이사항 갈래) 기본값 · 더하기 · 순서 · 고치기(지난 기록도) · 합치기 · 지우기 · 맞추기 / 특이사항 / 박수 / 가져오기 3판
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -33,7 +34,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -64,7 +65,7 @@ sc.eq('③ 자리: 모르는 역할 · 수요일이 아닌 수요 자리 · 시�
 sc.eq('③ 방문: 없는 날짜 · 모르는 머리글은 버림 · 숙소 모르는 값은 기본값 · 수요일 방문도 된다', J(raw.visits.map(v => [v.id, v.stay])), [['v|2026-11-15', [{ kind: 'hotel', name: '호텔 A', status: '', cost: 0, nights: 0, for: '' }]], ['v|2026-12-31', []]]);
 sc.eq('③ 머무는 날은 요일 글자만', raw.visits[1].days, '수목');
 sc.eq('③ 교회 일정 표시: 같은 표시 한 번 · 빈 것 버림', raw.marks[0].tags, ['성찬주']);
-sc.eq('③ 아무것도 아닌 것 → 빈 책', J(A.normBook(null)), { v: 1, at: 0, people: [], slots: [], visits: [], marks: [] });
+sc.eq('③ 아무것도 아닌 것 → 빈 책', J(A.normBook(null)), { v: 1, at: 0, people: [], slots: [], visits: [], marks: [], opts: [] });
 
 // ④ 맞추기
 const base = A.normBook(null);
@@ -200,19 +201,19 @@ sc.eq('⑫ 고르기 판: 네 예배 모두 같게 고를 때 빠진 예배를 �
 const full = A.normBook({ people: [{ id: 'x', name: '가가', roles: ['preach'], no: ['sun1|preach'], at: 5 }], visits: [{ id: 'v|2025-12-31', days: '수목', who: ['x'], at: 5 }, { id: 'v|2025-12-28', who: ['x'], at: 5 }] });
 const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripped.visits.filter(v => v.date !== '2025-12-31');   // R1 이 떨군 모양 (같은 at)
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
-const d1 = A.pickDoc(full, { b5: J(full), b4: stripped, b3: stripped, b2: stripped, book: stripped });
-sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b4)을 떨군 채 써도 b5 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b5: J(full) });
-sc.eq('⑬ b5 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1 = A.pickDoc(full, { b6: J(full), b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
+sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b5)을 떨군 채 써도 b6 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
+const d1b = A.pickDoc(full, { b6: J(full) });
+sc.eq('⑬ b6 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
-sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b5 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
+sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b6 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
-sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b5 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
+sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b6 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
 const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [], at: 9 });
-const d3 = A.pickDoc(full, { b4: old2, b5: J(full) });
-sc.eq('⑬ 낡은 앱(b4)에서 새로 적은 줄도 받아 b5 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
+const d3 = A.pickDoc(full, { b5: old2, b6: J(full) });
+sc.eq('⑬ 낡은 앱(b5)에서 새로 적은 줄도 받아 b6 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b5'/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b6'/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -271,7 +272,7 @@ sc.eq('⑯ 2판 셈: 1판으로 들어온 방문 하나를 고침으로 센다 (
 sc.eq('⑯ 2판의 사람 구분은 가져오기로 생긴 사람만 (앱에서 넣은 사람은 그대로)', [v2.book.people.find(p => p.name === '다다다').kind, v2.book.people.find(p => p.name === '가가가').kind || '교역자'], ['lay', '교역자']);
 const edited = J(v1); A.put(edited, 'visits', Object.assign({}, edited.visits.find(v => v.id === 'v|2026-11-15'), { staff: 'HB 가 고침' }), 'u', 900);
 sc.eq('⑯ 앱에서 고친 방문은 2판이 덮지 않는다', A.importBook(edited, imp2, 'u').book.visits.find(v => v.id === 'v|2026-11-15').staff, 'HB 가 고침');
-sc.eq('⑯ 모르는 판(3)은 안 받는다', A.importBook(hb, Object.assign(J(imp), { v: 3 }), 'u'), null);
+sc.eq('⑯ 모르는 판(4)은 안 받는다', A.importBook(hb, Object.assign(J(imp), { v: 4 }), 'u'), null);
 
 // ⑰ 자동 배열 제안 — 2026년 11월 (주일 11/1 · 8 · 15 · 22 · 29), 지어낸 이름
 const ab = A.normBook(null);
@@ -389,6 +390,37 @@ sc.eq('⑳ 금요 · 수요 표의 날: 그 달 안만 · 앞 · 뒤 주 펼치�
 // ㉑ 칠할 칸 · 금요일에 부산에 있는 분
 sc.eq('㉑ 오늘 = tdy, 뒤 엿새 안 = soon, 어제 · 이레 뒤 = 없음', ['2026-11-14', '2026-11-15', '2026-11-20', '2026-11-21', '2026-11-13'].map(d => A.nearCls(d, '2026-11-14')), ['tdy', 'soon', 'soon', '', '']);
 sc.eq('㉑ 그 금요일에 부산에 있는 방문 (금토일 방문의 금요일)', [A.busanOn(vb, '2026-11-20').map(v => v.id), A.busanOn(vb, '2026-11-13').length], [['v|2026-11-22'], 0]);
+
+// ㉒ 고르는 목록 (지어낸 이름)
+const ob = A.normBook({ visits: [
+  { id: 'v|2026-11-01', stay: [{ kind: 'hotel', name: '호텔 가', status: 'done' }, { kind: 'home', name: '가정 하나', status: 'ask' }], travel: [{ dir: 'down', mode: 'KTX' }], issues: [{ cat: '예배팀', text: '건반 없음' }, { cat: '', text: 'x' }, { cat: '시설', text: '' }] },
+  { id: 'v|2026-11-08', stay: [{ kind: 'hotel', name: '호텔 가' }, { kind: 'hotel', name: '호텔 나' }, { kind: 'hotel', name: '취소한 곳', status: 'cancel' }] }] });
+sc.eq('㉒ 특이사항: 갈래 · 글이 다 있는 것만', J(ob.visits[0].issues), [{ cat: '예배팀', text: '건반 없음' }]);
+sc.eq('㉒ 특이사항이 없으면 칸도 없다 (예전 자료 그대로)', 'issues' in ob.visits[1], false);
+sc.eq('㉒ 손대지 않은 목록은 기본값: 교통편 · 갈래', [A.optList(ob, 'mode').map(o => o.name), A.optList(ob, 'cat').length, ob.opts.length], [['KTX', '자차'], 10, 0]);
+sc.eq('㉒ 숙소 기본값은 지금까지 적힌 이름(많이 쓴 순, 취소한 곳 빼고)', A.optList(ob, 'stay').map(o => o.kind + ':' + o.name), ['hotel:호텔 가', 'home:가정 하나', 'hotel:호텔 나']);
+const o2 = J(ob); A.optAdd(o2, 'mode', 'SRT', null, 'u', 10);
+sc.eq('㉒ 처음 더하면 기본값도 같이 적힌다 (정해진 id)', [A.optList(o2, 'mode').map(o => o.name), o2.opts.some(o => o.id === A.optId('mode', 'KTX'))], [['KTX', '자차', 'SRT'], true]);
+sc.eq('㉒ 같은 이름을 또 더하면 그대로', [A.optAdd(o2, 'mode', 'SRT', null, 'u', 11) === A.optId('mode', 'SRT'), A.optList(o2, 'mode').length], [true, 3]);
+A.optMove(o2, 'mode', A.optId('mode', 'SRT'), -1, 'u', 12);
+sc.eq('㉒ 순서 바꾸기', A.optList(o2, 'mode').map(o => o.name), ['KTX', 'SRT', '자차']);
+sc.eq('㉒ 맨 위를 더 올리면 아무 일 없음', A.optMove(o2, 'mode', A.optId('mode', 'KTX'), -1, 'u', 13), false);
+A.drop(o2, 'opts', A.optId('mode', '자차'), 'u', 14);
+sc.eq('㉒ 지우면 목록에서 빠지고(표지는 남음), 기본값으로 되살아나지 않는다', [A.optList(o2, 'mode').map(o => o.name), o2.opts.filter(o => o.type === 'mode').length], [['KTX', 'SRT'], 3]);
+const o3 = J(ob); A.optAdd(o3, 'mode', '비행기', null, 'v', 9);   // 다른 기기가 따로 처음 손댐
+const om = A.mergeBook(o2, o3);
+sc.eq('㉒ 두 기기가 따로 처음 손대도 기본값은 한 줄씩 · 지운 것은 지워진 채 · 각자 더한 것은 다 남음', A.optList(om, 'mode').map(o => o.name).sort(), ['KTX', 'SRT', '비행기']);
+const o4 = J(ob); A.ensureOpts(o4, 'stay', 'u', 20);
+const idA = A.optId('stay', '호텔 가', 'hotel'), idB = A.optId('stay', '호텔 나', 'hotel');
+sc.eq('㉒ 숙소 이름 · 평소 금액 고치기 → 지난 방문 기록 2건의 이름도 같이', [A.optEdit(o4, idA, { name: '호텔 가나다', cost: 95000 }, 'u', 21), o4.visits.map(v => v.stay[0].name), A.optList(o4, 'stay')[0].cost], [2, ['호텔 가나다', '호텔 가나다'], 95000]);
+sc.eq('㉒ 합치기: 호텔 나 → 호텔 가나다 (기록 1건 바뀌고 목록에서 빠짐)', [A.optMerge(o4, idB, idA, 'u', 22), o4.visits[1].stay.map(x => x.name), A.optList(o4, 'stay').map(o => o.name)], [1, ['호텔 가나다', '호텔 가나다', '취소한 곳'], ['호텔 가나다', '가정 하나']]);
+sc.eq('㉒ 목록에 없고 기록에만 있는 이름', A.strayStays(o4).map(x => x.name), ['취소한 곳']);
+const o5 = J(ob); A.optAdd(o5, 'cat', '주차', null, 'u', 30); A.optEdit(o5, A.optId('cat', '예배팀'), { name: '찬양팀' }, 'u', 31);
+sc.eq('㉒ 갈래 이름을 고치면 적힌 특이사항의 갈래도 같이', [o5.visits[0].issues[0].cat, A.optList(o5, 'cat').length], ['찬양팀', 11]);
+sc.eq('㉒ 박수는 요일에서: 토일 1 · 금토일 2 · 금토일월 3 · 하루 1', ['', '금토일', '금토일월'].map(d => A.autoNights(V('2026-11-15', d))).concat(A.autoNights(V('2025-12-25', '목'))), [1, 2, 3, 1]);
+const imp3 = { kind: 'rota-import', v: 3, visits: [{ date: '2026-11-01', names: [], stay: [{ kind: 'hotel', name: '호텔 정리됨', status: 'done' }] }], slots: [], marks: [], opts: [{ type: 'stay', name: '호텔 정리됨', kind: 'hotel', cost: 80000 }, { type: 'stay', name: '가정 하나', kind: 'home' }] };
+const i1 = A.importBook(A.normBook({ visits: [{ id: 'v|2026-11-01', stay: [{ name: '호텔 2박 아무개' }], at: 2 }] }), imp3, 'u');
+sc.eq('㉒ 가져오기 3판: 앞 판으로 들어온 방문의 숙소를 바로잡고 숙소 목록도 넣는다', [i1.book.visits[0].stay[0].name, A.optList(i1.book, 'stay').map(o => o.name + ':' + o.cost)], ['호텔 정리됨', ['호텔 정리됨:80000', '가정 하나:0']]);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
