@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1114-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1114-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -117,6 +117,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .sortrow button{font-size:12.5px;color:var(--tx3);padding:3px 0}
 .sortrow button.on{color:var(--ac);font-weight:500}
 .sortrow button.on.bad{color:var(--bad)}
+.sortrow button.on.ok{color:var(--ok)}
 .sortrow .campus{display:flex;gap:2px 10px}
 .isort{margin:4px 2px 2px}
 .attnbox{margin:12px 0 4px;padding:8px 15px 4px;border-radius:12px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
@@ -423,7 +424,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 inside — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1114-2';
+const APP_VERSION = 'v. 26-1114-3';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -761,6 +762,8 @@ function cellHealth(rows, reps, st, thr) {
     rest: few ? { lv: 'na', text: '자료 부족' } : st.n - st.mis < 1 ? { lv: 'na', text: '낸 보고서 없음' } : { lv: ratio(st.off), text: '쉼 ' + st.off + '/' + st.n + '주 ' + Math.round(st.off * 100 / st.n) + '%' },
     issue: sub.length ? { lv: lv(heavy / sub.length, 0.5, 1.5), text: '무거운 이슈 ' + heavy + '건' } : { lv: 'na', text: '이슈: 낸 보고서 없음' },
     req: reps.length ? { lv: lv(asks, 1, 3), text: '셀리더 요청 ' + asks + '번' } : { lv: 'na', text: '요청: 낸 보고서 없음' },
+    // 대시보드 정렬(dashSort)이 쓰는 원값. 보류(na)는 각 칸의 lv 로 판단한다.
+    raw: { few, pct: st.pct, mis: few ? 0 : st.mis, off: few ? 0 : st.off, n: few ? 0 : st.n, subN: sub.length, heavy, repsN: reps.length, asks },
   };
 }
 // 셀리더 심방 알약 색 (HB 11/7): 기록 없음 = 빨강 · 한 달(30일) 넘음 = 주황 · 2주(14일) 넘음 = 노랑 · 2주 이내 = 초록
@@ -1234,7 +1237,7 @@ const TAB_ICON = {
   cell: '<svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><rect x="5.5" y="12" width="3" height="5.5" rx="1"/><rect x="10.5" y="6" width="3" height="11.5" rx="1"/><rect x="15.5" y="9" width="3" height="8.5" rx="1"/></svg>',
 };
 function tabIcon(id) { return id === 'prayer' ? PRAY_HANDS.replace('<svg ', '<svg class="ph" ') : TAB_ICON[id] || ''; }
-const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', wspan: 4, cspan: 4, cinfo: false, issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
+const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', wspan: 4, cspan: 4, cinfo: false, issue: 'all', prayCell: 'all', gOpen: true, csort: null, cdir: 'asc' }, lsGet(PREF_KEY, {}));
 if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-14 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
@@ -1970,12 +1973,41 @@ function barDate(c, week, md) {
   if (d && d.rep && d.rep.meeting_held !== false && d.rep.meeting_date) return { d: String(d.rep.meeting_date).slice(0, 10), real: true };
   return { d: md && md.top != null ? dateInWeek(week, md.top) : week, real: false };
 }
+// 1114 대시보드 정렬: 이번 주 탭과 같은 결 — 한 번 누르면 안좋은 순(글자 빨강) · 다시 누르면 좋은 순(글자 초록).
+// 신호가 '자료 부족 · 회색(na)'인 셀은 어느 방향이든 늘 맨 아래 (WSORTS 와 같은 규칙).
+const CSORTS = [['att', '출석'], ['sub', '제출'], ['rest', '쉼'], ['issue', '이슈'], ['req', '요청']];
+// 카드 한 장의 cm · reps · hl 을 한 번만 계산해 정렬과 그리기가 같이 쓴다 (memo, 렌더 한 번에 새로 만든다).
+function dashHealth(c, memo, ready) {
+  let o = memo.get(c); if (o) return o;
+  const cm = cellWeekMap(c); const cn = cspanN();
+  const rows8 = S.weeks.slice(0, 8).map(w => cm.get(w) || null);
+  const reps = ready ? cellReps(c, 8) : [];
+  const hl = ready ? cellHealth(rows8, reps, periodStats(cm, S.weeks, cn, true), PREF.thr) : null;
+  o = { cm, rows8, reps, hl }; memo.set(c, o); return o;
+}
+function dashGood(k, hl) {   // 값이 클수록 좋은 쪽 (att 는 출석률 · 나머지는 적을수록 좋아 부호를 뒤집는다). na 는 null.
+  if (!hl || hl[k].lv === 'na') return null;
+  const r = hl.raw;
+  return k === 'att' ? r.pct : -r[{ sub: 'mis', rest: 'off', issue: 'heavy', req: 'asks' }[k]];
+}
+function dashSortCmp(k, dir, memo, ready) {
+  const sg = dir === 'desc' ? -1 : 1;
+  const nm = (a, b) => cellName(a).localeCompare(cellName(b), 'ko');
+  const val = c => dashGood(k, dashHealth(c, memo, ready).hl);
+  return (a, b) => { const va = val(a), vb = val(b); if (va == null || vb == null) return va == null && vb == null ? nm(a, b) : va == null ? 1 : -1; return sg * (va - vb) || nm(a, b); };
+}
+function dashSortRow() {
+  return `<div class="sortrow noprint"><div class="sortbtns">${CSORTS.map(([k, l]) => {
+    const on = PREF.csort === k; return `<button class="${on ? 'on ' + (PREF.cdir === 'desc' ? 'ok' : 'bad') : ''}" data-act="csort" data-k="${k}">${l}</button>`; }).join('')}</div></div>`;
+}
 // 셀 카드들(신호등 · 막대). 슬라이더를 끄는 동안에는 이 부분만 다시 그린다 — 슬라이더 줄은 그대로 두어 끌던 손이 끊기지 않는다.
 function cellCardsHtml() {
-  const ids = sortedCells(); const ready = S.loadedSpan >= 8; const cn = cspanN();
-  let h = '';
+  const ready = S.loadedSpan >= 8; const cn = cspanN();
+  const memo = new Map();
+  const ids = PREF.csort && CSORTS.some(x => x[0] === PREF.csort) ? sortedCells().slice().sort(dashSortCmp(PREF.csort, PREF.cdir, memo, ready)) : sortedCells();
+  let h = dashSortRow();
   for (const c of ids) {
-    const cm = cellWeekMap(c);
+    const { cm, rows8, reps, hl } = dashHealth(c, memo, ready);
     // 막대 (HB 11/6): 슬라이더 기간(N)만큼. 5칸이 한눈에 보이고, 4주 이하면 센 기간 밖의 먼 주는 회색 · 6주 이상이면 상자 안에서 옆으로 밀어 이전 주를 본다.
     // 센 기간 = 이번 주가 마감 전이면 그 주를 빼고 N주 (periodStats 와 같다).
     const pend = cm.has(S.weeks[0]) && !isSubmitted(cm.get(S.weeks[0])) ? 1 : 0;
@@ -1985,9 +2017,6 @@ function cellCardsHtml() {
     const inWin = (k) => { const i = idxOf(k); return i >= pend && i < pend + cn; };
     const sm = attendanceSummary(ser.filter((x, k) => inWin(k)));
     const max = Math.max(1, ...ser.map(x => x.present + x.visitors));
-    const rows8 = S.weeks.slice(0, 8).map(w => cm.get(w) || null);
-    const reps = ready ? cellReps(c, 8) : [];
-    const hl = ready ? cellHealth(rows8, reps, periodStats(cm, S.weeks, cn, true), PREF.thr) : null;
     const sig = ready ? leaderSignals(rows8, reps) : [];
     const md = cellMeetDays(c);
     // 1113-T6 이번 주 칸 (HB 11/14 '6-A'): 아직이면 평균 높이의 점선 빈 막대 · 글자와 날짜를 이번 주 모임 날 색으로
@@ -3060,6 +3089,7 @@ document.addEventListener('click', async (e) => {
     case 'campus': return flipRender(() => { const cur = Array.isArray(PREF.campus) ? PREF.campus.filter(x => CAMPUSES.includes(x)) : []; PREF.campus = cur.includes(d.k) ? cur.filter(x => x !== d.k) : cur.concat(d.k); savePref(); rerender(); });
     case 'iss-sort': { if (issueSortKey(PREF.issSort) === d.k) return; PREF.issSort = d.k; savePref(); return flipRender(() => rerender()); }
     case 'wsort': return flipRender(() => { if (PREF.wsort === d.k) PREF.wdir = PREF.wdir === 'desc' ? 'asc' : 'desc'; else { PREF.wsort = d.k; PREF.wdir = 'asc'; } savePref(); rerender(); });
+    case 'csort': { const box = $('#cellcards'); if (!box) return; if (PREF.csort === d.k) PREF.cdir = PREF.cdir === 'desc' ? 'asc' : 'desc'; else { PREF.csort = d.k; PREF.cdir = 'asc'; } savePref(); box.innerHTML = cellCardsHtml(); for (const x of box.querySelectorAll('.barscroll')) x.scrollLeft = x.scrollWidth; return; }
     case 'leader-tg': PREF.showLeader = !PREF.showLeader; savePref(); rerender();
       toast(PREF.showLeader ? '셀리더 이름을\n보여 드립니다' : '셀리더 이름을\n감췄습니다'); toast.at = Date.now(); return;
     case 'print': return window.print();
