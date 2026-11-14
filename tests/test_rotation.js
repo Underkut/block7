@@ -17,6 +17,7 @@
 //  ⑭ 시트 기록 가져오기: 이름 → 사람 · 이미 적은 칸은 그대로 · 지운 것 안 살아남 · 두 번 해도 같음 · 지우지 않음
 //  ⑮ 화요예배(옛 기록) · 지난 주 노랑 안 깔기
 //  ⑰ 자동 배열 제안(R4): 빈 칸만 · 지운 칸 · 잠근 칸 그대로 · 부산 오래 안 간 분 먼저 · 두 주 연속 피함 · 겹침 피함 · 헌금 두 사람 · 인도 둘 다르게
+//  ⑱ 보기 틀(R4b) 읽기: 사람 × 주 · 내 일정 · 하루
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -30,7 +31,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -298,6 +299,20 @@ const pr2 = J(pr); pr2.slots.find(s => s.id === '2026-11-01|sun3|offer').on = fa
 const nApplied = A.applyProposal(ap, pr2, 'u', 9);
 sc.eq('⑰ 적용: 끈 줄 · 그 사이 채워진 칸은 건너뜀', [ap.slots.find(s => s.id === '2026-11-08|sun1|offer').who, ap.slots.some(s => s.id === '2026-11-01|sun3|offer'), nApplied], [['q1'], false, pr.visits.filter(v => v.pid).length + pr.slots.length - 2]);
 sc.eq('⑰ 제안은 원래 책을 바꾸지 않는다', A.live(ab.visits).length, 3);
+
+// ⑱ 보기 틀 읽기 (지어낸 이름)
+const vb = A.normBook(null);
+A.put(vb, 'people', { id: 'a', name: '가가', roles: ['preach', 'offer', 'lead', 'busan'] }, 'u', 1);
+for (const sv of ['sun1', 'sun3']) A.put(vb, 'slots', { id: '2026-11-15|' + sv + '|offer', who: ['a'] }, 'u', 1);
+A.put(vb, 'slots', { id: '2026-11-15|sun2|lead', who: ['a'] }, 'u', 1);
+A.put(vb, 'slots', { id: '2026-11-13|fri|preach', who: ['a'] }, 'u', 1);
+A.put(vb, 'slots', { id: '2026-11-18|wed|offer', who: ['a'] }, 'u', 1);
+A.put(vb, 'visits', { id: 'v|2026-11-22', who: ['a'], days: '금토일' }, 'u', 1);
+sc.eq('⑱ 사람 × 주: 금요 설교 · 주일 헌금(1 · 3부 하나로) · 주일 인도', J(A.weekTags(vb, 'a', '2026-11-15').map(t => [t.t, t.svc])), [['설', 'fri'], ['헌', 'sun'], ['인', 'sun']]);
+sc.eq('⑱ 사람 × 주: 부산 방문', J(A.weekTags(vb, 'a', '2026-11-22').map(t => [t.t, t.svc])), [['헌', 'wed'], ['부', 'bs']]);
+const mi = A.myItems(vb, 'a', '2026-11-01', '2026-11-30');
+sc.eq('⑱ 내 일정: 날짜순(같은 날은 설교 → 헌금 → 인도), 같은 날 같은 일의 주일 예배는 한 줄, 부산은 머무는 첫날에', J(mi.map(r => [r.kind, r.date, r.svcs || r.end])), [['slot', '2026-11-13', ['fri']], ['slot', '2026-11-15', ['sun1', 'sun3']], ['slot', '2026-11-15', ['sun2']], ['slot', '2026-11-18', ['wed']], ['visit', '2026-11-20', '2026-11-22']]);
+sc.eq('⑱ 하루: 그 날 자리 · 그 날 부산에 머무는 방문', [A.dayItems(vb, '2026-11-15').slots.map(s => s.id), A.dayItems(vb, '2026-11-21').visits.map(v => v.id)], [['2026-11-15|sun1|offer', '2026-11-15|sun3|offer', '2026-11-15|sun2|lead'], ['v|2026-11-22']]);
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
