@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1114-6 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R4 자동 배열 제안 -->
+<!-- 교역자 로테이션 v. 26-1114-7 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R4b 보기 틀 여섯 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -208,6 +208,26 @@ table.tsheet td.now{box-shadow:inset 0 0 0 1px var(--line2)}
 .lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
 .lightbox .modal-x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(10px,env(safe-area-inset-right));color:#fff}
 .lightbox .del{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);left:50%;transform:translateX(-50%);color:#f99;font-size:13px}
+/* 보기 틀 (R4b) */
+.vbtn{font-size:13px;padding:5px 10px;border:1px solid var(--line2);border-radius:9px;color:var(--tx)}
+.mrow{display:grid;grid-template-columns:76px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.mrow.bad{background:var(--bad-soft)}
+.mdate{white-space:nowrap}.mdate b{font-weight:500}
+.gchip{display:inline-block;font-size:11px;padding:0 7px;border-radius:999px;font-weight:500;vertical-align:1px}
+.gchip.sun,.tag2.sun,.cx.sun{background:var(--sun-soft);color:var(--sun)} .gchip.fri,.tag2.fri,.cx.fri{background:var(--fri-soft);color:var(--fri)}
+.gchip.wed,.tag2.wed,.cx.wed{background:var(--wed-soft);color:var(--wed)} .gchip.tue,.tag2.tue,.cx.tue{background:var(--tue-soft);color:var(--tue)}
+.gchip.bs,.tag2.bs,.cx.bs{background:var(--bs-soft);color:var(--bs)}
+.tag2{display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:5px;font-size:11px;font-weight:600;margin:0 1px}
+.tag2.bad,.cx.bad{background:var(--bad-soft);color:var(--bad);outline:1px solid var(--bad)}
+table.mtx td button{padding:5px 4px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cal .cw{text-align:center;font-size:11px;color:var(--tx3);padding:2px 0}
+.cday{min-height:70px;border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:3px;display:flex;flex-direction:column;gap:2px;align-items:stretch;text-align:left;min-width:0}
+.cday.out{opacity:.45} .cday.today{border-color:var(--tx2)} .cday.sel{outline:2px solid var(--tx2);outline-offset:-1px}
+.cnum{font-size:11px;color:var(--tx3)}
+.cx{display:block;font-size:10px;border-radius:4px;padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.bt td{padding:5px 7px;font-size:13px} table.bt td button{padding:0;min-height:0;display:inline;width:auto}
+table.bt tr.badrow td{background:var(--bad-soft)}
 /* 메뉴 판 */
 .sheet{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:max(12px,env(safe-area-inset-right));z-index:21;width:min(340px,calc(100vw - 24px));
   background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14);display:grid;gap:12px}
@@ -257,7 +277,7 @@ table.tsheet td.now{box-shadow:inset 0 0 0 1px var(--line2)}
 //   marks  : 그 주 교회 일정 { id:'m|주일', sun, tags:['성찬주'], note, at, by, del? }
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1114-6';
+const APP_VERSION = 'v. 26-1114-7';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 예배 — off: 그 주 주일에서 며칠 떨어졌나
 const SVC = {
@@ -679,6 +699,39 @@ function applyProposal(book, prop, by, now) {
   return n;
 }
 
+/* ---- 보기 틀(R4b)이 쓰는 읽기 ---- */
+const TAGCH = { preach: '설', offer: '헌', lead: '인' };
+const svcGroup = (svc) => (SUN4.includes(svc) ? 'sun' : svc);   // 주일 네 예배는 한 무리 (색 · 묶음)
+// ④ 사람 × 주: 그 주(월~주일)에 그 사람이 맡은 일 — 주일 네 예배의 같은 일은 하나로
+function weekTags(book, pid, sun) {
+  const mon = addDays(sun, -6), out = [];
+  for (const s of live(book.slots)) if (s.date >= mon && s.date <= sun && s.who.includes(pid)) {
+    const g = svcGroup(s.svc) + '|' + s.role + '|' + s.date;
+    if (!out.some(t => t.g === g)) out.push({ g, t: TAGCH[s.role], svc: svcGroup(s.svc), id: s.id, date: s.date });
+  }
+  for (const v of live(book.visits)) if (v.date >= mon && v.date <= sun && v.who.includes(pid)) out.push({ g: v.id, t: '부', svc: 'bs', id: v.id, date: v.date });
+  const ro = { 설: 0, 헌: 1, 인: 2, 부: 3 };   // 같은 날이면 설교 → 헌금 → 인도 → 부산 (시트 순서)
+  return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : ro[a.t] - ro[b.t]));
+}
+// ③ 내 일정: 그 사람이 맡은 것 날짜순 — 같은 날 같은 일의 주일 예배들은 한 줄('1부 · 3부 헌금')
+function myItems(book, pid, from, to) {
+  const rows = [];
+  for (const s of live(book.slots)) if (s.date >= from && s.date <= to && s.who.includes(pid)) {
+    const r = rows.find(x => x.kind === 'slot' && x.date === s.date && x.role === s.role && x.grp === svcGroup(s.svc));
+    if (r) { r.svcs.push(s.svc); r.ids.push(s.id); } else rows.push({ kind: 'slot', date: s.date, role: s.role, grp: svcGroup(s.svc), svcs: [s.svc], ids: [s.id], id: s.id });
+  }
+  for (const v of live(book.visits)) if (v.who.includes(pid)) { const ds = stayDates(v); if (ds[ds.length - 1] >= from && ds[0] <= to) rows.push({ kind: 'visit', date: ds[0], end: ds[ds.length - 1], id: v.id, v }); }
+  for (const r of rows) if (r.svcs) r.svcs.sort((a, b) => GRID.findIndex(g => g[0] === a) - GRID.findIndex(g => g[0] === b));
+  const ro = { preach: 0, offer: 1, lead: 2 };
+  return rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.kind === 'visit' ? -1 : b.kind === 'visit' ? 1 : ro[a.role] - ro[b.role]));
+}
+// ⑤ 월 달력: 그 날의 자리(예배마다 설교 먼저)와 그 날 부산에 머무는 방문
+function dayItems(book, date) {
+  const slots = live(book.slots).filter(s => s.date === date).sort((a, b) => GRID.findIndex(g => g[0] === a.svc && g[1] === a.role) - GRID.findIndex(g => g[0] === b.svc && g[1] === b.role));
+  const visits = live(book.visits).filter(v => stayDates(v).includes(date));
+  return { slots, visits };
+}
+
 // 그 달에 그 역할을 몇 번 맡았나 (고르기 판에 보여 줘 고르게 나누도록)
 function countRole(book, pid, role, ym) {
   if (role === 'busan') return live(book.visits).filter(v => v.date.slice(0, 7) === ym && v.who.includes(pid)).length;
@@ -903,6 +956,90 @@ function viewWeek() {
   ${cards.map(c => c.h).join('')}`;
 }
 
+/* ---------- 달력표 보기 틀 (R4b, HB 11/14 '여섯 모두') ----------
+   자료는 하나, 보기만 바뀐다. 고른 틀은 이 기기에 기억(PREF.mview). R6 부터 교역자 각자는 '내 일정' 이 기본(HB 결정). */
+const VIEWS = {
+  sheet: { name: '시트형', desc: '예배 구성 시트 그대로 — 주마다 설교 · 헌금, 오른쪽에 인도 · 부산' },
+  grid: { name: '가로형', desc: '주를 가로로 — 같은 자리에 누가 돌았나' },
+  mine: { name: '내 일정', desc: '한 사람이 맡은 것만 날짜순' },
+  matrix: { name: '사람 × 주', desc: '누가 몇 번 맡았는지 한눈에 — 고르게 나누기' },
+  cal: { name: '월 달력', desc: '보통 달력 모양 — 날을 누르면 그 날 자리 전부' },
+  busan: { name: '부산 순번표', desc: '부산 로테이션 시트처럼 — 숙소 · 금액 · 취소 기한 · 동행' },
+};
+const GCLS = { sun: 'sun', fri: 'fri', wed: 'wed', tue: 'tue', bs: 'bs' };
+const GNAME = { sun: '주일', fri: '금요', wed: '수요', tue: '화요', bs: '부산' };
+function monthRange(ym) { const suns = monthSundays(ym); return { from: ym + '-01', to: addDays(addMonths(ym, 1) + '-01', -1), suns }; }
+function paneViews() {
+  const cur = VIEWS[PREF.mview] ? PREF.mview : 'sheet';
+  return `<div class="phead"><span></span><b>보기</b>${xBtn}</div><div class="pbody" style="gap:0">
+    ${Object.entries(VIEWS).map(([k, v]) => `<button class="prow2" data-mview="${k}" aria-pressed="${k === cur}"><span class="ck"></span><span><b style="font-weight:500">${v.name}</b><br><span class="tiny muted">${v.desc}</span></span><span></span></button>`).join('')}
+  </div>`;
+}
+// ③ 내 일정
+function bodyMine(lv) {
+  const ps = live(S.book.people).slice().sort((a, b) => (a.kind === 'lay') - (b.kind === 'lay') || a.name.localeCompare(b.name, 'ko'));
+  if (!ps.length) return '<p class="empty">사람 탭에서 교역자를 먼저 더해 주세요.</p>';
+  const me = ps.find(p => p.id === PREF.me) || ps[0], { from, to } = monthRange(S.ym);
+  const rows = myItems(S.book, me.id, from, to);
+  const row = (r) => {
+    if (r.kind === 'visit') { const v = r.v, bf = busanFri(sunOf(v.date)), st = stayState(v);
+      return `<button class="mrow${lv[v.id] === 'bad' ? ' bad' : ''}" data-visit="${esc(v.id)}"><span class="mdate"><b>${md(r.date)}</b>${r.end !== r.date ? '~' + (+r.end.slice(8)) : ''}</span>
+        <span><span class="gchip bs">부산</span> ${daysHtml(sortDays(v.date, v.days || defaultDays(v.date)))}${v.fri && bf ? ' · 금' + bf : ''}${stayText(v) ? ' · ' + esc(stayText(v)) : ''}</span>
+        <span>${st === 'done' ? '<span class="pill ok">숙소 완료</span>' : st === 'open' ? '<span class="pill warn">숙소 미정</span>' : '<span class="pill">숙소 없음</span>'}</span></button>`; }
+    const bad = r.ids.some(id => lv[id] === 'bad'), g = r.grp;
+    const lab = (g === 'sun' ? r.svcs.map(x => SVC[x].short).join(' · ') + ' ' : '') + (r.role === 'lead' ? '예배인도' : g === 'fri' && r.role === 'offer' ? '헌금 · 광고' : ROLE[r.role]);
+    return `<button class="mrow${bad ? ' bad' : ''}" data-pick="${esc(r.id)}"><span class="mdate"><b>${md(r.date)}</b> <span class="${dowOf(r.date) === 0 || dowOf(r.date) === 6 ? 'muted' : 'dx'}">${DOW[dowOf(r.date)]}</span></span>
+      <span><span class="gchip ${GCLS[g]}">${GNAME[g]}</span> ${esc(lab)}</span><span>${bad ? '<span class="pill bad">겹침</span>' : ''}</span></button>`;
+  };
+  return `<div class="toggles" style="margin-bottom:8px">${ps.map(p => `<button class="tg sm" data-me="${esc(p.id)}" aria-pressed="${p.id === me.id}">${esc(p.name)}</button>`).join('')}</div>
+    ${rows.map(row).join('') || `<p class="empty">${esc(me.name)} 님은 이 달에 맡은 것이 없습니다.</p>`}
+    <p class="note tiny">R6(교역자 각자 들어오기) 부터는 들어온 분 자신의 일정이 이 틀로 먼저 열립니다.</p>`;
+}
+// ④ 사람 × 주
+function bodyMatrix(lv) {
+  const { suns } = monthRange(S.ym), thisSun = sunOf(todayYmd());
+  const ps = live(S.book.people).slice().sort((a, b) => (a.kind === 'lay') - (b.kind === 'lay') || a.name.localeCompare(b.name, 'ko'));
+  const rows = ps.map(p => { const cells = suns.map(sun => weekTags(S.book, p.id, sun)); const n = cells.reduce((a, c) => a + c.length, 0);
+    if (!n && !p.roles.length) return '';
+    return `<tr><td class="rl">${esc(p.name)}${p.kind === 'lay' ? ' <span class="tiny" style="color:var(--wed)">성도</span>' : ''}</td>${cells.map((c, i) => `<td class="${suns[i] === thisSun ? 'now' : ''}"><button data-gowk="${suns[i]}">${c.map(t => `<span class="tag2 ${GCLS[t.svc]}${lv[t.id] === 'bad' ? ' bad' : ''}" title="${GNAME[t.svc]}">${t.t}</span>`).join('') || '<span class="muted">·</span>'}</button></td>`).join('')}<td><b style="font-weight:500">${n}</b></td></tr>`; }).join('');
+  return `<div class="tblwrap"><table class="grid mtx"><tr><th></th>${suns.map(s => `<th class="${s === thisSun ? 'now' : ''}">${weekLabel(s)}</th>`).join('')}<th>합</th></tr>${rows}</table></div>
+    <p class="note tiny">설 · 헌 · 인 · 부 = 설교 · 헌금 · 예배인도 · 부산. 색은 예배(주일 주황 · 금요 보라 · 수요 파랑 · 부산 초록). 칸을 누르면 그 주로 갑니다.</p>`;
+}
+// ⑤ 월 달력
+function bodyCal(lv) {
+  const { suns } = monthRange(S.ym), today = todayYmd(), pm = peopleMap(S.book);
+  const short = (t) => t.length > 6 ? t.slice(0, 5) + '…' : t;
+  const days = []; for (const sun of suns) for (let k = -6; k <= 0; k++) days.push(addDays(sun, k));
+  const cell = (d) => { const it = dayItems(S.book, d), chips = [];
+    for (const v of it.visits) chips.push(`<span class="cx bs${lv[v.id] === 'bad' ? ' bad' : ''}">${esc(short(whoText(S.book, v.who, '', pm)))}</span>`);
+    const grp = {}; for (const s of it.slots) { const g = svcGroup(s.svc); (grp[g] = grp[g] || []).push(s); }
+    for (const [g, ss] of Object.entries(grp)) { const pre = ss.find(s => s.role === 'preach' && s.who.length) || ss.find(s => s.who.length) || ss[0];
+      chips.push(`<span class="cx ${GCLS[g]}${ss.some(s => lv[s.id] === 'bad') ? ' bad' : ''}">${esc(short(whoText(S.book, pre.who, pre.txt, pm)))}</span>`); }
+    return `<button class="cday${d.slice(0, 7) !== S.ym ? ' out' : ''}${d === today ? ' today' : ''}${S.calDay === d ? ' sel' : ''}" data-calday="${d}"><span class="cnum">${+d.slice(8)}</span>${chips.slice(0, 3).join('')}${chips.length > 3 ? `<span class="tiny muted">+${chips.length - 3}</span>` : ''}</button>`; };
+  let detail = '';
+  if (S.calDay) { const it = dayItems(S.book, S.calDay);
+    detail = `<div class="card" style="margin-top:10px"><div class="h"><b>${mdd(S.calDay)}</b></div>
+      ${it.visits.map(v => `<button class="tapline" data-visit="${esc(v.id)}"><span style="color:var(--bs)">부산</span><span>${esc(whoText(S.book, v.who, '', pm))} <span class="muted tiny">${daysHtml(sortDays(v.date, v.days || defaultDays(v.date)))}</span></span>${chev}</button>`).join('')}
+      ${it.slots.map(s => `<button class="tapline ${lv[s.id] || ''}" data-pick="${esc(s.id)}"><span style="color:var(--${GCLS[svcGroup(s.svc)]})">${esc(slotLabel(s.svc, s.role))}</span><span>${esc(whoText(S.book, s.who, s.txt, pm))}</span>${chev}</button>`).join('')}
+      ${!it.visits.length && !it.slots.length ? '<p class="muted small" style="margin:0">이 날은 적힌 것이 없습니다.</p>' : ''}</div>`; }
+  return `<div class="cal">${DOW.slice(1).concat(DOW[0]).map(w => `<span class="cw">${w}</span>`).join('')}${days.map(cell).join('')}</div>${detail}
+    <p class="note tiny">초록 = 부산에 머무는 날 · 주황 · 보라 · 파랑 = 주일 · 금요 · 수요 (설교, 설교가 글이면 첫 사람). 날을 누르면 아래에 그 날 전부.</p>`;
+}
+// ⑥ 부산 순번표 (합계 줄 없음 — HB 11/14)
+function bodyBusan(lv) {
+  const { from, to } = monthRange(S.ym), pm = peopleMap(S.book);
+  const vs = live(S.book.visits).filter(v => v.date >= from && v.date <= to).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const rows = vs.map(v => { const bf = busanFri(sunOf(v.date)), st = v.stay.filter(x => x.status !== 'cancel'), cost = st.reduce((a, x) => a + (x.cost || 0), 0);
+    const cb = st.map(x => x.cancelBy).filter(Boolean).sort()[0], nof = st.some(x => x.nofree);
+    const ss = stayState(v);
+    return `<tr class="${lv[v.id] === 'bad' ? 'badrow' : ''}"><td><button data-visit="${esc(v.id)}"><b>${md(v.date)}</b> <span class="${dowOf(v.date) === 0 ? 'muted' : 'dx'}">${DOW[dowOf(v.date)]}</span></button></td>
+      <td><button data-visit="${esc(v.id)}">${esc(whoText(S.book, v.who, '', pm)) || '<span class="muted">—</span>'}</button></td>
+      <td>${daysHtml(sortDays(v.date, v.days || defaultDays(v.date)))}${v.fri && bf ? ' <span class="tiny" style="color:var(--bs)">금' + bf + '</span>' : ''}</td>
+      <td style="text-align:left">${st.length ? st.map(x => `<span class="pill ${x.status === 'done' ? 'ok' : 'warn'}">${esc((x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도 댁' : '호텔')))}</span>`).join(' ') : `<span class="pill${ss === 'none' ? '' : ' warn'}">없음</span>`}</td>
+      <td>${cost ? won(cost) : ''}</td><td class="tiny">${cb ? mdd(cb) : nof ? '환불 불가' : ''}</td><td class="tiny" style="text-align:left">${esc(v.staff)}</td></tr>`; }).join('');
+  return vs.length ? `<div class="tblwrap"><table class="tsheet bt"><tr><th class="h-bs">날짜</th><th class="h-bs">교역자</th><th class="h-bs">날</th><th class="h-bs">숙소</th><th class="h-bs">금액</th><th class="h-bs">취소 기한</th><th class="h-bs">동행</th></tr>${rows}</table></div>` : '<p class="empty">이 달 부산 방문이 없습니다.</p>';
+}
+
 /* ---------- 화면: 달력표 ----------
    보기 둘(HB 11/14): '시트형' = 예배 구성 시트와 같은 배열(주마다 설교 · 헌금 두 줄, 오른쪽에 인도 · 부산) — 다들 익숙한 것이 기본.
    '가로형' = 주를 가로로 늘어놓은 표. 둘 다 '설교 접기' (담임목사님 고정이 많아 — 네 예배가 같은 주는 한 줄 요약). 칸을 누르면 고르기 판. */
@@ -910,7 +1047,7 @@ function viewMonth() {
   const suns = monthSundays(S.ym), pm = peopleMap(S.book), thisSun = sunOf(todayYmd());
   const plans = suns.map(s => weekPlan(S.book, s));
   const cf = suns.length ? conflicts(S.book, addDays(suns[0], -6), suns[suns.length - 1], todayYmd()) : [], lv = levelMap(cf);
-  const mview = PREF.mview === 'grid' ? 'grid' : 'sheet', fold = PREF.fold !== false;
+  const mview = VIEWS[PREF.mview] ? PREF.mview : 'sheet', fold = PREF.fold !== false;
   const short = (t) => t.length > 9 ? t.slice(0, 8) + '…' : t;
   const cell = (p, svc, role, extra) => { const id = slotId(svcDate(p.sun, svc), svc, role); const s = p.slots[svc + '|' + role]; const t = s ? whoText(S.book, s.who, s.txt, pm) : '';
     return `<td class="${[lv[id] || '', extra || '', p.sun === thisSun ? 'now' : ''].join(' ').trim()}"><button data-pick="${id}" title="${esc(t)}">${t ? esc(short(t)) : '<span class="muted">·</span>'}</button></td>`; };
@@ -919,10 +1056,14 @@ function viewMonth() {
     const target = vs.find(v => v.date === p.sun) || vs[0];
     return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="${[t ? 'bs' : '', l === 'bad' ? 'bad' : '', p.sun === thisSun ? 'now' : ''].join(' ').trim()}"><button ${target ? `data-visit="${esc(target.id)}"` : `data-newvisit="${p.sun}"`}>${t ? esc(short(t)) : '<span class="muted">+</span>'}</button></td>`; };
   const preachSame = (p) => { const g = groupRole(S.book, p, 'preach', SUN4, pm); return g.length === 1 && g[0].svcs.length === 4 ? g[0].text : ''; };
-  const bar = `<div class="mbar"><span class="seg2"><button data-mview="sheet" aria-pressed="${mview === 'sheet'}">시트형</button><button data-mview="grid" aria-pressed="${mview === 'grid'}">가로형</button></span>
-    <span class="spacer"></span><button class="txtbtn" data-act="fold">${fold ? '설교 펴기' : '설교 접기'}</button><button class="btn" style="padding:5px 11px;font-size:13px" data-act="auto">자동 배열 제안</button></div>`;
+  const bar = `<div class="mbar"><button class="vbtn" data-act="views">보기 · ${VIEWS[mview].name} <span class="muted">▾</span></button>
+    <span class="spacer"></span>${mview === 'sheet' || mview === 'grid' ? `<button class="txtbtn" data-act="fold">${fold ? '설교 펴기' : '설교 접기'}</button>` : ''}<button class="btn" style="padding:5px 11px;font-size:13px" data-act="auto">자동 배열 제안</button></div>`;
   let body = '';
-  if (mview === 'sheet') {
+  if (mview === 'mine') body = bodyMine(lv);
+  else if (mview === 'matrix') body = bodyMatrix(lv);
+  else if (mview === 'cal') body = bodyCal(lv);
+  else if (mview === 'busan') body = bodyBusan(lv);
+  else if (mview === 'sheet') {
     const rows = plans.map(p => {
       const ps = preachSame(p), hide = fold && ps;
       const kinds = hide ? ['offer'] : ['preach', 'offer'], rs = kinds.length;
@@ -957,7 +1098,7 @@ function viewMonth() {
   <div class="nav"><button data-month="-1" aria-label="지난 달">‹</button><b>${S.ym.slice(0, 4)}년 ${+S.ym.slice(5, 7)}월</b><button data-month="1" aria-label="다음 달">›</button>
     ${S.ym !== todayYmd().slice(0, 7) ? '<button class="now" data-month="0">오늘</button>' : ''}</div>
   ${bar}${alertList(cf, 4)}${body}
-  <p class="note tiny">칸을 누르면 사람을 고릅니다. '금1 · 금2 · 금3' 은 그 주 부산 금요예배가 있는 주입니다.</p>`;
+  ${mview === 'sheet' || mview === 'grid' ? `<p class="note tiny">칸을 누르면 사람을 고릅니다. '금1 · 금2 · 금3' 은 그 주 부산 금요예배가 있는 주입니다.</p>` : ''}`;
 }
 
 /* ---------- 화면: 부산 ---------- */
@@ -1034,7 +1175,7 @@ const xBtn = `<button class="iconbtn modal-x" data-act="closepane" aria-label="�
 function renderPane() {
   const el = $('#pane'); if (!el || !S.pane) return;
   const top = el.scrollTop;
-  el.innerHTML = ({ pick: panePick, visit: paneVisit, mark: paneMark, imp: paneImport, auto: paneAuto }[S.pane.kind])();
+  el.innerHTML = ({ pick: panePick, visit: paneVisit, mark: paneMark, imp: paneImport, auto: paneAuto, views: paneViews }[S.pane.kind])();
   el.scrollTop = top;
   el.querySelectorAll('img[data-img]').forEach(im => loadImg(im.dataset.img));
 }
@@ -1310,7 +1451,10 @@ document.addEventListener('click', (e) => {
   if (d.mark) return openPane({ kind: 'mark', sun: d.mark });
   if (d.autooff) { for (const k of d.autooff.split(',')) S.pane.off[k] = !S.pane.off[k]; autoMake(); return renderPane(); }
   if (d.autoalt) { S.pane.force[d.autoalt] = d.v; autoMake(); return renderPane(); }
-  if (d.mview) { PREF.mview = d.mview; savePref(); return render(); }
+  if (d.mview) { PREF.mview = d.mview; savePref(); if (S.pane && S.pane.kind === 'views') closePane(); else render(); return; }
+  if (d.me) { PREF.me = d.me; savePref(); return render(); }
+  if (d.calday) { S.calDay = S.calDay === d.calday ? null : d.calday; return render(); }
+  if (d.gowk) { S.sun = d.gowk; return goTab('week'); }
   // 방문 판: 요일 하나씩 · 숙소 고르기 칸 · 교통 고르기 칸 · 사진
   if (d.day) return visitApply(v => { const cur = sortDays(v.date, v.days || defaultDays(v.date)); v.days = sortDays(v.date, cur.includes(d.day) ? cur.replace(d.day, '') : cur + d.day); if (!v.days.includes('금')) v.fri = false; }, true);
   if (d.sf) { const [k, f] = d.sf.split('.');
@@ -1361,6 +1505,7 @@ document.addEventListener('click', (e) => {
   if (a === 'addlay') return addPerson(true);
   if (a === 'auto') { S.pane = { kind: 'auto', ym: S.ym, force: {}, off: {} }; autoMake(); return openPane(S.pane); }
   if (a === 'autogo') { const n = applyProposal(S.book, S.pane.prop, byNow(), Date.now()); saveBook(); closePane(); return toast(n ? `제안 ${n}개를 넣었습니다\n칸을 눌러 언제든 고칠 수 있습니다` : '넣을 것이 없습니다\n그 사이 칸이 채워졌습니다'); }
+  if (a === 'views') return openPane({ kind: 'views' });
   if (a === 'wsort') { PREF.wsort = PREF.wsort === 'new' ? 'time' : 'new'; savePref(); return render(); }
   if (a === 'fold') { PREF.fold = PREF.fold === false; savePref(); return render(); }
   if (a === 'stayother') { S.pane.other = S.pane.other === +d.i ? null : +d.i; renderPane(); const el = document.querySelector(`[data-vf="stay.${d.i}.name"]`); if (el) el.focus(); return; }
