@@ -50,7 +50,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
@@ -1093,6 +1093,24 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊸ 줄 글 — 100자 · | 는 / 로(열쇠 깨짐 막기)', [A.actLineText('가|나'), A.actLineText('가'.repeat(150)).length], ['가/나', 100]);
   sc.eq('㊸ 탭 줄 꼴 — 종류 · 내용 · 상태 할 일', A.actLineRow(AH, 'C9', '가나다', { t: '보고', x: '목사님께 공유' }, 'A9'), ['A9', 'C9', '가나다', '보고', '', '목사님께 공유', '', '할 일', '', '', '']);
   sc.eq('㊸ 종류별 안내 글', [A.ACT_HINT['중보'], A.ACT_HINT['연락']], ['무엇을 위해 기도할까요', '언제 · 무엇으로']);
+}
+
+// ㊺ (1115) 예배 · 모임 알약의 요일 · 시작 · 마침 — 탭 셋째 열 '시간' · 출석 입력을 열 때 고르는 알약
+{
+  const J = x => JSON.parse(JSON.stringify(x));
+  sc.eq('㊺ 시간 글 읽기 · 쓰기', [J(A.svcTimeParse('수 · 금 20:00~22:00')), A.svcTimeText({ days: [5, 3], s: '9:30', e: '11:00' }), A.svcTimeParse('20:00~22:00'), A.svcTimeParse('금 20:00~20:00')], [{ days: [3, 5], s: '20:00', e: '22:00' }, '수 · 금 09:30~11:00', null, null]);
+  const P = A.attOptsParse([['칸', '값', '시간'], ['예배 · 모임', '주일 3부', '일 13:00~14:30'], ['예배 · 모임', '수요예배', '수 19:30~21:00'], ['예배 · 모임', '기타 모임', ''], ['자리', '맨 앞', '']]);
+  const U = A.attOptsUse(P, []);
+  sc.eq('㊺ 탭 읽기 — 시간은 알약 이름에', J(U.svcTime), { '주일 3부': { days: [0], s: '13:00', e: '14:30' }, '수요예배': { days: [3], s: '19:30', e: '21:00' } });
+  sc.eq('㊺ 탭 쓰기 — 셋째 열 시간', J(A.attOptsRows({ svc: ['주일 3부', '기타 모임'], seat: ['맨 앞'], svcTime: U.svcTime })), [['칸', '값', '시간'], ['예배 · 모임', '주일 3부', '일 13:00~14:30'], ['예배 · 모임', '기타 모임', ''], ['자리', '맨 앞', '']]);
+  const at = (d, h, m) => new Date(2026, 10, 15 + d, h, m);   // 2026-11-15 = 일요일
+  sc.eq('㊺ 고르기 — 시간 안 · 마침 시각은 안 듦 · 없으면 시간 없는 맨 앞', [A.svcPick(U, at(0, 13, 30)), A.svcPick(U, at(3, 19, 30)), A.svcPick(U, at(3, 21, 0)), A.svcPick(U, at(1, 10, 0))], ['주일 3부', '수요예배', '기타 모임', '기타 모임']);
+  sc.eq('㊺ 시간 없는 알약이 하나도 없으면 빈 칸', A.svcPick({ svc: ['가'], svcTime: { '가': { days: [1], s: '10:00', e: '11:00' } } }, at(0, 9, 0)), '');
+  sc.eq('㊺ 밤을 넘기는 모임', [A.svcTimeHit({ days: [6], s: '22:00', e: '01:00' }, at(6, 23, 0)), A.svcTimeHit({ days: [6], s: '22:00', e: '01:00' }, at(7, 0, 30)), A.svcTimeHit({ days: [6], s: '22:00', e: '01:00' }, at(7, 2, 0))], [true, true, false]);
+  const o = J(U);
+  sc.eq('㊺ 정하기 · 이름 바꾸면 따라감 · 지우면 함께 빠짐', [A.attOptSetTime(o, '기타 모임', { days: [5], s: '20:00', e: '22:00' }), A.attOptRename(o, 'svc', '기타 모임', '금요 모임'), J(o.svcTime['금요 모임']), A.attOptRemove(o, 'svc', '금요 모임'), '금요 모임' in o.svcTime, A.attOptSetTime(o, '수요예배', null), J(o.svcTime)],
+    [true, true, { days: [5], s: '20:00', e: '22:00' }, true, false, true, { '주일 3부': { days: [0], s: '13:00', e: '14:30' } }]);
+  sc.eq('㊺ 시간 없는 목록은 예전 두 열 그대로', J(A.attOptsRows({ svc: ['A'] })), [['칸', '값'], ['예배 · 모임', 'A']]);
 }
 
 sc.done();
