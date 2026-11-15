@@ -841,12 +841,12 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   { const rows = tab('출석').rows, c = rows[0].indexOf('구분'); rows.forEach(x => x.splice(c, 1)); }
   await page.evaluate(() => loadData(true)); await page.waitForTimeout(1200);
   await page.evaluate(id => openAttEdit(id), id); await tidy();
-  eq('㊽ 예전 탭 — 구분은 빈 채로 열린다 · 혼자 체크는 그대로', [await page.$$eval(LY + ' .pills[data-k="roles"] [aria-pressed="true"]', x => x.length), await page.$eval(LY + ' [data-act="attsolo"]', e => e.checked)], [0, true]);
+  eq('㊽ 예전 탭 — 기록 칸이 없어도 그분 구분(1115-5 ④ 성도 탭)을 불러온다 · 혼자 체크는 그대로', [await page.$$eval(LY + ' .pills[data-k="roles"] [aria-pressed="true"]', x => x.length), await page.$eval(LY + ' [data-act="attsolo"]', e => e.checked)], [1, true]);
   await page.click(LY + ' .pills[data-k="roles"] [data-v="장년부"]');
   await page.click(LY + ' [data-act="attsolo"]'); await page.waitForTimeout(200);
   await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
   const H3 = tab('출석').rows[0], r3 = tab('출석').rows.find(x => x[H3.indexOf('출석ID')] === id);
-  eq("㊽ 고치기 — '구분' 머리글이 끝에 생기고 · 그 칸에 · 혼자를 끄면 함께는 빈칸", [H3[H3.length - 1], r3[H3.indexOf('구분')], r3[H3.indexOf('함께')]], ['구분', '장년부', '']);
+  eq("㊽ 고치기 — '구분' 머리글이 끝에 생기고 · 그 칸에 · 혼자를 끄면 함께는 빈칸", [H3[H3.length - 1], r3[H3.indexOf('구분')], r3[H3.indexOf('함께')]], ['구분', '청년부, 장년부', '']);
   }
 
   // ㊾ (1115-4 ②) 출석 목록 — 날짜는 머리줄에만 · 예배 · 모임마다 한 줄 · 이름은 적은 차례로 가로 · 이름 누르면 정보 팝업(연필 = 고치기 · × · 바깥 · ESC)

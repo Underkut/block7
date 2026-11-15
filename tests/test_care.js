@@ -31,6 +31,7 @@
 //  ㊼ (1115-V) 한눈에 카드 셈 — 돌봄 지도(4주 · 8주 · 그 뒤 · 기록 없음) · 구분 알약 · 구분 나란히 · 심방+출석 네 칸 · 안 보임 · 달라짐 · 다시 보임 · 챙길 것
 //  ㊾ (1115-4 ③) 자리 배치 — 가로 6칸 · 겹치면 안 놓임(다른 알약은 그대로) · 빈 곳 찾기 · 끌기 · 당기기 · 알약 이름 따라가기 · 틀린 저장값 거르기 · 배치는 제 시각으로 기기끼리 맞춤
 //  ㊿ (1115-4 ④) 자리 보기 — 배치 위에 그 모임에 온 분 이름 · 배치에 없는 자리 · 자리 기록 없음 · 한 분도 안 빠짐
+//  ㉜ (1115-5 ④) 구분은 사람에게 — '성도' 탭 '구분' 칸이 그분 값('없음' = 일부러 비움) · 칸이 비면 지난 기록을 모아(혼자 받은 기록 먼저) · 옛 기록 칸은 안 바뀜 · 더하고 뺀 것만 사람마다 · 탭엔 그 칸만
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -58,7 +59,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
-  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, actLineText, actLinesOf, actLinesPlan, actLineRow, ACT_HINT, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N };`, ctx);
+  INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, actLineText, actLinesOf, actLinesPlan, actLineRow, ACT_HINT, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N,
+  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -1291,6 +1293,72 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const e = A.seatFill([], [P('가온', '뒤', 1), P('나래', '', 2)]);
   sc.eq('㊿ 배치가 없으면 — 자리별 묶음 + 자리 기록 없음', J([e.blocks, e.rows, e.off.map(g => [g.n, g.who.length]), e.none.length]), [[], 0, [['뒤', 1]], 1]);
   sc.eq('㊿ 빈 값', J(A.seatFill(null, null)), { blocks: [], rows: 0, off: [], none: [] });
+}
+
+// ㉜ (1115-5 ④) 구분은 사람에게 — 이름은 모두 지어낸 것
+{
+  sc.eq("㉜ 칸 읽기 — 빈 칸 = 안 정함 · '없음' = 비움 · 쉼표로 여럿", J([A.proleSplit(''), A.proleSplit('없음'), A.proleSplit('셀원, 장년부 ,셀원')]), [null, [], ['셀원', '장년부']]);
+  sc.eq("㉜ 칸 쓰기 — 비우면 '없음'", [A.proleCell(['셀원', '장년부']), A.proleCell([])], ['셀원, 장년부', '없음']);
+  const PT = A.parsePeopleTab([['성도ID', '이름', '부르는 이름', '구분', '메모'], ['P1', '가 온', '', '청년부', ''], ['P2', '나래', '', '', '붙여넣기로 추가'], ['P3', '다람', '', '없음', ''], ['P4', '가온', '', '장년부', ''], ['', '', '', '셀원', '']]);
+  sc.eq('㉜ 성도 탭 — 띄어쓰기 무시 · 같은 이름이면 위 줄 · 이름 없는 줄은 건너뜀', J(PT), { '가온': { row: 2, name: '가 온', roles: ['청년부'] }, '나래': { row: 3, name: '나래', roles: null }, '다람': { row: 4, name: '다람', roles: [] } });
+  sc.eq("㉜ '구분' 열이 없는 탭 — 이름은 알지만 구분은 안 정함", J(A.parsePeopleTab([['이름'], ['가온']])), { '가온': { row: 2, name: '가온', roles: null } });
+  sc.eq("㉜ '이름' 열이 없으면 빈 것", J(A.parsePeopleTab([['성도ID'], ['P1']])), {});
+
+  // 기록: 혼자 받은 심방 둘(구분이 달라짐) · 셀 모임(여럿) · 출석(구분 칸)
+  const V = (name, ymd, roles) => ({ name, who: A.parseWho(name).names.length ? A.parseWho(name).names : A.parseWho(name).groups, ymd, clock: '', allRoles: roles });
+  const vs = [V('가온', '2026-11-01', ['청년부']), V('가온', '2026-11-10', ['장년부']), V('라온 셀, 라온, 마루, 바다', '2026-11-12', ['셀리더', '셀원']), V('마루', '2026-10-01', ['예배팀']), V('라온 셀', '2026-11-13', ['셀원'])];
+  const at = [{ name: '바다', date: '2026-11-14', at: '2026-11-14 10:00', role: '새가족' }, { name: '마루', date: '2026-11-02', role: '' }, { name: '사랑', date: '2026-11-03', role: '청년부, 새가족' }];
+  const RM = A.personRoleMap(vs, at, {});
+  sc.eq('㉜ 지난 기록을 모아 — 최근 것부터 · 겹침 없이', RM['가온'].roles, ['장년부', '청년부']);
+  sc.eq('㉜ 혼자 받은 기록(심방 · 출석)이 있으면 그것만 — 셀 모임 구분이 모두에게 안 붙는다', [RM['마루'].roles, RM['바다'].roles], [['예배팀'], ['새가족']]);
+  sc.eq('㉜ 여럿이 함께한 기록뿐인 분 — 그 기록 구분', RM['라온'].roles, ['셀리더', '셀원']);
+  sc.eq('㉜ 출석만 있는 분도', [RM['사랑'].roles, RM['사랑'].from], [['청년부', '새가족'], 'rec']);
+  sc.eq('㉜ 셀 표시는 사람이 아니다', !!RM['라온셀'], false);
+
+  const RS = A.personRoleMap(vs, at, A.parsePeopleTab([['이름', '구분'], ['가온', '장년부, 셀리더'], ['마루', '없음'], ['바다', ''], ['아라', '청년부']]));
+  sc.eq('㉜ 성도 탭에 적힌 값이 이긴다 — 기록과 달라도', J([RS['가온'], RS['마루']]), [{ name: '가온', roles: ['장년부', '셀리더'], from: 'sheet' }, { name: '마루', roles: [], from: 'sheet' }]);
+  sc.eq('㉜ 성도 탭 칸이 비었으면 지난 기록에서', J(RS['바다']), { name: '바다', roles: ['새가족'], from: 'rec' });
+  sc.eq('㉜ 기록 없이 성도 탭에만 있는 분', J(RS['아라']), { name: '아라', roles: ['청년부'], from: 'sheet' });
+
+  // 모형에 입히기 — 옛 기록 칸은 recRoles 로 그대로, 화면 · 셈은 사람 값
+  const model = { visits: vs.map(v => Object.assign({}, v)), people: { '가온': { roles: ['장년부'] }, '마루': { roles: ['셀리더', '셀원'] } } };
+  A.applyPersonRoles(model, RS);
+  sc.eq('㉜ 성도의 구분 = 사람 값', J([model.people['가온'].roles, model.people['마루'].roles]), [['장년부', '셀리더'], []]);
+  sc.eq('㉜ 기록 카드 · 필터 = 그 기록에 든 분들 구분', J(model.visits.map(v => v.allRoles)), [['장년부', '셀리더'], ['장년부', '셀리더'], ['셀리더', '셀원', '새가족'], [], ['셀원']]);
+  sc.eq('㉜ 기록 칸 그대로의 값은 남긴다', J(model.visits.map(v => v.recRoles)), [['청년부'], ['장년부'], ['셀리더', '셀원'], ['예배팀'], ['셀원']]);
+  sc.eq('㉜ 다시 셈해도 기록 칸 값으로 — 두 번 입혀도 같다', J(A.personRoleMap(model.visits, at, {})['가온'].roles), ['장년부', '청년부']);
+  A.applyPersonRoles(model, RS);
+  sc.eq('㉜ 두 번 입혀도 recRoles 는 처음 것', J(model.visits[0].recRoles), ['청년부']);
+
+  // 입력 창 — 더하고 뺀 것
+  sc.eq('㉜ 더하고 뺀 것', J(A.roleDiff(['셀원', '장년부'], ['장년부', '셀리더'])), { added: ['셀리더'], removed: ['셀원'] });
+  sc.eq('㉜ 이름이 바뀌어도 손댄 것은 그대로', A.roleCarry(['장년부', '셀리더'], ['셀원', '장년부'], ['청년부', '셀원']), ['청년부', '셀리더']);
+  sc.eq('㉜ 손 안 댄 채 이름만 바뀌면 새 이름 값', A.roleCarry(['셀원'], ['셀원'], ['청년부']), ['청년부']);
+  sc.eq('㉜ 안 고쳤으면 사람 값도 안 바뀜', J(A.personRoleChanges(['가온'], RS, A.roleDiff(['장년부', '셀리더'], ['셀리더', '장년부']))), []);
+  sc.eq('㉜ 한 분 — 고친 값 그대로', J(A.personRoleChanges(['가온'], RS, A.roleDiff(['장년부', '셀리더'], ['장년부'])))
+    , [{ name: '가온', roles: ['장년부'] }]);
+  sc.eq('㉜ 여러 분 — 더한 것은 모두에게 · 뺀 것은 가진 분에게서만 · 안 바뀌는 분 · 셀 표시는 빼고', J(A.personRoleChanges(['라온 셀', '가온', '마루', '바다', '가 온'], RS, A.roleDiff(['장년부', '셀리더', '새가족'], ['장년부', '새가족', '셀원']))),
+    [{ name: '가온', roles: ['장년부', '셀원'] }, { name: '마루', roles: ['셀원'] }, { name: '바다', roles: ['새가족', '셀원'] }]);
+  sc.eq('㉜ 처음 적는 분 — 고른 구분이 그분 값', J(A.personRoleChanges(['하늘'], RS, A.roleDiff([], ['청년부']))), [{ name: '하늘', roles: ['청년부'] }]);
+  sc.eq('㉜ 모두 빼면 빈 값(시트엔 없음)', J(A.personRoleChanges(['바다'], RS, A.roleDiff(['새가족'], []))), [{ name: '바다', roles: [] }]);
+
+  // 성도 탭에 쓰기 — 그 칸만 · 없는 분은 새 줄 · 머리글
+  const tab = [['성도ID', '이름', '부르는 이름', '구분', '메모'], ['P1', '가 온', '', '청년부', '메모 그대로'], ['P2', '나래', '', '', '']];
+  const pl = A.peopleRolePlan(tab, [{ name: '가온', roles: ['장년부'] }, { name: '나래', roles: [] }, { name: '하늘', roles: ['청년부', '새가족'] }], 1700000000000, 0.5);
+  sc.eq('㉜ 있는 분은 구분 칸만(띄어쓰기 무시)', J(pl.set), [{ row: 2, col: 3, value: '장년부' }, { row: 3, col: 3, value: '없음' }]);
+  sc.eq('㉜ 없는 분은 새 줄 — 머리글 자리대로 성도ID · 이름 · 구분', J(pl.add.map(r => [r[0].charAt(0), r[1], r[2], r[3], r[4]])), [['P', '하늘', '', '청년부, 새가족', '']]);
+  sc.eq('㉜ 머리글은 그대로', pl.head, null);
+  const p2 = A.peopleRolePlan([['성도ID', '이름'], ['P1', '가온']], [{ name: '가온', roles: ['셀원'] }], 1, 0.1);
+  sc.eq("㉜ '구분' 열이 없으면 오른쪽 끝에 머리글만 더하고 그 칸에", J([p2.head, p2.set]), [{ col: 2, cells: ['구분'] }, [{ row: 2, col: 2, value: '셀원' }]]);
+  const p3 = A.peopleRolePlan([], [{ name: '가온', roles: ['셀원'] }], 1, 0.1);
+  sc.eq('㉜ 빈 탭이면 앱의 성도 머리글부터', J([p3.head.col, p3.head.cells, p3.add[0][1], p3.add[0][3]]), [0, A.TABS['성도'], '가온', '셀원']);
+  sc.eq('㉜ 같은 분이 두 번이면 나중 것 하나만', J(A.peopleRolePlan(tab, [{ name: '나래', roles: ['셀원'] }, { name: '나 래', roles: ['장년부'] }], 1, 0.1).set), [{ row: 3, col: 3, value: '장년부' }]);
+  sc.eq('㉜ 이름 열이 없으면 쓰지 않는다', (() => { try { A.peopleRolePlan([['성도ID']], [{ name: '가온', roles: [] }], 1, 0.1); return 'wrote'; } catch (e) { return 'refused'; } })(), 'refused');
+  sc.eq('㉜ 상한을 넘으면 쓰지 않는다', (() => { try { A.peopleRolePlan(tab, Array.from({ length: A.PROLE_MAX + 1 }, (_, i) => ({ name: 'n' + i, roles: [] })), 1, 0.1); return 'wrote'; } catch (e) { return 'refused'; } })(), 'refused');
+
+  // 한눈에 — 출석만 · 성도 탭에만 있는 분도 사람 값으로
+  const G = A.glanceModel({ model: { people: {} }, visits: [], attend: [{ name: '사랑', date: '2026-11-03', role: '청년부' }], roster: ['아라'], today: '2026-11-15', proles: { '사랑': { roles: ['새가족'] }, '아라': { roles: ['청년부'] } } });
+  sc.eq('㉜ 한눈에 — 출석만 · 성도 탭에만 있는 분도 그분 구분', J(G.map.groups.map(g => [g.role, g.people.map(p => p.name)]).sort()), [['새가족', ['사랑']], ['청년부', ['아라']]]);
 }
 
 // ── 1115-5 3 '함께 온 분' 은 여럿 ──
