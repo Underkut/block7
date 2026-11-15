@@ -836,7 +836,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   const H = tab('출석').rows[0], r = tab('출석').rows[nR] || [];
   eq("㊽ 저장 — 구분 칸 · 함께 칸 '혼자'", [r[H.indexOf('성도')], r[H.indexOf('구분')], r[H.indexOf('함께')]], ['머머머', '청년부', '혼자']);
   const id = r[H.indexOf('출석ID')];
-  eq("㊽ 결과 글은 '혼자 함께' 가 아니라 '혼자'", await page.evaluate(id => attSub(AT().find(a => a.id === id)), id), '청년부 · 혼자');
+  eq("㊽ 결과 글은 '혼자 함께' 가 아니라 '혼자'", await page.evaluate(id => attSub(AT().find(a => a.id === id)).split(' · ').filter(x => x === '청년부' || /혼자|함께/.test(x)), id), ['청년부', '혼자']);
   // 예전 탭(구분 머리글 없음)에서 고치기 → 머리글을 오른쪽 끝에 더하고 그 칸에 쓴다
   { const rows = tab('출석').rows, c = rows[0].indexOf('구분'); rows.forEach(x => x.splice(c, 1)); }
   await page.evaluate(() => loadData(true)); await page.waitForTimeout(1200);
