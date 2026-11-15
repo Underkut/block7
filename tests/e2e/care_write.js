@@ -184,7 +184,8 @@ async function route(r) {
   await page.route(/.*/, r => (r.request().url().startsWith('file:') ? r.continue() : route(r)));
   await page.addInitScript(() => { matchMedia = q => ({ matches: q.includes('reduce'), addEventListener() {}, addListener() {} }); });
   await page.goto(FILE); await page.waitForTimeout(400);
-  eq('⑲ 여는 동안엔 화면 뼈대 + 단계 막대', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); const r = [!!document.querySelector('.sk .sk-card'), !!document.querySelector('.sk .sk-bar b')]; USER = null; return r; }), [true, true]);
+  eq('⑲ 여는 동안엔 바로 입력 두 단추 + 기록 맛보기 + 테두리 막대 (1115-W)', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); const r = [document.querySelectorAll('.sk .sk-go').length, !!document.querySelector('.sk .sk-ring .pg'), !!document.querySelector('.sk .sk-ls'), !!document.querySelector('.sk .sk-cl')]; USER = null; return r; }), [2, true, true, true]);
+eq('⑲-2 읽는 중에 누른 입력 단추는 예약만 — 못 읽으면 버려진다', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); document.querySelector('.sk-go[data-v="attend"]').click(); const a = [EARLY, document.querySelector('.sk-go.on small').textContent.length > 0]; USER = null; render(); a.push(EARLY); return a; }), ['attend', true, null]);
   await page.evaluate(() => { USER = { email: 'test@example.com', uid: 'u', getIdToken: async () => 'x' }; AUTH_READY = true; save({ sheet: { id: 'S', name: '시험 시트' }, form: { id: 'F', name: '시험 폼' } }); googleStatus(); });
   await page.waitForSelector('.card');
   eq('⑲ (1108-B2) 처음 열 때 시트에 묻는 것은 두 번 — 탭 목록 · 모든 탭 한꺼번에', REQ.sheets, 2);
