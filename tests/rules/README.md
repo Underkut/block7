@@ -6,8 +6,13 @@
 cd tests/rules
 npm init -y && npm i firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10
 npx firebase emulators:exec --only firestore --project demo-rota "node rota.test.mjs"
+# 실제 앱 화면까지(R6): 저장소 맨 위에서 python3 -m http.server 8765 를 띄운 뒤
+npx firebase emulators:exec --only firestore,auth --project demo-rota "node rota.e2e.mjs"
 ```
 
 - `rota.rules` — 교역자 로테이션 규칙 덩어리를 감싼 시험용 전체 규칙. **콘솔에 붙이는 덩어리는 `docs/rotation/firestore-rules.md`** 이고,
   둘이 같은지 `tests/test_rotation.js` ㉓ 이 지킨다.
 - `rota.test.mjs` — HB · 팀 교역자 · 팀 밖 사람 · 이메일 확인 안 된 계정으로 읽기 · 쓰기 · 팀 검색 · 사진 · 교역자 칸을 시험(지어낸 이메일).
+- `rota.e2e.mjs` — 실제 앱(`rotation/index.html`)을 브라우저로 열어 에뮬레이터(로그인 + 저장 + 규칙)에 붙인다. 파이어베이스 도구는 CDN 대신 `node_modules/firebase` 의 같은 파일을 내준다.
+  ① HB 빈 기기 로그인(자료 그대로 · team 적힘) ② 교역자 구글 로그인(보기만 · 남의 방문 · 자리 고르기 막힘 · 자기 숙소 · 부재 · 가능 일정은 자기 칸에)
+  ③ HB 앱이 받아들임(메모를 고쳐도 교역자 숙소 그대로) ④ 팀 밖 사람(못 봄 · 문서 안 만듦) ⑤ HB 두 번째 빈 기기 ⑥ 이메일을 지우면 못 들어옴 — 25가지.

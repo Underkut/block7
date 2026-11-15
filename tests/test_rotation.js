@@ -35,7 +35,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -510,6 +510,17 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
     const doc = blk(fs.readFileSync(path.join(__dirname, '..', 'docs', 'rotation', 'firestore-rules.md'), 'utf8')), rules = blk(fs.readFileSync(path.join(__dirname, 'rules', 'rota.rules'), 'utf8'));
     sc.eq('㉓ 문서의 규칙 덩어리 = 에뮬레이터로 시험한 규칙', [!!doc, doc === rules], [true, true]);
     sc.eq('㉓ 규칙: 교역자 칸에 넣을 수 있는 칸 = normStaff 가 읽는 칸', /hasOnly\(\['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt'\]\)/.test(rules || ''), true); }
+  // 교역자 앱이 고친 방문 → 자기 칸에 쓸 것
+  { const v0 = J(bk.visits.find(x => x.id === 'v|2026-11-22'));
+    const v1 = Object.assign(J(v0), { stay: hotel('바꾼 호텔'), note: '몰래 메모', who: ['pb'] });
+    sc.eq('㉓ 교역자가 고친 방문 → 숙소만 쓴다(메모 · 교역자는 버림)', A.staffEdits(v0, v1).map(x => [x.kind, x.val[0].name]), [['stay', '바꾼 호텔']]);
+    sc.eq('㉓ 교통만 바꾸면 교통만', A.staffEdits(v0, Object.assign(J(v0), { travel: [{ dir: 'down', mode: 'KTX', time: '금 09:10', who: '' }] })).map(x => x.kind), ['travel']);
+    sc.eq('㉓ 아무것도 안 바뀌면 없음 · 다른 방문이면 없음', [A.staffEdits(v0, J(v0)), A.staffEdits(v0, Object.assign(J(v0), { id: 'v|2026-11-29' }))], [[], []]);
+  }
+  // 교역자 화면은 HB 책에 쓰지 않는다 (실제 흐름은 tests/rules/rota.e2e.mjs)
+  sc.eq('㉓ 계정에 쓰는 것은 주인(HB)만 · 교역자 화면은 이 기기 HB 칸에도 안 씀', [/function cloudSave\(\) \{\n  if \(DEMO \|\| !FB\.user \|\| !FB\.db \|\| FB\.role !== 'owner'\) return;/.test(HTML), /function saveBook\(\) \{\n  if \(isStaff\(\)\) return;/.test(HTML)], [true, true]);
+  sc.eq('㉓ 교역자 누름은 한 곳에서 거른다(클릭 · 글자 칸)', [/if \(isStaff\(\) && !staffOk\(t, d\)\) return toast/.test(HTML), /if \(isStaff\(\) && !t\.closest\('#pane'\)\) return;/.test(HTML)], [true, true]);
+  sc.eq('㉓ 교역자가 고친 방문은 자기 칸에만(staffEdits → staffWrite)', /if \(isStaff\(\)\) \{ if \(!myVisit\(v\)\) return toast\(staffNoMsg\(\)\); for \(const x of staffEdits\(v, next\)\) staffWrite/.test(HTML), true);
   sc.eq('㉓ 모르는 갈래는 조각을 만들지 않는다', A.staffPatch('ga@example.com', 'note', 'v|2026-11-22', 'x', 1), null);
 }
 
