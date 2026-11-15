@@ -30,6 +30,7 @@
 //  ㊴ (1112-N 6) 화면 정리 — 상세 기록 Markdown 안전하게(제목 · 목록 · 굵게만, 나머지는 글자) · 성도 화면 요약(최근 핵심 · 장기 관찰 · 다음 질문 = 기록 + 계획) · 같은 날 계획 찾기
 //  ㊼ (1115-V) 한눈에 카드 셈 — 돌봄 지도(4주 · 8주 · 그 뒤 · 기록 없음) · 구분 알약 · 구분 나란히 · 심방+출석 네 칸 · 안 보임 · 달라짐 · 다시 보임 · 챙길 것
 //  ㊾ (1115-4 ③) 자리 배치 — 가로 6칸 · 겹치면 안 놓임(다른 알약은 그대로) · 빈 곳 찾기 · 끌기 · 당기기 · 알약 이름 따라가기 · 틀린 저장값 거르기 · 배치는 제 시각으로 기기끼리 맞춤
+//  ㊿ (1115-4 ④) 자리 보기 — 배치 위에 그 모임에 온 분 이름 · 배치에 없는 자리 · 자리 기록 없음 · 한 분도 안 빠짐
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -45,7 +46,7 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
-  SEAT_COLS, SEAT_ROWS_MAX, seatOver, seatValid, seatWhyNot, seatClean, seatView, seatRows, seatFree, seatPut, seatOut, seatDragTo, seatSizeTo, seatRename, seatDrop, seatPack,
+  SEAT_COLS, SEAT_ROWS_MAX, seatOver, seatValid, seatWhyNot, seatClean, seatView, seatRows, seatFree, seatPut, seatOut, seatDragTo, seatSizeTo, seatRename, seatDrop, seatPack, seatFill,
   joinMulti, splitEtc, blankRecord, parseTalk, talkText, talkTags, talkPreview, talkTopicsOf, talkTagCounts, talkNext, talkCycle, talkPaste, talkTagSync, recordTags, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, b7Text, b7Note, b7MarkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
@@ -1274,6 +1275,22 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   r = A.mergeCfg({ sheet: S2, at: 90, seats: M1 }, { sheet: S1, at: 10, seats: M2 }, 100);
   sc.eq('㊾ 시트는 올리고 배치는 받는다', J([r.local.seats, r.push]), [M2, { sheet: S2, seats: M2, at: 90 }]);
   sc.eq('㊾ 올리는 것에 성도 이름 칸이 없다(알약 이름 · 위치 · 크기 · 시각뿐)', !!(Object.keys(A.seatPack(base, 1)).join() === 'items,at' && Object.keys(A.seatPack(base, 1).items[0]).join() === 'n,x,y,w,h'), true);
+}
+
+// ㊿ (1115-4 ④) 자리 보기 — 배치 위에 이름. 이름 · 자리는 모두 지어낸 것
+{
+  const B = (n, x, y, w, h) => ({ n, x, y, w, h }), P = (name, seat, row) => ({ id: 'A' + row, name, seat, row });
+  const items = [B('맨 앞', 0, 0, 6, 1), B('앞 왼쪽', 0, 1, 2, 2), B('뒤', 2, 4, 2, 1)];
+  const f = A.seatFill(items, [P('다람', '뒤', 5), P('가온', '앞왼쪽', 2), P('나래', '', 3), P('라온', '로비', 4), P('마루', '앞 왼쪽', 1), P('바다', ' 로 비 ', 6), P('사랑', undefined, 7)]);
+  sc.eq('㊿ 자리 이름이 같으면(띄어쓰기 무시) 그 블록에 — 적은 차례로', J(f.blocks.map(b => [b.n, b.x, b.y, b.w, b.h, b.who.map(a => a.name)])), [['맨 앞', 0, 0, 6, 1, []], ['앞 왼쪽', 0, 1, 2, 2, ['마루', '가온']], ['뒤', 2, 4, 2, 1, ['다람']]]);
+  sc.eq('㊿ 줄 수 = 놓인 데까지(빈 줄 안 더함)', f.rows, 5);
+  sc.eq('㊿ 자리는 적었지만 배치에 없는 자리 — 자리별로 따로', J(f.off.map(g => [g.n, g.who.map(a => a.name)])), [['로비', ['라온', '바다']]]);
+  sc.eq('㊿ 자리를 안 적은 분 — 자리 기록 없음', J(f.none.map(a => a.name)), ['나래', '사랑']);
+  sc.eq('㊿ 한 분도 빠지지 않는다', f.blocks.reduce((n, b) => n + b.who.length, 0) + f.off.reduce((n, g) => n + g.who.length, 0) + f.none.length, 7);
+  sc.eq('㊿ 배치 원본은 안 건드린다', J(items[1]), B('앞 왼쪽', 0, 1, 2, 2));
+  const e = A.seatFill([], [P('가온', '뒤', 1), P('나래', '', 2)]);
+  sc.eq('㊿ 배치가 없으면 — 자리별 묶음 + 자리 기록 없음', J([e.blocks, e.rows, e.off.map(g => [g.n, g.who.length]), e.none.length]), [[], 0, [['뒤', 1]], 1]);
+  sc.eq('㊿ 빈 값', J(A.seatFill(null, null)), { blocks: [], rows: 0, off: [], none: [] });
 }
 
 sc.done();
