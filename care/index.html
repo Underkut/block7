@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -300,7 +300,13 @@ body.dragging{cursor:grabbing}
 .omenu-bg{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:40}
 .omenu{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));width:min(92vw,380px);background:var(--paper);border-radius:16px;box-shadow:var(--shadow);z-index:41;padding:8px;display:flex;flex-direction:column}
 .omenu .tmdays{display:flex;gap:4px;padding:4px 8px;flex-wrap:wrap}.omenu .tmdays .opt{padding:8px 0;flex:1;text-align:center;min-width:36px}
-.omenu .tmrow{display:flex;gap:10px;padding:8px 12px}.omenu .tmrow label{flex:1;font-size:13px;color:var(--tx2);display:flex;flex-direction:column;gap:4px}.omenu .tmrow .inp{margin:0}
+.omenu .tmrow{display:flex;gap:10px;padding:8px 12px}.omenu .tmrow>div{flex:1;font-size:13px;color:var(--tx2);display:flex;flex-direction:column;gap:4px}
+/* 1115 시간 휠 — 처음(00)에서 끝(23 · 55)까지만 돈다(이어 돌지 않음) · 분은 5분 단위 */
+.whl{position:relative;display:flex;height:160px;border-radius:12px;background:var(--s1);overflow:hidden}
+.whl:before{content:"";position:absolute;left:6px;right:6px;top:64px;height:32px;border-radius:8px;background:var(--paper);box-shadow:0 0 0 1px var(--line);pointer-events:none}
+.whc{position:relative;flex:1;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;padding:64px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.whc::-webkit-scrollbar{display:none}
+.whi{height:32px;line-height:32px;text-align:center;font-size:17px;color:var(--tx);scroll-snap-align:center;font-variant-numeric:tabular-nums;cursor:pointer}
+.whs{align-self:center;position:relative;font-size:17px;color:var(--tx2)}
 .pills .opt .otm{display:block;font-size:10.5px;opacity:.7;margin-top:1px}
 .omenu .t{padding:10px 12px 8px;font-size:13px;color:var(--tx2)}.omenu button{padding:13px 12px;text-align:left;border-radius:10px;font-size:15px}.omenu button:hover{background:var(--s1)}.omenu .danger{color:var(--warn)}
 .attsum{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;margin:2px 0 12px;border-radius:14px;background:var(--s1);border:1px solid var(--line);text-align:left}
@@ -796,7 +802,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-1';
+const APP_VERSION = 'v. 26-1115-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2182,8 +2188,8 @@ function stampLocal(nowMs) { const d = new Date(nowMs); return ymdOf(d) + ' ' + 
 // 특별히 돌볼 성도가 어느 예배(또는 부서 모임 · 개인 기도)에 · 언제 와서 · 언제 갔고 · 어디 앉았고 · 누구와 왔는지. 한 줄 = 한 사람의 한 번 출석.
 // 이름은 심방 기록 · 기도노트 · 셀에 없어도 된다(처음 보는 분도 적는다). 내용은 이 탭에만 — 다른 앱은 읽기만 한다.
 const ATT_TAB = '출석';
-const ATT_HEAD = ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '메모', '적은 시각'];
-const ATT_KEYS = { '출석ID': 'id', '날짜': 'date', '성도': 'name', '예배 · 모임': 'svc', '언제 왔나': 'from', '언제 보였나': 'seen', '언제 갔나': 'to', '자리': 'seat', '함께': 'with', '메모': 'memo', '적은 시각': 'at' };
+const ATT_HEAD = ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '섬김', '메모', '적은 시각'];
+const ATT_KEYS = { '출석ID': 'id', '날짜': 'date', '성도': 'name', '예배 · 모임': 'svc', '언제 왔나': 'from', '언제 보였나': 'seen', '언제 갔나': 'to', '자리': 'seat', '함께': 'with', '섬김': 'serve', '메모': 'memo', '적은 시각': 'at' };
 const ATT_SVC = ['주일 1부', '주일 2부', '주일 3부', '라이프라인', '수요예배', '금요예배', '부서 모임', '개인 기도'];   // HB 2026-11-08: 예배가 대부분이지만 모임 · 개인 기도도
 const ATT_FROM = ['처음부터', '찬양 중', '말씀 전', '말씀 중', '헌금부터'];
 const ATT_TO = ['끝까지', '축도 전', '기도 때 나감', '말씀 뒤 나감', '중간에 나감'];
@@ -2200,7 +2206,7 @@ function parseAttend(values) {
     const r = values[i] || [], a = { row: i + 1 };
     Object.keys(ATT_KEYS).forEach(k => { const j = h.indexOf(k); a[ATT_KEYS[k]] = j < 0 ? '' : r[j]; });
     a.date = attYmd(a.date);
-    ['id', 'name', 'svc', 'from', 'seen', 'to', 'seat', 'with', 'at'].forEach(k => { a[k] = norm(a[k]); });
+    ['id', 'name', 'svc', 'from', 'seen', 'to', 'seat', 'with', 'serve', 'at'].forEach(k => { a[k] = norm(a[k]); });
     a.memo = String(a.memo == null ? '' : a.memo).trim();
     if (!a.name) continue;
     out.push(a);
@@ -2250,7 +2256,7 @@ function parseAttendText(text, today, known) {
   const yr = +String(today || '').slice(0, 4) || new Date().getFullYear();
   for (const b of blocks) {
     const lines = b.split('\n').map(x => x.trim()).filter(Boolean); if (!lines.length) continue;
-    const a = { name: '', date: '', svc: '', from: '', seen: '', to: '', seat: '', with: '', memo: '' }, memo = [];
+    const a = { name: '', date: '', svc: '', from: '', seen: '', to: '', seat: '', with: '', serve: '', memo: '' }, memo = [];
     lines.forEach((raw, i) => {
       const s = raw.replace(/^[(（]\s*/, '').replace(/\s*[)）]$/, '').trim(), k = nameKey(s);
       let m;
@@ -2334,13 +2340,14 @@ function prayJoin(meta, parts) {
 // ───────── 1108-B3 출석 선택지 ('출석 선택지' 탭) ─────────
 // 칸마다 알약 목록. 탭 한 줄 = [칸, 값], 줄 차례 = 알약 차례. 탭이 없으면 기본값(자리 · 함께는 지난 출석에서 자주 쓴 것).
 const ATT_OPT_TAB = '출석 선택지';
-const ATT_OPT_FIELDS = [['svc', '예배 · 모임'], ['from', '언제 왔나'], ['seen', '언제 보였나'], ['to', '언제 갔나'], ['seat', '자리'], ['with', '함께 온 분'], ['fav', '바로 적을 분']];   // fav: 1113-E 1 출석 탭 위 이름 알약(HB 가 고른 분)
+const ATT_OPT_FIELDS = [['svc', '예배 · 모임'], ['from', '언제 왔나'], ['seen', '언제 보였나'], ['to', '언제 갔나'], ['seat', '자리'], ['with', '함께 온 분'], ['serve', '섬김'], ['fav', '바로 적을 분']];   // fav: 1113-E 1 출석 탭 위 이름 알약(HB 가 고른 분)
 const ATT_SEEN = ['찬양 때', '기도 때', '말씀 때', '헌금 때', '광고 때'];
+const ATT_SERVE = ['예배팀', '기술팀', '예배위원', '교회학교', '스데반'];   // 1115 섬김 기본 알약
 const ATT_OPT_MAX = 30;   // 한 칸 알약 상한
 function attOptLabel(k) { const f = ATT_OPT_FIELDS.find(x => x[0] === k); return f ? f[1] : k; }
 function attOptDefaults(list) {
   const top = k => { const c = {}; (list || []).forEach(a => { const v = norm(a[k]); if (v) c[v] = (c[v] || 0) + 1; }); return Object.keys(c).sort((x, y) => c[y] - c[x]).slice(0, 6); };
-  return { svc: ATT_SVC.slice(), from: ATT_FROM.slice(), seen: ATT_SEEN.slice(), to: ATT_TO.slice(), seat: top('seat'), with: top('with'), fav: [] };
+  return { svc: ATT_SVC.slice(), from: ATT_FROM.slice(), seen: ATT_SEEN.slice(), to: ATT_TO.slice(), seat: top('seat'), with: top('with'), serve: ATT_SERVE.slice(), fav: [] };
 }
 // 탭 → { svc: [...], ... }. 탭이 없거나 비면 null (기본값을 쓰라는 뜻). 모르는 칸 이름 · 빈 값 · 겹친 값은 버린다.
 function optsParse(values, fields) {
@@ -4035,7 +4042,7 @@ function lPerson(L) {
 
 // ───────────────────────────── 출석 (1108-A) ─────────────────────────────
 function AT() { return DATA.attend || []; }
-function attSub(a) { return [[a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · '); }
+function attSub(a) { return [[a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, a.with ? a.with + ' 함께' : '', a.serve ? a.serve + ' 섬김' : ''].filter(Boolean).join(' · '); }
 function attRowHtml(a, withName) {
   const sub = attSub(a), memo = firstLine(a.memo || '');
   return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + nm(a.name) + '</b>' : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
@@ -4150,13 +4157,39 @@ function lAttEdit(L) {
   h += '<div class="fsec">누가</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="' + (L.id ? '성도 이름' : '성도 이름 (여럿은 쉼표로)') + '" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + attSuggHtml(L) + '</div>' +
     '<div class="hint" id="nameHint">' + attNameHint(L) + '</div>' + (L.id ? '' : recentHtml(L)) + '</div>';   // 1113-D I 심방 입력과 같은 최근 이름 줄 · 셀
   h += '<div class="fsec">언제 · 어디</div>' + attDateHtml(f) + attFieldHtml(L, 'svc');
-  h += '<div class="fsec">어떻게</div>' + attFieldHtml(L, 'from') + attFieldHtml(L, 'seen') + attFieldHtml(L, 'to') + attFieldHtml(L, 'seat') + attFieldHtml(L, 'with');
+  h += '<div class="fsec">어떻게</div>' + attFieldHtml(L, 'from') + attFieldHtml(L, 'seen') + attFieldHtml(L, 'to') + attFieldHtml(L, 'seat') + attFieldHtml(L, 'with') + attFieldHtml(L, 'serve');
   h += '<div class="fsec">메모</div><div class="fld"><textarea class="inp" data-f="memo" rows="3" placeholder="본 것 · 들은 것" aria-label="메모">' + esc(f.memo) + '</textarea></div>';
   h += '<p class="hint">알약을 길게 누르면 이름 바꾸기 · 지우기, 길게 누른 채 끌면 순서를 바꿉니다(PC 는 오른쪽 단추 · 끌기).</p>';
   if (L.id) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn danger" data-act="attdel" data-v="' + esc(L.id) + '">이 출석 지우기</button></div>';
   h += omenuHtml(L);
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attsave">' + (L.id ? '고친 것 저장' : '완료') + '</button></div>';
 }
+// 1115 시간 휠 — 시(00~23) · 분(00~55, 5분 단위). 끝에서 이어 돌지 않고 멈춘다. 값은 바깥 div 의 data-val ('HH:MM')
+const WHL_H = 32, WHL_STEP = 5;
+function whlSnap(v) { const m = /^(\d{1,2}):(\d{2})$/.exec(norm(v)); let h = m ? +m[1] : 10, mi = m ? Math.round(+m[2] / WHL_STEP) * WHL_STEP : 0; if (mi > 55) mi = 55; if (h > 23) h = 23; return [h, mi]; }
+function wheelHtml(key, val) {
+  const [h, mi] = whlSnap(val), p2 = n => String(n).padStart(2, '0');
+  const col = (c, list, cur) => '<div class="whc" data-c="' + c + '" role="listbox">' + list.map(n => '<div class="whi" role="option" data-n="' + n + '" aria-selected="' + (n === cur) + '">' + p2(n) + '</div>').join('') + '</div>';
+  const H = Array.from({ length: 24 }, (_, i) => i), M = Array.from({ length: 60 / WHL_STEP }, (_, i) => i * WHL_STEP);
+  return '<div class="whl" data-omt="' + key + '" data-val="' + p2(h) + ':' + p2(mi) + '">' + col('h', H, h) + '<span class="whs">:</span>' + col('m', M, mi) + '</div>';
+}
+function whlInit() {   // 그린 뒤: 값 자리로 굴려 둔다
+  document.querySelectorAll('.whl').forEach(w => {
+    const [h, mi] = whlSnap(w.dataset.val);
+    w.querySelectorAll('.whc').forEach(c => { const idx = c.dataset.c === 'h' ? h : mi / WHL_STEP; if (Math.round(c.scrollTop / WHL_H) !== idx) c.scrollTop = idx * WHL_H; });
+  });
+}
+document.addEventListener('scroll', e => {
+  const c = e.target; if (!c || !c.classList || !c.classList.contains('whc')) return;
+  clearTimeout(c._t); c._t = setTimeout(() => {
+    const w = c.closest('.whl'); if (!w) return;
+    const hc = w.querySelector('[data-c="h"]'), mc = w.querySelector('[data-c="m"]');
+    const hi = Math.max(0, Math.min(23, Math.round(hc.scrollTop / WHL_H))), mi = Math.max(0, Math.min(60 / WHL_STEP - 1, Math.round(mc.scrollTop / WHL_H))) * WHL_STEP, p2 = n => String(n).padStart(2, '0');
+    w.dataset.val = p2(hi) + ':' + p2(mi);
+    hc.querySelectorAll('.whi').forEach((x, i) => x.setAttribute('aria-selected', i === hi)); mc.querySelectorAll('.whi').forEach((x, i) => x.setAttribute('aria-selected', i * WHL_STEP === mi));
+  }, 70);
+}, true);
+document.addEventListener('click', e => { const it = e.target.closest && e.target.closest('.whi'); if (it) { const c = it.parentNode; c.scrollTo({ top: [...c.children].indexOf(it) * WHL_H, behavior: 'smooth' }); } });
 function omenuHtml(L) {
   const C = optCtx(L); if (!L.omenu || !C) return '';
   const om = L.omenu, svcT = om.k === 'svc' && C.opts === ATTO;
@@ -4164,7 +4197,7 @@ function omenuHtml(L) {
     const t = om.time;
     return '<div class="omenu-bg" data-act="aoptx"></div><div class="omenu" role="dialog"><div class="t">' + esc(om.v) + ' · 요일 · 시간</div>' +
       '<div class="tmdays">' + DOW_KO.map((d, i) => '<button class="opt" data-act="aopttd" data-v="' + i + '" aria-pressed="' + t.days.includes(i) + '">' + d + '</button>').join('') + '</div>' +
-      '<div class="tmrow"><label>시작 <input type="time" class="inp" data-omt="s" value="' + esc(t.s) + '"></label><label>마침 <input type="time" class="inp" data-omt="e" value="' + esc(t.e) + '"></label></div>' +
+      '<div class="tmrow"><div>시작' + wheelHtml('s', t.s) + '</div><div>마침' + wheelHtml('e', t.e) + '</div></div>' +
       '<p class="hint" style="margin:4px 12px">출석 입력을 이 시간에 열면 이 알약이 먼저 골라집니다.</p>' +
       '<button data-act="aopttsave">저장</button>' + (t.had ? '<button class="danger" data-act="aopttclr">시간 지우기</button>' : '') + '<button data-act="aoptx">취소</button></div>';
   }
@@ -4302,9 +4335,9 @@ function lAttPaste(L) {
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attpastesave">완료</button></div>';
 }
 function openAttEdit(id, name) {
-  if (id) { const a = AT().find(x => x.id === id); if (!a) return; openLayer('attedit', { id, form: { name: a.name, date: a.date, svc: a.svc, from: a.from, seen: a.seen || '', to: a.to, seat: a.seat, with: a.with, memo: a.memo }, open: {} }); return; }
+  if (id) { const a = AT().find(x => x.id === id); if (!a) return; openLayer('attedit', { id, form: { name: a.name, date: a.date, svc: a.svc, from: a.from, seen: a.seen || '', to: a.to, seat: a.seat, with: a.with, serve: a.serve || '', memo: a.memo }, open: {} }); return; }
   const hb = name ? attHabit(AT(), name) : { svc: '', seat: '' };
-  openLayer('attedit', { id: null, form: { name: name || '', date: today(), svc: svcPick(ATTO(), new Date()), from: '', seen: '', to: '', seat: hb.seat, with: '', memo: '' }, open: {} });
+  openLayer('attedit', { id: null, form: { name: name || '', date: today(), svc: svcPick(ATTO(), new Date()), from: '', seen: '', to: '', seat: hb.seat, with: '', serve: '', memo: '' }, open: {} });
 }
 async function saveAttend(L) {
   const names = splitNames(L.form.name);
@@ -5604,6 +5637,7 @@ function render() {
   });
   [...lay.children].slice(S.layers.length).forEach(el => el.remove());
   document.body.classList.toggle('locked', S.layers.length > 0 || S.sheet);
+  whlInit();
   setTimeout(typingSync, 0);   // 1109-J 3-6 (다시 그린 바로 뒤 단추가 칸에 포커스를 주는 경우가 있어 한 박자 뒤에)
   recentFadeAll();
 }
@@ -5873,10 +5907,10 @@ document.addEventListener('click', e => {
   if (a === 'aoptx') { const L = optL(); if (optCtx(L)) { L.omenu = null; render(); } return; }
   if (a === 'aopttime' || a === 'aopttd' || a === 'aopttsave' || a === 'aopttclr') {   // 1115 예배 · 모임 알약 요일 · 시간
     const L = optL(), C = optCtx(L); if (!C || !L.omenu) return; const om = L.omenu;
-    document.querySelectorAll('[data-omt]').forEach(i => { if (om.time) om.time[i.dataset.omt] = i.value; });
-    if (a === 'aopttime') { const t = (C.opts().svcTime || {})[om.v]; om.time = t ? { days: t.days.slice(), s: t.s, e: t.e, had: true } : { days: [], s: '', e: '', had: false }; render(); return; }
+    document.querySelectorAll('.whl[data-omt]').forEach(i => { if (om.time) om.time[i.dataset.omt] = i.dataset.val; });
+    if (a === 'aopttime') { const t = (C.opts().svcTime || {})[om.v]; om.time = t ? { days: t.days.slice(), s: t.s, e: t.e, had: true } : { days: [], s: '10:00', e: '11:00', had: false }; render(); return; }
     if (a === 'aopttd') { const d = +v, ds = om.time.days; om.time.days = ds.includes(d) ? ds.filter(x => x !== d) : ds.concat([d]); render(); return; }
-    if (a === 'aopttsave' && !svcTimeNorm(om.time)) { toast('요일을 하나 넘게 고르고\n시작 · 마침 시각을 넣어 주세요'); return; }
+    if (a === 'aopttsave' && !svcTimeNorm(om.time)) { toast('요일을 하나 넘게 고르고\n시작 · 마침 시각을 다르게 맞춰 주세요'); return; }
     const t = a === 'aopttclr' ? null : om.time; L.omenu = null;
     if (!C.change(o => attOptSetTime(o, om.v, t), t ? om.v + '\n' + svcTimeText(t) : om.v + '\n시간을 지웠습니다')) render();
     return;
@@ -6045,7 +6079,12 @@ document.addEventListener('focusin', e => {
 // 1109-J 3-6 쓰던 칸이 다시 그리기로 사라지면 아이폰은 focusout 을 안 보낸다 → 'typing' 이 남아 아래 '완료' 단추가 계속 숨었다.
 //   다시 그린 뒤 · 자판 높이가 바뀔 때 · 화면을 누를 때마다 '지금 정말 쓰는 중인가' 를 다시 본다.
 function typingSync() { if (!isField(document.activeElement) || !document.activeElement.closest('.layer')) { clearTimeout(typingT); document.body.classList.remove('typing'); } }
-document.addEventListener('pointerdown', () => setTimeout(typingSync, 0), true);
+// 1115 메모 칸에 커서를 둔 뒤 알약 · 빈 곳을 눌러도 아이폰은 커서를 풀지 않아 '완료/저장' 줄이 계속 숨었다 → 글 칸이 아닌 곳을 누르면 커서를 직접 푼다(자판도 내려간다)
+document.addEventListener('pointerdown', e => {
+  const ae = document.activeElement;
+  if (ae && isField(ae) && ae.closest('.layer') && e.target && e.target.closest && !e.target.closest('input,textarea,select,label,[contenteditable]')) { try { ae.blur(); } catch (_) {} }
+  setTimeout(typingSync, 0);
+}, true);
 document.addEventListener('focusout', () => {
   clearTimeout(typingT);
   typingT = setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 150);   // 칸에서 칸으로 옮길 땐 깜빡이지 않게

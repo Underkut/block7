@@ -531,7 +531,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const memo = ['기록', '', '가나다', '11/8 ', '주일3부 ', '처음부터 참석', '예배팀 ', '맨 앞 자리', '끝까지 참석', '', '', '라마바', '11/8 ', '라이프라인 ', '헌금부터 참석', '음향부스 뒷자리', '(기도 때 일찍 나감?)', '', '', '사아자', '11/8', '주일 2부', '라운지에서 ', '아내와 함께', '라이프라인도 오신다 했으나 안 오심'].join('\n');
   const r = A.parseAttendText(memo, '2026-11-08', A.ATT_SVC);
   sc.eq('⑳ 메모 꼴 붙여 넣기 — 세 분 · 머리말 한 덩어리 건너뜀', [r.items.length, r.skipped], [3, 1]);
-  sc.eq('⑳ 첫 분 — 주일3부 → 주일 3부 · 처음부터 · 끝까지 · 자리 · 나머지는 메모', J(r.items[0]), { name: '가나다', date: '2026-11-08', svc: '주일 3부', from: '처음부터', seen: '', to: '끝까지', seat: '맨 앞 자리', with: '', memo: '예배팀' });
+  sc.eq('⑳ 첫 분 — 주일3부 → 주일 3부 · 처음부터 · 끝까지 · 자리 · 나머지는 메모', J(r.items[0]), { name: '가나다', date: '2026-11-08', svc: '주일 3부', from: '처음부터', seen: '', to: '끝까지', seat: '맨 앞 자리', with: '', serve: '', memo: '예배팀' });
   sc.eq('⑳ 둘째 — 헌금부터 · 괄호 속 나감 · 뒷자리', J([r.items[1].svc, r.items[1].from, r.items[1].to, r.items[1].seat]), ['라이프라인', '헌금부터', '기도 때 일찍 나감?', '음향부스 뒷자리']);
   sc.eq("⑳ 셋째 — '아내와 함께' · '라이프라인도 …' 는 예배가 아니라 메모", J([r.items[2].svc, r.items[2].seat, r.items[2].with, r.items[2].memo]), ['주일 2부', '라운지에서', '아내', '라이프라인도 오신다 했으나 안 오심']);
   const r2 = A.parseAttendText('차카타\n11/5\n개인 기도\n\n파하\n청년부 모임\n\n거너\n수요 예배\n\n12/30 혼자\n주일 1부', '2026-11-08', A.ATT_SVC);
@@ -1111,6 +1111,21 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊺ 정하기 · 이름 바꾸면 따라감 · 지우면 함께 빠짐', [A.attOptSetTime(o, '기타 모임', { days: [5], s: '20:00', e: '22:00' }), A.attOptRename(o, 'svc', '기타 모임', '금요 모임'), J(o.svcTime['금요 모임']), A.attOptRemove(o, 'svc', '금요 모임'), '금요 모임' in o.svcTime, A.attOptSetTime(o, '수요예배', null), J(o.svcTime)],
     [true, true, { days: [5], s: '20:00', e: '22:00' }, true, false, true, { '주일 3부': { days: [0], s: '13:00', e: '14:30' } }]);
   sc.eq('㊺ 시간 없는 목록은 예전 두 열 그대로', J(A.attOptsRows({ svc: ['A'] })), [['칸', '값'], ['예배 · 모임', 'A']]);
+}
+
+// ㊻ (1115) 섬김 — 출석 입력 '함께 온 분' 아래 알약 칸
+{
+  const J = x => JSON.parse(JSON.stringify(x));
+  const d = A.attOptDefaults([]);
+  sc.eq('㊻ 섬김 기본 알약 다섯', d.serve, ['예배팀', '기술팀', '예배위원', '교회학교', '스데반']);
+  sc.eq("㊻ 선택지 칸 이름 '섬김' · 함께 온 분 바로 뒤", [A.ATT_OPT_FIELDS.map(f => f[0]).slice(5, 7), A.ATT_OPT_FIELDS.find(f => f[0] === 'serve')[1]], [['with', 'serve'], '섬김']);
+  sc.eq("㊻ 출석 탭 머리글 '섬김' · 줄 읽기 · 줄 쓰기", [A.ATT_HEAD.includes('섬김'), J(A.parseAttend([['출석ID', '성도', '날짜', '섬김'], ['T1', '가나다', '2026-11-15', '기술팀']])[0].serve), J(A.attRow(['성도', '섬김'], { name: '가나다', serve: '스데반' }))], [true, '기술팀', ['가나다', '스데반']]);
+  sc.eq('㊻ 섬김 열이 없는 옛 탭도 읽힌다(빈 값)', A.parseAttend([['출석ID', '성도', '날짜'], ['T1', '가나다', '2026-11-15']])[0].serve, '');
+  const o = J(d);
+  sc.eq('㊻ 더하기 · 이름 바꾸기 · 지우기', [A.attOptAdd(o, 'serve', '찬양팀'), A.attOptRename(o, 'serve', '찬양팀', '찬양단'), o.serve.includes('찬양단'), A.attOptRemove(o, 'serve', '스데반'), o.serve.length], [true, true, true, true, 5]);
+  const rows = A.attOptsRows(o), back = A.attOptsUse(A.attOptsParse(rows), []);
+  sc.eq('㊻ 탭에 쓰고 다시 읽어도 섬김이 그대로', J(back.serve), J(o.serve));
+  sc.eq('㊻ 섬김 줄이 없는 옛 선택지 탭이면 기본 다섯', J(A.attOptsUse(A.attOptsParse([['칸', '값'], ['자리', '맨 앞']]), []).serve), ['예배팀', '기술팀', '예배위원', '교회학교', '스데반']);
 }
 
 sc.done();
