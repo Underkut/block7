@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -802,7 +802,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-2';
+const APP_VERSION = 'v. 26-1115-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2412,12 +2412,14 @@ function attOptsRows(o) {   // 시간을 정한 알약이 하나라도 있으면
 // 탭에 그 칸이 비어 있으면: 폼 질문의 선택지(있으면) → 장소는 지난 기록에 자주 쓴 것 · 사주심은 '사주심 · 사드림'.
 // 폼 선택지와 저절로 맞추지는 않는다(폼은 그대로). 이름 바꾸기 · 지우기는 알약 목록만 — 지난 기록 글자는 그대로.
 const VIS_OPT_TAB = '심방 선택지';
-const VIS_OPT_FIELDS = [['place', '장소'], ['pay', '사주심 / 사드림']];
+const VIS_OPT_FIELDS = [['method', '어떻게'], ['place', '장소'], ['pay', '사주심 / 사드림']];
 function visOptDefaults(visits, formOpts) {
   const c = {}, fo = formOpts || {};
   (visits || []).forEach(v => { const x = norm(v.place); if (x) c[x] = (c[x] || 0) + 1; });
   const top = Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b)).slice(0, 8);
-  return { place: fo.places && fo.places.length ? fo.places.slice() : top, pay: fo.pays && fo.pays.length ? fo.pays.slice() : PAY_DEFAULT.slice() };
+  const mc = {}; (visits || []).forEach(v => { const x = norm(v.methodLabel || v.method); if (x) mc[x] = (mc[x] || 0) + 1; });
+  const mtop = Object.keys(mc).sort((a, b) => mc[b] - mc[a] || a.localeCompare(b)).slice(0, 8);
+  return { method: fo.methods && fo.methods.length ? fo.methods.slice() : mtop, place: fo.places && fo.places.length ? fo.places.slice() : top, pay: fo.pays && fo.pays.length ? fo.pays.slice() : PAY_DEFAULT.slice() };
 }
 function visOptsUse(parsed, visits, formOpts) {
   const d = visOptDefaults(visits, formOpts); if (!parsed) return d;
@@ -4083,7 +4085,7 @@ function vAttend() {
 // ── 1108-B3 출석 입력 — 칸마다 알약 + 직접 적기(접어 둠) · 알약은 여기서 더하고, 끌어 옮기고, 길게 눌러 고치고 지운다 ──
 function ATTO() { return attOptsUse(DATA.attOpts, AT()); }
 function VISO() { return visOptsUse(DATA.visOpts, M() ? M().visits : [], DATA.opts); }
-function visOptLabel(k) { return k === 'pay' ? (DATA.payTitle || '사주심 / 사드림') : k === 'place' ? '장소' : ATTR_KEY[k] ? (k === 'acts' ? '할 일' : ATTR_KEY[k]) : k; }
+function visOptLabel(k) { return k === 'pay' ? (DATA.payTitle || '사주심 / 사드림') : k === 'place' ? '장소' : k === 'method' ? '어떻게' : ATTR_KEY[k] ? (k === 'acts' ? '할 일' : ATTR_KEY[k]) : k; }
 // 1109-E1 구분 · 태그 · 할 일 — 선택지 원본은 예전처럼 시트 '속성' 탭 ↔ 구글폼(attrAdd · attrHide). 끌어 옮기기는 하지 않는다
 const ATTR_KEY = { roles: '구분', tags: '태그', acts: '액션' };
 function multiHtml(L, k, label, base, etcKey, ph, pre, kind) {
@@ -4398,7 +4400,7 @@ function vPlan() {
 }
 // 새 계획 · 계획 고치기 (겹 화면)
 function lPlanEdit(L) {
-  const f = L.form, sv = saved(), methods = filterOptions(M().visits, DATA.opts).method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true));
+  const f = L.form, sv = saved(), methods = VISO().method;
   let h = lhead(L.planId ? '계획 고치기' : '새 계획', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<div class="fsec">누구를</div>' + whoFieldHtml(L);
   h += '<div class="fsec">언제 · 어떻게</div><div class="fld" style="display:flex;gap:8px"><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜"><input class="inp" type="time" data-f="time" value="' + esc(f.time) + '" aria-label="시간 (비우면 하루 종일)"></div><p class="hint">시간을 비우면 하루 종일 일정이 됩니다.</p>';
@@ -4832,9 +4834,8 @@ function lEdit(L) {
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
   const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
   const rolesF = multiHtml(L, 'roles', '구분', offer('roles', FO.role, []), 'rolesEtc', '직접 적기 (쉼표로 여럿)');
-  const mOpen = (L.open && L.open.method) || !!norm(f.methodEtc || '');
-  const methodF = '<div class="fld"><span class="lb">어떻게</span><div class="opts" id="methodChips" data-k="method">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') +
-    '<button class="opt etc" data-act="aetc" data-k="method" aria-pressed="' + mOpen + '">' + IC.plus + '기타</button></div>' + (mOpen ? '<input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타">' : '') + '</div>';
+  if (!f.method && norm(f.methodEtc || '')) { f.method = norm(f.methodEtc); f.methodEtc = ''; }   // 직접 적은 방식도 알약 칸 하나로
+  const methodF = attFieldHtml(L, 'method');   // 장소처럼 알약(더하기 · 길게 눌러 고치기 · 지우기 · 끌어 옮기기)
   // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
   const placeF = DATA.hasPlace ? attFieldHtml(L, 'place') : '', payF = DATA.hasPay ? attFieldHtml(L, 'pay', true) : '';
   let whereInfo = '';
