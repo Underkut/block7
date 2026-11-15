@@ -631,7 +631,8 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㉕ 같거나 옛것 · 꼴이 이상하면 새 버전이 아니다(다시 열기 되풀이 막기)', [A.isNewer('v. 26-1109-4', 'v. 26-1109-4'), A.isNewer('v. 26-1109-3', 'v. 26-1109-4'), A.isNewer('', 'v. 26-1109-4'), A.isNewer('<html>', 'v. 26-1109-4')], [false, false, false, false]);
   sc.eq('㉕ 지금 앱 버전도 그 꼴이다', A.verNum(A.APP_VERSION) > 0, true);
   sc.eq('㉕ 개발자 배지는 HB 계정에만(대소문자 무시)', [A.isDevEmail('denartist@gmail.com'), A.isDevEmail('DenArtist@Gmail.com'), A.isDevEmail('test@example.com'), A.isDevEmail(undefined)], [true, true, false, false]);
-  sc.eq("㉕ 탭 이름 '심방 선택지' · 칸 장소 · 사주심", [A.VIS_OPT_TAB, J(A.VIS_OPT_FIELDS.map(f => f[0]))], ['심방 선택지', ['place', 'pay']]);
+  sc.eq("㉕ 탭 이름 '심방 선택지' · 칸 어떻게 · 장소 · 사주심", [A.VIS_OPT_TAB, J(A.VIS_OPT_FIELDS.map(f => f[0]))], ['심방 선택지', ['method', 'place', 'pay']]);
+  sc.eq('㉕ 어떻게 알약 — 폼 선택지가 처음 목록 · 없으면 지난 기록에서 · 더하기 · 이름 바꾸기 · 지우기', (() => { const a = A.visOptDefaults([], { methods: ['전화', '만남'] }).method, b = A.visOptDefaults([{ methodLabel: '카톡' }, { methodLabel: '카톡' }, { methodLabel: '전화' }], {}).method, o = { method: ['전화', '만남'] }; A.attOptAdd(o, 'method', '화상'); A.attOptRename(o, 'method', '만남', '방문'); A.attOptRemove(o, 'method', '전화'); return J([a, b, o.method]); })(), J([['전화', '만남'], ['카톡', '전화'], ['방문', '화상']]));
   const vis = [{ place: '역 앞 카페' }, { place: '역 앞 카페' }, { place: '교회 카페' }, { place: '' }];
   const d0 = A.visOptDefaults(vis, {});
   sc.eq('㉕ 탭이 비면 — 장소는 자주 쓴 것, 사주심은 사주심 · 사드림', J([d0.place, d0.pay]), [['역 앞 카페', '교회 카페'], ['사주심', '사드림']]);
