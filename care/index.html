@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-15 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -1058,7 +1058,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-15';
+const APP_VERSION = 'v. 26-1115-16';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1978,6 +1978,84 @@ function parseMeetTab(values) {
 function parseRosterTab(values) {
   const h = ((values && values[0]) || []).map(norm), ci = h.indexOf('이름'); if (ci < 0) return [];
   return [...new Set((values || []).slice(1).map(r => norm((r || [])[ci])).filter(Boolean))];
+}
+
+// ── 1115-5 ④ 구분은 사람에게 (HB 2026-11-15) ──
+// 그분의 구분 = 시트 '성도' 탭 '구분' 칸(쉼표로 여럿 · '없음' = 일부러 비움). 칸이 비었거나 줄이 없으면
+// 지난 기록(심방 · 출석)의 구분을 모아(겹침 없이, 최근 것부터) 보여 준다 — 혼자 받은 기록에서 먼저, 그게 하나도 없을 때만
+// 여럿이 함께한 기록에서(셀 모임 '셀리더, 셀원' 이 모두에게 둘 다 붙지 않게).
+// ⚠️ 시트에만 둔다(계정 · 서버 · 저장소 아님). 옛 기록의 구분 칸은 지우지도 바꾸지도 않는다 — 그 기록을 적을 때의 값으로 남는다.
+const PROLE_NONE = '없음', PROLE_MAX = 200;   // 한 번에 고치는 사람 수 상한
+function proleSplit(cell) { const t = norm(cell); return !t ? null : t === PROLE_NONE ? [] : attRoleList([], t); }
+function proleCell(roles) { return (roles || []).length ? roles.join(', ') : PROLE_NONE; }
+// '성도' 탭 → { 이름열쇠: { row, name, roles } } — 같은 이름이 두 줄이면 위 줄. roles = null 은 '안 정함'(칸이 비었거나 '구분' 열이 없음)
+function parsePeopleTab(values) {
+  const h = ((values && values[0]) || []).map(norm), ci = h.indexOf('이름'), cr = h.indexOf('구분'), out = {};
+  if (ci < 0) return out;
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || [], n = norm(r[ci]), k = nameKey(n); if (!k || out[k]) continue;
+    out[k] = { row: i + 1, name: n, roles: cr < 0 ? null : proleSplit(r[cr]) };
+  }
+  return out;
+}
+function roleUnion(lists) { const out = []; (lists || []).forEach(l => (l || []).forEach(x => { x = norm(x); if (x && !out.includes(x)) out.push(x); })); return out; }
+// 사람마다 구분 → { 이름열쇠: { name, roles, from: 'sheet' | 'rec' } }. visits 의 recRoles(기록 칸 그대로)가 있으면 그것을 본다
+function personRoleMap(visits, attend, ptab) {
+  const ev = [], out = {}, P = ptab || {};
+  (visits || []).forEach(v => { const w = vWho(v).filter(n => !groupCanon(n)); w.forEach(n => ev.push({ n, at: (v.ymd || '') + ' ' + (v.clock || ''), roles: v.recRoles || v.allRoles || [], solo: w.length === 1 })); });
+  (attend || []).forEach(a => { const n = norm(a.name); if (n) ev.push({ n, at: (a.date || '') + ' ' + (a.at || '').slice(11), roles: attRoleList([], a.role), solo: true }); });
+  ev.sort((a, b) => b.at.localeCompare(a.at));
+  const acc = {};
+  ev.forEach(e => { const k = nameKey(e.n); if (!k) return; const x = acc[k] || (acc[k] = { name: e.n, solo: [], group: [] }); (e.solo ? x.solo : x.group).push(e.roles); });
+  Object.keys(acc).forEach(k => { const x = acc[k], s = roleUnion(x.solo); out[k] = { name: x.name, roles: s.length ? s : roleUnion(x.group), from: 'rec' }; });
+  Object.keys(P).forEach(k => { if (P[k].roles) out[k] = { name: (out[k] && out[k].name) || P[k].name, roles: P[k].roles.slice(), from: 'sheet' }; else if (!out[k]) out[k] = { name: P[k].name, roles: [], from: 'rec' }; });
+  return out;
+}
+// 모형에 사람 구분을 입힌다 — 성도(people[n].roles)와 기록 카드 · 필터 · 셈(v.allRoles = 그 기록에 든 분들 구분)
+// 기록 칸 그대로의 값은 v.recRoles 에 남긴다(고치기 창 · 다시 셈). 아무도 모르는 이름뿐인 기록(셀 표시만 등)은 기록 칸 그대로
+function applyPersonRoles(model, map) {
+  const M0 = map || {};
+  (model.visits || []).forEach(v => {
+    if (!v.recRoles) v.recRoles = (v.allRoles || []).slice();
+    const w = vWho(v).filter(n => M0[nameKey(n)]);
+    v.allRoles = w.length ? roleUnion(w.map(n => M0[nameKey(n)].roles)) : v.recRoles.slice();
+  });
+  Object.keys(model.people || {}).forEach(n => { const x = M0[nameKey(n)]; if (x) model.people[n].roles = x.roles.slice(); });
+  return model;
+}
+// 입력 창의 구분 — 처음 불러온 값(init)에서 무엇을 더하고 뺐나
+function roleDiff(init, final) { const a = roleUnion([init]), b = roleUnion([final]); return { added: b.filter(x => !a.includes(x)), removed: a.filter(x => !b.includes(x)) }; }
+function roleApply(cur, d) { return roleUnion([(cur || []).filter(x => !d.removed.includes(norm(x))), d.added]); }
+// 이름이 바뀌었을 때 — 손댄 것(더하고 뺀 것)은 그대로 들고 새 이름들의 구분 위에 다시 얹는다
+function roleCarry(field, oldInit, newInit) { return roleApply(newInit, roleDiff(oldInit, field)); }
+// 저장할 때 — 더하고 뺀 것을 이름마다 그분 구분에 적용 → 바뀌는 분만 [{ name, roles }]
+function personRoleChanges(names, map, d) {
+  const out = [], seen = new Set();
+  if (!d || (!d.added.length && !d.removed.length)) return out;
+  (names || []).forEach(n0 => {
+    const n = norm(n0), k = nameKey(n); if (!k || seen.has(k) || groupCanon(n)) return; seen.add(k);
+    const cur = ((map || {})[k] || { roles: [] }).roles, next = roleApply(cur, d);
+    if (cur.join('|') !== next.join('|')) out.push({ name: n, roles: next });
+  });
+  return out;
+}
+// '성도' 탭에 쓸 것 — values = 지금 탭(첫 줄 머리글). → { head: [머리글 칸 더할 것, A1 부터 또는 오른쪽 끝] , set: [{row, col, value}], add: [줄] }
+// 이름으로 줄을 찾고(띄어쓰기 무시 · 위 줄), 없으면 새 줄. '구분' 열이 없으면 오른쪽 끝에 머리글만 더한다. 다른 칸은 건드리지 않는다
+function peopleRolePlan(values, changes, nowMs, rnd) {
+  let h = ((values && values[0]) || []).map(norm); const out = { head: null, set: [], add: [] };
+  if (!h.some(Boolean)) { h = TABS['성도'].slice(); out.head = { col: 0, cells: h.slice() }; }
+  if (h.indexOf('이름') < 0) throw new Error("'성도' 탭 첫 줄에 '이름' 머리글이 없습니다 — 쓰지 않았습니다");
+  if (h.indexOf('구분') < 0) { out.head = { col: h.length, cells: ['구분'] }; h = h.concat('구분'); }
+  if ((changes || []).length > PROLE_MAX) throw new Error('한 번에 ' + PROLE_MAX + '분까지 고칩니다 — 쓰지 않았습니다');
+  const ci = h.indexOf('이름'), cr = h.indexOf('구분'), rows = {}, last = {};
+  (values || []).slice(1).forEach((r, i) => { const k = nameKey(norm((r || [])[ci])); if (k && !rows[k]) rows[k] = i + 2; });
+  (changes || []).forEach(c => { const k = nameKey(c.name); if (k) last[k] = c; });
+  Object.keys(last).forEach((k, i) => {
+    const c = last[k], value = proleCell(c.roles);
+    if (rows[k]) out.set.push({ row: rows[k], col: cr, value });
+    else out.add.push(h.map(x => ({ '성도ID': newId('P', (nowMs || 0) + i, rnd == null ? Math.random() : rnd), '이름': norm(c.name), '구분': value })[x] || ''));
+  });
+  return out;
 }
 
 // ── 저장할 것 ──
@@ -3066,6 +3144,7 @@ function glanceModel(o) {
   Object.keys(P).forEach(n => { const p = by[nameKey(n)]; if (p) { p.name = n; p.roles = (P[n].roles || []).slice(); } });
   (o.attend || []).forEach(a => { if (!a.date) return; const p = get(a.name); if (p) p.at.push(a); });
   (o.roster || []).forEach(n => get(n));
+  if (o.proles) Object.keys(by).forEach(k => { const x = o.proles[k]; if (x) by[k].roles = x.roles.slice(); });   // 1115-5 ④ 출석만 · 성도 탭에만 있는 분도 그분 구분
   let people = Object.keys(by).map(k => by[k]);
   if (role) people = people.filter(p => p.roles.includes(role));
   people.forEach(p => {
@@ -3489,7 +3568,7 @@ async function loadData(quiet) {
     DATA.attend = parseAttend(V(ATT_TAB));
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
     DATA.visOpts = optsParse(V(VIS_OPT_TAB), VIS_OPT_FIELDS);
-    DATA.attrRows = parseAttrRows(V('속성')); DATA.meets = parseMeetTab(V('모임')); DATA.roster = parseRosterTab(V('성도'));
+    DATA.attrRows = parseAttrRows(V('속성')); DATA.meets = parseMeetTab(V('모임')); DATA.roster = parseRosterTab(V('성도')); DATA.ptab = parsePeopleTab(V('성도'));
     { const items = parseInbox(V(INBOX_TAB)), chk = inboxCheck(items, Date.now());   // 1112-N 5 AI 입력대기함 — 열 때마다 본다
       DATA.inbox = chk.waiting; DATA.inboxBad = chk.bad; DATA.recAt = inboxRecAt(items);
       if (chk.patches.length && DATA.nx) setTimeout(() => inboxPatch(chk.patches, items), 0); }   // 1112-N 붙여넣기: 속성 대조 · 모임 중복 · 새 성도 명단
@@ -3499,7 +3578,7 @@ async function loadData(quiet) {
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
     opts.recAt = DATA.recAt || {};
-    DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda); tkOverlay(DATA.model);
+    DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda); finishRoles(); tkOverlay(DATA.model);
     DATA.state = 'ok'; DATA.err = ''; DATA.at = Date.now(); DATA.lite = true;
     { const hint = { nx: !!DATA.nx, place: !!DATA.hasPlace, pay: !!DATA.hasPay, payTitle: DATA.payTitle || '' }; if (JSON.stringify(saved().hint || null) !== JSON.stringify(hint)) save({ hint }); }   // 1115-X 다음에 열 때 읽기 전의 입력 창이 같은 칸으로 서게 (화면 모양뿐 — 내용 아님)
     earlySettle();
@@ -3542,7 +3621,10 @@ function hueLegend() {   // 지금 쓰는 색 · 기도노트가 붙인 이름 �
   return MK_ORDER.filter(m => by[m]).map(m => ({ m, label: by[m].label, n: by[m].n }));
 }
 const HUE_BTN = () => '<button class="hue-b' + (hueOn() ? ' on' : '') + '" data-act="hue" aria-pressed="' + hueOn() + '" aria-label="이름 색 — ' + (hueOn() ? '켜짐' : '꺼짐') + '"><i></i><i></i><i></i></button>';
-function rebuild() { if (DATA.vals) DATA.model = attachExtras(buildModel(DATA.vals, Object.assign({ cutoff: prefs().cutoff }, DATA.opts || {})), DATA.actStatus || {}, DATA.addenda || {}); }
+function rebuild() { if (DATA.vals) { DATA.model = attachExtras(buildModel(DATA.vals, Object.assign({ cutoff: prefs().cutoff }, DATA.opts || {})), DATA.actStatus || {}, DATA.addenda || {}); finishRoles(); } }
+// 1115-5 ④ 구분은 사람에게 — '성도' 탭 + 지난 기록 → 사람마다 구분(DATA.proles) → 모형에 입힌다. 기록 칸 값은 v.recRoles 에 그대로
+function finishRoles() { if (!DATA.model) return; DATA.proles = personRoleMap(DATA.model.visits, AT(), DATA.ptab || {}); applyPersonRoles(DATA.model, DATA.proles); }
+function rolesOf(n) { const x = (DATA.proles || {})[nameKey(n)]; return x ? x.roles.slice() : []; }
 
 // ───────────────────────────── 쓰기 (C2) ─────────────────────────────
 // ⚠️ 쓰기 전에는 언제나 머리글 · 기록ID 열을 새로 읽어 칸 자리를 정한다 (care-core 'C2 쓰기' 머리말).
@@ -4480,7 +4562,7 @@ function vPeople() {
   return h + '</div></div>' + nav();
 }
 function lPerson(L) {
-  const n = L.name, t = today(), all = M().visits.filter(v => hasPerson(v, n)), vs = all.filter(v => S.showArch || !v.archived), p = M().people[n] || { roles: [] };
+  const n = L.name, t = today(), all = M().visits.filter(v => hasPerson(v, n)), vs = all.filter(v => S.showArch || !v.archived), p = { roles: rolesOf(n) };   // 1115-5 ④ 출석만 있는 분도 그분 구분
   let h = lhead('', L) + '<div class="ph-body">';
   h += '<div class="dt-name">' + nm(n) + '</div><div class="dt-when">' + esc(p.roles.join(' · ')) + '</div>';
   const live = all.filter(v => !v.archived), deep = live.filter(v => v.depthN === 3).length, lv = live[0];
@@ -4651,20 +4733,66 @@ function attNameAdd(L, list, toggle) {   // 1113-D I 출석 이름 칸(쉼표 �
   if (names.length === 1) { const hb = attHabit(AT(), names[0]); if (!L.form.svc) L.form.svc = hb.svc; if (!L.form.seat) L.form.seat = hb.seat; }
   attRoleFill(L);
 }
-// 1115-4 출석 구분 — 한 분이고 아직 안 골랐으면 그분의 심방 구분으로 채운다(심방 입력 whoAdd 와 같은 규칙). 다 읽은 뒤에만
-function attRoleFill(L) {
-  const f = L.form, names = splitNames(f.name); if (names.length !== 1 || DATA.state !== 'ok' || (f.roles || []).length || norm(f.rolesEtc)) return;
-  const P = M().people, n = Object.keys(P).find(x => nameKey(x) === nameKey(names[0])), p = n ? P[n] : null; if (!p) return;
-  const RO = attRoleBase(); f.roles = (p.roles || []).filter(r => RO.includes(r)); f.rolesEtc = (p.roles || []).filter(r => !RO.includes(r)).join(', ');
+// 1115-4 출석 구분 → 1115-5 ④ 그분(들)의 구분을 불러온다 — 심방 입력과 같은 roleSync
+function attRoleFill(L) { roleSync(L); }
+// ── 1115-5 ④ 구분은 사람에게 — 입력 · 고치기 창 ──
+// 창의 구분 칸 = 넣은 분들의 구분(성도 탭 → 없으면 지난 기록 모음). L.rk = { sig(지금 이름들), init(불러온 값), rec(고치기: 기록 칸 그대로) }
+// 이름이 바뀌면 다시 불러오되 손댄 것(더하고 뺀 것)은 그대로 얹는다. 저장 때 더하고 뺀 것만 사람마다 성도 탭에 적는다(roleCommit).
+// ⚠️ 다 읽기 전에는 손대지 않는다 — 덜 읽은 사람 값으로 불러오면 저장 때 엉뚱한 차이가 사람 값에 들어간다.
+function roleNames(L) { return L.type === 'attedit' ? splitNames(L.form.name).filter(n => !groupCanon(n)) : parseWho(L.form.name).names; }
+function roleBase(L) { return L.type === 'attedit' ? attRoleBase() : filterOptions(M().visits, DATA.opts).role; }
+function roleSet(L, list) { const RO = roleBase(L); L.form.roles = list.filter(r => RO.includes(r)); L.form.rolesEtc = list.filter(r => !RO.includes(r)).join(', '); }
+function roleSync(L) {
+  if (!L || !L.form || L.impSlot || (L.type !== 'edit' && L.type !== 'attedit') || DATA.state !== 'ok' || !DATA.proles) return;
+  const names = roleNames(L), sig = names.map(nameKey).join('|');
+  if (L.rk && L.rk.sig === sig) return;
+  const init = roleUnion(names.map(rolesOf)), field = attRoleList(L.form.roles, L.form.rolesEtc), old = !!(L.key || L.id);
+  let next;
+  if (!L.rk) { L.rk = { rec: old ? field : null }; next = old ? init : roleUnion([init, field]); }   // 고치기: 그분 값을 불러온다 · 새로: 먼저 고른 것은 더해 둔다
+  else next = roleCarry(field, L.rk.init, init);
+  L.rk.sig = sig; L.rk.init = init;
+  if (old && !names.length) next = field;   // 이름을 다 지운 고치기 — 칸은 그대로
+  roleSet(L, next);
+}
+// 저장 직전 — { changes: [{name, roles}] 성도 탭에 적을 것, same: 구분을 안 고침 }. 안 고친 고치기는 기록 칸을 예전 값 그대로 둔다
+function roleCommit(L) {
+  if (!L || !L.rk || L.impSlot || DATA.state !== 'ok') return { changes: [], same: true };
+  const final = attRoleList(L.form.roles, L.form.rolesEtc), d = roleDiff(L.rk.init, final);
+  if (!d.added.length && !d.removed.length) { if (L.rk.rec) roleSet(L, L.rk.rec); return { changes: [], same: true }; }
+  return { changes: personRoleChanges(roleNames(L), DATA.proles, d), same: false };
+}
+// 입력 창 구분 칸 아래 한 줄 — 저장하면 누구 구분이 어떻게 바뀌나
+function roleHint(L) {
+  if (!L || !L.rk || L.impSlot || DATA.state !== 'ok') return '<div data-rhint></div>';
+  const d = roleDiff(L.rk.init, attRoleList(L.form.roles, L.form.rolesEtc));
+  const ch = personRoleChanges(roleNames(L), DATA.proles, d); if (!ch.length) return '<div data-rhint></div>';
+  return '<div class="hint" data-rhint>저장하면 성도 탭의 구분도 바뀝니다 — ' + ch.slice(0, 4).map(c => esc(c.name) + ' ' + esc(c.roles.join(' · ') || '없음')).join(', ') + (ch.length > 4 ? ' 외 ' + (ch.length - 4) + '분' : '') + '</div>';
+}
+// 성도 탭에 사람 구분 쓰기 — 탭이 없으면 만든다 · 쓰기 직전에 탭을 새로 읽어 이름으로 줄을 찾는다(그사이 줄이 밀려도)
+function roleHintSync(L) { const el = document.querySelector('#layers > .layer:last-child [data-rhint]'); if (el) el.outerHTML = roleHint(L); }
+async function personRolesWrite(changes) {
+  if (!(changes || []).length) return 0;
+  const s = saved().sheet, m = await sheetMeta(s.id);
+  if (!(m.sheets || []).some(x => x.properties.title === '성도')) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: '성도' } } }] } });
+  const v = await readTab(s.id, '성도'), pl = peopleRolePlan(v, changes, Date.now());
+  const data = pl.set.map(c => ({ range: a1('성도', c.col, c.row), values: [[c.value]] }));
+  if (pl.head) data.unshift({ range: a1('성도', pl.head.col, 1), values: [pl.head.cells] });
+  await batchValues(s.id, data);
+  if (pl.add.length) await gapi(SH + s.id + '/values/' + rng('성도', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: pl.add } });
+  return pl.set.length + pl.add.length;
+}
+async function personRolesSave(changes) {
+  try { await personRolesWrite(changes); return true; } catch (e) { toast('기록은 적었는데 성도 탭에 구분을 적지 못했습니다\n' + e.message + '\n다시 열어 구분을 고쳐 주세요'); return false; }
 }
 function attRoleBase() { return DATA.opts && DATA.opts.roles && DATA.opts.roles.length ? DATA.opts.roles : filterOptions(M().visits, DATA.opts).role; }
 // 구분 · 태그 · 할 일 알약(시트 '속성' 탭 · 구글폼이 원본)인가 — 심방 입력의 셋, 출석 입력의 구분
 function attrPill(L, k) { return !!L && !!ATTR_KEY[k] && (L.type === 'edit' || (L.type === 'attedit' && k === 'roles')); }
 function lAttEdit(L) {
+  roleSync(L);   // 1115-5 ④ 이름이 바뀌었으면 그분(들) 구분을 다시 불러온다
   const f = L.form, names = splitNames(f.name), known = names.length === 1 && attNames().some(n => nameKey(n) === nameKey(names[0]));
   let h = lhead(L.id ? '출석 고치기' : '출석했어요', L) + '<div class="ph-body" style="padding-bottom:110px">' + earlyHtml(L);
   h += '<div class="fsec">누가</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="' + (L.id ? '성도 이름' : '성도 이름 (여럿은 쉼표로)') + '" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + attSuggHtml(L) + '</div>' +
-    '<div class="hint" id="nameHint">' + attNameHint(L) + '</div>' + (L.id ? '' : recentHtml(L)) + '</div>' + multiHtml(L, 'roles', '구분', attRoleBase(), 'rolesEtc', '직접 적기 (쉼표로 여럿)');   // 1115-4 구분 · 1113-D I 심방 입력과 같은 최근 이름 줄 · 셀
+    '<div class="hint" id="nameHint">' + attNameHint(L) + '</div>' + (L.id ? '' : recentHtml(L)) + '</div>' + multiHtml(L, 'roles', '구분', attRoleBase(), 'rolesEtc', '직접 적기 (쉼표로 여럿)') + roleHint(L);   // 1115-4 구분 · 1115-5 ④ 사람 값 · 1113-D I 심방 입력과 같은 최근 이름 줄 · 셀
   h += '<div class="fsec">언제 · 어디</div>' + attDateHtml(f) + attFieldHtml(L, 'svc');
   h += '<div class="fsec">어떻게</div>' + attFieldHtml(L, 'from') + attFieldHtml(L, 'seen') + attFieldHtml(L, 'to') + attFieldHtml(L, 'seat') + attFieldHtml(L, 'with') + attFieldHtml(L, 'serve');
   h += '<div class="fsec">메모</div><div class="fld"><textarea class="inp" data-f="memo" rows="3" placeholder="본 것 · 들은 것" aria-label="메모">' + esc(f.memo) + '</textarea></div>';
@@ -4964,12 +5092,16 @@ async function saveAttend(L) {
   const errs = validateAttend(Object.assign({}, L.form, { name: names[0] || '' })); if (errs.length) { toast(errs.join('\n')); return; }
   if (names.length > 30) { toast('한 번에 30분까지 적습니다'); return; }
   if (!(await waitData())) return;   // 1115-X 읽기 전에 연 창 — 다 읽은 뒤에 쓴다
+  roleSync(L); const rc = roleCommit(L);   // 1115-5 ④ 구분을 고쳤으면 그분(들) 값도
   L.form.role = attRoleList(L.form.roles, L.form.rolesEtc).join(', ');   // 1115-4 구분
   const f = Object.assign({}, L.form, { name: names[0] });
-  if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n }))); L.dirty = false; closeLayer(true); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
+  if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n }))); L.dirty = false; closeLayer(true); if (rc.changes.length) await personRolesSave(rc.changes); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
   else {
     const old = AT().find(x => x.id === L.id); if (!old) throw new Error('이 출석 기록을 찾지 못했습니다');
-    const n = await attWriteEdit(old, f); L.dirty = false; closeLayer(true); toast(n ? '고쳤습니다\n' + n + '칸' : '바뀐 것이 없습니다');
+    if (rc.same) f.role = old.role;   // 구분을 안 고쳤으면 그 기록 칸은 예전 값 그대로
+    const n = await attWriteEdit(old, f); L.dirty = false; closeLayer(true);
+    const pr = rc.changes.length ? await personRolesSave(rc.changes) : false;
+    toast(n ? '고쳤습니다\n' + n + '칸' + (pr ? '\n성도 탭 구분도 고쳤습니다' : '') : pr ? '성도 탭의 구분을 고쳤습니다' : '바뀐 것이 없습니다');
   }
   await loadData(true);
 }
@@ -5128,7 +5260,7 @@ const GL_CARDS = [['both', '심방+출석'], ['map', '돌봄 지도'], ['flow', 
 function glRoles() { return filterOptions(M().visits, DATA.opts).role; }
 function GM() {
   if (!GLC) { const roles = glRoles(); if (S.gRole && !roles.includes(S.gRole)) S.gRole = '';
-    GLC = glanceModel({ model: M(), visits: M().visits, attend: AT(), plans: DATA.plans, qn: DATA.qn, roster: DATA.roster, today: today(), stale: prefs().stale, role: S.gRole, roles, showArch: S.showArch }); }
+    GLC = glanceModel({ model: M(), visits: M().visits, attend: AT(), plans: DATA.plans, qn: DATA.qn, roster: DATA.roster, proles: DATA.proles, today: today(), stale: prefs().stale, role: S.gRole, roles, showArch: S.showArch }); }
   return GLC;
 }
 function glChips() { return '<div class="gl-chips" data-noswipe>' + [''].concat(glRoles()).map(r => '<button data-act="grole" data-v="' + esc(r) + '" aria-pressed="' + (S.gRole === r) + '">' + esc(r || '전체') + '</button>').join('') + '</div>'; }
@@ -5377,14 +5509,11 @@ function whoFieldHtml(L) {
 }
 // 이름 · 셀 표시 더하기 — 셀 표시는 명단을 불러와 사람 알약으로 펼친다(whoGroup). 처음 넣는 분의 구분은 지난 기록에서
 function whoAdd(L, list) {
-  const first = !parseWho(L.form.name).names.length, groups = [], names = [];
+  const groups = [], names = [];
   (list || []).map(norm).filter(Boolean).forEach(x => { const g = groupCanon(x); if (g) groups.push(g); else names.push(x); });
   if (names.length) L.form.name = whoMerge(L.form.name, names);
   L.dirty = true;
-  if (L.type === 'edit' && first && names.length && !(L.form.roles || []).length && !norm(L.form.rolesEtc)) {
-    const p = M().people[names[0]] || {}, RO = filterOptions(M().visits, DATA.opts).role;
-    L.form.roles = (p.roles || []).filter(r => RO.includes(r)); L.form.rolesEtc = (p.roles || []).filter(r => !RO.includes(r)).join(', ');
-  }
+  roleSync(L);   // 1115-5 ④ 넣은 분들의 구분을 불러온다(손댄 것은 그대로)
   render();
   groups.forEach(g => whoGroup(L, g));
 }
@@ -5593,6 +5722,7 @@ function crow(L, k, label, body) {
   return '<div class="crow' + (on ? ' open' : '') + '" data-crow="' + k + '"><button class="crow-h" data-act="crow" data-k="' + k + '" aria-expanded="' + on + '"><span>' + esc(label) + '</span><span class="v' + (v ? '' : ' none') + '">' + esc(v || '고르기') + '</span>' + IC_CHEV + '</button><div class="crow-b"><div' + (on ? '' : ' inert') + '>' + body + '</div></div></div>';
 }
 function lEdit(L) {
+  roleSync(L);   // 1115-5 ④ 이름이 바뀌었으면 그분(들) 구분을 다시 불러온다
   const f = L.form, FO = filterOptions(M().visits, DATA.opts), wide = editWide();
   L.wide = wide;
   let h = lhead(L.impSlot ? '가져온 기록 고치기' : L.key ? '기록 고치기' : '심방했어요', L, DATA.nx && DATA.state === 'ok' && !L.key && !L.impSlot ? ['impopen', '붙여넣어 채우기', 'paste'] : null) + '<div class="ph-body edf ' + (wide ? 'e-wide' : 'e-narrow') + '" style="padding-bottom:110px">' + earlyHtml(L);
@@ -5600,7 +5730,7 @@ function lEdit(L) {
   const nameF = whoFieldHtml(L);   // 1112-M 이름 알약 (여럿 · '○○ 셀')
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
   const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
-  const rolesF = multiHtml(L, 'roles', '구분', offer('roles', FO.role, []), 'rolesEtc', '직접 적기 (쉼표로 여럿)');
+  const rolesF = multiHtml(L, 'roles', '구분', offer('roles', FO.role, []), 'rolesEtc', '직접 적기 (쉼표로 여럿)') + roleHint(L);
   if (!f.method && norm(f.methodEtc || '')) { f.method = norm(f.methodEtc); f.methodEtc = ''; }   // 직접 적은 방식도 알약 칸 하나로
   const methodF = attFieldHtml(L, 'method');   // 장소처럼 알약(더하기 · 길게 눌러 고치기 · 지우기 · 끌어 옮기기)
   // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
@@ -5710,12 +5840,14 @@ async function saveRecord(L) {
   const errs = validateRecord(L.form); if (errs.length) { toast(errs.join('\n')); return; }
   if (!(await waitData())) return;   // 1115-X 읽기 전에 연 창 — 다 읽은 뒤에 쓴다
   if (!(await ensurePrepared())) return;
+  roleSync(L); const rc = roleCommit(L);   // 1115-5 ④ 구분을 고쳤으면 그분(들) 값도 — 기록을 적은 뒤에 성도 탭에
   const AL = L.form.actLines; if (AL) Object.keys(AL).forEach(t => { if ((AL[t] || []).length && !L.form.acts.includes(t)) L.form.acts.push(t); });   // 1113-E 줄이 있는 종류는 응답 칸에도
   try {
     if (!L.key) {
       const pl0 = !L.planId && DATA.plans ? planForRecord(DATA.plans, L.form.name, L.form.ymd) : null;   // 1112-N 6 같은 날 계획이 있으면 이을지 묻는다
       const linkPl = pl0 && confirm(whoShort(pl0.name) + ' ' + md(pl0.date) + ' 계획이 있습니다.\n이 기록을 그 계획에 이을까요? (계획이 \'기록됨\' 으로 바뀝니다)');
       const r = await writeNew(L.form); L.dirty = false; closeLayer(true);
+      if (rc.changes.length) await personRolesSave(rc.changes);
       if (AL) { try { await writeActLines({ id: r.id, name: L.form.name }, AL); } catch (e) { toast('기록은 적었는데 할 일 줄을 적지 못했습니다\n' + e.message + '\n기록을 열어 다시 적어 주세요'); } }
       if (L.planId) await finishPlan(L.planId, r.id);
       else if (linkPl) await finishPlan(pl0.id, r.id);
@@ -5727,12 +5859,13 @@ async function saveRecord(L) {
       const v = byKey(L.key) || M().visits.find(x => x.row === L.row);
       if (!v) throw new Error('이 기록을 찾지 못했습니다');
       const r = await writeEdit(v, L.form); if (r.cancel) return;
+      const pr = rc.changes.length ? await personRolesSave(rc.changes) : false;
       let qnCh = false;
       if (DATA.nx && v.id) { const old = qnItems(v), qi = qnMerge(old, L.form.qn); if (qnEncode(qi) !== qnEncode(old)) { await writeQn(v, qi); qnCh = true; } }
       if (AL && v.id && await writeActLines(v, AL)) qnCh = true;   // 1113-E 할 일 줄 — 바뀐 것만
       L.dirty = false; closeLayer(true);
-      if (r.none) { toast(qnCh ? '다음 질문 · 할 일 줄을 고쳤습니다' : '바뀐 것이 없습니다'); if (qnCh) await loadData(true); return; }
-      toast('고쳤습니다\n' + r.cells.filter(c => c.k !== '@수정').length + '칸', 0, { label: '되돌리기', fn: () => busy(async () => {
+      if (r.none) { toast(qnCh ? '다음 질문 · 할 일 줄을 고쳤습니다' + (pr ? '\n성도 탭 구분도 고쳤습니다' : '') : pr ? '성도 탭의 구분을 고쳤습니다' : '바뀐 것이 없습니다'); if (qnCh || pr) await loadData(true); return; }
+      toast('고쳤습니다\n' + r.cells.filter(c => c.k !== '@수정').length + '칸' + (pr ? '\n성도 탭 구분도 고쳤습니다' : ''), 0, { label: '되돌리기', fn: () => busy(async () => {
         try { await undoEdit(r.id, r.cells); toast('되돌렸습니다'); await loadData(true); } catch (e) { toast('되돌리지 못했습니다\n' + e.message); } }) });
     }
     await loadData(true);
@@ -6398,10 +6531,7 @@ function earlySettle() {
       if (L.autoSvc && !optsWait()) { L.autoSvc = false; if (!L.form.svc) L.form.svc = svcPick(ATTO(), new Date()); }
       attRoleFill(L);
     }
-    if (L.type === 'edit' && !L.key && DATA.state === 'ok' && !(L.form.roles || []).length && !norm(L.form.rolesEtc)) {   // 처음 넣은 분의 구분은 지난 기록에서 (whoAdd 와 같은 규칙)
-      const n0 = parseWho(L.form.name).names[0], p = n0 && M().people[n0];
-      if (p) { const RO = filterOptions(M().visits, DATA.opts).role; L.form.roles = (p.roles || []).filter(r => RO.includes(r)); L.form.rolesEtc = (p.roles || []).filter(r => !RO.includes(r)).join(', '); }
-    }
+    if (L.type === 'edit') roleSync(L);   // 1115-5 ④ 그분 구분 — 다 읽은 뒤에(읽기 전에 고른 것은 더해 둔다)
   });
 }
 // 저장은 다 읽은 뒤에 — 읽는 중이면 기다렸다가 이어서 한다. 읽을 수 없게 됐으면 그만두고 알린다(쓰던 글은 창에 그대로)
@@ -6647,7 +6777,9 @@ document.addEventListener('input', e => {
       L.wtyped = typed; L.form.with = attWithJoin(keep.concat(typed)); withSync(L); return;
     }
     L.form[f] = e.target.value;
-    if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = attSuggHtml(L); const nh = $('nameHint'); if (nh) nh.textContent = attNameHint(L); }
+    if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = attSuggHtml(L); const nh = $('nameHint'); if (nh) nh.textContent = attNameHint(L);
+      const r0 = JSON.stringify([L.form.roles, L.form.rolesEtc]); roleSync(L); if (JSON.stringify([L.form.roles, L.form.rolesEtc]) !== r0) { render(); return; } }   // 1115-5 ④ 아는 분을 적으면 그분 구분을 불러온다
+    if (f === 'rolesEtc') roleHintSync(L);
     if (f === 'date') { render(); return; }
     if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
     return;
@@ -6658,6 +6790,7 @@ document.addEventListener('input', e => {
   if (f === 'nameq') { whoTyping(L, e.target); return; }   // 1112-M 이름 알약 — 쉼표면 알약으로
   if (L.type === 'edit' && f.startsWith('pn:')) { const x = (L._pn || [])[+f.slice(3)]; if (x) { (L.form.pn = L.form.pn || {})[x.key] = { name: x.name, text: e.target.value }; L.dirty = true; } talkGrow(e.target); return; }
   L.form[f] = e.target.value; L.dirty = true;
+  if (f === 'rolesEtc' && L.type === 'edit') roleHintSync(L);
   if (f === 'ymd' && L.type === 'edit') { render(); return; }
   if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
   if (f === 'methodEtc' && e.target.value) { L.form.method = ''; document.querySelectorAll('#methodChips .opt').forEach(b => b.setAttribute('aria-pressed', 'false')); }
@@ -6708,7 +6841,7 @@ document.addEventListener('click', e => {
   if (a === 'pickname') { const L = topLayer(); if (L && L.type === 'attedit') { attNameAdd(L, [v], true); render(); return; } }
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
     const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit' && !(L.type === 'attedit' && a === 'ftog'))) return; L.dirty = true;
-    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); crowSync(L); return; }
+    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); crowSync(L); if (k === 'roles') roleHintSync(L); return; }
     else if (a === 'fone') {
       L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = '';
       chipsSync(k, L.form[k]); if (k === 'method') { const ei = document.querySelector('.layer:last-child [data-f="methodEtc"]'); if (ei) ei.value = ''; }
