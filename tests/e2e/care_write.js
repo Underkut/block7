@@ -1769,7 +1769,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
     eq('㊼ 구분 알약 → 그 구분 사람만(줄어듦) · 눌린 표시', [await page.$$eval(GL + ' .gl-map button', x => x.length) <= tot, await page.$eval(GL + ' .gl-chips button:nth-child(2)', e => e.getAttribute('aria-pressed')), await page.evaluate(() => S.gRole) === role], [true, 'true', true]);
     await page.click(GL + ' .gl-chips button:nth-child(1)'); await page.waitForTimeout(200);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/glance-map.png', fullPage: false });
-    for (const [k, title] of [['flow', '심방 흐름'], ['role', '구분 나란히'], ['vis', '심방 격자'], ['quiet', '안 보이는 분'], ['att', '출석 격자'], ['todo', '챙길 것']]) {
+    for (const [k, title] of [['flow', '심방 흐름'], ['vis', '심방 격자'], ['quiet', '안 보이는 분'], ['att', '출석 격자'], ['todo', '챙길 것']]) {
       await page.click(GL + ' .gl-nav [data-act="gnav"][data-v="' + k + '"]'); await page.waitForTimeout(650);
       eq('㊼ 옆 카드로 — ' + title, await page.$eval(GL + ' .ph-head h3', e => e.textContent), title);
       if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/glance-' + k + '.png', fullPage: false });

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -98,6 +98,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .fab.round{width:50px;padding:0;justify-content:center}
 .h-sec{font-size:13px;font-weight:600;color:var(--tx);margin:24px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
 .h-sec small{font-weight:400;color:var(--tx3);font-size:12px}
+.h-sec .hs-t{display:inline-flex;align-items:baseline;gap:6px}
+.h-sec .hs-add{font-size:17px;line-height:1;padding:0 4px;font-weight:400}
 .h-sec button{color:var(--ac);font-weight:500;font-size:12.5px}
 .muted{color:var(--tx3);font-size:12.5px}
 .empty{font-size:13px;color:var(--tx3);padding:8px 0}
@@ -773,6 +775,10 @@ a.wl{color:inherit;text-decoration:none}
 .sk-go svg{width:30px;height:30px;fill:none;stroke:var(--tx);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round;transition:stroke .4s var(--ease),transform .4s var(--ease)}
 .sk-go:active svg{transform:scale(.94)}
 .sk-go{padding-bottom:14px}
+.nbk{position:fixed;inset:0;z-index:16;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:24px;animation:nbin .22s var(--ease)}
+.nbx{width:100%;max-width:320px;background:var(--paper);border-radius:16px;box-shadow:var(--shadow);padding-top:38px}
+@keyframes nbin{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.nbk{animation:none}}
 /* 1115-X 읽기 전에 연 입력 창 — 맨 위 알림 줄 · 아직 못 읽은 알약 자리 · 로그인 화면을 보러 간 사이 돌아오는 단추 */
 .early{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;line-height:1.5;color:var(--tx2);background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin:0 0 14px}
 .early>i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--ac);animation:skbreath 2.8s ease-in-out infinite}
@@ -1051,7 +1057,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-13';
+const APP_VERSION = 'v. 26-1115-14';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -3701,6 +3707,16 @@ function qnTick(v, i) {
   qnSet(v, it); tkPop('qtick', v.key, i);
 }
 // ── 할 일 → BLOCK7 할일 (C3b-1) — 기도노트 · 시리와 같은 쪽지함. BLOCK7 은 그대로 받는다 ──
+// 1115-5 5-D 성도 카드 → 기도노트: 이름만 든 쪽지 하나(내용 없음) — 기도노트를 열면 '심방 노트에서 온 분' 으로 들어온다
+async function prayPersonSend(name) {
+  if (trialOn()) { toast('시험 시트에서는 기도노트로\n보내지 않습니다'); return; }
+  const now = Date.now(), note = prayNote(name, now, newId('N', now, Math.random())); if (!note || !USER || !DB) return;
+  try {
+    await DB.doc('pray/' + USER.uid + '/c/inbox').set({ items: firebase.firestore.FieldValue.arrayUnion(note) }, { merge: true });
+    if (DATA.pray && DATA.pray.people && !prayHas(name)) DATA.pray.people.push(name);
+    toast('기도노트로 보냈습니다\n' + name + ' · 기도노트를 열면 들어옵니다');
+  } catch (e) { toast('보내지 못했습니다\n' + e.message); }
+}
 async function inboxPush(note) { if (trialOn()) throw new Error('시험 시트에서는 BLOCK7 로 보내지 않습니다'); await DB.doc('pray/' + USER.uid + '/c/b7inbox').set({ items: firebase.firestore.FieldValue.arrayUnion(note) }, { merge: true }); }
 async function writeB7Mark(v, a, stamp) {
   const s = saved().sheet, av = await readTab(s.id, '액션'), plan = b7MarkPlan(parseActionTab(av), v, a, stamp, newId('A', Date.now(), Math.random()));
@@ -4082,7 +4098,7 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // ───────────────────────────── 화면 상태 ─────────────────────────────
-const S = { keep: new Set(), attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
+const S = { keep: new Set(), attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: (v => ['list', 'attend', 'people', 'week', 'month', 'plan', 'collect'].includes(v) ? v : 'list')(savedRaw().view), newBox: false, layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
   wk: 0, mo: today().slice(0, 7), mday: today(), gRole: '', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
 const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
 // 1115-X 시트를 다 읽기 전에도 입력 창이 선다 — 그동안은 빈 모형(기록 0건)을 돌려준다. '다 읽었나' 는 ready() · DATA.state 로 본다
@@ -4176,7 +4192,7 @@ function head(title, left, right) {
   return '<div class="ph-head r2">' + vb + '<h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
-  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'attend' ? '<button class="fab round" data-act="attadd" aria-label="출석했어요">' + IC.plus + '</button>' : '<button class="fab round" data-act="addrec" aria-label="심방했어요">' + IC.plus + '</button>';
+  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'attend' ? '<button class="fab round" data-act="attadd" aria-label="출석했어요">' + IC.plus + '</button>' : S.view === 'list' ? '<button class="fab round" data-act="addrec" aria-label="심방했어요">' + IC.plus + '</button>' : '<button class="fab round" data-act="newbox" aria-label="새로 적기">' + IC.plus + '</button>';   // 1115-5 2 심방 · 출석 · 계획 밖에서는 + 가 NEW 상자(심방 입력 · 출석 입력)를 연다
   return f + '<nav class="ph-nav">' + TABS_NAV.map(t => { const on = S.view === t[0] || (t[0] === 'week' && S.view === 'month');
     return '<button data-act="tab" data-v="' + t[0] + '"' + (on ? ' aria-current="true"' : '') + '>' + IC[t[2]] + t[1] + '</button>'; }).join('') + '</nav>';
 }
@@ -4473,25 +4489,25 @@ function lPerson(L) {
   if (sm.qs.length) h += '<div class="h-sec">다음 질문<small>' + sm.qs.length + '</small></div><ul class="nx-qs">' + sm.qs.map(q => '<li>' + IC.qb + '<span>' + esc(q.t) + ' <small>' + (q.from === '계획' ? md(q.ymd) + ' 계획' : md(q.ymd) + ' 기록') + '</small></span></li>').join('') + '</ul>';
   h += personTopicsHtml(L, live);
   const att = attendOf(AT(), n);
-  h += '<div class="h-sec">출석<small>' + (att.length ? att.length + '번 · 마지막 ' + relDay(att[0].date, t) : '기록 없음') + '</small></div>';
-  if (att.length) h += '<div class="tl">' + att.slice(0, L.attAll ? 999 : 5).map(a => attRowHtml(a, false)).join('') + '</div>' + (att.length > 5 && !L.attAll ? '<button class="send" data-act="attall" style="margin-top:8px">출석 ' + att.length + '번 모두 보기</button>' : '');
-  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="send" data-act="attadd" data-v="' + esc(n) + '">+ 출석했어요</button><button class="send" data-act="b7person" data-v="' + esc(n) + '">BLOCK7 할일로</button></div>';
+  h += '<div class="h-sec"><span class="hs-t">출석<button class="hs-add" data-act="attadd" data-v="' + esc(n) + '" aria-label="출석 추가">+</button></span><small>' + (att.length ? att.length + '번 · 마지막 ' + relDay(att[0].date, t) : '기록 없음') + '</small></div>';
+  if (att.length) h += '<div class="tl">' + att.slice(0, L.attAll ? 999 : 5).map(a => attRowHtml(a, false, true)).join('') + '</div>' + (att.length > 5 && !L.attAll ? '<button class="send" data-act="attall" style="margin-top:8px">출석 ' + att.length + '번 모두 보기</button>' : '');
   const up = calItems().filter(e => e.ymd >= t && (e.planId ? e.title === n : e.title.includes(n)));
-  h += '<div class="h-sec">흐름<small>' + vs.length + '번' + (all.length > vs.length ? ' · 보관 ' + (all.length - vs.length) : '') + '</small></div><div class="tl">';
+  h += '<div class="h-sec"><span class="hs-t">심방<button class="hs-add" data-act="addrecp" data-v="' + esc(n) + '" aria-label="심방 추가">+</button></span><small>' + vs.length + '번' + (all.length > vs.length ? ' · 보관 ' + (all.length - vs.length) : '') + '</small></div><div class="tl">';
   up.forEach(e => { h += e.planId ? '<button class="tlx" data-act="planopen" data-v="' + esc(e.planId) + '"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(((DATA.plans || []).find(p => p.id === e.planId) || {}).why || '물어볼 것 없음').split('\n')[0] + '</span></span></button>' : '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
   h += vs.map(x => tlRow(x, n)).join('') + '</div>';
   if (all.length > vs.length) h += '<button class="send" data-act="arch" style="margin-top:10px">보관 기록 함께 보기</button>';
   const ment = M().visits.filter(v => !hasPerson(v, n) && (v.mentions || []).some(x => nameKey(x) === nameKey(n)) && (S.showArch || !v.archived));   // 1112-N 다른 분 기록에 이름만 나온 것(그 분 기록은 안 만듦)
   if (ment.length) h += '<div class="h-sec">다른 기록에서 언급됨<small>' + ment.length + '번</small></div><div class="tl">' + ment.map(x => tlRow(x)).join('') + '</div>';
   if (sm.src.length) h += '<div class="h-sec">원본</div>' + sm.src.map(x => '<div class="nx-src">' + (x.url && /^https:\/\//.test(x.url) ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.id) + ' ↗</a>' : esc(x.id)) + ' <small>' + md(x.ymd) + '</small></div>').join('');
+  h += '<div class="h-sec">다른 앱으로</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="send" data-act="b7person" data-v="' + esc(n) + '">BLOCK7으로</button><button class="send" data-act="praysend" data-v="' + esc(n) + '">기도노트앱으로</button></div>';   // 1115-5 5-D
   return h + '</div>';
 }
 
 // ───────────────────────────── 출석 (1108-A) ─────────────────────────────
 function AT() { return DATA.attend || []; }
-function attSub(a) { return [a.role, [a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, attWithText(a.with), a.serve ? a.serve + ' 섬김' : ''].filter(Boolean).join(' · '); }
-function attRowHtml(a, withName) {
-  const sub = attSub(a), memo = firstLine(a.memo || '');
+function attSub(a, noRole) { return [noRole ? '' : a.role, [a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, attWithText(a.with), a.serve ? a.serve + ' 섬김' : ''].filter(Boolean).join(' · '); }
+function attRowHtml(a, withName, noRole) {
+  const sub = attSub(a, noRole), memo = firstLine(a.memo || '');
   return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + nm(a.name) + '</b>' : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
     (sub || a.memo ? '<span class="t2">' + esc(sub) + (sub && a.memo ? ' · ' : '') + (a.memo ? esc(memo) : '') + '</span>' : '') + '</span></button>';
 }
@@ -5102,7 +5118,7 @@ function hbars(rows) {
 //   예전 '대시보드 · 할 일 · 속성별' 세 탭은 없다 — 할 일은 '챙길 것', 속성별은 '심방 흐름' 의 '무엇을 나눴나' 로 들어왔다.
 //   구분 알약(S.gRole)은 한눈에 안에서만 쓴다(깔때기 조건과 따로 — 다른 탭에 걸리지 않게, HB 11/15).
 let GLC = null;   // 한 번 그릴 때 한 번만 센다(render 가 비운다)
-const GL_CARDS = [['both', '심방+출석'], ['map', '돌봄 지도'], ['flow', '심방 흐름'], ['role', '구분 나란히'], ['vis', '심방 격자'], ['quiet', '안 보이는 분'], ['att', '출석 격자'], ['todo', '챙길 것']];
+const GL_CARDS = [['both', '심방+출석'], ['map', '돌봄 지도'], ['flow', '심방 흐름'], ['vis', '심방 격자'], ['quiet', '안 보이는 분'], ['att', '출석 격자'], ['todo', '챙길 것']];
 function glRoles() { return filterOptions(M().visits, DATA.opts).role; }
 function GM() {
   if (!GLC) { const roles = glRoles(); if (S.gRole && !roles.includes(S.gRole)) S.gRole = '';
@@ -5183,23 +5199,22 @@ function vCollect() {
   if (m === 'pa') {
     h += gxHero(G, 0) + sec('심방') + '<div class="gl-cg">' +
       gxCard('map', hd.map, gxBand(G)) + gxCard('flow', hd.flow, gxFlow(G, 40) + gxFlowNote(G)) +
-      gxCard('role', hd.role, gxRoles(G, 4)) + gxCard('vis', hd.vis, gxOld(G, 3)) + '</div>' + sec('출석', '적힌 분 기준') + '<div class="gl-cg">' +
+      gxCard('vis', hd.vis, gxOld(G, 3), 'wide') + '</div>' + sec('출석', '적힌 분 기준') + '<div class="gl-cg">' +
       gxCard('quiet', hd.quiet, gxQuiet(G, 3, false)) + gxCard('att', hd.att, gxAtt(G, 36)) + '</div>' + sec('챙길 것') + '<div class="gl-cg">' + gxCard('todo', hd.todo, todoBar, 'wide') + '</div>';
   } else if (m === 'pb') {
     h += gxHero(G, 3) + sec('심방') + '<div class="gl-cg">' +
       gxCard('map', hd.map, gxBand(G)) + gxCard('flow', hd.flow, gxFlow(G, 40) + gxFlowNote(G)) +
-      gxCard('role', hd.role, gxRoles(G, 4), 'wide') + gxCard('vis', hd.vis, gxVis(G, 5), 'wide') + '</div>' + sec('출석', '적힌 분 기준') + '<div class="gl-cg">' +
+      gxCard('vis', hd.vis, gxVis(G, 5), 'wide') + '</div>' + sec('출석', '적힌 분 기준') + '<div class="gl-cg">' +
       gxCard('quiet', hd.quiet, gxQuiet(G, 3, true), 'wide') + gxCard('att', hd.att, '<span class="gx-two"><span>' + gxAtt(G, 34) + '</span><span>' + gxSvc(G, 3) + '</span></span>', 'wide') + '</div>' +
       sec('챙길 것') + '<div class="gl-cg">' + gxCard('todo', hd.todo, todoBar + gxTodo(G, 4), 'wide') + '</div>';
   } else if (m === 'ta') {
     h += '<div class="gl-cg c3">' + gxHero(G, 3, 'span2') + gxCard('todo', hd.todo, todoBar + gxTodo(G, 4)) +
-      gxCard('map', hd.map, gxBand(G) + gxOld(G, 3)) + gxCard('flow', hd.flow, gxFlow(G, 64) + gxFlowNote(G)) + gxCard('role', hd.role, gxRoles(G, 6)) +
-      gxCard('vis', hd.vis, gxVis(G, 6)) + gxCard('quiet', hd.quiet, gxQuiet(G, 4, true)) + gxCard('att', hd.att, gxAtt(G, 48) + gxSvc(G, 3)) + '</div>';
+      gxCard('map', hd.map, gxBand(G) + gxOld(G, 3)) + gxCard('flow', hd.flow, gxFlow(G, 64) + gxFlowNote(G)) + gxCard('vis', hd.vis, gxVis(G, 6)) + gxCard('quiet', hd.quiet, gxQuiet(G, 4, true)) + gxCard('att', hd.att, gxAtt(G, 48) + gxSvc(G, 3)) + '</div>';
   } else {
     h += '<div class="gl-two"><div class="gl-pane">' + gxHero(G, 3) +
       gxCard('map', hd.map, gxBand(G) + gxNames(G, 18)) + gxCard('vis', hd.vis, gxVis(G, 6)) +
       '</div><div class="gl-pane">' + gxCard('todo', hd.todo, todoBar + gxTodo(G, 4)) + gxCard('flow', hd.flow, gxFlow(G, 70) + gxFlowNote(G)) +
-      gxCard('role', hd.role, gxRoles(G, 6)) + gxCard('quiet', hd.quiet, gxQuiet(G, 4, true)) + gxCard('att', hd.att, gxAtt(G, 50) + gxSvc(G, 3)) + '</div></div>';
+      gxCard('quiet', hd.quiet, gxQuiet(G, 4, true)) + gxCard('att', hd.att, gxAtt(G, 50) + gxSvc(G, 3)) + '</div></div>';
   }
   return h + '</div>' + nav();
 }
@@ -5261,10 +5276,8 @@ const GL_BODY = {
       '<div class="tile"><span class="l">만난 사람</span><b>' + f.met + '<small>명</small></b><span class="s">최근 4주</span></div><div class="tile"><span class="l">깊은 대화</span><b>' + f.deep + '<small>번</small></b><span class="s">최근 4주</span></div></div>';
     if (heard) h += '<p class="muted" style="margin:-4px 0 12px">최근 4주 기록 중 <span class="nx-heard">전해 들음</span> ' + heard + '건 — 본인에게 직접 듣지 않은 이야기입니다.</p>';
     h += '<div class="panel"><div class="pt"><b>주별 심방</b><span>최근 8주</span></div><div class="lg"><span><i style="background:var(--deep)"></i>깊음</span><span><i style="background:' + mixDeep(58) + '"></i>중간</span><span><i style="background:' + mixDeep(26) + '"></i>얕음</span></div>' + chartWeekly(G.visits) + '</div>';
-    h += '<div class="panel"><div class="pt"><b>구분 나란히</b><span>8주 흐름 · 8주 안에 만난 분</span></div>' + glRoleTable(G) + '</div>';
     return h + '<div class="panel"><div class="pt"><b>무엇을 나눴나</b><span>누르면 펼침</span></div>' + glAttrs(G) + '</div>';
   },
-  role(G) { return '<p class="muted">구분마다 지난 8주의 심방 흐름과, 그 구분 성도 가운데 8주 안에 만난 분입니다. 절반에 못 미치면 주황으로 보입니다. 줄을 누르면 한눈에 전체를 그 구분으로 봅니다.</p>' + glRoleTable(G); },
   vis(G) {
     if (!G.grid.length) return '<p class="empty">아직 기록이 없습니다.</p>';
     const ws = weeksBack(12, today()), n = S.glN || 60;
@@ -5679,10 +5692,10 @@ async function writeActLines(rec, lines) {
   if (pl.cancel.length) await batchValues(s.id, pl.cancel.map(r => ({ range: a1('액션', h.indexOf('상태'), r), values: [['취소']] })));
   return pl.add.length + pl.cancel.length;
 }
-function openEdit(key) {
+function openEdit(key, name) {
   if (CELLS.state === 'idle') loadCells();   // 1112-N 이름 후보에 셀 명단도 (읽기만 — 셀 inside 로그인이 이 브라우저에 있을 때)
   if (key) { const v = byKey(key); if (!v) return; openLayer('edit', { key, row: v.row, form: Object.assign(recordFromVisit(v), { qn: qnText(qnItems(v)), actLines: linesOfVisit(v) }), detOpen: !!v.detail }); }
-  else { const last = null; openLayer('edit', { key: null, form: Object.assign(blankRecord(today(), last), { actLines: {} }) }); }
+  else { const last = null; openLayer('edit', { key: null, form: Object.assign(blankRecord(today(), last), { actLines: {}, name: name || '' }) }); }
 }
 async function saveRecord(L) {
   if (L.impSlot) { impSlotSave(L); return; }   // 1112-N 붙여넣기 미리보기에서 연 고치기 — 시트가 아니라 미리보기로
@@ -6138,7 +6151,9 @@ function settingsPane(L, t) {
   let h = '';
   if (t === 0) {
     const mode = talkMode(), SAMPLE = [{ w: 's', t: '요즘 잠을 잘 못 자요.' }, { w: 'm', t: '오늘 저녁에 같이 기도할게요.' }, { w: 's', t: '고마워요.' }];
-    h += '<div class="set"><div class="srow"><span class="t">대화 보기</span><span></span><div class="seg" role="group" aria-label="대화 보기" style="grid-column:1/-1;margin:6px 0 0">' +
+    h += '<div class="set"><div class="srow"><span class="t">화면 색</span><span></span><div class="seg" role="group" aria-label="화면 색" style="grid-column:1/-1;margin:6px 0 0">' +
+      [['auto', '기기'], ['light', '라이트'], ['dark', '다크']].map(o => '<button data-act="theme" data-v="' + o[0] + '" aria-pressed="' + (themeNow() === o[0]) + '">' + o[1] + '</button>').join('') + '</div></div>' +
+      '<div class="srow"><span class="t">대화 보기</span><span></span><div class="seg" role="group" aria-label="대화 보기" style="grid-column:1/-1;margin:6px 0 0">' +
       [['b', '대본 — 앞에 이름표'], ['a', '말풍선']].map(o => '<button data-act="talkmode" data-v="' + o[0] + '" aria-pressed="' + (mode === o[0]) + '">' + o[1] + '</button>').join('') + '</div>' +
       '<div class="tv ' + mode + '" style="grid-column:1/-1;margin-top:8px;padding:8px 12px;border-radius:12px;background:var(--s1);border:1px solid var(--line)" aria-hidden="true"><div class="tv-body" style="padding:2px 0">' + talkLinesView(SAMPLE, mode) + '</div></div>' +
       '<div class="d">기록을 열었을 때 성도의 말 · 내 말이 보이는 모양입니다. 시트에 적히는 글은 같습니다.</div></div>' +
@@ -6402,6 +6417,18 @@ function earlyHtml(L) {
     (DATA.state === 'err' && USER && G.connected ? '<button data-act="reload">다시 읽기</button>' : '') + '<button data-act="earlypeek">' + (DATA.state === 'err' && USER && G.connected ? '자세히' : '화면 보기') + '</button></div>';
 }
 
+// 1115-5 2 NEW 상자 — 심방 · 출석 · 계획 페이지가 아닌 곳의 + 가 연다. 불러오는 화면의 NEW 상자와 같은 모양(바깥을 누르면 닫힘)
+function newBoxHtml() {
+  const go = (k, ic, name) => '<button class="sk-go" data-act="nbgo" data-v="' + k + '">' + ic + '<span>' + name + '</span></button>';
+  return '<div class="nbk" data-act="nbclose"><div class="sk-box nbx" data-frame data-act="nbstay" role="dialog" aria-label="새로 적기"><h3>NEW</h3><div class="sk-new">' + go('visit', IC.n_list, '심방 입력') + go('attend', IC.n_att, '출석 입력') + '</div></div></div>';
+}
+// 1115-5 1 테마 — 기기(자동) · 라이트 · 다크. 이 기기에만 기억한다(계정에 안 올림)
+function themeNow() { const t = savedRaw().theme; return t === 'light' || t === 'dark' ? t : 'auto'; }
+function applyTheme() {
+  const t = themeNow(), root = document.documentElement;
+  if (t === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { if (!m.dataset.o) m.dataset.o = m.content; m.content = t === 'light' ? '#ffffff' : t === 'dark' ? '#181c1a' : m.dataset.o; });
+}
 // 1115-W 처음 여는 동안 — 화면 한가운데: 위 NEW(심방 · 출석 바로 입력) / 아래 HISTORY(기록 맛보기 두 그림, 테두리가 불러오기 막대)
 // 1115-X 두 단추는 읽는 중에도 입력 창을 **바로** 연다(openEarly). 시트는 뒤에서 마저 읽는다.
 const LOADSTEP = { step: -1, t: 0 };
@@ -6453,7 +6480,8 @@ function render() {
   } else {
     S.peek = false;
     const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
-    app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + '<div class="tip" id="tip" hidden></div>';
+    app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + (S.newBox ? newBoxHtml() : '') + '<div class="tip" id="tip" hidden></div>';
+    if (S.newBox) skFrame(app);
   document.body.classList.toggle('gl-wide', S.view === 'collect' && S.glm === 'ta');   // 1115-V2
     if (window.scrollY !== y) window.scrollTo(0, y);
     if (foc) { const q = $('q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
@@ -6533,7 +6561,7 @@ function tabIndex(v) { return TABS_NAV.findIndex(t => t[0] === (v === 'month' ? 
 function goTab(v) {
   if (v === S.view) { window.scrollTo({ top: 0, behavior: RM.matches ? 'auto' : 'smooth' }); return; }
   const dir = Math.sign(tabIndex(v) - tabIndex(S.view)) || (v === 'month' ? 1 : -1);
-  swap(dir, () => { S.view = v; S.sheet = false; S.attPop = null; window.scrollTo(0, 0); });
+  swap(dir, () => { S.view = v; S.sheet = false; S.attPop = null; S.newBox = false; save({ view: v }); window.scrollTo(0, 0); });
 }
 function stepPeriod(d) {
   if (S.view === 'week') S.wk += d;
@@ -6660,6 +6688,8 @@ document.addEventListener('click', e => {
   if (a === 'c0') { const s = STEPS.find(x => x[0] === v); if (s) s[3](); return; }
   if (a === 'wk' || a === 'mo') { const d = +v; swap(d, () => stepPeriod(d)); return; }
   if (a === 'addrec') { openEdit(null); return; }
+  if (a === 'addrecp') { openEdit(null, v || ''); return; }   // 1115-5 5-C 성도 카드 '심방' 옆 + — 이름이 채워진 채
+  if (a === 'praysend') { prayPersonSend(v); return; }   // 1115-5 5-D
   if (a === 'edit') { S.menu = null; openEdit(v); return; }
   if (a === 'prepare') { busy(ensurePrepared).then(() => render()); return; }
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
@@ -6904,6 +6934,11 @@ document.addEventListener('click', e => {
   else if (a === 'gnav') { const el = $('layers').lastElementChild; if (el && topLayer().type === 'glance') { S.glN = 0; detGo(el, v, +k || 1); } return; }
   else if (a === 'glmore') S.glN = (S.glN || 60) + 60;
   else if (a === 'glay') save({ glLay: v });   // 1115-V2 폰 카드 배치 — 이 기기에만
+  else if (a === 'newbox') S.newBox = true;
+  else if (a === 'nbclose') S.newBox = false;
+  else if (a === 'nbstay') return;
+  else if (a === 'nbgo') { S.newBox = false; if (v === 'attend') openAttEdit(null, ''); else openEdit(null); return; }
+  else if (a === 'theme') { save({ theme: v }); applyTheme(); toast(v === 'light' ? '라이트로 보여 줍니다' : v === 'dark' ? '다크로 보여 줍니다' : '기기 설정을 따라갑니다', 2200); }
   else if (a === 'attrk') S.attrK = v;
   else if (a === 'gopen') S.gopen[v] = !S.gopen[v];
   else if (a === 'showdone') S.showDone = !S.showDone;
@@ -7074,8 +7109,9 @@ document.addEventListener('touchcancel', () => sdEnd(true));
 document.addEventListener('keydown', e => {   // 1113-E 2 PC: 열람 화면에서 ← → 로 이전 · 다음 기록
   if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isField(document.activeElement)) { const L = topLayer(); if (L && L.type === 'detail') { const nb = detNeighbors(), d = e.key === 'ArrowRight' ? 1 : -1, to = d > 0 ? nb.next : nb.prev; if (to) detGo($('layers').lastElementChild, to, d); return; } }
   if (e.key !== 'Escape') return;
-  if (S.attPop) { S.attPop = null; render(); } else if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
+  if (S.newBox) { S.newBox = false; render(); } else if (S.attPop) { S.attPop = null; render(); } else if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
 });
+applyTheme();
 render();
 fbInit().catch(e => { AUTH_READY = true; render(); toast('로그인 준비에 실패했습니다\n' + e.message); });
 </script>
