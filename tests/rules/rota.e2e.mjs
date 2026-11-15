@@ -60,7 +60,8 @@ ok('② 남의 방문의 숙소는 열리지 않고 알림만', [await ga.evalua
 // HB 몫 — 달력표 칸 고르기 · 자동 배열
 await ga.evaluate(() => closePane()); await ga.waitForTimeout(600); ga.toasts.length = 0;
 await ga.evaluate(() => { const b = document.createElement('button'); b.dataset.pick = '2026-11-22|sun1|offer'; b.id = 'probe'; document.body.appendChild(b); b.click(); });
-ok('② 자리 고르기 판은 열리지 않는다(HB 몫)', [await ga.evaluate(() => S.pane ? S.pane.kind : null), ga.toasts.length > 0], [null, true]);
+ok('② 자리를 누르면 고르기 대신 \'보기만\' 판(누가 · 걸리는 것) · 고르는 단추 없음', await ga.evaluate(() => [S.pane && S.pane.kind, /보기만/.test($('#pane').innerText), !!document.querySelector('#pane [data-who]')]), ['slotv', true, false]);
+await ga.evaluate(() => closePane()); await ga.waitForTimeout(600);
 ok('② 자동 배열 단추 · 방문 더하기는 안 보인다', await ga.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'sheet'; render(); const a = !!document.querySelector('[data-act="auto"]'); PREF.tab = 'busan'; render(); const b = !!document.querySelector('[data-act="newvisit"]'); return [a, b]; }), [false, false]);
 // 자기 방문 숙소 적기 — 실제 판 · 저장 단추
 await ga.waitForTimeout(600); await ga.evaluate(() => openPane({ kind: 'visit', id: 'v|2026-11-22' })); await ga.waitForTimeout(400);
@@ -85,6 +86,7 @@ const hbv = await until(() => hb.evaluate(() => { const v = S.book.visits.find(x
 ok('③ HB 화면: 교역자 숙소 · 부재 · 가능 일정 + 누가', hbv, ['교역자 호텔', 'pa', [{ from: '2026-12-01', to: '2026-12-03', note: '수술' }], 'pa', 1]);
 const d3 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b7.visits.find(x => x.id === 'v|2026-11-22'); return v.stay && v.stay.length ? d : null; });
 ok('③ HB 계정 문서에도 들어갔다(HB 앱이 씀)', d3 && [d3.b7.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d3.b7.visits.find(x => x.id === 'v|2026-11-22').note, d3.b7.people.length], ['교역자 호텔', '처음 메모', 2]);
+ok('③ HB 고르기 판: 교역자가 적은 가능 일정이 \'가능 일정\'(초록)으로', await hb.evaluate(async () => { openPane({ kind: 'pick', id: '2026-12-20|sun1|offer' }); await new Promise(r => setTimeout(r, 300)); const b = document.querySelector('#pane [data-who="pa"] .why'); const out = b ? [b.textContent.includes('가능 일정'), b.classList.contains('ok')] : null; closePane(); await new Promise(r => setTimeout(r, 600)); return out; }), [true, true]);
 ok('③ 숙소 이름이 HB 숙소 목록에 저절로 들어가지 않는다(목록은 HB 몫)', await hb.evaluate(() => S.book.opts.filter(o => o.type === 'stay' && !o.del).map(o => o.name)), []);
 // HB 가 메모만 고친다 → 교역자 숙소는 그대로
 await hb.evaluate(() => openPane({ kind: 'visit', id: 'v|2026-11-22' })); await hb.waitForTimeout(400);

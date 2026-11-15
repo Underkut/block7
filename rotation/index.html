@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1115-2 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R6b 교역자 들어오기(구글 로그인 · 보기만 + 자기 숙소 · 교통 · 일정) -->
+<!-- 교역자 로테이션 v. 26-1115-3 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R6c 가능 일정을 자동 배열이 먼저 고려 · 교역자 자리 보기 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -191,6 +191,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
 .prow2[aria-pressed="true"] .ck::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--bg)}
 .prow2 .why{font-size:12px;color:var(--tx3);text-align:right}
 .prow2 .why.bad{color:var(--bad)}
+.why.ok{color:var(--ok)}
+.okc{color:var(--ok)}
+.badc{color:var(--bad)}
 .grp{font-size:12px;color:var(--tx3);margin:4px 2px -4px}
 .subrow{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:12px;position:relative}
 .subrow .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -342,7 +345,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1115-2';
+const APP_VERSION = 'v. 26-1115-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 예배 — off: 그 주 주일에서 며칠 뒤인가. ⚠️ 모든 주간은 **주일에 시작**한다(HB 11/14): 주일 → 화 → 수 → 금 → 토
 const SVC = {
@@ -824,6 +827,8 @@ function dayChoices(date) { const out = []; for (let k = -5; k <= 1; k++) out.pu
 // 그 주(주일~토) 이름: '11/15~21', 달이 넘어가면 '11/29~12/5'
 function weekLabel(sun) { const sat = addDays(sun, 6); return mdOf(sun) + '~' + (sat.slice(5, 7) === sun.slice(5, 7) ? +sat.slice(8, 10) : mdOf(sat)); }
 // 그 날 그 사람이 부재인가 — 있으면 그 기간
+// 가능 일정(R6 — 교역자가 직접 적음): 그 날 '맡을 수 있다' 고 한 분. 자동 배열이 먼저 고려하고, 고르기 판에 '가능 일정' 으로 보인다
+function canOn(book, pid, date) { const p = book.people.find(x => x.id === pid); return (p && !p.del && (p.can || []).find(a => date >= a.from && date <= a.to)) || null; }
 function awayOn(book, pid, date) { const p = book.people.find(x => x.id === pid); return (p && !p.del && (p.away || []).find(a => date >= a.from && date <= a.to)) || null; }
 // 그 주에 그 사람이 분당에 있어야 하나(고정 조건) — 있으면 걸린 표시
 function pinOn(book, pid, sun) { const p = book.people.find(x => x.id === pid), m = book.marks.find(x => x.id === markId(sun) && !x.del);
@@ -899,6 +904,7 @@ function pickNote(book, pid, date, role, svcs) {
   if (p && !p.roles.includes(r0)) return { level: 'warn', text: "'" + PROLES[r0] + "' 안 맡음" };
   const off = (svcs || []).filter(s => p && !canDo(p, s, role));
   if (off.length) return { level: 'warn', text: off.map(s => SVC[s].short).join(' · ') + ' 안 들어감' };
+  const c = canOn(book, pid, date); if (c) return { level: 'ok', text: '가능 일정' + (c.note ? ' · ' + c.note : '') };
   return null;
 }
 /* ---- 자동 배열 제안 (R4) ----
@@ -931,12 +937,13 @@ function propose(book, ym, force) {
       const gap = last ? Math.round((Date.parse(sun) - Date.parse(last)) / 864e5) : 365;
       const recent = ds.filter(d => d >= addDays(sun, -56)).length;
       const prevWeek = ds.some(d => d >= addDays(sun, -13) && d <= addDays(sun, -7));
-      return { s: gap - recent * 21 - (prevWeek ? 100 : 0), gap, recent, last }; };
+      const can = dates.some(d => canOn(work, p.id, d));   // 가능 일정을 적은 분은 먼저(+60 — 두 주 연속 벌점은 못 넘는다)
+      return { s: gap - recent * 21 - (prevWeek ? 100 : 0) + (can ? 60 : 0), gap, recent, last, can }; };
     const ranked = cand.map(p => Object.assign({ p }, score(p))).sort((a, b) => b.s - a.s || a.p.name.localeCompare(b.p.name, 'ko'));
     const forced = force[sun] && ranked.find(r => r.p.id === force[sun]);
     const best = forced || ranked[0];
     out.visits.push({ date: sun, pid: best.p.id, days, fri: !!bf,
-      why: best.last ? `마지막 부산 ${mdOf(best.last)} · ${best.gap}일 전${best.recent ? ' · 8주에 ' + best.recent + '번' : ''}` : '부산 기록 없음',
+      why: (best.can ? '가능 일정 적음 · ' : '') + (best.last ? `마지막 부산 ${mdOf(best.last)} · ${best.gap}일 전${best.recent ? ' · 8주에 ' + best.recent + '번' : ''}` : '부산 기록 없음'),
       alts: ranked.filter(r => r !== best).slice(0, 3).map(r => r.p.id) });
     put(work, 'visits', { id: visitId(sun), who: [best.p.id], days, fri: !!bf }, 'auto', 1);
   }
@@ -947,7 +954,7 @@ function propose(book, ym, force) {
   const pick = (svcs, role, date, not) => {
     const u = used(role);
     const c = everyone.filter(p => svcs.every(sv => canDo(p, sv, role)) && !(not || []).includes(p.id) && !busyOn(work, p.id, date) && !awayOn(work, p.id, date));
-    c.sort((a, b) => ((u[a.id] ? u[a.id].n.size : 0) - (u[b.id] ? u[b.id].n.size : 0)) || ((u[a.id] ? u[a.id].last : '') < (u[b.id] ? u[b.id].last : '') ? -1 : (u[a.id] ? u[a.id].last : '') > (u[b.id] ? u[b.id].last : '') ? 1 : 0) || a.name.localeCompare(b.name, 'ko'));
+    c.sort((a, b) => (!!canOn(work, b.id, date) - !!canOn(work, a.id, date)) || ((u[a.id] ? u[a.id].n.size : 0) - (u[b.id] ? u[b.id].n.size : 0)) || ((u[a.id] ? u[a.id].last : '') < (u[b.id] ? u[b.id].last : '') ? -1 : (u[a.id] ? u[a.id].last : '') > (u[b.id] ? u[b.id].last : '') ? 1 : 0) || a.name.localeCompare(b.name, 'ko'));
     return c;
   };
   const fill = (id, pid) => { out.slots.push({ id, pid }); put(work, 'slots', { id, who: [pid] }, 'auto', 1); };
@@ -1389,7 +1396,7 @@ function viewWeek() {
   return `${syncBanner()}
   <div class="nav"><button data-week="-1" aria-label="지난 주">‹</button><b>${weekLabel(sun)}${sun === thisSun ? ' · 이번 주' : ''}</b><button data-week="1" aria-label="다음 주">›</button>
     ${sun !== thisSun ? '<button class="now" data-week="0">오늘</button>' : ''}<button class="txtbtn" data-act="wsort" aria-label="순서 바꾸기">${order === 'new' ? '최신순' : '시간순'}</button></div>
-  <button class="markline" data-mark="${sun}">${mk && (mk.tags.length || mk.note) ? mk.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('') + (mk.note ? `<span>${esc(mk.note)}</span>` : '') : '<span class="muted">교회 일정 표시 (성찬주 · 극동방송 …) 더하기</span>'}</button>
+  ${isStaff() ? (mk && (mk.tags.length || mk.note) ? `<div class="markline">${mk.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('')}${mk.note ? `<span>${esc(mk.note)}</span>` : ''}</div>` : '') : `<button class="markline" data-mark="${sun}">${mk && (mk.tags.length || mk.note) ? mk.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('') + (mk.note ? `<span>${esc(mk.note)}</span>` : '') : '<span class="muted">교회 일정 표시 (성찬주 · 극동방송 …) 더하기</span>'}</button>`}
   ${alertList(cf)}${sun === thisSun ? choreList() : ''}
   ${cards.map(c => c.h).join('')}`;
 }
@@ -1663,6 +1670,24 @@ function personBox(p) {
     <div class="field"><span class="flabel">고정 — 이 표시가 있는 주에는 분당에 있어야 함</span>
       <div class="toggles">${tags.map(t => `<button class="tg sm" data-pin="${esc(t)}" data-pid="${esc(p.id)}" aria-pressed="${(p.pin || []).includes(t)}">${esc(t)}</button>`).join('')}</div></div>`;
 }
+/* ---- 자리 보기 (교역자 — 고르기는 HB 몫, R6c): 누가 · 그 자리에 걸리는 것 · 내가 그 날 어떤지 ---- */
+function paneSlotView() {
+  const [date, svc, role] = S.pane.id.split('|'), pm = peopleMap(S.book);
+  const sun4 = SVC[svc].off === 0 && role !== 'lead' ? SUN4.map(sv => slotId(date, sv, role)) : [S.pane.id];
+  const rows = sun4.map(id => { const x = S.book.slots.find(y => y.id === id && !y.del); return [id.split('|')[1], x ? whoText(S.book, x.who, x.txt, pm) : '']; });
+  const same = rows.every(r => r[1] === rows[0][1]);
+  const cf = conflicts(S.book, date, date, '').filter(c => sun4.includes(c.slot));
+  const me = myPid(), n = me ? pickNote(S.book, me, date, role, [svc]) : null;
+  return `<div class="phead"><span></span><b>${esc(slotLabel(svc, role))}<span class="sub">${mdd(date)} · 보기만</span></b>${xBtn}</div>
+  <div class="pbody">
+    ${cf.length ? `<div class="alerts" style="margin:0">${cf.map(c => `<div class="alert ${c.level}">${esc(conflictText(S.book, c, pm))}</div>`).join('')}</div>` : ''}
+    ${same && rows.length > 1 ? `<div class="vsec"><span class="vh">1 · 2 · 3부 · LL</span><span class="vv">${esc(rows[0][1]) || '<span class="muted">비어 있음</span>'}</span></div>`
+      : rows.map(([sv, w]) => `<div class="vsec"><span class="vh">${esc(SVC[sv].short)}</span><span class="vv">${esc(w) || '<span class="muted">비어 있음</span>'}</span></div>`).join('')}
+    ${me ? `<p class="small muted" style="margin:4px 0 0">나는 이 날: ${n ? `<span class="${n.level === 'bad' ? 'badc' : n.level === 'ok' ? 'okc' : ''}">${esc(n.text)}</span>` : '걸리는 것 없음'}</p>
+      <button class="txtbtn" data-act="myavail" style="justify-self:start">내 부재 · 가능 일정 적기 ›</button>` : ''}
+    <p class="tiny muted" style="margin:0">자리는 HB 께서 정합니다. 바꾸고 싶으시면 부재 · 가능 일정을 적어 주세요.</p>
+  </div>`;
+}
 /* ---- 내 부재 · 가능 일정 (교역자 — 자기 칸에 적는다, R6) ---- */
 function paneMyAvail() {
   const p = live(S.book.people).find(x => x.id === myPid());
@@ -1725,7 +1750,7 @@ const xBtn = `<button class="iconbtn modal-x" data-act="closepane" aria-label="�
 function renderPane() {
   const el = $('#pane'); if (!el || !S.pane) return;
   const top = el.scrollTop, an = S.anchor; S.anchor = null;
-  el.innerHTML = ({ pick: panePick, visit: paneVisit, mark: paneMark, imp: paneImport, auto: paneAuto, views: paneViews, exp: paneExport, myavail: paneMyAvail }[S.pane.kind])();
+  el.innerHTML = ({ pick: panePick, visit: paneVisit, mark: paneMark, imp: paneImport, auto: paneAuto, views: paneViews, exp: paneExport, myavail: paneMyAvail, slotv: paneSlotView }[S.pane.kind])();
   el.scrollTop = top;
   // 누른 단추가 다시 그린 뒤에도 같은 높이에 있게 (위 줄이 늘거나 줄어도 화면이 튀지 않게)
   if (an) { const n = [...el.querySelectorAll('button')].find(b => b.dataset && JSON.stringify(Object.assign({}, b.dataset)) === an.key); if (n) el.scrollTop += n.getBoundingClientRect().top - an.y; }
@@ -1748,7 +1773,7 @@ function panePick() {
   const cf = conflicts(S.book, date, date, '').filter(c => pickTargets().includes(c.slot));
   const prow = (p) => { const on = cur.who.includes(p.id), n = pickNote(S.book, p.id, date, role, tsv), cnt = countRole(S.book, p.id, role, ym);
     return `<button class="prow2" data-who="${esc(p.id)}" aria-pressed="${on}"><span class="ck"></span><span>${esc(p.name)}</span>
-      <span class="why${n && n.level === 'bad' ? ' bad' : ''}">${n ? esc(n.text) + ' · ' : ''}${+ym.slice(5)}월 ${cnt}번</span></button>`; };
+      <span class="why${n && n.level === 'bad' ? ' bad' : n && n.level === 'ok' ? ' ok' : ''}">${n ? esc(n.text) + ' · ' : ''}${+ym.slice(5)}월 ${cnt}번</span></button>`; };
   const title = canAll && S.pane.all ? `주일 ${ROLE[role]}` : slotLabel(svc, role);
   // 주일 설교 · 헌금: '네 예배 같게' 또는 예배 하나 — 고르는 곳을 분명히 (HB 11/14: 1부만 저장되던 것)
   const target = canAll ? `<div class="field"><span class="flabel">어느 예배에 넣을까요</span><div class="seg3"><button data-act="pickall" aria-pressed="${!!S.pane.all}">네 예배 같게</button>${SUN4.map(sv => `<button data-picksvc="${sv}" aria-pressed="${!S.pane.all && svc === sv}">${SVC[sv].short}</button>`).join('')}</div></div>` : '';
@@ -2157,6 +2182,7 @@ document.addEventListener('click', (e) => {
     return slide(to > S.ym ? 1 : -1, () => { S.ym = to; S.ext = {}; S.calDay = null; }); }
   // 판 열기
   // 이번 주의 묶음 줄(설교 · 헌금)은 네 예배가 같거나 비었으면 '모두 같게' 를 켠 채, 달력표의 한 칸은 그 칸만
+  if (d.pick && isStaff()) return openPane({ kind: 'slotv', id: d.pick });   // 교역자: 고르기 대신 '누가 · 걸리는 것' 보기 (R6c)
   if (d.pick) return openPane({ kind: 'pick', id: d.pick, all: d.all === '1' && (sameFour(d.pick) || isEmptyFour(d.pick)) });
   if (d.visit) return openPane({ kind: 'visit', id: d.visit });
   if (d.newvisit !== undefined) { if (d.newvisit) return newVisit(d.newvisit); goTab('busan'); return; }
@@ -2260,7 +2286,8 @@ function staffOk(t, d) {
     return !ed.manage && (ed.sec === 'stay' || ed.sec === 'travel') && d.vmanage === undefined;
   }
   if (t.closest('#pane') && S.pane && S.pane.kind === 'myavail') return true;
-  if (d.tab || d.week !== undefined || d.month !== undefined || d.mview || d.theme !== undefined || d.calf || d.ext || d.me || d.calday || d.gowk || d.img || d.visit) return true;
+  if (t.closest('#pane') && S.pane && S.pane.kind === 'slotv') return d.act === 'closepane' || d.act === 'myavail';
+  if (d.tab || d.week !== undefined || d.month !== undefined || d.mview || d.theme !== undefined || d.calf || d.ext || d.me || d.calday || d.gowk || d.img || d.visit || d.pick) return true;
   return !!d.act && STAFF_ACTS.has(d.act);
 }
 function staffNoMsg() { return '보기만 할 수 있습니다\n내 부산 방문의 숙소 · 교통과\n내 부재 · 가능 일정만 적을 수 있어요'; }

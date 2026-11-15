@@ -13,6 +13,7 @@
 //  ⑩ 겹침 검사: 부산에 머무는 날의 판교 자리(주일 · 금요 · 수요) = 빨강, 맡지 않는 일 · 두 주 연속 · 숙소 미정 · 극동방송 동행 없음 = 노랑
 //  ⑪ 자리 넣고 빼기: 비면 지우기 표지 · 같은 값이면 안 씀
 //  ⑫ 예배마다 들어가는지(HB 11/14): 일을 맡아도 빼 둔 예배가 있다 · 예전 자료는 '모두'
+//  ㉔ 가능 일정(R6c): 고르기 판 '가능 일정' · 자동 배열이 먼저 고려(부산 +60 · 분당 자리 먼저) · 두 주 연속은 못 넘음
 //  ㉓ 함께 쓰기(R6): 들어올 이메일 · 교역자 칸 · 받아들이기(자기 것만 · 칸마다 나중 것)
 //  ⑬ 낡은 앱과 함께: 새 앱은 b2 칸에만 쓰고 book · b2 를 합쳐 읽는다 · 같은 때면 긴 사본이 이긴다
 //  ⑭ 시트 기록 가져오기: 이름 → 사람 · 이미 적은 칸은 그대로 · 지운 것 안 살아남 · 두 번 해도 같음 · 지우지 않음
@@ -35,7 +36,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -522,6 +523,27 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉓ 교역자 누름은 한 곳에서 거른다(클릭 · 글자 칸)', [/if \(isStaff\(\) && !staffOk\(t, d\)\) return toast/.test(HTML), /if \(isStaff\(\) && !t\.closest\('#pane'\)\) return;/.test(HTML)], [true, true]);
   sc.eq('㉓ 교역자가 고친 방문은 자기 칸에만(staffEdits → staffWrite)', /if \(isStaff\(\)\) \{ if \(!myVisit\(v\)\) return toast\(staffNoMsg\(\)\); for \(const x of staffEdits\(v, next\)\) staffWrite/.test(HTML), true);
   sc.eq('㉓ 모르는 갈래는 조각을 만들지 않는다', A.staffPatch('ga@example.com', 'note', 'v|2026-11-22', 'x', 1), null);
+}
+
+// ㉔ 가능 일정 (R6c) — 지어낸 이름
+{
+  const mk = () => { const b = A.normBook(null);
+    ['가가', '나나', '다다'].forEach((n, i) => A.put(b, 'people', { id: 'c' + i, name: n, roles: ['preach', 'offer', 'lead', 'busan'] }, 'u', 1));
+    A.put(b, 'visits', { id: 'v|2026-10-04', who: ['c0'] }, 'u', 1); A.put(b, 'visits', { id: 'v|2026-10-11', who: ['c1'] }, 'u', 1); A.put(b, 'visits', { id: 'v|2026-10-18', who: ['c2'] }, 'u', 1);
+    return b; };
+  const b0 = mk(), p0 = A.propose(b0, '2026-11'), v0 = p0.visits.find(v => v.date === '2026-11-01');
+  sc.eq('㉔ (기준) 가능 일정이 없으면 가장 오래 안 간 분(가가)', v0.pid, 'c0');
+  const b1 = mk(); A.put(b1, 'people', Object.assign({}, b1.people.find(p => p.id === 'c1'), { can: [{ from: '2026-10-31', to: '2026-11-01', note: '이 주 좋아요' }] }), 'u', 2);
+  const p1 = A.propose(b1, '2026-11'), v1 = p1.visits.find(v => v.date === '2026-11-01');
+  sc.eq('㉔ 그 주 가능 일정을 적은 분(나나)이 먼저 · 이유 글에 표시', [v1.pid, /가능 일정 적음/.test(v1.why)], ['c1', true]);
+  sc.eq('㉔ 고르기 판에 \'가능 일정 · 까닭\'(초록)', [A.canOn(b1, 'c1', '2026-11-01').note, (A.pickNote(b1, 'c1', '2026-11-01', 'offer', ['sun1']) || {}).level, (A.pickNote(b1, 'c1', '2026-11-01', 'offer', ['sun1']) || {}).text], ['이 주 좋아요', 'ok', '가능 일정 · 이 주 좋아요']);
+  sc.eq('㉔ 부재가 가능 일정보다 먼저(같은 날이면 빨강)', (() => { const b = mk(); A.put(b, 'people', Object.assign({}, b.people.find(p => p.id === 'c1'), { can: [{ from: '2026-11-01' }], away: [{ from: '2026-11-01' }] }), 'u', 2); return A.pickNote(b, 'c1', '2026-11-01', 'offer', ['sun1']).level; })(), 'bad');
+  const b2 = mk(); A.put(b2, 'visits', { id: 'v|2026-10-25', who: ['c1'] }, 'u', 1);
+  A.put(b2, 'people', Object.assign({}, b2.people.find(p => p.id === 'c1'), { can: [{ from: '2026-11-01' }] }), 'u', 2);
+  sc.eq('㉔ 바로 앞 주에 다녀왔으면 가능 일정이 있어도 두 주 연속은 피한다', A.propose(b2, '2026-11').visits.find(v => v.date === '2026-11-01').pid !== 'c1', true);
+  const b3 = mk(); A.put(b3, 'people', Object.assign({}, b3.people.find(p => p.id === 'c2'), { can: [{ from: '2026-11-04' }] }), 'u', 2);
+  const s3 = Object.fromEntries(A.propose(b3, '2026-11').slots.map(s => [s.id, s.pid]));
+  sc.eq('㉔ 분당 자리도 그 날 가능 일정을 적은 분이 먼저(11/4 수요 설교)', s3['2026-11-04|wed|preach'], 'c2');
 }
 
 sc.done();
