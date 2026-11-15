@@ -1083,7 +1083,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
     await page.evaluate(() => openLayer('settings')); await tidy();
     eq('㉙ 다시 열면 마지막에 본 탭(이 기기에만 기억)', [await page.$eval(LE + ' [data-act="stab"][aria-pressed="true"]', e => e.textContent), await page.evaluate(() => 'stab' in pickCfg(saved()))], ['연결', false]);
     await stab(page, '보기');
-    eq("㉙ '보기' 탭 — 대화 보기 · 이름 색 · 오래 못 만남 · 보관 기준 · 보관 기록", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['대화 보기', '이름 색', '오래 못 만남 기준', '보관 기준', '보관 기록 함께 보기']);
+    eq("㉙ '보기' 탭 — 대화 보기 · 이름 색 · 오래 못 만남 · 보관 기준 · 보관 기록", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['화면 색', '대화 보기', '이름 색', '오래 못 만남 기준', '보관 기준', '보관 기록 함께 보기']);   // 1115-5 맨 위에 화면 색
     await page.click(LE + ' [data-act="talkmode"][data-v="a"]'); await page.waitForTimeout(300);
     eq('㉙ 말풍선을 고르면 미리 보기도 말풍선 · 계정에 맞출 값(talk)', [await page.$$eval(LE + ' #stPane .tv.a .bb', x => x.length), await page.evaluate(() => pickCfg(saved()).talk)], [3, 'a']);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/settings_view.png' });
@@ -1574,7 +1574,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
     eq('㊴ 모임 → 참석 성도 기록으로', await page.$eval(LN + ' .nx-core-v b', e => e.textContent), '하노을 핵심 한줄');
     await page.evaluate(() => { S.layers.length = 0; render(); openLayer('person', { name: '하새벽' }); }); await page.waitForTimeout(500);
     const secs = await page.$$eval(LN + ' .h-sec', x => x.map(e => e.childNodes[0].textContent.trim()));
-    eq('㊴ 성도 화면 순서 — 최근 핵심 → (남은 할 일) → 장기 관찰 → 다음 질문 → … → 원본', [secs.indexOf('최근 핵심') === 0, secs.indexOf('장기 관찰') > secs.indexOf('최근 핵심'), secs.indexOf('다음 질문') > secs.indexOf('장기 관찰'), secs[secs.length - 1]], [true, true, true, '원본']);
+    eq('㊴ 성도 화면 순서 — 최근 핵심 → (남은 할 일) → 장기 관찰 → 다음 질문 → … → 원본', [secs.indexOf('최근 핵심') === 0, secs.indexOf('장기 관찰') > secs.indexOf('최근 핵심'), secs.indexOf('다음 질문') > secs.indexOf('장기 관찰'), secs[secs.length - 1]], [true, true, true, '다른 앱으로']);   // 1115-5 맨 아래가 '다른 앱으로'
     eq('㊴ 다음 질문 — 기록의 것(계획은 기록됨이 되어 빠짐)', await page.$$eval(LN + ' .nx-qs li', x => x.map(e => e.querySelector('span').childNodes[0].textContent.trim())), ['하새벽 다음 질문?']);
     // 새 기록(손으로)도 같은 날 계획이 있으면 묻는다 — 확인 창은 '예'
     await page.evaluate(() => { S.layers.length = 0; render(); openEdit(null); const L = topLayer(); L.form.name = '하노을'; L.form.ymd = '2026-11-14'; L.form.text = '손으로 적음'; L.dirty = true; render(); }); await page.waitForTimeout(400);
@@ -1749,11 +1749,11 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   {
     await page.setViewportSize({ width: 390, height: 844 });   // 1115-V2 폰 배치(나)로 본다
     await page.evaluate(() => { save({ glLay: 'b' }); S.layers.length = 0; S.show = []; S.gRole = ''; S.view = 'collect'; render(); }); await page.waitForTimeout(200);
-    eq('㊼ 첫 화면 — 큰 카드(심방+출석) 하나 · 카드 일곱 · 옛 세 탭 없음', [await page.$$eval('#app .gl-hero', x => x.length), await page.$$eval('#app .gl-cd', x => x.map(e => e.dataset.v)), await page.$$eval('#app .seg', x => x.length)], [1, ['map', 'flow', 'role', 'vis', 'quiet', 'att', 'todo'], 0]);
+    eq('㊼ 첫 화면 — 큰 카드(심방+출석) 하나 · 카드 여섯 · 옛 세 탭 없음', [await page.$$eval('#app .gl-hero', x => x.length), await page.$$eval('#app .gl-cd', x => x.map(e => e.dataset.v)), await page.$$eval('#app .seg', x => x.length)], [1, ['map', 'flow', 'vis', 'quiet', 'att', 'todo'], 0]);   // 1115-5 '구분 나란히' 카드 뺌
     await page.click('#app .gl-lay [data-v="a"]'); await page.waitForTimeout(200);
-    eq('㊼ (1115-V2) 폰 배치 단추 — 가: 두 줄 격자(넓은 카드는 챙길 것만) · 이 기기에 기억', [await page.$$eval('#app .gl-cd.wide', x => x.map(e => e.dataset.v)), await page.evaluate(() => saved().glLay)], [['todo'], 'a']);
+    eq('㊼ (1115-V2) 폰 배치 단추 — 가: 두 줄 격자(넓은 카드는 챙길 것만) · 이 기기에 기억', [await page.$$eval('#app .gl-cd.wide', x => x.map(e => e.dataset.v)), await page.evaluate(() => saved().glLay)], [['vis', 'todo'], 'a']);   // 1115-5 심방 줄이 셋이 되어 끝 '심방 격자' 가 한 줄 넓게
     await page.click('#app .gl-lay [data-v="b"]'); await page.waitForTimeout(200);
-    eq('㊼ (1115-V2) 나: 이름 카드는 한 줄 넓게', await page.$$eval('#app .gl-cd.wide', x => x.map(e => e.dataset.v)), ['role', 'vis', 'quiet', 'att', 'todo']);
+    eq('㊼ (1115-V2) 나: 이름 카드는 한 줄 넓게', await page.$$eval('#app .gl-cd.wide', x => x.map(e => e.dataset.v)), ['vis', 'quiet', 'att', 'todo']);
     for (const [w, hh, cls] of [[820, 1180, 'gl-tb'], [1180, 820, 'gl-ta']]) { await page.setViewportSize({ width: w, height: hh }); await page.waitForTimeout(250);
       eq('㊼ (1115-V2) 패드 ' + (cls === 'gl-tb' ? '세로 → 나 펼친 판' : '가로 → 가 세 줄 카드') + ' · 배치 단추 없음', [await page.$$eval('#app .ph-body.' + cls, x => x.length), await page.$$eval('#app .gl-lay', x => x.length)], [1, 0]); }
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(250);
