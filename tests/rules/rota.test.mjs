@@ -24,6 +24,7 @@ await t('팀 검색 — 남의 이메일로는 못 찾는다', out.collection('r
 await t('팀 검색 — 조건 없이 다 읽기는 안 된다', ga.collection('rota').get(), false);
 await t('교역자는 자기 칸에 쓴다', ga.doc('rota/hb/staff/uga').set({ email: 'ga@example.com', at: 5, visits: { 'v|2026-11-22': { stay: [], stayAt: 5 } } }, { merge: true }), true);
 await t('교역자는 자기 칸을 고친다(merge)', ga.doc('rota/hb/staff/uga').set({ email: 'ga@example.com', at: 6, away: [], awayAt: 6 }, { merge: true }), true);
+await t('교역자는 자기 칸에 내 화면 취향(ui)을 쓴다 (R8b)', ga.doc('rota/hb/staff/uga').set({ email: 'ga@example.com', at: 7, v: 'x', ui: { home: 'month:mine', name: { b: true, c: '', h: 'yellow' }, at: 7 } }, { merge: true }), true);
 await t('교역자는 남의 칸에 못 쓴다', ga.doc('rota/hb/staff/ugb').set({ email: 'ga@example.com', at: 5 }, { merge: true }), false);
 await t('교역자는 남의 이메일로 못 쓴다', ga.doc('rota/hb/staff/uga').set({ email: 'ra@example.com', at: 7 }, { merge: true }), false);
 await t('교역자 칸에 모르는 칸(role)은 못 넣는다', ga.doc('rota/hb/staff/uga').set({ email: 'ga@example.com', role: 'owner' }, { merge: true }), false);

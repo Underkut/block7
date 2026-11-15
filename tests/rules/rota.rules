@@ -19,7 +19,7 @@ service cloud.firestore {
         allow read: if isOwner() || isMember();
         allow create, update: if isMember() && request.auth.uid == sid
           && request.resource.data.email == request.auth.token.email
-          && request.resource.data.keys().hasOnly(['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt']);
+          && request.resource.data.keys().hasOnly(['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt', 'ui']);
         allow delete: if isOwner() || (signedIn() && request.auth.uid == sid);
       }
     }

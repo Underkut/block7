@@ -95,6 +95,30 @@ const d4 = await getDoc('rota/' + HB), v4 = d4.b7.visits.find(x => x.id === 'v|2
 ok('③ HB 가 메모를 고쳐도 교역자 숙소 · 누가는 그대로', [v4.note, v4.stay[0].name, v4.stayBy], ['HB 메모', '교역자 호텔', 'pa']);
 ok('③ 교역자 화면에도 HB 메모가 온다', await until(() => ga.evaluate(() => S.book.visits.find(v => v.id === 'v|2026-11-22').note === 'HB 메모')), true);
 
+console.log('③-2 내 화면 취향 (R8b) — 첫 화면 · 내 이름 모양은 계정에, 책은 그대로');
+{
+  const before = JSON.stringify((await getDoc('rota/' + HB)).b7);
+  await ga.evaluate(() => { document.querySelector('[data-act="namefmt"]').click(); });
+  await until(() => ga.evaluate(() => !!document.querySelector('#pane [data-nf="c"]')));
+  await ga.evaluate(() => { document.querySelector('#pane [data-nf="c"]').click(); document.querySelector('#pane [data-nfc="blue"]').click(); });
+  await ga.evaluate(() => closePane()); await sleep(500); await ga.evaluate(() => { openMenu(); document.querySelector('#menu [data-act="home"]').click(); }); await sleep(500);
+  await ga.evaluate(() => { document.querySelector('#pane [data-home="busan"]').click(); });
+  const st = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); return x && x.ui && x.ui.home === 'busan' ? x : null; });
+  ok('③-2 교역자의 첫 화면 · 이름 모양은 자기 칸 ui 에(숙소 · 부재는 그대로)', st && [st.ui.home, st.ui.name, st.ui.at > 0, st.visits['v|2026-11-22'].stay[0].name, st.away.length], ['busan', { b: true, c: 'blue', h: 'yellow' }, true, '교역자 호텔', 1]);
+  ok('③-2 교역자 화면: 내 이름에 모양이 붙는다(달력표 내 일정)', await ga.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'mine'; render(); const e = document.querySelector('#panel .mename'); return [!!e && e.textContent, getComputedStyle(document.documentElement).getPropertyValue('--me-c').trim()]; }), ['가나다', '#2f6fb5']);
+  ok('③-2 내 일정: 사람 알약은 모두 보이고 내가 골라져 있다 · 다른 분을 누르면 그분 일정', await ga.evaluate(() => { const a = [...document.querySelectorAll('[data-me]')].map(b => [b.textContent, b.getAttribute('aria-pressed')]); document.querySelector('[data-me="pb"]').click(); return [a, document.querySelector('.mhello b').textContent]; }), [[['가나다', 'true'], ['라마바', 'false']], '라마바']);
+  await hb.evaluate(() => closePane()); await sleep(500); await hb.evaluate(() => { openMenu(); document.querySelector('#menu [data-act="home"]').click(); }); await sleep(500);
+  await hb.evaluate(() => { document.querySelector('#pane [data-home="month:mine"]').click(); });
+  const d = await until(async () => { const x = await getDoc('rota/' + HB); return x && x.ui ? x : null; });
+  await sleep(1200);
+  const d2 = await getDoc('rota/' + HB);
+  ok('③-2 HB 의 첫 화면은 문서 맨 위 ui 칸에 · 책(b7) · team 은 한 글자도 그대로 · HB 책에 교역자 ui 가 섞이지 않았다', [d && d.ui.home, JSON.stringify(d2.b7) === before, d2.team, /"ui"|"home"/.test(JSON.stringify(d2.b7))], ['month:mine', true, ['ga@example.com'], false]);
+  await hb.evaluate(() => closePane()); await sleep(300);
+  await ga.reload(); await until(() => ga.evaluate(() => typeof FB !== 'undefined' && FB.role === 'staff' && FB.synced));
+  ok('③-2 교역자가 다시 열면 고른 첫 화면(부산)이 먼저 뜬다', await ga.evaluate(() => PREF.tab), 'busan');
+  await ga.evaluate(() => { window.toast = ((o) => (m) => { window.__toast(String(m)); return o(m); })(toast); });
+}
+
 console.log('④ 팀 밖 사람 — 구글 로그인');
 const zz = await device('팀 밖');
 await google(zz, 'zz-sub-1', 'zz@example.com');

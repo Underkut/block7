@@ -31,7 +31,7 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
         allow read: if isOwner() || isMember();
         allow create, update: if isMember() && request.auth.uid == sid
           && request.resource.data.email == request.auth.token.email
-          && request.resource.data.keys().hasOnly(['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt']);
+          && request.resource.data.keys().hasOnly(['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt', 'ui']);
         allow delete: if isOwner() || (signedIn() && request.auth.uid == sid);
       }
     }
@@ -79,3 +79,5 @@ HB 계정은 BLOCK7 과 같은 이메일 · 비밀번호 계정이다. 같은 �
 
 - R1 (v. 26-1114-1): `rota/{uid}` 를 본인만 읽고 쓰기.
 - R3b (v. 26-1114-5): 안에 `match /img/{id}` 세 줄(사진) 더함.
+- R6a (v. 26-1115-1): 팀 읽기(`team`) · 교역자 칸(`staff/{uid}`).
+- R8b (v. 26-1115-4): 교역자 칸에 넣을 수 있는 칸 이름에 **`'ui'` 한 낱말** 더함 — 교역자의 '첫 화면 · 내 이름 보이는 모양' 을 계정에 두려고. 붙이기 전에는 교역자 기기 안에서만 기억된다(다른 것은 그대로 돈다).
