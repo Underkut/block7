@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -655,8 +655,19 @@ a.wl{color:inherit;text-decoration:none}
 .sk-go+.sk-go{border-left:1px solid var(--line)}
 .sk-go svg{width:30px;height:30px;fill:none;stroke:var(--tx);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round;transition:stroke .4s var(--ease),transform .4s var(--ease)}
 .sk-go:active svg{transform:scale(.94)}
-.sk-go small{font-size:10.5px;letter-spacing:.02em;color:var(--ac);min-height:13px;opacity:0;transition:opacity .5s var(--ease)}
-.sk-go.on{color:var(--ac)}.sk-go.on svg{stroke:var(--ac)}.sk-go.on small{opacity:1}
+.sk-go{padding-bottom:14px}
+/* 1115-X 읽기 전에 연 입력 창 — 맨 위 알림 줄 · 아직 못 읽은 알약 자리 · 로그인 화면을 보러 간 사이 돌아오는 단추 */
+.early{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;line-height:1.5;color:var(--tx2);background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin:0 0 14px}
+.early>i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--ac);animation:skbreath 2.8s ease-in-out infinite}
+.early.stop>i{background:var(--tx3);animation:none}
+.early>span{flex:1 1 180px}
+.early button{flex:none;padding:5px 12px;border-radius:999px;border:1px solid var(--line2);font-size:12.5px;color:var(--tx)}
+.pills.wait{pointer-events:none}
+.pills.wait i{display:block;height:32px;border-radius:999px;background:var(--s2);animation:skbreath 5.6s ease-in-out infinite}
+.pills.wait i:nth-child(1){width:64px}.pills.wait i:nth-child(2){width:84px;animation-delay:.5s}.pills.wait i:nth-child(3){width:52px;animation-delay:1s}
+.peekbar{position:fixed;left:0;right:0;bottom:calc(22px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;z-index:15;pointer-events:none}
+.peekbar button{pointer-events:auto;padding:11px 20px;border-radius:999px;background:var(--ac);color:var(--on-ac);font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+@media (prefers-reduced-motion:reduce){.early>i,.pills.wait i{animation:none}}
 .sk-hrow{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:center;padding:0 6px}
 .sk-hrow svg{width:100%;height:58px;display:block}
 .sk-ls circle{fill:var(--tx3)}
@@ -923,7 +934,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-6';
+const APP_VERSION = 'v. 26-1115-7';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -3166,10 +3177,20 @@ async function readTab(id, title) {
   return j.values || [];
 }
 // 1108-B2 처음 열 때 — 탭 목록 한 번 + 모든 탭(휴지통 빼고) 값 한 번 = 요청 두 번. 예전엔 탭마다 머리줄 · 값을 차례로 읽었다(열 번 넘게)
-async function readAll(id) {
+// 1115-X 입력에 필요한 것 먼저 — onLite 를 주면 탭 목록 뒤에 '가벼운 묶음'(모든 탭 머리줄 + 선택지 · 속성 · 성도 탭)을 큰 묶음과 **함께** 띄운다.
+// 가벼운 것이 먼저 돌아와 입력 창의 알약 · 칸을 채운다. 못 읽어도 큰 묶음이 오면 그만이라 조용히 넘긴다. (요청 = 탭 목록 + 가벼운 묶음 + 큰 묶음)
+const LITE_TABS = ['출석 선택지', '심방 선택지', '속성', '성도'];
+async function readAll(id, onLite) {
   const meta = await sheetMeta(id), list = (meta.sheets || []).map(x => x.properties).filter(p => p.title !== TRASH_TAB);
-  const q = list.map(p => 'ranges=' + rng(p.title, 'A1:ZZ')).join('&');
-  const j = list.length ? await gapi(SH + id + '/values:batchGet?' + q + '&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER') : { valueRanges: [] };
+  const q = list.map(p => 'ranges=' + rng(p.title, 'A1:ZZ')).join('&'), RO = '&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER';
+  const big = list.length ? gapi(SH + id + '/values:batchGet?' + q + RO) : Promise.resolve({ valueRanges: [] });
+  if (onLite && list.length) {
+    big.catch(() => { });   // (아래 await 가 받는다 — 가벼운 묶음을 기다리는 사이 '안 받은 실패' 로 뜨지 않게)
+    gapi(SH + id + '/values:batchGet?' + list.map(p => 'ranges=' + rng(p.title, LITE_TABS.includes(p.title) ? 'A1:ZZ' : '1:1')).join('&') + RO)
+      .then(lj => { const lv = lj.valueRanges || []; onLite(list.map((p, i) => { const values = (lv[i] && lv[i].values) || []; return { title: p.title, header: values[0] || [], values }; })); })
+      .catch(() => { });
+  }
+  const j = await big;
   const vr = j.valueRanges || [];
   const tabs = list.map((p, i) => { const values = (vr[i] && vr[i].values) || []; return { title: p.title, sheetId: p.sheetId, cols: (p.gridProperties || {}).columnCount || 0, header: values[0] || [], values }; });
   return { title: meta.properties.title, tabs, all: (meta.sheets || []).map(x => x.properties.title) };
@@ -3223,12 +3244,26 @@ function trialSet(f) {
 const DATA = { state: 'idle', err: '', model: null, form: null, tab: null, at: 0, cal: null, calErr: '' };
 function today() { return ymdOf(new Date()); }
 function prefs() { const s = saved(); return { cutoff: s.cutoff === undefined ? ARCHIVE_DEFAULT : s.cutoff, stale: s.stale || STALE_DAYS_DEFAULT }; }
+function formOptsOf(form) { return form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [], places: (formQOf(form, 'place') || {}).options || [] } : {}; }
+// 1115-X 가벼운 묶음이 먼저 왔다 — 입력 창에 필요한 것만 채운다(머리줄로 아는 칸 · 알약 목록 · 폼 선택지 · 성도 탭 이름). 기록은 큰 묶음이 와야 선다
+let LOADSEQ = 0;
+function applyLite(seq, tabs, fj) {
+  if (seq !== LOADSEQ || DATA.state !== 'loading') return;   // 이미 다 읽었거나, 그 사이 다른 읽기가 시작됐다
+  const tab = findResponsesTab(tabs); if (!tab) return;
+  const hm = headerMap(tab.header).map, V = t => { const x = tabs.find(y => y.title === t); return x ? x.values : []; };
+  DATA.hasPlace = hm.place != null; DATA.hasPay = hm.pay != null; DATA.nx = nxReady(hm); DATA.payTitle = hm.pay != null ? norm(tab.header[hm.pay]) : '';
+  DATA.attOpts = attOptsParse(V(ATT_OPT_TAB)); DATA.visOpts = optsParse(V(VIS_OPT_TAB), VIS_OPT_FIELDS);
+  DATA.attrRows = parseAttrRows(V('속성')); DATA.roster = parseRosterTab(V('성도'));
+  const form = fj ? formSummary(fj) : DATA.form; if (form) DATA.opts = formOptsOf(form);
+  DATA.lite = true; earlySettle(); render();
+}
 async function loadData(quiet) {
   const s = saved().sheet; if (!s || !G.connected) { render(); return; }
-  if (!quiet) { DATA.state = 'loading'; render(); }
+  const seq = ++LOADSEQ;
+  if (!quiet) { DATA.state = 'loading'; DATA.lite = false; render(); }
   try {
     const f0 = saved().form, formP = f0 && !DATA.form ? gapi('https://forms.googleapis.com/v1/forms/' + f0.id).catch(() => null) : null;   // 폼은 시트와 함께 받는다
-    const info = await readAll(s.id), tab = findResponsesTab(info.tabs), V = t => { const x = info.tabs.find(y => y.title === t); return x ? x.values : []; };
+    const info = await readAll(s.id, quiet ? null : tabs => Promise.resolve(formP).then(fj => applyLite(seq, tabs, fj))), tab = findResponsesTab(info.tabs), V = t => { const x = info.tabs.find(y => y.title === t); return x ? x.values : []; };
     if (!tab) throw new Error('고른 시트에서 "성도 이름" · "내용" 머리글이 있는 탭을 찾지 못했습니다.\n심방 결과 시트를 골랐는지 봐 주세요.');
     const vals = tab.values;
     const tabNames = info.all, hm = headerMap(vals[0] || []).map;
@@ -3249,21 +3284,21 @@ async function loadData(quiet) {
       if (chk.patches.length && DATA.nx) setTimeout(() => inboxPatch(chk.patches, items), 0); }   // 1112-N 붙여넣기: 속성 대조 · 모임 중복 · 새 성도 명단
     let form = DATA.form;
     if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
-    const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [], places: (formQOf(form, 'place') || {}).options || [] } : {};
+    const opts = formOptsOf(form);
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
     opts.recAt = DATA.recAt || {};
     DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda); tkOverlay(DATA.model);
-    DATA.state = 'ok'; DATA.err = ''; DATA.at = Date.now();
+    DATA.state = 'ok'; DATA.err = ''; DATA.at = Date.now(); DATA.lite = true;
+    { const hint = { nx: !!DATA.nx, place: !!DATA.hasPlace, pay: !!DATA.hasPay, payTitle: DATA.payTitle || '' }; if (JSON.stringify(saved().hint || null) !== JSON.stringify(hint)) save({ hint }); }   // 1115-X 다음에 열 때 읽기 전의 입력 창이 같은 칸으로 서게 (화면 모양뿐 — 내용 아님)
+    earlySettle();
     if (!DATA.inboxAsked && /[?&]inbox=1/.test(location.search)) { DATA.inboxAsked = true; setTimeout(() => { if (DATA.nx && !S.layers.length) openLayer('inbox'); try { history.replaceState(null, '', location.pathname); } catch (e) { } }, 0); }   // 알림을 눌러 들어옴 → 대기함부터
     if (DATA.prepared && saved().form) setTimeout(autoSyncAttrs, 0);   // 폼 ↔ '속성' 탭 맞추기 (조용히, 바뀐 것만 알림)
   } catch (e) {
     DATA.state = 'err';
     DATA.err = e.status === 403 || e.status === 404 ? '시트를 열 권한이 없습니다.\n설정에서 "다시 연결" 뒤 시트를 다시 골라 주세요.' : (e.message || String(e));
   }
-  if (DATA.state !== 'ok') EARLY = null;
   render();
-  if (EARLY && ready()) { const e = EARLY; EARLY = null; if (e === 'attend') openAttEdit(null); else openEdit(); }   // 1115-W 읽는 중에 눌러 둔 입력 창
   loadCal();
   loadPray();
 }
@@ -3590,6 +3625,7 @@ async function autoSyncAttrs() {
 }
 // 탭 한 줄의 칸 고치기 · 새 줄 — 고친 뒤 곧바로 폼과 맞춘다
 async function attrWrite(fn) {
+  if (!dataOk(true)) return;
   if (!(await ensurePrepared())) return;
   const s = saved().sheet, { v, h } = await attrTab(s), rows = parseAttrRows(v);
   await fn(s, h, rows);
@@ -3848,7 +3884,9 @@ document.addEventListener('visibilitychange', async () => {
 const S = { keep: new Set(), attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
   wk: 0, mo: today().slice(0, 7), mday: today(), gRole: '', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
 const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
-function M() { return DATA.model; }
+// 1115-X 시트를 다 읽기 전에도 입력 창이 선다 — 그동안은 빈 모형(기록 0건)을 돌려준다. '다 읽었나' 는 ready() · DATA.state 로 본다
+let EMPTY_M = null;
+function M() { return DATA.model || EMPTY_M || (EMPTY_M = attachExtras(buildModel([], {}), {}, {})); }
 function V() { const L = filterVisits(M().visits, S.filt, S.quick, S.showArch, S.q); return S.show.length ? L.filter(v => onlyItems(v).length) : L; }
 // 1113-D F · G '할일' · '질문' 알약 — 켜면 기록 내용 대신 그것만(남은 할 일 · 아직 안 물어본 질문). 둘 다 켜도 된다
 // 1114 목록에서 체크한 것은 이번에 앱을 연 동안 그 자리에 회색으로 남는다(다시 눌러 되돌릴 수 있게). 예전에 마친 것은 그대로 감춘다
@@ -4295,6 +4333,7 @@ function visOptLabel(k) { return k === 'pay' ? (DATA.payTitle || '사주심 / �
 const ATTR_KEY = { roles: '구분', tags: '태그', acts: '액션' };
 function multiHtml(L, k, label, base, etcKey, ph, pre, kind) {
   const f = L.form, chosen = f[k] || [], list = base.concat(chosen.filter(x => !base.includes(x))), etcV = f[etcKey] || '', open = (L.open && L.open[k]) || !!norm(etcV);
+  if (DATA.state !== 'ok' && !list.length && !open) return '<div class="fld"><span class="lb">' + label + ' <small>여럿</small></span>' + PILL_WAIT + '</div>';   // 1115-X 선택지를 아직 못 읽음
   let h = '<div class="fld"><span class="lb">' + label + ' <small>여럿</small></span><div class="opts pills" data-k="' + k + '">';
   h += list.map(x => chip((pre || '') + esc(x), chosen.includes(x), 'ftog', k, x, kind ? kind(x) : '')).join('');
   h += plusHtml(L, k, label, open) + '</div>';
@@ -4335,6 +4374,7 @@ function plusHtml(L, k, label, open, noEtc) {
 }
 function attFieldHtml(L, k, noEtc) {
   const C = optCtx(L), f = L.form, cur = f[k] || '';
+  if (optsWait() && !cur) return '<div class="fld"><span class="lb">' + esc(C.label(k)) + '</span>' + PILL_WAIT + '</div>';   // 1115-X 알약 목록을 아직 못 읽음
   let opts = C.opts()[k] || []; if (noEtc && cur && !opts.includes(cur)) opts = opts.concat([cur]);
   const open = !noEtc && ((L.open && L.open[k]) || (cur && !opts.includes(cur)));
   let h = '<div class="fld"><span class="lb">' + esc(C.label(k)) + '</span><div class="opts pills" data-k="' + k + '">';
@@ -4360,7 +4400,7 @@ function attNameAdd(L, list, toggle) {   // 1113-D I 출석 이름 칸(쉼표 �
 }
 function lAttEdit(L) {
   const f = L.form, names = splitNames(f.name), known = names.length === 1 && attNames().some(n => nameKey(n) === nameKey(names[0]));
-  let h = lhead(L.id ? '출석 고치기' : '출석했어요', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  let h = lhead(L.id ? '출석 고치기' : '출석했어요', L) + '<div class="ph-body" style="padding-bottom:110px">' + earlyHtml(L);
   h += '<div class="fsec">누가</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="' + (L.id ? '성도 이름' : '성도 이름 (여럿은 쉼표로)') + '" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + attSuggHtml(L) + '</div>' +
     '<div class="hint" id="nameHint">' + attNameHint(L) + '</div>' + (L.id ? '' : recentHtml(L)) + '</div>';   // 1113-D I 심방 입력과 같은 최근 이름 줄 · 셀
   h += '<div class="fsec">언제 · 어디</div>' + attDateHtml(f) + attFieldHtml(L, 'svc');
@@ -4414,11 +4454,12 @@ function omenuHtml(L) {
 function attNameHint(L) {
   const names = splitNames(L.form.name);
   if (names.length > 1) return L.id ? '고칠 때는 한 분만 적습니다.' : names.length + '분 — 같은 내용으로 한 분씩 한 줄씩 적힙니다.';
-  if (names.length === 1 && !attNames().some(n => nameKey(n) === nameKey(names[0]))) return '처음 적는 이름입니다. 심방 기록이 없어도 그대로 적힙니다.';
+  if (DATA.state === 'ok' && names.length === 1 && !attNames().some(n => nameKey(n) === nameKey(names[0]))) return '처음 적는 이름입니다. 심방 기록이 없어도 그대로 적힙니다.';
   return '';
 }
 // 알약 목록 저장 — 탭을 통째로 지금 목록으로 덮어쓰고, 남는 아랫줄만 지운다 (쓰기가 실패해도 예전 목록이 반쯤 지워지지 않게: 쓰기 먼저, 지우기 나중)
 async function saveOptTab(tab, rows) {
+  if (DATA.state !== 'ok') throw new Error('시트를 다 읽은 뒤에 고칠 수 있습니다');   // 1115-X 덜 읽은 목록으로 탭을 덮어쓰지 않는다
   const s = saved().sheet, m = await sheetMeta(s.id);
   if (!(m.sheets || []).some(x => x.properties.title === tab)) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: tab } } }] } });
   await batchValues(s.id, [{ range: "'" + tab + "'!A1", values: rows }]);
@@ -4426,6 +4467,7 @@ async function saveOptTab(tab, rows) {
 }
 function saveAttOpts(o) { return saveOptTab(ATT_OPT_TAB, attOptsRows(o)); }
 function visOptChange(fnc, msg) {   // 출석과 같은 길 — 화면 먼저, 실패하면 예전 목록으로
+  if (!dataOk(true)) return false;
   const before = JSON.stringify(DATA.visOpts || null), o = JSON.parse(JSON.stringify(VISO()));
   if (!fnc(o)) return false;
   DATA.visOpts = o; render();
@@ -4433,6 +4475,7 @@ function visOptChange(fnc, msg) {   // 출석과 같은 길 — 화면 먼저, �
   return true;
 }
 function attOptChange(fnc, msg) {   // 화면 먼저 바꾸고 시트에 쓴다. 실패하면 예전 목록으로
+  if (!dataOk(true)) return false;
   const before = JSON.stringify(DATA.attOpts || null), o = JSON.parse(JSON.stringify(ATTO()));
   if (!fnc(o)) return false;
   DATA.attOpts = o; render();
@@ -4455,7 +4498,7 @@ function attOptCommit(inp) {
 const DR = { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, x: 0, y: 0, eat: false };
 function drReset() { clearTimeout(DR.t); if (DR.el) DR.el.classList.remove('lift'); Object.assign(DR, { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, fixed: false }); document.body.classList.remove('dragging'); }
 function drLift() { if (!DR.el) return; DR.lifted = true; DR.el.classList.add('lift'); document.body.classList.add('dragging'); try { navigator.vibrate && navigator.vibrate(8); } catch (e) { } }
-function attOptMenu(k, v) { const L = optL(); if (!optCtx(L)) return; L.omenu = { k, v }; render(); }
+function attOptMenu(k, v) { const L = optL(); if (!optCtx(L) || !dataOk(true)) return; L.omenu = { k, v }; render(); }
 document.addEventListener('pointerdown', e => {
   const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"], .pills .opt[data-act="favgo"]'); if (!el || e.button === 2) return;
   drReset(); Object.assign(DR, { el, k: el.dataset.k, x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse', fixed: el.dataset.act === 'ftog' });
@@ -4544,13 +4587,14 @@ function lAttPaste(L) {
 function openAttEdit(id, name) {
   if (id) { const a = AT().find(x => x.id === id); if (!a) return; openLayer('attedit', { id, form: { name: a.name, date: a.date, svc: a.svc, from: a.from, seen: a.seen || '', to: a.to, seat: a.seat, with: a.with, serve: a.serve || '', memo: a.memo }, open: {} }); return; }
   const hb = name ? attHabit(AT(), name) : { svc: '', seat: '' };
-  openLayer('attedit', { id: null, form: { name: name || '', date: today(), svc: svcPick(ATTO(), new Date()), from: '', seen: '', to: '', seat: hb.seat, with: '', serve: '', memo: '' }, open: {} });
+  openLayer('attedit', { id: null, form: { name: name || '', date: today(), svc: optsWait() ? '' : svcPick(ATTO(), new Date()), from: '', seen: '', to: '', seat: hb.seat, with: '', serve: '', memo: '' }, open: {} });
 }
 async function saveAttend(L) {
   const names = splitNames(L.form.name);
   if (L.id && names.length > 1) { toast('고칠 때는 한 분만 적어 주세요'); return; }
   const errs = validateAttend(Object.assign({}, L.form, { name: names[0] || '' })); if (errs.length) { toast(errs.join('\n')); return; }
   if (names.length > 30) { toast('한 번에 30분까지 적습니다'); return; }
+  if (!(await waitData())) return;   // 1115-X 읽기 전에 연 창 — 다 읽은 뒤에 쓴다
   const f = Object.assign({}, L.form, { name: names[0] });
   if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n }))); L.dirty = false; closeLayer(true); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
   else {
@@ -4897,7 +4941,7 @@ function whoFieldHtml(L) {
   const f = L.form, w = parseWho(f.name), P = (M() && M().people) || {};
   const x = n => '<button data-act="whox" data-v="' + esc(n) + '" aria-label="' + esc(n) + ' 빼기">' + IC.x + '</button>';
   const chips = w.groups.map(g => '<span class="wc grp">' + IC.people + esc(g) + x(g) + '</span>').concat(w.names.map(n => '<span class="wc">' + nm(n) + x(n) + '</span>')).join('');
-  const fresh = w.names.filter(n => !P[n]);
+  const fresh = DATA.state === 'ok' ? w.names.filter(n => !P[n]) : [];   // 다 읽기 전에는 '처음 적는 이름' 인지 모른다
   return '<div class="fld"><div class="who"><div class="wchips">' + chips + '</div><input class="inp wq" data-f="nameq" value="' + esc(L.nq || '') + '" placeholder="' + (chips ? '+ 이름' : '성도 이름 · 여럿은 쉼표 · ○○ 셀') + '" autocomplete="off" enterkeyhint="done" aria-label="성도 이름 더하기"></div>' +
     '<div class="sugg" id="nameSugg">' + suggHtml(L) + '</div>' + recentHtml(L) +
     (fresh.length ? '<div class="hint">처음 적는 이름' + (fresh.length > 1 ? '(' + fresh.length + ')' : '') + ': ' + esc(fresh.join(', ')) + ' — 이름이 맞는지 한 번 봐 주세요.</div>' : '') + '</div>';
@@ -5122,7 +5166,7 @@ function crow(L, k, label, body) {
 function lEdit(L) {
   const f = L.form, FO = filterOptions(M().visits, DATA.opts), wide = editWide();
   L.wide = wide;
-  let h = lhead(L.impSlot ? '가져온 기록 고치기' : L.key ? '기록 고치기' : '심방했어요', L, DATA.nx && !L.key && !L.impSlot ? ['impopen', '붙여넣어 채우기', 'paste'] : null) + '<div class="ph-body edf ' + (wide ? 'e-wide' : 'e-narrow') + '" style="padding-bottom:110px">';
+  let h = lhead(L.impSlot ? '가져온 기록 고치기' : L.key ? '기록 고치기' : '심방했어요', L, DATA.nx && DATA.state === 'ok' && !L.key && !L.impSlot ? ['impopen', '붙여넣어 채우기', 'paste'] : null) + '<div class="ph-body edf ' + (wide ? 'e-wide' : 'e-narrow') + '" style="padding-bottom:110px">' + earlyHtml(L);
   if (L.impSlot) h += '<div class="note" style="margin:0 0 12px">여기서 고친 것은 <b>확인 화면으로 돌아갑니다</b>. 시트에는 그 화면의 \'저장\' 을 눌러야 들어갑니다.</div>';
   const nameF = whoFieldHtml(L);   // 1112-M 이름 알약 (여럿 · '○○ 셀')
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
@@ -5133,8 +5177,8 @@ function lEdit(L) {
   // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
   const placeF = DATA.hasPlace ? attFieldHtml(L, 'place') : '', payF = DATA.hasPay ? attFieldHtml(L, 'pay', true) : '';
   let whereInfo = '';
-  if (!DATA.hasPlace) whereInfo += '장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.<br>';
-  if (!DATA.hasPay && formQOf(DATA.form, 'pay')) whereInfo += '폼에는 \'' + esc(formQOf(DATA.form, 'pay').title) + '\' 질문이 있는데 시트에 아직 그 열이 없습니다. 시트 응답 탭 머리글을 봐 주세요.<br>';
+  if (!DATA.hasPlace && !optsWait()) whereInfo += '장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.<br>';
+  if (!DATA.hasPay && !optsWait() && formQOf(DATA.form, 'pay')) whereInfo += '폼에는 \'' + esc(formQOf(DATA.form, 'pay').title) + '\' 질문이 있는데 시트에 아직 그 열이 없습니다. 시트 응답 탭 머리글을 봐 주세요.<br>';
   const pillInfo = '알약을 길게 누르면(PC 는 오른쪽 단추) 이름 바꾸기 · 지우기, 누른 채 끌면 순서를 바꿉니다. 구분 · 태그 · 할 일은 구글폼 선택지도 함께 바뀝니다.<br>\'+ 더하기\' 에서 알약으로 더하면 다음에도 쓰고, \'이번 기록에만\' 은 이 기록에만 적힙니다.';
   const depthF = '<div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
   const tagsF = multiHtml(L, 'tags', '태그', offer('tags', FO.tag, []), 'tagsEtc', '직접 적기 (쉼표로 여럿)', '#');
@@ -5235,6 +5279,7 @@ async function saveRecord(L) {
   whoFlush(L);   // 1112-M 아직 알약이 안 된 이름도
   if (L.form.actLines) document.querySelectorAll('.layer:last-child .al-in').forEach(i => { const t = i.dataset.f.slice(3), x = actLineText(i.value); if (!x) return; const a = L.form.actLines[t] = L.form.actLines[t] || []; if (!a.includes(x)) a.push(x); i.value = ''; });   // 1113-E 치다 만 줄도
   const errs = validateRecord(L.form); if (errs.length) { toast(errs.join('\n')); return; }
+  if (!(await waitData())) return;   // 1115-X 읽기 전에 연 창 — 다 읽은 뒤에 쓴다
   if (!(await ensurePrepared())) return;
   const AL = L.form.actLines; if (AL) Object.keys(AL).forEach(t => { if ((AL[t] || []).length && !L.form.acts.includes(t)) L.form.acts.push(t); });   // 1113-E 줄이 있는 종류는 응답 칸에도
   try {
@@ -5893,14 +5938,66 @@ function gate() {
   if (DATA.state === 'err') return h + '<div class="card"><h2>시트를 읽지 못했습니다</h2><p class="muted" style="white-space:pre-line">' + esc(DATA.err) + '</p><div class="row"><button class="btn pri" data-act="reload">다시 읽기</button><button class="btn" data-act="pick" data-v="sheet">시트 다시 고르기</button><button class="btn" data-act="gconnect">다시 연결</button></div></div></div>';
   return loadingHtml('시트를 읽는 중', 2);
 }
+// ── 1115-X 읽기 전에 여는 입력 창 ──
+// 여는 것 · 적는 것은 바로. 시트에 쓰는 것(저장 · 알약 고치기)은 다 읽은 뒤에만 — 덜 읽은 목록으로 탭을 덮어쓰지 않게.
+let OPEN_EARLY = false;
+function dataOk(say) { if (DATA.state === 'ok') return true; if (say) toast('시트를 읽는 중입니다\n알약 고치기는 읽기가 끝난 뒤에 됩니다'); return false; }
+function optsWait() { return DATA.state !== 'ok' && !DATA.lite; }   // 알약 목록(선택지 탭)을 아직 못 읽었다
+const PILL_WAIT = '<div class="opts pills wait" aria-hidden="true"><i></i><i></i><i></i></div>';
+// 읽기가 끝날 수 없는 까닭 — 없으면 '' (아직 읽는 중이거나 다 읽음)
+function gateBlock() {
+  if (!AUTH_READY) return '';
+  if (!USER) return '로그인이 필요합니다';
+  if (!G.checked) return '';
+  if (!G.connected) return '구글 연결이 필요합니다';
+  if (!saved().sheet) return '심방 시트를 먼저 골라야 합니다';
+  if (DATA.state === 'err') return '시트를 읽지 못했습니다';
+  return '';
+}
+function openEarly(kind) {
+  if (!ready() && !DATA.lite) { const h = saved().hint; if (h) { DATA.nx = !!h.nx; DATA.hasPlace = !!h.place; DATA.hasPay = !!h.pay; DATA.payTitle = h.payTitle || ''; } }   // 지난번에 본 칸 모양으로 먼저
+  OPEN_EARLY = true;
+  try { if (kind === 'attend') openAttEdit(null); else openEdit(); } finally { OPEN_EARLY = false; }
+}
+// 알약 · 기록이 도착했을 때 — 읽기 전에 연 창에, 평소라면 열 때 채웠을 것을 채운다(손댄 칸은 그대로)
+function earlySettle() {
+  S.layers.forEach(L => {
+    if (!L.early || !L.form) return;
+    if (L.type === 'attedit' && !L.id) {
+      if (L.autoSvc && !optsWait()) { L.autoSvc = false; if (!L.form.svc) L.form.svc = svcPick(ATTO(), new Date()); }
+    }
+    if (L.type === 'edit' && !L.key && DATA.state === 'ok' && !(L.form.roles || []).length && !norm(L.form.rolesEtc)) {   // 처음 넣은 분의 구분은 지난 기록에서 (whoAdd 와 같은 규칙)
+      const n0 = parseWho(L.form.name).names[0], p = n0 && M().people[n0];
+      if (p) { const RO = filterOptions(M().visits, DATA.opts).role; L.form.roles = (p.roles || []).filter(r => RO.includes(r)); L.form.rolesEtc = (p.roles || []).filter(r => !RO.includes(r)).join(', '); }
+    }
+  });
+}
+// 저장은 다 읽은 뒤에 — 읽는 중이면 기다렸다가 이어서 한다. 읽을 수 없게 됐으면 그만두고 알린다(쓰던 글은 창에 그대로)
+async function waitData() {
+  if (DATA.state === 'ok') return true;
+  if (!gateBlock()) toast('시트를 읽는 중입니다\n끝나면 바로 저장합니다');
+  for (let i = 0; i < 1200; i++) {
+    if (DATA.state === 'ok') return true;
+    const w = gateBlock(); if (w) { toast(w + '\n아직 저장하지 못했습니다\n쓰던 글은 그대로 있습니다'); return false; }
+    await new Promise(r => setTimeout(r, 150));
+  }
+  toast('시트 읽기가 너무 오래 걸립니다\n쓰던 글은 그대로 있습니다\n잠시 뒤 다시 눌러 주세요'); return false;
+}
+function earlyHtml(L) {
+  if (DATA.state === 'ok' || !L.early) return '';
+  const w = gateBlock();
+  if (!w) return '<div class="early" role="status"><i></i><span>시트를 읽는 중입니다. 먼저 적으셔도 됩니다 — 알약과 이름 후보는 곧 채워집니다.</span></div>';
+  return '<div class="early stop" role="status"><i></i><span>' + esc(w) + '. 쓰던 글은 이 창에 그대로 둡니다.</span>' +
+    (DATA.state === 'err' && USER && G.connected ? '<button data-act="reload">다시 읽기</button>' : '') + '<button data-act="earlypeek">' + (DATA.state === 'err' && USER && G.connected ? '자세히' : '화면 보기') + '</button></div>';
+}
+
 // 1115-W 처음 여는 동안 — 화면 한가운데: 위 NEW(심방 · 출석 바로 입력) / 아래 HISTORY(기록 맛보기 두 그림, 테두리가 불러오기 막대)
-// 입력 창은 시트의 선택지(알약)를 쓰므로, 읽는 중에 누르면 '예약' 해 두었다가 읽기가 끝나는 즉시 열린다.
-let EARLY = null;   // 'visit' | 'attend' — 읽는 중에 누른 입력 단추
+// 1115-X 두 단추는 읽는 중에도 입력 창을 **바로** 연다(openEarly). 시트는 뒤에서 마저 읽는다.
 const LOADSTEP = { step: -1, t: 0 };
 function loadingHtml(msg, step) {
   if (LOADSTEP.step !== step) { LOADSTEP.step = step; LOADSTEP.t = Date.now(); }
   const A = [4, 30, 56][step], B = [30, 56, 96][step], dur = [6, 8, 40][step], dl = -((Date.now() - LOADSTEP.t) / 1000);
-  const go = (k, ic, name) => '<button class="sk-go' + (EARLY === k ? ' on' : '') + '" data-act="early" data-v="' + k + '" aria-pressed="' + (EARLY === k) + '">' + ic + '<span>' + name + '</span><small>' + (EARLY === k ? '곧 열립니다' : '') + '</small></button>';
+  const go = (k, ic, name) => '<button class="sk-go" data-act="early" data-v="' + k + '">' + ic + '<span>' + name + '</span></button>';
   const cells = [];
   for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) if (r < 2 || c < 3) cells.push([c * 19 + 1, r * 19 + 1, r * 5 + c]);
   const cal = '<svg class="sk-cl" viewBox="0 0 96 58" aria-hidden="true">' + cells.map(([x, y, n]) => '<rect' + (n === 7 ? ' class="hi"' : '') + ' x="' + x + '" y="' + y + '" width="13" height="13" rx="3" style="animation-delay:' + ((n % 5) * 0.45 + Math.floor(n / 5) * 0.3).toFixed(2) + 's"/>').join('') + '</svg>';
@@ -5936,11 +6033,19 @@ function render() {
   const app = $('app'), lay = $('layers');
   CANDS = null; GLC = null;
   { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }   // 1112-N 시험 시트 띠 — 어느 화면에서든(불러오는 중에도) 먼저
-  if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; skFrame(app); if (EARLY && !app.querySelector('.sk')) EARLY = null; return; }
-  const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
-  app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + '<div class="tip" id="tip" hidden></div>';
-  if (window.scrollY !== y) window.scrollTo(0, y);
-  if (foc) { const q = $('q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
+  if (!ready()) {
+    // 1115-X 읽기 전에 연 입력 창은 불러오는 화면 위에 그대로 선다. (S.peek = 로그인 · 연결 화면을 보러 잠깐 내려 둠 — 창과 쓰던 글은 S.layers 에 그대로)
+    const keep = S.layers.length && S.layers[0].early;
+    if (!keep) S.peek = false;
+    app.innerHTML = gate() + (keep && S.peek ? '<div class="peekbar"><button data-act="earlyback">쓰던 입력 창으로</button></div>' : ''); skFrame(app);
+    if (!keep || S.peek) { lay.innerHTML = ''; document.body.classList.remove('locked'); return; }
+  } else {
+    S.peek = false;
+    const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
+    app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + '<div class="tip" id="tip" hidden></div>';
+    if (window.scrollY !== y) window.scrollTo(0, y);
+    if (foc) { const q = $('q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
+  }
   // 겹 화면 — 이미 있는 것은 속만 갈아 끼운다(스크롤 유지), 새로 생긴 것만 미끄러져 들어온다
   const have = [...lay.children];
   S.layers.forEach((L, i) => {
@@ -5991,7 +6096,7 @@ function morphNode(a, b) {
 }
 let lid = 0;
 // 겹 화면 열쇠는 _k — 예전엔 id 였는데 출석 고치기가 id(출석ID, 새로 적기면 null)로 덮어써서 다시 그릴 때마다 겹 화면을 새로 만들었다 → 맨 위로 튐 (1109-J 3-5)
-function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type }, extra || {}, { _k: type + (++lid) })); render(); }
+function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type }, extra || {}, { _k: type + (++lid) }, OPEN_EARLY && !ready() ? { early: true, autoSvc: type === 'attedit' } : null)); render(); }
 function closeLayer(force) {
   const lay = $('layers'), el = lay.lastElementChild; if (!S.layers.length) return;
   const top = topLayer();
@@ -6182,7 +6287,9 @@ document.addEventListener('click', e => {
   if (a === 'b7send') { const L = topLayer(); if (L && L.type === 'b7send') busy(async () => { try { await sendB7(L); } catch (e) { toast('보내지 못했습니다\n' + e.message); } }); return; }
   if (a === 'calsw') { const c = calShow(); c[v] = !c[v]; if (!c.v && !c.a) c[v === 'v' ? 'a' : 'v'] = true; save({ calShow: c }); render(); return; }
   if (a === 'attlist') { S.layers = []; goTab('attend'); return; }
-  if (a === 'early') { EARLY = EARLY === v ? null : v; render(); return; }   // 1115-W 읽는 중에 누른 입력 단추 — 읽기가 끝나면 열린다
+  if (a === 'early') { openEarly(v); return; }   // 1115-X 읽는 중에도 입력 창을 바로
+  if (a === 'earlypeek') { S.peek = true; render(); return; }
+  if (a === 'earlyback') { S.peek = false; render(); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
   if (a === 'favgo') { openAttEdit(null, v); return; }
   if (a === 'attopen') { if (v) openAttEdit(v); return; }
@@ -6226,7 +6333,7 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'recentmore') { const L = topLayer(); if (L && (L.type === 'edit' || L.type === 'planedit' || L.type === 'attedit')) { L.recentAll = !L.recentAll; render(); } return; }
-  if (a === 'aoptadd') { const L = optL(); if (optCtx(L)) { L.adding = k; L.plus = null; render(); const i = document.querySelector(L.type === 'atttab' ? '.favs [data-optadd]' : '.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
+  if (a === 'aoptadd') { const L = optL(); if (optCtx(L) && dataOk(true)) { L.adding = k; L.plus = null; render(); const i = document.querySelector(L.type === 'atttab' ? '.favs [data-optadd]' : '.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
   if (a === 'aoptx') { const L = optL(); if (optCtx(L)) { L.omenu = null; render(); } return; }
   if (a === 'aopttime' || a === 'aopttd' || a === 'aopttsave' || a === 'aopttclr') {   // 1115 예배 · 모임 알약 요일 · 시간
     const L = optL(), C = optCtx(L); if (!C || !L.omenu) return; const om = L.omenu;

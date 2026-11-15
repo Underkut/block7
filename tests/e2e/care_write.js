@@ -23,7 +23,7 @@
 //  ⑯ (1108-A2) 기도노트 표시색 — 덩어리를 읽기만 · 기도노트가 붙인 색 이름 · 묶음에 이어 둔 색 · 성도 목록 · 사람 화면 · 사람 화면에서 BLOCK7 할일(쪽지만)
 //  ⑰ (1108-A5) 요즘 안 보이는 분 — 성도 탭 요약에 수 · 출석 목록 맨 위에 늘 오던 분만
 //  ⑱ (1108-B) 휴대폰 — 칸 글자 16(아이폰 확대 막기) · 날짜 칸 폭 · 알약은 다시 그리지 않음(스크롤 · 쓰던 칸 그대로) · 쓰는 동안 아래 단추 감춤 · 쓰는 칸을 보이는 자리로
-//  ⑲ (1108-B2) 처음 열 때 시트 요청 두 번(탭 목록 + 모든 탭 한꺼번에) · 로딩 뼈대
+//  ⑲ (1108-B2 · 1115-X) 처음 열 때 시트 요청 세 번(탭 목록 + 가벼운 묶음 + 모든 탭 한꺼번에) · 여는 동안 화면
 //  ⑳ (1108-B3) 출석 입력 — 직접 적기는 접힘 · 날짜 단추 · 이름 여럿(한 줄씩) · 알약 더하기 → '출석 선택지' 탭 · 끌어 옮기기 · 오른쪽 단추 메뉴(이름 바꾸기 · 지우기) · 지난 기록은 그대로
 //  ㉑ (1108-B4) 닫기 손짓 — 가장자리 밀기 · 머리줄 내려끌기 · 못 미치면 제자리 · 굴리기는 아님 · 쓰던 글은 묻는다
 //  ㉒ (1108-B4) 달력 — 심방 · 출석 켜고 끄기 (둘 다 끌 수 없음 · 기억)
@@ -186,10 +186,10 @@ async function route(r) {
   await page.addInitScript(() => { matchMedia = q => ({ matches: q.includes('reduce'), addEventListener() {}, addListener() {} }); });
   await page.goto(FILE); await page.waitForTimeout(400);
   eq('⑲ 여는 동안엔 바로 입력 두 단추 + 기록 맛보기 + 테두리 막대 (1115-W)', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); const r = [document.querySelectorAll('.sk .sk-go').length, !!document.querySelector('.sk .sk-frame .pg'), !!document.querySelector('.sk .sk-ls'), !!document.querySelector('.sk .sk-cl')]; USER = null; return r; }), [2, true, true, true]);
-eq('⑲-2 읽는 중에 누른 입력 단추는 예약만 — 못 읽으면 버려진다', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); document.querySelector('.sk-go[data-v="attend"]').click(); const a = [EARLY, document.querySelector('.sk-go.on small').textContent.length > 0]; USER = null; render(); a.push(EARLY); return a; }), ['attend', true, null]);
+eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 — 자세한 것은 care_early.js', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); document.querySelector('.sk-go[data-v="attend"]').click(); const a = [S.layers.length, S.layers[0].type, !!S.layers[0].early, !!document.querySelector('#layers .layer .early')]; S.layers = []; USER = null; render(); return a; }), [1, 'attedit', true, true]);
   await page.evaluate(() => { USER = { email: 'test@example.com', uid: 'u', getIdToken: async () => 'x' }; AUTH_READY = true; save({ sheet: { id: 'S', name: '시험 시트' }, form: { id: 'F', name: '시험 폼' } }); googleStatus(); });
   await page.waitForSelector('.card');
-  eq('⑲ (1108-B2) 처음 열 때 시트에 묻는 것은 두 번 — 탭 목록 · 모든 탭 한꺼번에', REQ.sheets, 2);
+  eq('⑲ (1108-B2 · 1115-X) 처음 열 때 시트에 묻는 것은 세 번 — 탭 목록 · 가벼운 묶음(입력에 필요한 것 먼저) · 모든 탭 한꺼번에', REQ.sheets, 3);
   const formRowsBefore = JSON.stringify(ROWS);
   const tidy = () => page.waitForTimeout(500);
 
@@ -197,7 +197,7 @@ eq('⑲-2 읽는 중에 누른 입력 단추는 예약만 — 못 읽으면 버�
   await page.click('[data-act="addrec"]'); await tidy();
   await page.fill('[data-f="nameq"]', '새사람');
   await talk(page, [['s', '새로 적은 이야기'], ['m', '둘째 줄']]);
-  await page.click('.layer [data-act="fone"][data-k="method"][data-v="카톡, 문자"]');
+  await page.click('.layer [data-act="aone"][data-k="method"][data-v="카톡, 문자"]');
   await page.click('.layer [data-act="fone"][data-k="depth"][data-v="깊음"]');
   await page.click('.layer [data-act="ftog"][data-k="tags"][data-v="학교"]');
   await page.click('.layer [data-act="ftog"][data-k="acts"][data-v="중보"]');
