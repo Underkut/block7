@@ -541,7 +541,7 @@ async function route(r) {
   await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
   const AT_ = () => tab('출석').rows, tH = () => AT_()[0], tc = (r, k) => r[tH().indexOf(k)];
   const todayK = await page.evaluate(() => today());
-  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '메모', '적은 시각']);
+  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '섬김', '메모', '적은 시각']);
   eq('⑮ 한 줄 — 이름 · 예배 · 모임 · 자리 · 날짜(오늘) · 출석ID', AT_().slice(1).map(r => [tc(r, '성도'), tc(r, '예배 · 모임'), tc(r, '자리'), tc(r, '날짜') === todayK, /^T/.test(tc(r, '출석ID'))]), [['새손님', '개인 기도', '기도실', true, true]]);
   eq('⑮ (시험 준비) 머머머는 심방 기록이 있는 분', await page.evaluate(() => !!M().people['머머머']), true);
   await page.click('.ph-head [data-act="attpaste"]'); await tidy();
@@ -722,6 +722,12 @@ async function route(r) {
     eq('㉚ 알약 더하기 칸을 쓰는 동안은 단추를 감춘다', await mp.evaluate(() => [document.activeElement.dataset.optadd != null, document.body.classList.contains('typing')]), [true, true]);
     await mp.evaluate(() => { const i = document.activeElement; i.addEventListener('blur', e => e.stopImmediatePropagation(), true); document.addEventListener('focusout', e => { if (e.target === i) e.stopImmediatePropagation(); }, { capture: true, once: true }); topLayer().adding = null; render(); }); await mp.waitForTimeout(300);
     eq("㉚ 그 칸이 사라지면 '완료' 단추가 돌아온다 (typing 이 남지 않음)", await mp.evaluate(l => [document.body.classList.contains('typing'), getComputedStyle(document.querySelector(l + ' .ph-foot')).display], AL), [false, 'block']);
+    // ㊻ (1115) 메모 칸에 커서를 둔 뒤 알약 · 빈 곳을 눌러도(아이폰은 커서를 안 풀어 준다) 저장 단추가 돌아온다
+    await mp.evaluate(l => document.querySelector(l + ' [data-f="memo"]').focus(), AL); await mp.waitForTimeout(200);
+    eq('㊻ 메모 칸에 커서 — 저장 줄 숨음', await mp.evaluate(l => [document.body.classList.contains('typing'), getComputedStyle(document.querySelector(l + ' .ph-foot')).display], AL), [true, 'none']);
+    await mp.evaluate(l => document.querySelector(l + ' .fsec').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })), AL); await mp.waitForTimeout(250);
+    eq('㊻ 빈 곳을 누르면 커서가 풀리고 저장 단추가 돌아온다', await mp.evaluate(l => [document.body.classList.contains('typing'), getComputedStyle(document.querySelector(l + ' .ph-foot')).display], AL), [false, 'block']);
+    eq('㊻ 출석 입력에 섬김 알약 다섯이 함께 온 분 아래에 있다', await mp.evaluate(l => { const L = document.querySelector(l), k = [...L.querySelectorAll('.pills')].map(p => p.dataset.k), p = L.querySelector('.pills[data-k="serve"]'); return [k.indexOf('serve') === k.indexOf('with') + 1, p ? [...p.querySelectorAll('[data-act="aone"]')].map(b => b.dataset.v).join(',') : ''].join('|'); }, AL), 'true|예배팀,기술팀,예배위원,교회학교,스데반');
     // 알약 더하기 칸은 자판 바로 위로 (자판 = 가짜 visualViewport 높이 260)
     const pin = await mp.evaluate(async k => {
       const vv = { offsetTop: 0, height: 260, addEventListener() {} }; Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
@@ -779,11 +785,18 @@ async function route(r) {
   await page.click(LY + ' .omenu [data-act="aopttime"]'); await page.waitForTimeout(200);
   const nowD = await page.evaluate(() => new Date().getDay());
   await page.click(LY + ' .omenu [data-act="aopttd"][data-v="' + nowD + '"]'); await page.waitForTimeout(150);
-  await page.fill(LY + ' .omenu [data-omt="s"]', '00:00'); await page.fill(LY + ' .omenu [data-omt="e"]', '23:59');
+  // 1115 시간 휠 — 처음에서 끝까지만(이어 돌지 않음) · 분은 5분 단위. 시작을 맨 위로, 마침을 맨 아래 너머로 힘껏 굴려도 00:00 / 23:55 에서 멈춘다
+  eq('㊼ 시간 휠 — 시 24칸 · 분 12칸(5분 단위: 00 ~ 55)', await page.$$eval(LY + ' .omenu .whl[data-omt="s"] .whc', c => [c[0].children.length, [...c[1].children].map(x => x.textContent).join(',')]), [24, '00,05,10,15,20,25,30,35,40,45,50,55']);
+  const roll = (k, c, top) => page.evaluate(([k, c, top]) => { document.querySelector('.omenu .whl[data-omt="' + k + '"] [data-c="' + c + '"]').scrollTop = top; }, [k, c, top]);
+  await roll('s', 'h', 0); await roll('s', 'm', 0); await roll('e', 'h', 99999); await roll('e', 'm', 99999); await page.waitForTimeout(400);
+  eq('㊼ 끝까지 굴려도 이어 돌지 않고 멈춘다', await page.$$eval(LY + ' .omenu .whl', w => w.map(x => x.dataset.val)), ['00:00', '23:55']);
+  await roll('s', 'm', 32 * 3); await page.waitForTimeout(300);
+  eq('㊼ 분을 세 칸 굴리면 15분', await page.$eval(LY + ' .omenu .whl[data-omt="s"]', x => x.dataset.val), '00:15');
+  await roll('s', 'm', 0); await page.waitForTimeout(300);
   await page.click(LY + ' .omenu [data-act="aopttsave"]'); await page.waitForTimeout(1200);
   const TT = () => (tab('출석 선택지') || { rows: [] }).rows.find(r => r[0] === '예배 · 모임' && r[1] === '새벽기도');
-  eq('㊺ 시간 저장 → 탭 셋째 열 · 머리글 시간', [tab('출석 선택지').rows[0][2], TT()[2]], ['시간', ['일', '월', '화', '수', '목', '금', '토'][nowD] + ' 00:00~23:59']);
-  eq('㊺ 알약에 시간이 작게', await page.$eval(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"] .otm', e => e.textContent), ['일', '월', '화', '수', '목', '금', '토'][nowD] + ' 00:00~23:59');
+  eq('㊺ 시간 저장 → 탭 셋째 열 · 머리글 시간', [tab('출석 선택지').rows[0][2], TT()[2]], ['시간', ['일', '월', '화', '수', '목', '금', '토'][nowD] + ' 00:00~23:55']);
+  eq('㊺ 알약에 시간이 작게', await page.$eval(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"] .otm', e => e.textContent), ['일', '월', '화', '수', '목', '금', '토'][nowD] + ' 00:00~23:55');
   eq('㊺ 지금 열면 그 알약 · 시간 없으면 시간 없는 맨 앞', await page.evaluate(() => [svcPick(ATTO(), new Date()), svcPick(ATTO(), new Date(Date.now() + 864e5)) === ATTO().svc.find(v => !(ATTO().svcTime || {})[v])]), ['새벽기도', true]);
   await page.click(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"]', { button: 'right' }); await page.waitForTimeout(300);
   await page.evaluate(() => { window.prompt = () => '새벽 기도회'; });
