@@ -8,7 +8,9 @@
  *                       care:true 면 심방 노트(sweeter.my/care/)용 권한(drive.file)을 함께 묻는다 — 아래 CARE_SCOPES
  *   POST /fin {code,state,error}  구글이 block7.my/gcal/ 로 돌려보낸 것을 그 쪽지가 넘겨준다
  *                       → 갱신 토큰을 gcalTokens/{uid} 에 맡기고 {ret, result} (돌아갈 앱 주소)를 알려 준다
+ *                       mail:true 면 교역자 로테이션(sweeter.my/rotation/, R9b)의 **메일 읽기 전용** 열쇠를 따로 받는다 — 아래 MAIL_SCOPES
  *   POST /token         (Bearer) 한 시간짜리 열쇠(access token)를 새로 받아 준다
+ *   /token · /status · /off 에 {mail:true} 를 주면 메일 열쇠(gmailTokens/{uid}) 쪽을 다룬다
  *   POST /status        (Bearer) 연결됐는지 · 어느 구글 계정인지
  *   POST /off           (Bearer) 연결 끊기 — 구글에 열쇠를 돌려주고 지운다
  *
@@ -40,9 +42,14 @@ const SCOPES = [
 // drive.file = HB 가 구글 파일 고르기 창에서 **고른 파일만**(심방 시트 · 심방 폼) 열 수 있다 (HB 결정 2026-11-06, '가').
 //   ⚠️ 'spreadsheets' · 'drive' 처럼 모든 파일을 여는 권한으로 넓히지 말 것 — 심방 기록은 민감 정보다.
 const CARE_SCOPES = ["https://www.googleapis.com/auth/drive.file"];
+// 교역자 로테이션(sweeter.my/rotation/, R9b)의 '메일에서 숙소 예약 찾기' — **캘린더 · 심방 열쇠와 따로** 받고 따로 맡긴다(gmailTokens/{uid}).
+//   한 벌에 섞으면 BLOCK7 · 심방 노트가 받는 열쇠까지 메일을 읽을 수 있게 된다. 그래서 include_granted_scopes 도 쓰지 않는다.
+//   ⚠️ gmail.readonly(읽기만)보다 넓히지 말 것 — 보내기 · 지우기는 필요 없다.
+const MAIL_SCOPES = ["openid", "email", "https://www.googleapis.com/auth/gmail.readonly"];
 const APP_DEFAULT = "https://block7.my/";
 // 돌아갈 주소는 BLOCK7 운영본 자리와 심방 노트 자리만 받는다 (아무 데로나 돌려보내는 문이 되지 않게)
-const okRet = (u) => typeof u === "string" && /^https:\/\/(block7\.my|underkut\.github\.io\/block7|sweeter\.my\/care)\//.test(u);
+const okRet = (u) => typeof u === "string" && /^https:\/\/(block7\.my|underkut\.github\.io\/block7|sweeter\.my\/(care|rotation))\//.test(u);
+const tokDoc = (uid, mail) => db.doc(`${mail ? "gmailTokens" : "gcalTokens"}/${uid}`);
 // 구글이 돌려보내는 자리는 block7.my 안에 둔다 (v26-1023-2) — 구글 '앱 게시' 는 승인된 도메인을
 // HB 소유 도메인으로 요구하는데 cloudfunctions.net 은 HB 것이 아니다. 그 쪽지(gcal/index.html)가 /fin 을 부른다.
 const REDIRECT_URI = "https://block7.my/gcal/";
@@ -89,7 +96,7 @@ exports.gcal = onRequest(
         if (!t.ok || !t.j.refresh_token) { console.error("gcal code exchange", t.status, t.j); back(res, s.ret, "err"); return; }
         let email = "";
         try { email = JSON.parse(Buffer.from(String(t.j.id_token).split(".")[1], "base64url").toString()).email || ""; } catch (e) { /* 없어도 된다 */ }
-        await db.doc(`gcalTokens/${s.uid}`).set({ rt: t.j.refresh_token, email, at: Date.now() });
+        await tokDoc(s.uid, s.mail === true).set({ rt: t.j.refresh_token, email, at: Date.now() });
         back(res, s.ret, "ok");
         return;
       }
@@ -97,19 +104,20 @@ exports.gcal = onRequest(
       if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
       const uid = await uidOf(req);
       if (!uid) { res.status(401).json({ error: "no auth" }); return; }
-      const tokRef = db.doc(`gcalTokens/${uid}`);
+      const mail = !!(req.body && req.body.mail === true);
+      const tokRef = tokDoc(uid, mail);
 
       if (path === "/start") {
         const ret = okRet(req.body && req.body.ret) ? req.body.ret : APP_DEFAULT;
         const state = crypto.randomBytes(18).toString("hex");
-        await db.doc(`gcalStates/${state}`).set({ uid, ret, exp: Date.now() + 15 * 60e3 });
+        await db.doc(`gcalStates/${state}`).set({ uid, ret, mail, exp: Date.now() + 15 * 60e3 });
         const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
         u.search = new URLSearchParams({
           client_id: cid(), redirect_uri: redirectUri(), response_type: "code",
-          scope: SCOPES.concat(req.body && req.body.care === true ? CARE_SCOPES : []).join(" "), access_type: "offline", prompt: "consent",
-          include_granted_scopes: "true", state,
+          scope: mail ? MAIL_SCOPES.join(" ") : SCOPES.concat(req.body && req.body.care === true ? CARE_SCOPES : []).join(" "), access_type: "offline", prompt: "consent",
+          ...(mail ? {} : { include_granted_scopes: "true" }), state,
         }).toString();
-        res.json({ url: u.toString() });
+        res.json({ url: u.toString(), mail });   // mail 을 돌려주는 것으로 앱이 '새 서버' 인 줄 안다 (옛 서버면 캘린더 권한을 물으니 앱이 보내지 않는다)
         return;
       }
 

@@ -25,6 +25,7 @@
 //  ㉒ 부산 입력 A안(R5b-C): 고르는 목록(숙소 · 교통편 · 특이사항 갈래) 기본값 · 더하기 · 순서 · 고치기(지난 기록도) · 합치기 · 지우기 · 맞추기 / 특이사항 / 박수 / 가져오기 3판
 //  ㉕ 내 일정(R8b): 오늘 · 다음 차례 · 가까운 부산 · 그다음 · 횟수 / 한 줄이 한 주 / 부산 준비 / 내 화면 취향(첫 화면 · 이름 서식) · 책에 안 섞임 / 내 이름 자리
 //  ㉖ 예약 읽기(R9): AI 답 다듬기 · 맞는 방문 · 초안 채우기(목록 이름 · 원화만 금액 · 취소 기한 · 환불 불가 · 취소됨) · 예약번호 저장 · 책은 안 고침
+//  ㉗ 메일에서 찾기(R9b): 찾는 말 · 메일 글 다듬기(주소 · 전화 · 링크 지움, 날짜 · 예약번호 남김) · 나중 메일이 이김 · 지난 예약 빼기 · 넣을 자리 · 열쇠 서버(메일 열쇠 따로 · 읽기만)
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -38,7 +39,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay };`, ctx);
+  myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -628,6 +629,40 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉖ AI 에 보낼 말: JSON 배열 · 짐작 금지 · 사진/메일 갈림', [/JSON 배열/.test(A.bookingPrompt('img')), /짐작해서 채우지 말 것/.test(A.bookingPrompt('mail')), /메일/.test(A.bookingPrompt('mail')), /그림/.test(A.bookingPrompt('img'))], [true, true, true, true]);
   sc.eq('㉖ ⚠️ 읽은 것은 초안에만 — 책을 고치는 저장(visitApply · saveBook)을 부르지 않는다', (() => { const f = HTML.slice(HTML.indexOf('function fillStay('), HTML.indexOf('async function readStayImg(')); return [f.length > 50, /visitApply|saveBook|cloudSave/.test(f)]; })(), [true, false]);
   sc.eq('㉖ 열쇠: 셀 inside 사본 → 계정 cellbook 읽기만(쓰지 않음) · 교역자는 안 됨', [/lsGet\('cell_ai_key', ''\)/.test(HTML), /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.get\(\)/.test(HTML), /collection\('cellbook'\)[^;]*\.(set|update|delete)\(/.test(HTML), /function aiCan\(\) \{ return DEMO \|\| \(!!FB\.user && !isStaff\(\)\); \}/.test(HTML)], [true, true, false, true]);
+}
+
+// ㉗ 메일에서 찾기 (R9b) — 지어낸 숙소 · 메일
+{
+  sc.eq('㉗ 찾는 말: 아고다 · 트립닷컴 · 1년', [/agoda\.com/.test(A.MAIL_Q), /trip\.com/.test(A.MAIL_Q), /newer_than:365d/.test(A.MAIL_Q)], [true, true, true]);
+  sc.eq('㉗ HTML → 글: 스타일 · 태그 빼고 줄 나눔 · 글자 표시 풀기', A.htmlText('<style>.x{}</style><div>바다&nbsp;호텔</div><table><tr><td>체크인</td><td>2026-11-27</td></tr></table>A &amp; B').replace(/\n+/g, '\n'), '바다 호텔\n체크인 2026-11-27\nA & B');
+  const c = A.mailClean('예약자 hb@example.com 연락처 010-1234-5678 / +82 51 123 4567\n체크인 2026-11-27 예약번호 1234567890 https://x.example/a?b=1');
+  sc.eq('㉗ 다듬기: 메일 주소 · 전화 · 링크 지움, 날짜 · 예약번호는 남김', [/@/.test(c), /1234-5678/.test(c), /123 4567/.test(c), /https/.test(c), /2026-11-27/.test(c), /1234567890/.test(c)], [false, false, false, false, true, true]);
+  sc.eq('㉗ 길이 상한', A.mailClean('가'.repeat(9000)).length, 5000);
+  sc.eq('㉗ 메일 번호를 함께 받게 묻는다', /"mail": 그 메일 번호/.test(A.mailPrompt()), true);
+  const mails = [
+    { at: 100, b: [{ hotel: '바다 호텔', checkIn: '2026-11-27', checkOut: '2026-11-29', ref: 'R1', total: 180000 }] },
+    { at: 300, b: [{ hotel: '바다 호텔', checkIn: '2026-11-27', checkOut: '2026-11-29', ref: 'R1', cancelled: true }] },
+    { at: 200, b: [{ hotel: '언덕 스테이', checkIn: '2026-12-11', ref: '' }, { hotel: '언덕스테이', checkIn: '2026-12-11', total: 90000 }, { hotel: '', checkIn: '' }] },
+    { at: 50, b: [{ hotel: '옛 호텔', checkIn: '2026-10-01', ref: 'OLD' }] }];
+  const bk = A.mailBookings(mails);
+  sc.eq('㉗ 같은 예약번호는 나중 메일이 이김(예약 → 취소) · 번호 없으면 숙소 + 체크인으로 하나 · 빈 예약 버림 · 체크인 순', bk.map(b => [b.hotel, b.ref, b.cancelled]), [['옛 호텔', 'OLD', false], ['바다 호텔', 'R1', true], ['언덕스테이', '', false]]);
+  sc.eq('㉗ 메일 순서가 바뀌어도 같은 답', JSON.stringify(A.mailBookings(mails.slice().reverse())) === JSON.stringify(bk), true);
+  const b = A.normBook({ people: [{ id: 'a', name: '가가', roles: ['busan'] }], visits: [
+    { id: 'v|2026-11-29', who: ['a'], days: '금토일', stay: [{ kind: 'home', name: '어느 댁' }, { kind: 'hotel', name: '바다 호텔', status: 'ask' }] },
+    { id: 'v|2026-12-13', who: ['a'], days: '금토일', stay: [{ kind: 'hotel', name: '언덕스테이', status: 'done', ref: 'Q9' }] }] });
+  const rows = A.mailRows(b, bk, '2026-11-15');
+  sc.eq('㉗ 화면 줄: 이레 넘게 지난 예약은 뺌 · 맞는 방문 · 들어 있음', rows.map(r => [r.bk.hotel, (r.visit || {}).id || null, r.seen]), [['바다 호텔', 'v|2026-11-29', false], ['언덕스테이', 'v|2026-12-13', false]]);
+  sc.eq('㉗ 넣을 자리: 같은 예약번호 → 예약 완료 아닌 호텔 줄 → 새 줄', [A.mailSlot(b.visits[0], { ref: 'R1' }), A.mailSlot(b.visits[1], { ref: 'Q9' }), A.mailSlot(b.visits[1], { ref: 'Z' })], [1, 0, -1]);
+  sc.eq('㉗ ⚠️ 넣기는 초안까지 — mailPut 은 저장을 부르지 않는다', (() => { const f = HTML.slice(HTML.indexOf('function mailPut('), HTML.indexOf('async function mailConnect(')); return [f.length > 50, /fillStay\(/.test(f), /visitApply|saveBook|cloudSave/.test(f)]; })(), [true, true, false]);
+  sc.eq('㉗ 메일은 이 기기에 저장하지 않는다 — 기억하는 것은 메일 id 별 뽑은 예약(at · b)뿐', /cache\[g\.id\] = \{ at: \+g\.internalDate \|\| 0, b: got\.filter/.test(HTML), true);
+  sc.eq('㉗ 옛 서버면(mail 을 안 돌려줌) 연결 화면으로 보내지 않는다', /if \(!j\.mail\) return toast\(/.test(HTML), true);
+
+  const src = fs.readFileSync(path.join(__dirname, '..', 'gcal-functions', 'src', 'index.js'), 'utf8');
+  const MS = new Function(src.match(/^const MAIL_SCOPES = .*$/m)[0].replace('const MAIL_SCOPES =', 'return'))();
+  const okRet = new Function(src.match(/^const okRet = .*$/m)[0].replace('const okRet =', 'return'))();
+  sc.eq('㉗ 서버: 메일 권한은 읽기만(gmail.readonly) — 보내기 · 지우기 · 전체 권한 없음', [MS.includes('https://www.googleapis.com/auth/gmail.readonly'), MS.some(x => /gmail\.(send|modify|compose)|mail\.google\.com/.test(x)), MS.some(x => /calendar|drive/.test(x))], [true, false, false]);
+  sc.eq('㉗ 서버: 메일 열쇠는 따로(gmailTokens) · 캘린더 권한과 합치지 않음(include_granted_scopes 빼기)', [/mail \? "gmailTokens" : "gcalTokens"/.test(src), /\.\.\.\(mail \? \{\} : \{ include_granted_scopes: "true" \}\)/.test(src), /set\(\{ uid, ret, mail, exp/.test(src), /tokDoc\(s\.uid, s\.mail === true\)/.test(src)], [true, true, true, true]);
+  sc.eq('㉗ 서버: 돌아갈 자리 — 로테이션 · 심방 노트 · BLOCK7 만', ['https://sweeter.my/rotation/', 'https://sweeter.my/care/', 'https://block7.my/', 'https://sweeter.my/', 'https://sweeter.my/cell/', 'https://sweeter.my.evil.com/rotation/'].map(okRet), [true, true, true, false, false, false]);
 }
 
 sc.done();
