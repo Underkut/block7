@@ -54,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT, glanceModel, attMark,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attWithText, attRoleList, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attWithText, attWithList, attWithJoin, attWithToggle, attRoleList, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
@@ -1291,6 +1291,17 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const e = A.seatFill([], [P('가온', '뒤', 1), P('나래', '', 2)]);
   sc.eq('㊿ 배치가 없으면 — 자리별 묶음 + 자리 기록 없음', J([e.blocks, e.rows, e.off.map(g => [g.n, g.who.length]), e.none.length]), [[], 0, [['뒤', 1]], 1]);
   sc.eq('㊿ 빈 값', J(A.seatFill(null, null)), { blocks: [], rows: 0, off: [], none: [] });
+}
+
+// ── 1115-5 3 '함께 온 분' 은 여럿 ──
+{
+  sc.eq('㉛ 함께 — 쉼표로 이은 여럿을 하나씩', A.attWithList('아내, 철수 ,아내，영희'), ['아내', '철수', '영희']);
+  sc.eq("㉛ 함께 — 예전 한 명 기록 · '혼자' · 빈 값", [A.attWithList('아내'), A.attWithList('혼자'), A.attWithList('')], [['아내'], [], []]);
+  sc.eq('㉛ 결과 글 — 여럿이면 이름 모두 + 함께', [A.attWithText('아내, 철수'), A.attWithText('아내'), A.attWithText('혼자'), A.attWithText('')], ['아내, 철수 함께', '아내 함께', '혼자', '']);
+  sc.eq('㉛ 눌러 더하고 · 다시 눌러 빼기', [A.attWithToggle('', '아내'), A.attWithToggle('아내', '철수'), A.attWithToggle('아내, 철수', '아내'), A.attWithToggle('아내', '아내')], ['아내', '아내, 철수', '철수', '']);
+  sc.eq("㉛ '혼자' 였다가 이름을 누르면 그 이름만", A.attWithToggle('혼자', '아내'), '아내');
+  sc.eq('㉛ 띄어쓰기 달라도 한 사람', A.attWithJoin(['김 철수', '김철수', '영희']), '김 철수, 영희');
+  sc.eq('㉛ 알약 기본값 — 여럿 칸도 이름 하나씩 센다', A.attOptDefaults([{ with: '아내, 철수' }, { with: '아내' }, { with: '혼자' }]).with, ['아내', '철수']);
 }
 
 sc.done();
