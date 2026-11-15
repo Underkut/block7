@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -546,34 +546,36 @@ a.wl{color:inherit;text-decoration:none}
 .sk-bar b{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .6s var(--ease)}
 @keyframes skshine{0%{background-position:100% 0}100%{background-position:-50% 0}}
 @media (prefers-reduced-motion:reduce){.sk-today i,.sk-card i{animation:none}.sk-bar b{transition:none}}
-/* 1115-W 여는 동안 — 위 NEW(바로 입력) · 아래 HISTORY(기록 열람 맛보기, 테두리가 불러오기 막대) */
-.sk-box{position:relative;margin:26px 0 0;padding:26px 14px 18px;border:1px solid var(--line2);border-radius:18px}
-.sk-box>h3{position:absolute;top:-9px;left:50%;transform:translateX(-50%);margin:0;padding:0 12px;background:var(--paper);font:500 12px/18px var(--sans,inherit);letter-spacing:.16em;color:var(--tx2)}
-.sk-new{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.sk-go{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px 12px;border:0;background:none;color:var(--tx);font:inherit;font-size:14px;cursor:pointer;border-radius:14px;-webkit-tap-highlight-color:transparent}
-.sk-go svg{width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.sk-go:active{background:var(--ac-soft)}
-.sk-go small{font-size:11px;color:var(--tx3,var(--tx2));min-height:14px}
-.sk-go.on{color:var(--ac)}
-.sk-his{padding:22px 14px 16px;border:0;height:130px;box-sizing:border-box}
-.sk-his>svg.sk-ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.sk-ring rect{fill:none;stroke-width:1.6}
-.sk-ring .tr{stroke:var(--line2)}
-.sk-ring .pg{stroke:var(--ac);stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:var(--a);animation:skring var(--d) cubic-bezier(.2,.7,.3,1) forwards;animation-delay:var(--dl)}
+/* 1115-W 여는 동안 — 화면 한가운데, 여백 넉넉히. 위 NEW(바로 입력) · 아래 HISTORY(기록 맛보기, 테두리가 불러오기 막대)
+   테두리는 CSS border 가 아니라 JS(skFrame)가 실제 크기로 그린 선 — 이름표 자리를 비우고, 막대는 이름표 왼쪽에서 반시계로 돌아 오른쪽에서 끝난다 */
+.sk-c{min-height:100vh;min-height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:calc(48px + env(safe-area-inset-top,0px)) 28px calc(48px + env(safe-area-inset-bottom,0px))}
+.sk-c>*{width:100%;max-width:340px}
+.sk-c .sk-t{font-family:var(--serif);font-weight:400;font-size:19px;letter-spacing:.14em;text-align:center;color:var(--tx);margin:0 0 44px}
+.sk-box{position:relative;padding:34px 18px 26px}
+.sk-box+.sk-box{margin-top:30px}
+.sk-box>h3{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);margin:0;font:400 10.5px/1 var(--sans);letter-spacing:.38em;text-indent:.38em;color:var(--tx3);white-space:nowrap}
+.sk-frame{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.sk-frame path{fill:none;stroke-width:1}
+.sk-frame .tr{stroke:var(--line2)}
+.sk-frame .pg{stroke:var(--ac);stroke-width:1.4;stroke-linecap:round;stroke-dasharray:100 101;stroke-dashoffset:var(--a);animation:skring var(--d) cubic-bezier(.33,0,.2,1) forwards;animation-delay:var(--dl)}
 @keyframes skring{from{stroke-dashoffset:var(--a)}to{stroke-dashoffset:var(--b)}}
-.sk-hrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center}
-.sk-hrow svg{width:100%;height:84px;display:block}
-.sk-ls i{fill:var(--ac)}
-.sk-ls line{stroke:var(--tx2);stroke-width:1.6;stroke-linecap:round;stroke-dasharray:60;animation:skline 2.4s ease-in-out infinite}
-.sk-ls line:nth-of-type(2){animation-delay:.25s}.sk-ls line:nth-of-type(3){animation-delay:.5s}
-.sk-ls circle{fill:var(--ac);animation:skdot 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-.sk-ls circle:nth-of-type(2){animation-delay:.25s}.sk-ls circle:nth-of-type(3){animation-delay:.5s}
-@keyframes skline{0%{stroke-dashoffset:60}40%,80%{stroke-dashoffset:0}100%{stroke-dashoffset:-60}}
-@keyframes skdot{0%,100%{transform:scale(.7);opacity:.5}40%,80%{transform:scale(1);opacity:1}}
-.sk-cl rect{fill:none;stroke:var(--tx2);stroke-width:1.5;animation:skpop 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-.sk-cl rect.hi{fill:var(--ac-soft);stroke:var(--ac)}
-@keyframes skpop{0%,100%{transform:scale(.8);opacity:.45}35%,70%{transform:scale(1);opacity:1}}
-@media (prefers-reduced-motion:reduce){.sk-ring .pg{animation:none;stroke-dashoffset:var(--b)}.sk-ls line,.sk-ls circle,.sk-cl rect{animation:none}}
+.sk-new{display:grid;grid-template-columns:1fr 1fr}
+.sk-go{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 4px 4px;border:0;background:none;color:var(--tx2);font:300 13px/1.2 var(--sans);letter-spacing:.08em;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .4s var(--ease)}
+.sk-go+.sk-go{border-left:1px solid var(--line)}
+.sk-go svg{width:30px;height:30px;fill:none;stroke:var(--tx);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round;transition:stroke .4s var(--ease),transform .4s var(--ease)}
+.sk-go:active svg{transform:scale(.94)}
+.sk-go small{font-size:10.5px;letter-spacing:.02em;color:var(--ac);min-height:13px;opacity:0;transition:opacity .5s var(--ease)}
+.sk-go.on{color:var(--ac)}.sk-go.on svg{stroke:var(--ac)}.sk-go.on small{opacity:1}
+.sk-hrow{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:center;padding:0 6px}
+.sk-hrow svg{width:100%;height:58px;display:block}
+.sk-ls circle{fill:var(--tx3)}
+.sk-ls line{stroke:var(--tx3);stroke-width:1.1;stroke-linecap:round}
+.sk-ls g,.sk-cl rect{animation:skbreath 5.6s ease-in-out infinite;opacity:.35}
+.sk-cl rect{fill:none;stroke:var(--tx3);stroke-width:1.1}
+.sk-cl rect.hi{stroke:var(--ac)}
+@keyframes skbreath{0%,100%{opacity:.28}50%{opacity:.9}}
+.sk-c .sk-m{margin-top:40px;text-align:center;font-size:11px;letter-spacing:.12em;color:var(--tx3)}
+@media (prefers-reduced-motion:reduce){.sk-frame .pg{animation:none;stroke-dashoffset:var(--b)}.sk-ls g,.sk-cl rect{animation:none;opacity:.6}}
 .gate{max-width:440px;margin:0 auto;padding:calc(40px + env(safe-area-inset-top,0px)) 18px 40px}
 .gate h1{font-family:var(--serif);font-size:28px;margin:0}
 .gate .sub{color:var(--tx2);font-size:14px;margin:4px 0 22px}
@@ -830,7 +832,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-4';
+const APP_VERSION = 'v. 26-1115-5';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -5629,23 +5631,39 @@ function gate() {
   if (DATA.state === 'err') return h + '<div class="card"><h2>시트를 읽지 못했습니다</h2><p class="muted" style="white-space:pre-line">' + esc(DATA.err) + '</p><div class="row"><button class="btn pri" data-act="reload">다시 읽기</button><button class="btn" data-act="pick" data-v="sheet">시트 다시 고르기</button><button class="btn" data-act="gconnect">다시 연결</button></div></div></div>';
   return loadingHtml('시트를 읽는 중', 2);
 }
-// 1115-W 처음 여는 동안 — 위: 바로 입력하는 두 단추(심방 · 출석) / 아래: 기록 열람 맛보기 두 그림, 그 상자 테두리가 불러오기 막대
+// 1115-W 처음 여는 동안 — 화면 한가운데: 위 NEW(심방 · 출석 바로 입력) / 아래 HISTORY(기록 맛보기 두 그림, 테두리가 불러오기 막대)
 // 입력 창은 시트의 선택지(알약)를 쓰므로, 읽는 중에 누르면 '예약' 해 두었다가 읽기가 끝나는 즉시 열린다.
 let EARLY = null;   // 'visit' | 'attend' — 읽는 중에 누른 입력 단추
 const LOADSTEP = { step: -1, t: 0 };
 function loadingHtml(msg, step) {
   if (LOADSTEP.step !== step) { LOADSTEP.step = step; LOADSTEP.t = Date.now(); }
-  const A = [6, 34, 58][step], B = [34, 62, 96][step], dur = [6, 8, 40][step], dl = -((Date.now() - LOADSTEP.t) / 1000);
-  const go = (k, ic, name) => '<button class="sk-go' + (EARLY === k ? ' on' : '') + '" data-act="early" data-v="' + k + '" aria-pressed="' + (EARLY === k) + '">' + ic + name + '<small>' + (EARLY === k ? '읽기가 끝나면 바로 열려요' : '') + '</small></button>';
-  const cells = [[6, 8], [28, 8], [50, 8], [72, 8], [6, 34], [28, 34], [50, 34], [72, 34], [6, 60], [28, 60], [50, 60]];
-  const cal = '<svg class="sk-cl" viewBox="0 0 96 84" aria-hidden="true">' + cells.map((c, n) => '<rect' + (n % 5 === 2 ? ' class="hi"' : '') + ' x="' + c[0] + '" y="' + c[1] + '" width="18" height="18" rx="4" style="animation-delay:' + (n * 0.14).toFixed(2) + 's"/>').join('') + '</svg>';
-  const lst = '<svg class="sk-ls" viewBox="0 0 96 84" aria-hidden="true">' + [14, 42, 70].map(y => '<circle cx="10" cy="' + y + '" r="5"/><line x1="26" y1="' + y + '" x2="88" y2="' + y + '" pathLength="60"/>').join('') + '</svg>';
-  return '<div class="sk" aria-busy="true" aria-live="polite"><div class="sk-head">심방 노트</div>' +
-    '<div class="sk-box"><h3>NEW</h3><div class="sk-new">' + go('visit', IC.n_list, '심방 입력') + go('attend', IC.n_att, '출석 입력') + '</div></div>' +
-    '<div class="sk-box sk-his"><h3>HISTORY</h3><svg class="sk-ring" viewBox="0 0 340 130" preserveAspectRatio="none" aria-hidden="true"><rect class="tr" x="1" y="1" width="338" height="128" rx="18" pathLength="100"/><rect class="pg" x="1" y="1" width="338" height="128" rx="18" pathLength="100" style="--a:' + (100 - A) + ';--b:' + (100 - B) + ';--d:' + dur + 's;--dl:' + dl.toFixed(2) + 's"/></svg>' +
-    '<div class="sk-hrow">' + lst + cal + '</div></div>' +
-    '<div class="sk-msg">' + esc(msg) + '…</div></div>';
+  const A = [4, 30, 56][step], B = [30, 56, 96][step], dur = [6, 8, 40][step], dl = -((Date.now() - LOADSTEP.t) / 1000);
+  const go = (k, ic, name) => '<button class="sk-go' + (EARLY === k ? ' on' : '') + '" data-act="early" data-v="' + k + '" aria-pressed="' + (EARLY === k) + '">' + ic + '<span>' + name + '</span><small>' + (EARLY === k ? '곧 열립니다' : '') + '</small></button>';
+  const cells = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) if (r < 2 || c < 3) cells.push([c * 19 + 1, r * 19 + 1, r * 5 + c]);
+  const cal = '<svg class="sk-cl" viewBox="0 0 96 58" aria-hidden="true">' + cells.map(([x, y, n]) => '<rect' + (n === 7 ? ' class="hi"' : '') + ' x="' + x + '" y="' + y + '" width="13" height="13" rx="3" style="animation-delay:' + ((n % 5) * 0.45 + Math.floor(n / 5) * 0.3).toFixed(2) + 's"/>').join('') + '</svg>';
+  const lst = '<svg class="sk-ls" viewBox="0 0 96 58" aria-hidden="true">' + [[8, 78], [29, 62], [50, 70]].map(([y, x2], n) => '<g style="animation-delay:' + (n * 0.9) + 's"><circle cx="5" cy="' + y + '" r="2.6"/><line x1="18" y1="' + y + '" x2="' + x2 + '" y2="' + y + '"/></g>').join('') + '</svg>';
+  return '<div class="sk sk-c" aria-busy="true" aria-live="polite"><h2 class="sk-t">심방 노트</h2>' +
+    '<div class="sk-box" data-frame><h3>NEW</h3><div class="sk-new">' + go('visit', IC.n_list, '심방 입력') + go('attend', IC.n_att, '출석 입력') + '</div></div>' +
+    '<div class="sk-box sk-his" data-frame="pg" style="--a:' + (100 - A) + ';--b:' + (100 - B) + ';--d:' + dur + 's;--dl:' + dl.toFixed(2) + 's"><h3>HISTORY</h3><div class="sk-hrow">' + lst + cal + '</div></div>' +
+    '<div class="sk-m">' + esc(msg) + '</div></div>';
 }
+// 테두리 선 — 상자의 실제 크기로 그린다(늘여 그리면 모서리가 찌그러진다). 이름표 자리는 비우고,
+// 이름표 왼쪽 끝에서 출발해 반시계(왼쪽 → 아래 → 오른쪽 → 위)로 돌아 이름표 오른쪽 끝에서 멈춘다.
+function skFrame(root) {
+  (root || document).querySelectorAll('.sk-box[data-frame]').forEach(box => {
+    const w = box.clientWidth, h = box.clientHeight, lab = box.querySelector('h3'); if (!w || !h) return;
+    const lw = lab ? lab.getBoundingClientRect().width : 0, gap = 12, r = 16, o = 0.5;
+    const L = o, T = o, R = w - o, Bt = h - o, a = w / 2 - lw / 2 - gap, z = w / 2 + lw / 2 + gap;
+    const d = 'M' + a + ' ' + T + 'H' + (L + r) + 'A' + r + ' ' + r + ' 0 0 0 ' + L + ' ' + (T + r) + 'V' + (Bt - r) + 'A' + r + ' ' + r + ' 0 0 0 ' + (L + r) + ' ' + Bt +
+      'H' + (R - r) + 'A' + r + ' ' + r + ' 0 0 0 ' + R + ' ' + (Bt - r) + 'V' + (T + r) + 'A' + r + ' ' + r + ' 0 0 0 ' + (R - r) + ' ' + T + 'H' + z;
+    let svg = box.querySelector(':scope>.sk-frame');
+    if (!svg) { svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'sk-frame'); svg.setAttribute('aria-hidden', 'true'); box.prepend(svg); }
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.innerHTML = '<path class="tr" d="' + d + '"/>' + (box.dataset.frame === 'pg' ? '<path class="pg" pathLength="100" d="' + d + '"/>' : '');
+  });
+}
+addEventListener('resize', () => { if (document.querySelector('.sk-c')) skFrame(); });
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
@@ -5656,7 +5674,7 @@ function render() {
   const app = $('app'), lay = $('layers');
   CANDS = null;
   { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }   // 1112-N 시험 시트 띠 — 어느 화면에서든(불러오는 중에도) 먼저
-  if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; if (EARLY && !app.querySelector('.sk')) EARLY = null; return; }
+  if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; skFrame(app); if (EARLY && !app.querySelector('.sk')) EARLY = null; return; }
   const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
   app.innerHTML = VIEWS[S.view]() + (S.sheet ? sheetHtml() : '') + '<div class="tip" id="tip" hidden></div>';
   if (window.scrollY !== y) window.scrollTo(0, y);
