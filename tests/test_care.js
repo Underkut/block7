@@ -28,6 +28,7 @@
 //  ㊲ (1112-N 2·3·4) 붙여넣어 채우기 — 규격 검사(JSON) · Markdown 규칙 읽기(추측 없음) · 초안 · 속성 대조 · 성도 연결(이름만 → 후보) · 중복(원본ID · 해시) · 할 일(세부 칸 · 미채택은 상세 기록 끝) · 모임
 //  ㊳ (1112-N 5) AI 입력대기함 — 대기 줄만 · 규격 오류는 '오류' + 사유(상한) · 접수ID 붙이기 · 줄 다시 찾기(접수ID · 없으면 같은 패킷) · 완료 칸 · ChatGPT 지시문(지금 시트 주소)
 //  ㊴ (1112-N 6) 화면 정리 — 상세 기록 Markdown 안전하게(제목 · 목록 · 굵게만, 나머지는 글자) · 성도 화면 요약(최근 핵심 · 장기 관찰 · 다음 질문 = 기록 + 계획) · 같은 날 계획 찾기
+//  ㊼ (1115-V) 한눈에 카드 셈 — 돌봄 지도(4주 · 8주 · 그 뒤 · 기록 없음) · 구분 알약 · 구분 나란히 · 심방+출석 네 칸 · 안 보임 · 달라짐 · 다시 보임 · 챙길 것
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -48,7 +49,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
-  ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
+  ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT, glanceModel, attMark,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
   ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
@@ -1127,6 +1128,54 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const rows = A.attOptsRows(o), back = A.attOptsUse(A.attOptsParse(rows), []);
   sc.eq('㊻ 탭에 쓰고 다시 읽어도 섬김이 그대로', J(back.serve), J(o.serve));
   sc.eq('㊻ 섬김 줄이 없는 옛 선택지 탭이면 기본 다섯', J(A.attOptsUse(A.attOptsParse([['칸', '값'], ['자리', '맨 앞']]), []).serve), ['예배팀', '기술팀', '예배위원', '교회학교', '스데반']);
+}
+
+// ㊼ (1115-V) 한눈에 카드 — 이름은 모두 지어낸 것
+{
+  const T = '2026-11-15';   // 주일
+  const V = (id, ymd, name, roles, o) => Object.assign({ id, key: id, ymd, name, who: name.split(', '), allRoles: roles, allTags: [], depthN: 1, actions: [], prio: '', archived: false }, o || {});
+  const visits = [
+    V('C1', '2026-11-10', '가나다', ['청년부'], { depthN: 3, allTags: ['진로'], actions: [{ t: '중보', done: false }, { t: '연락', done: true }] }),
+    V('C2', '2026-10-01', '가나다', ['청년부'], { allTags: ['가정'], actions: [{ t: '만남', done: false }] }),
+    V('C3', '2026-10-05', '라마바', ['청년부'], { prio: '긴급', allTags: ['진로'] }),            // 41일 전 = 8주 안
+    V('C4', '2026-08-01', '사아자', ['장년부'], {}),                                              // 8주 넘음
+    V('C5', '2025-01-01', '차카타', ['장년부'], { archived: true, actions: [{ t: '중보', done: false }] }),   // 보관 — 지도에는 나오되 할 일은 안 셈
+    V('C6', '2026-11-12', '파하가, 가나다', ['청년부'], { allTags: ['진로'] }),
+  ];
+  const model = { people: { '가나다': { roles: ['청년부'] }, '라마바': { roles: ['청년부'] }, '사아자': { roles: ['장년부'] }, '차카타': { roles: ['장년부'] }, '파하가': { roles: ['청년부'] } } };
+  const at = (date, name, o) => Object.assign({ date, name, svc: '주일 2부', from: '처음부터', to: '끝까지' }, o || {});
+  const attend = [
+    at('2026-09-27', '사아자'), at('2026-10-04', '사아자'), at('2026-10-11', '사아자'),                 // 늘 오다 5주째 안 보임 · 심방도 오래됨 → 먼저 볼 분
+    at('2026-10-18', '라 마바'), at('2026-10-25', '라마바'),                                             // 3주째 안 보임 · 심방은 8주 안이지만 기준(21일) 밖 → 먼저 볼 분
+    at('2026-11-01', '가나다'), at('2026-11-08', '가나다', { from: '말씀 중' }), at('2026-11-15', '가나다', { from: '말씀 중' }),   // 늦게 옴 2번 → 달라짐 · 최근 만남
+    at('2026-09-20', '파하가'), at('2026-11-15', '파하가'),                                              // 8주 만에 다시 보임
+    at('2026-11-15', '나그네'),                                                                          // 처음 적힌 분 (구분 없음)
+  ];
+  const plans = [{ id: 'P1', name: '라마바', date: '2026-11-18', time: '19:30', status: '예정', why: '' }, { id: 'P2', name: '가나다', date: '2026-11-25', status: '예정' }, { id: 'P3', name: '사아자', date: '2026-11-17', status: '취소됨' }];
+  const qn = { C1: { items: [{ t: '면접은 어땠는지', done: false }, { t: '물어본 것', done: true }] } };
+  const base = { model, visits, attend, plans, qn, roster: ['거너더'], today: T, stale: 21, roles: ['청년부', '장년부'] };
+  const G = A.glanceModel(base), nmOf = a => a.map(p => p.name).sort();
+  sc.eq('㊼ 돌봄 지도 — 4주 안 · 8주 안 · 8주 넘음 · 기록 없음', J(G.map.cnt), { ok: 2, mid: 1, old: 2, none: 2 });
+  sc.eq('㊼ 명단 · 출석에만 있는 분은 기록 없음 칸에', nmOf(G.people.filter(p => p.band === 'none')), ['거너더', '나그네']);
+  sc.eq('㊼ 띄어쓰기가 달라도 같은 분', G.people.filter(p => p.name.replace(/ /g, '') === '라마바').length, 1);
+  sc.eq('㊼ 지도 묶음 — 구분 차례대로, 구분 없는 분은 맨 뒤', G.map.groups.map(g => g.role + ':' + g.met + '/' + g.people.length), ['청년부:3/3', '장년부:0/2', ':0/2']);
+  sc.eq('㊼ 묶음 안은 오래된 분이 앞', G.map.groups[0].people.map(p => p.name), ['라마바', '가나다', '파하가']);
+  sc.eq('㊼ 심방 흐름 — 최근 4주 번 · 만난 사람 · 깊은 대화 · 늘어난 주제', [G.flow.last4, G.flow.met, G.flow.deep, G.flow.up], [2, 2, 1, '진로']);
+  sc.eq('㊼ 구분 나란히 — 만난 분 / 전체 · 절반 못 미치면 표시', G.roles.map(r => [r.role, r.met, r.total, r.low]), [['청년부', 3, 3, false], ['장년부', 0, 2, true]]);
+  sc.eq('㊼ 심방 격자 — 끊긴 지 오래된 분부터 · 12칸', [G.grid.map(p => p.name), G.grid[0].weeks.length, G.far], [['차카타', '사아자', '라마바', '가나다', '파하가'], 12, 2]);
+  sc.eq('㊼ 격자 칸 — 그 주 가장 깊은 대화', G.people.find(p => p.name === '가나다').weeks.slice(-2), [3, 0]);
+  sc.eq('㊼ 안 보이는 분 — 늘 오던 분만, 오래된 순', G.att.quiet.map(x => x.q.name), ['사아자', '라마바']);
+  sc.eq('㊼ 달라진 분(늦게 옴 2번) · 다시 보인 분 · 처음 적힌 분', [G.att.changed.map(x => x.p.name + x.late), G.att.back.map(x => x.p.name + x.gap), nmOf(G.att.first)], [['가나다2'], ['파하가56'], ['나그네']]);
+  sc.eq('㊼ 출석 격자 — 8칸 · 늦게 온 주는 l', G.people.find(p => p.name === '가나다').att, ['', '', '', '', '', 'o', 'l', 'l']);
+  sc.eq('㊼ 이번 주 · 지난주 적힌 분', [G.att.now, G.att.prev], [3, 1]);
+  sc.eq('㊼ 심방+출석 네 칸 — 안 보임·못 만남 / 안 보임·만남 / 잘 나옴·오래됨 / 잘 나옴·만남', [nmOf(G.both.a), nmOf(G.both.b), nmOf(G.both.c), nmOf(G.both.d)], [['라마바', '사아자'], [], [], ['가나다', '파하가']]);
+  sc.eq('㊼ 한 번만 적힌 분은 네 칸에 안 넣는다', ['a', 'b', 'c', 'd'].some(k => G.both[k].some(p => p.name === '나그네')), false);
+  sc.eq('㊼ 챙길 것 — 급히 · 남은 할 일(보관 기록 빼고, 오래된 순) · 안 물은 질문 · 이번 주 잡힌 심방', [G.todo.urgent.map(u => u.p.name), G.todo.acts.map(x => x.a.t + x.days), G.todo.qs.map(q => q.t), G.todo.plans.map(p => p.id), G.todo.oldest], [['라마바'], ['만남45', '중보5'], ['면접은 어땠는지'], ['P1'], 45]);
+  const R = A.glanceModel(Object.assign({}, base, { role: '장년부' }));
+  sc.eq('㊼ 구분 알약 — 그 구분 사람만', [nmOf(R.people), R.map.total, R.flow.last4, R.todo.acts.length, R.att.quiet.map(x => x.q.name)], [['사아자', '차카타'], 2, 0, 0, ['사아자']]);
+  sc.eq('㊼ 구분 나란히는 알약과 상관없이 전체', R.roles.length, 2);
+  sc.eq('㊼ 빈 자료여도 죽지 않는다', A.glanceModel({ today: T }).map.total, 0);
+  sc.eq('㊼ 출석 표시 — 늦게 l · 일찍 h · 그 밖 o', [A.attMark({ from: '헌금부터' }), A.attMark({ to: '중간에 나감' }), A.attMark({ from: '찬양 중', to: '끝까지' })], ['l', 'h', 'o']);
 }
 
 sc.done();
