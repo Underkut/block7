@@ -556,7 +556,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   eq('⑮ 붙여 넣기 → 칸마다 나뉘어 적힌다', ['머머머', '타파하'].map(n => { const r = byN(n); return [tc(r, '날짜'), tc(r, '예배 · 모임'), tc(r, '언제 왔나'), tc(r, '언제 갔나'), tc(r, '자리'), tc(r, '함께'), tc(r, '메모')]; }),
     [['2026-11-08', '주일 3부', '처음부터', '끝까지', '맨 앞 자리', '', ''], ['2026-11-08', '라이프라인', '헌금부터', '기도 때 일찍 나감?', '음향부스 뒷자리', '남편', '다음 주도 오신다 함']]);
   { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
-  eq('⑮ 출석 탭에 적은 출석이 날짜별로', await page.$$eval('#app .tl .planbadge.att', x => x.length) >= 3, true);
+  eq('⑮ 출석 탭에 적은 출석이 날짜별로 (1115-4 예배 · 모임 묶음 안에 이름)', await page.$$eval('#app .asv .an', x => x.length) >= 3, true);
   await page.click('.ph-nav [data-act="tab"][data-v="people"]'); await page.waitForTimeout(700);
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_people.png', fullPage: true });
   eq('⑮ 출석만 있는 새 이름(새손님 · 타파하)도 성도 목록에 — 심방 기록 있는 머머머는 원래 목록', (await page.$$eval('.prow .nm', x => x.map(e => e.textContent))).filter(n => ['새손님', '타파하', '머머머'].includes(n)).sort(), ['머머머', '새손님', '타파하']);
@@ -847,6 +847,33 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
   const H3 = tab('출석').rows[0], r3 = tab('출석').rows.find(x => x[H3.indexOf('출석ID')] === id);
   eq("㊽ 고치기 — '구분' 머리글이 끝에 생기고 · 그 칸에 · 혼자를 끄면 함께는 빈칸", [H3[H3.length - 1], r3[H3.indexOf('구분')], r3[H3.indexOf('함께')]], ['구분', '장년부', '']);
+  }
+
+  // ㊾ (1115-4 ②) 출석 목록 — 날짜는 머리줄에만 · 예배 · 모임마다 한 줄 · 이름은 적은 차례로 가로 · 이름 누르면 정보 팝업(연필 = 고치기 · × · 바깥 · ESC)
+  {
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.evaluate(() => goTab('attend')); await page.waitForTimeout(600);
+  eq('㊾ 목록 줄에 날짜 기둥이 없다', await page.$$eval('#app .tl .d', x => x.length), 0);
+  const exp = await page.evaluate(() => { const d = AT()[0].date; return attSvcGroups(AT().filter(a => a.date === d)).map(g => [g.svc, g.items.map(a => a.name)]); });
+  const got = await page.$$eval('#app .asg', g => [...g[0].querySelectorAll('.asv')].map(v => [v.querySelector('.asv-n').firstChild.textContent, [...v.querySelectorAll('.an')].map(e => e.textContent)]));
+  eq('㊾ 첫 날 — 예배 · 모임 묶음과 이름 차례가 적은 차례 그대로', got, exp);
+  eq('㊾ 이름 사이는 쉼표 없이 빈칸', await page.$eval('#app .asv-p', e => /,/.test(e.textContent)), false);
+  const id = await page.evaluate(() => AT().find(a => a.with === '' && a.seat).id);
+  await page.click('#app .an[data-v="' + id + '"]'); await page.waitForTimeout(250);
+  if (process.env.SHOT) { await page.screenshot({ path: process.env.SHOT + '/att_pop.png' }); await page.click('.apop-h [data-act="attpopx"]'); await page.waitForTimeout(200); await page.screenshot({ path: process.env.SHOT + '/att_list.png' }); await page.click('#app .an[data-v="' + id + '"]'); await page.waitForTimeout(200); }
+  eq('㊾ 이름 누르면 팝업 — 좌상단 연필 · 우상단 × · 자리 줄', [await page.$$eval('.apop-h .ic', x => x.map(e => e.dataset.act)), await page.$$eval('.apop-g .k', x => x.map(e => e.textContent).includes('자리'))], [['attpopedit', 'attpopx'], true]);
+  await page.click('.apop-h [data-act="attpopx"]'); await page.waitForTimeout(200);
+  eq('㊾ × 로 닫힘', await page.$$eval('.apop', x => x.length), 0);
+  await page.click('#app .an[data-v="' + id + '"]'); await page.waitForTimeout(200);
+  await page.mouse.click(8, 300); await page.waitForTimeout(200);
+  eq('㊾ 바깥을 누르면 닫힘', await page.$$eval('.apop', x => x.length), 0);
+  await page.click('#app .an[data-v="' + id + '"]'); await page.waitForTimeout(200);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  eq('㊾ ESC 로 닫힘', await page.$$eval('.apop', x => x.length), 0);
+  await page.click('#app .an[data-v="' + id + '"]'); await page.waitForTimeout(200);
+  await page.click('.apop-h [data-act="attpopedit"]'); await tidy();
+  eq('㊾ 연필 → 그 출석 고치기 화면 · 팝업은 걷힘', [await page.evaluate(() => topLayer() && topLayer().type + ':' + topLayer().id), await page.$$eval('.apop', x => x.length)], ['attedit:' + id, 0]);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
   // ㉒ (1108-B4) 달력에 출석 켜고 끄기
