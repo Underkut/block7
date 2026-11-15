@@ -1690,8 +1690,17 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
 
   // ㊼ (1115-V) 한눈에 카드
   {
-    await page.evaluate(() => { S.layers.length = 0; S.show = []; S.gRole = ''; S.view = 'collect'; render(); }); await page.waitForTimeout(200);
+    await page.setViewportSize({ width: 390, height: 844 });   // 1115-V2 폰 배치(나)로 본다
+    await page.evaluate(() => { save({ glLay: 'b' }); S.layers.length = 0; S.show = []; S.gRole = ''; S.view = 'collect'; render(); }); await page.waitForTimeout(200);
     eq('㊼ 첫 화면 — 큰 카드(심방+출석) 하나 · 카드 일곱 · 옛 세 탭 없음', [await page.$$eval('#app .gl-hero', x => x.length), await page.$$eval('#app .gl-cd', x => x.map(e => e.dataset.v)), await page.$$eval('#app .seg', x => x.length)], [1, ['map', 'flow', 'role', 'vis', 'quiet', 'att', 'todo'], 0]);
+    await page.click('#app .gl-lay [data-v="a"]'); await page.waitForTimeout(200);
+    eq('㊼ (1115-V2) 폰 배치 단추 — 가: 두 줄 격자(넓은 카드는 챙길 것만) · 이 기기에 기억', [await page.$$eval('#app .gl-cd.wide', x => x.map(e => e.dataset.v)), await page.evaluate(() => saved().glLay)], [['todo'], 'a']);
+    await page.click('#app .gl-lay [data-v="b"]'); await page.waitForTimeout(200);
+    eq('㊼ (1115-V2) 나: 이름 카드는 한 줄 넓게', await page.$$eval('#app .gl-cd.wide', x => x.map(e => e.dataset.v)), ['role', 'vis', 'quiet', 'att', 'todo']);
+    for (const [w, hh, cls] of [[820, 1180, 'gl-tb'], [1180, 820, 'gl-ta']]) { await page.setViewportSize({ width: w, height: hh }); await page.waitForTimeout(250);
+      eq('㊼ (1115-V2) 패드 ' + (cls === 'gl-tb' ? '세로 → 나 펼친 판' : '가로 → 가 세 줄 카드') + ' · 배치 단추 없음', [await page.$$eval('#app .ph-body.' + cls, x => x.length), await page.$$eval('#app .gl-lay', x => x.length)], [1, 0]); }
+    await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(250);
+    eq('㊼ (1115-V2) 아이폰에서 카드 안 그림이 폭을 가진다(사파리 폭 0 고침)', await page.$$eval('#app .gl-cd .gx-band, #app .gl-cd .gx-wb', x => x.every(e => e.getBoundingClientRect().width > 100)), true);
     eq('㊼ 카드마다 한 줄 요약과 그림', await page.$$eval('#app .gl-cg .gl-cd', x => x.every(e => e.querySelector('.hd').textContent.length > 0)), true);
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300); await page.screenshot({ path: process.env.SHOT + '/glance-home.png', fullPage: true }); }
     await page.click('#app [data-act="gcard"][data-v="map"]'); await page.waitForTimeout(450);
@@ -1708,6 +1717,12 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
       eq('㊼ 옆 카드로 — ' + title, await page.$eval(GL + ' .ph-head h3', e => e.textContent), title);
       if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/glance-' + k + '.png', fullPage: false });
     }
+    eq('㊼ (1115-V3) 넘긴 뒤 겹 화면 자신은 불투명 · 움직임은 속(머리줄 · 본문)에만', await page.$eval(GL, e => [e.style.opacity, e.style.transform, getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)']), ['', '', true]);
+    await page.evaluate(() => { const el = $('layers').lastElementChild; detGo(el, 'flow', -1); });
+    await page.waitForTimeout(80);
+    eq('㊼ (1115-V3) 넘기는 도중에도 겹 화면은 불투명(뒤 첫 화면이 비치지 않음)', await page.$eval(GL, e => [e.style.opacity, getComputedStyle(e).opacity, e.style.transform]), ['', '1', '']);   // (시험은 움직임 줄이기 켬 — 겹 화면 자신에 손대지 않는지만 본다)
+    await page.waitForTimeout(600);
+    await page.evaluate(() => { const el = $('layers').lastElementChild; detGo(el, 'todo', 1); }); await page.waitForTimeout(600);
     eq('㊼ 겹 화면은 하나 그대로(카드를 넘겨도 쌓이지 않음)', await page.evaluate(() => S.layers.length), 1);
     eq('㊼ 챙길 것 — 약속한 일은 사람별 묶음 · 체크 단추', [await page.$$eval(GL + ' .kgrp.gl-pg', x => x.length) > 0, await page.$$eval(GL + ' .kgrp.gl-pg .todo .ck', x => x.length) > 0], [true, true]);
     await page.evaluate(() => { const L = topLayer(); L.key = 'both'; render(); }); await page.waitForTimeout(200);
