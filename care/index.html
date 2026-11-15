@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -316,6 +316,33 @@ body.dragging{cursor:grabbing}
 .attsum small{font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .attsum svg{width:18px;height:18px;stroke:var(--tx3);stroke-width:1.8;fill:none;flex:none}
 .planbadge.att{border-style:solid}
+/* 1115-4 ③ 자리 배치 — 가로 6칸 격자. 알약을 끌어 옮기고(칸에 맞춰 붙음), 고른 알약의 오른쪽 아래 모서리를 당겨 크기를 바꾼다.
+   블록은 누르자마자 끌린다(touch-action:none) — 화면 굴리기는 블록 밖에서. 줄 높이 46px 은 JS 의 SEAT_CH 와 같은 값 */
+.fld .lb .seatgo{float:right;display:inline-flex;align-items:center;gap:5px;margin:-3px 0 0 10px;padding:3px 0 3px 8px;color:var(--ac);font-size:12px}
+.seatgo svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none}
+.smap{max-width:520px;margin:0 auto}
+.sfront{height:22px;margin-bottom:6px;border-radius:8px;background:var(--s2);color:var(--tx3);font-size:11px;letter-spacing:.12em;display:grid;place-items:center}
+.sgrid{position:relative;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:4px;
+  background-image:linear-gradient(to right,var(--line) 1px,transparent 1px),linear-gradient(to bottom,var(--line) 1px,transparent 1px);background-size:calc(100% / 6) 46px}
+.sblk{position:absolute;padding:3px;touch-action:none;cursor:grab;outline:none}
+.sblk .in{display:grid;place-items:center;width:100%;height:100%;padding:2px 4px;border-radius:12px;border:1px solid var(--line2);background:var(--paper);color:var(--tx2);font-size:12.5px;line-height:1.25;text-align:center;overflow:hidden}
+.sblk:focus-visible .in{box-shadow:0 0 0 2px var(--ac)}
+.sblk.sel{z-index:2}
+.sblk.sel .in{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,var(--paper));color:var(--ac);font-weight:500}
+.sblk.lift{z-index:3;cursor:grabbing}
+.sblk.lift .in{box-shadow:var(--shadow);border-color:var(--ac)}
+.sblk.bad .in{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--paper));color:var(--warn)}
+.sblk .hd{display:none;position:absolute;right:-6px;bottom:-6px;width:34px;height:34px;cursor:nwse-resize}
+.sblk.sel .hd{display:block}
+.sblk .hd::after{content:"";position:absolute;right:10px;bottom:10px;width:11px;height:11px;border-right:2.5px solid var(--ac);border-bottom:2.5px solid var(--ac);border-bottom-right-radius:5px}
+.sghost{position:absolute;padding:3px;pointer-events:none;z-index:1}
+.sghost::after{content:"";display:block;width:100%;height:100%;border-radius:12px;border:1.5px dashed var(--ac);background:var(--ac-soft)}
+.sghost.bad::after{border-color:var(--warn);background:var(--warn-soft)}
+.sbar{min-height:46px;display:flex;align-items:center;gap:10px;margin:12px 0 16px;padding:6px 14px;border-radius:14px;background:var(--s1)}
+.sbar .hint{margin:0}
+.sbar b{font-size:14px;font-weight:600;color:var(--ac)}
+.sbar small{font-family:var(--mono);font-size:12px;color:var(--tx3);margin-right:auto;font-variant-numeric:tabular-nums}
+.sbar button{padding:8px 4px;font-size:13px;color:var(--warn)}
 .asv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
 .asv-n{font-size:12px;color:var(--ac);white-space:nowrap;min-width:6.5em}.asv-n small{margin-left:5px;color:var(--tx3);font-size:11px;font-family:var(--mono)}
 .asv-p{font-size:14.5px;line-height:1.85;min-width:0}
@@ -1010,7 +1037,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-11';
+const APP_VERSION = 'v. 26-1115-12';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1210,11 +1237,20 @@ function idPatches(values, nowMs, max) {
 // ⚠️ 심방 내용은 여기 넣지 않는다. 파일 이름 · id · 기준값뿐이다. BLOCK7 은 data/ 아래에서 state · backup_0~2 ·
 //    conflicts 만 이름으로 읽으므로 이 문서와 부딪치지 않는다.
 const CFG_DOC = 'data/care';
-const CFG_FIELDS = ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf', 'talk'];   // talk = 대화 보기(b 대본 · a 말풍선, 1109-T)   // calPre · calSuf: '심방' 일정 제목 앞 · 뒤 글자(C3)
+const CFG_FIELDS = ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf', 'talk', 'seats'];   // seats = 자리 배치(1115-4 ③, 알약 이름 · 위치 · 크기뿐)   // talk = 대화 보기(b 대본 · a 말풍선, 1109-T)   // calPre · calSuf: '심방' 일정 제목 앞 · 뒤 글자(C3)
 function pickCfg(o) { const r = {}; CFG_FIELDS.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); if (o && o.at) r.at = o.at; return r; }
 // 나중에 고친 쪽을 따른다. 시각 없는 옛 기기 값(이 기능 전에 고른 것)은 계정 것보다 뒤로 친다.
 // → { local: 이 기기에 쓸 값(없으면 null), push: 계정에 올릴 값(없으면 null) }
-function mergeCfg(local, cloud, now) {
+function mergeCfg(local, cloud, now) { return mergeSeats(local, cloud, mergeCfgBase(local, cloud, now)); }
+// 자리 배치(seats)는 제 시각(seats.at)으로 따로 맞춘다 — 더 나중에 저장한 배치가 이긴다(문서의 at 과 상관없이).
+//   한쪽에만 있으면 그것. 배치 기능 전의 낡은 창이 문서를 통째로 다시 쓰면 seats 가 빠지는데, 그때 가진 기기가 다시 올린다.
+function mergeSeats(local, cloud, r) {
+  const ls = local && local.seats, cs = cloud && cloud.seats; if (!ls && !cs) return r;
+  const at = x => (x && x.at) || 0, win = !ls ? cs : !cs ? ls : at(cs) > at(ls) ? cs : ls, same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
+  const dev = r.local || local || {}, cl = r.push || cloud;
+  return { local: same(dev.seats, win) ? r.local : Object.assign({}, dev, { seats: win }), push: cl && same(cl.seats, win) ? r.push : Object.assign(pickCfg(cl || dev), { seats: win }) };
+}
+function mergeCfgBase(local, cloud, now) {
   const l = pickCfg(local), c = cloud ? pickCfg(cloud) : null;
   const lHas = CFG_FIELDS.some(k => l[k] !== undefined), la = l.at || 0, ca = c ? (c.at || 0) : -1;
   if (!c) return lHas ? { local: null, push: Object.assign(l, { at: la || now }) } : { local: null, push: null };
@@ -2647,6 +2683,61 @@ function attOptRename(o, k, v, nv) {
   return true;
 }
 function attOptMove(o, k, from, to) { const L = o[k] || []; if (from < 0 || from >= L.length || to < 0 || to >= L.length || from === to) return false; const [x] = L.splice(from, 1); L.splice(to, 0, x); return true; }
+// ───────── 1115-4 ③ 자리 배치 ─────────
+// 자리 알약을 가로 6칸 격자에 놓은 모양 — 계정 문서의 seats 칸에 { items: [{ n, x, y, w, h }], at }. 알약 이름 · 위치 · 크기뿐이다(성도 이름 없음).
+// 알약과는 이름으로 맞춘다(띄어쓰기 무시). 세로는 놓인 만큼 늘어난다. 겹치는 자리에는 놓이지 않는다(HB 11/15 '빈 곳에만' — 건드리지 않은 알약은 안 움직인다).
+const SEAT_COLS = 6, SEAT_MIN_ROWS = 6, SEAT_ROWS_MAX = 40;
+function seatBox(c) { return { x: c.x, y: c.y, w: c.w, h: c.h }; }
+function seatOver(a, b) { return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h; }
+function seatValid(c) { return !!c && [c.x, c.y, c.w, c.h].every(v => Number.isInteger(v)) && c.w >= 1 && c.h >= 1 && c.x >= 0 && c.y >= 0 && c.x + c.w <= SEAT_COLS && c.y + c.h <= SEAT_ROWS_MAX; }
+function seatHits(items, c, n) { const k = nameKey(n); return (items || []).filter(i => nameKey(i.n) !== k && seatOver(c, i)); }
+// 그 자리에 놓아도 되나 — '' 이면 된다, 아니면 까닭(토스트 글)
+function seatWhyNot(items, n, c) {
+  if (!seatValid(c)) return !c || !(c.w >= 1) || !(c.h >= 1) ? '더 줄일 수 없습니다' : c.x < 0 || c.x + c.w > SEAT_COLS ? '가로는 ' + SEAT_COLS + '칸까지입니다' : c.y + c.h > SEAT_ROWS_MAX ? '세로는 ' + SEAT_ROWS_MAX + '줄까지입니다' : '놓을 수 없는 자리입니다';
+  return seatHits(items, c, n).length ? '다른 자리와 겹칩니다\n빈 곳에만 놓을 수 있습니다' : '';
+}
+// 저장된 것 읽기 — 틀린 칸 · 겹친 이름 · 겹친 자리(뒤엣것)는 버린다. 알약 상한까지만
+function seatClean(map) {
+  const out = [], seen = new Set();
+  ((map && map.items) || []).forEach(i => {
+    const n = norm(i && i.n), k = nameKey(n), c = i ? seatBox(i) : null;
+    if (!n || seen.has(k) || !seatValid(c) || out.some(o => seatOver(o, c)) || out.length >= ATT_OPT_MAX) return;
+    seen.add(k); out.push(Object.assign({ n }, c));
+  });
+  return out;
+}
+// 지금 알약 목록에 맞춘다 → { items: 놓인 것(알약에 있는 것만 · 이름은 알약 꼴로), tray: 아직 안 놓은 알약(알약 차례) }
+function seatView(map, pills) {
+  const by = {}, keys = []; (pills || []).forEach(p => { p = norm(p); const k = nameKey(p); if (p && !by[k]) { by[k] = p; keys.push(k); } });
+  const items = seatClean(map).filter(i => by[nameKey(i.n)]).map(i => Object.assign({}, i, { n: by[nameKey(i.n)] }));
+  const placed = new Set(items.map(i => nameKey(i.n)));
+  return { items, tray: keys.filter(k => !placed.has(k)).map(k => by[k]) };
+}
+// 편집기에 그릴 줄 수 — 놓인 데까지 + 늘 빈 줄 하나(거기 놓으면 한 줄 늘어난다). extra = 끄는 중인 알약의 아래 끝
+function seatRows(items, extra) { let m = 0; (items || []).forEach(i => { m = Math.max(m, i.y + i.h); }); return Math.min(SEAT_ROWS_MAX, Math.max(SEAT_MIN_ROWS, m, extra || 0) + 1); }
+// 빈 곳 찾기 — 위에서부터, 왼쪽부터. 없으면 null(세로 상한)
+function seatFree(items, w, h) { for (let y = 0; y + h <= SEAT_ROWS_MAX; y++) for (let x = 0; x + w <= SEAT_COLS; x++) { const c = { x, y, w, h }; if (!(items || []).some(i => seatOver(c, i))) return c; } return null; }
+// 놓기 · 옮기기 · 크기 바꾸기 — 되면 새 목록, 안 되면 null. 다른 알약은 한 칸도 건드리지 않는다
+function seatPut(items, n, c) {
+  if (!norm(n) || seatWhyNot(items, n, c)) return null;
+  const k = nameKey(n); let hit = false;
+  const out = (items || []).map(i => { if (nameKey(i.n) !== k) return i; hit = true; return Object.assign({ n: i.n }, seatBox(c)); });
+  if (!hit) { if (out.length >= ATT_OPT_MAX) return null; out.push(Object.assign({ n: norm(n) }, seatBox(c))); }
+  return out;
+}
+function seatOut(items, n) { const k = nameKey(n); return (items || []).filter(i => nameKey(i.n) !== k); }
+// 끌기 · 모서리 당기기 — 처음 모양(o)에서 가로 dx칸 · 세로 dy칸(소수)만큼 움직였을 때 붙을 칸. 판 밖으로는 안 나간다
+function seatDragTo(o, dx, dy) { return { x: Math.max(0, Math.min(SEAT_COLS - o.w, o.x + Math.round(dx))), y: Math.max(0, Math.min(SEAT_ROWS_MAX - o.h, o.y + Math.round(dy))), w: o.w, h: o.h }; }
+function seatSizeTo(o, dx, dy) { return { x: o.x, y: o.y, w: Math.max(1, Math.min(SEAT_COLS - o.x, o.w + Math.round(dx))), h: Math.max(1, Math.min(SEAT_ROWS_MAX - o.y, o.h + Math.round(dy))) }; }
+// 알약 이름을 바꾸면 배치도 따라가고, 지우면 빠진다. 바뀔 것이 없으면 null (→ 저장하지 않는다)
+function seatRename(map, from, to) {
+  const a = nameKey(from), b = norm(to), items = seatClean(map);
+  if (!b || !items.some(i => nameKey(i.n) === a) || (nameKey(b) !== a && items.some(i => nameKey(i.n) === nameKey(b)))) return null;
+  return items.map(i => nameKey(i.n) === a ? Object.assign({}, i, { n: b }) : i);
+}
+function seatDrop(map, n) { const k = nameKey(n), items = seatClean(map); return items.some(i => nameKey(i.n) === k) ? items.filter(i => nameKey(i.n) !== k) : null; }
+// 저장할 모양 — 깨끗이 고른 줄 + 저장한 시각(기기끼리 맞출 때 이 시각으로 가린다)
+function seatPack(items, now) { return { items: seatClean({ items }), at: now }; }
 // 이름 칸 — 쉼표(, ， 、)로 여럿. 앞뒤 빈칸을 떼고, 띄어쓰기만 다른 같은 이름은 한 번만
 function splitNames(s) { const seen = new Set(), out = []; String(s || '').split(/[,，、]/).map(norm).filter(Boolean).forEach(n => { const k = nameKey(n); if (!seen.has(k)) { seen.add(k); out.push(n); } }); return out; }
 // ── 1112-M 한 심방에 여러 이름 · 셀 표시 · 사람별 내용 ──
@@ -4010,6 +4101,7 @@ const IC = {
   cal: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>',
   trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>',
   pen: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>',
+  seat: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="12" width="8" height="8" rx="1.5"/><rect x="13" y="12" width="8" height="8" rx="1.5"/></svg>',   // 1115-4 ③ 자리 배치
   out: '<svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M10 6H6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4"/></svg>',
   n_list: '<svg viewBox="0 0 24 24"><path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 11.5h1.5a2.5 2.5 0 0 1 0 5H16M8.5 3.5c0 1 1 1.5 1 2.5M12 3.5c0 1 1 1.5 1 2.5"/></svg>',   // 심방 = 커피잔 (1108-C2)
   n_att: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -4490,7 +4582,8 @@ function attFieldHtml(L, k, noEtc) {
     if (o2) h += '<input class="inp etc" data-f="' + k + '" data-etc="1" value="' + esc(opts.includes(cur) ? '' : cur) + '" placeholder="직접 적기" aria-label="' + esc(C.label(k)) + ' 직접 적기">';
     return h + '</div>';
   }
-  let h = '<div class="fld"><span class="lb">' + esc(C.label(k)) + '</span><div class="opts pills" data-k="' + k + '">';
+  const seatGo = k === 'seat' && L.type === 'attedit' ? '<button class="seatgo" data-act="seatmap" aria-label="자리 배치">' + IC.seat + '배치</button>' : '';   // 1115-4 ③
+  let h = '<div class="fld"><span class="lb">' + esc(C.label(k)) + seatGo + '</span><div class="opts pills" data-k="' + k + '">';
   const tm = (k === 'svc' && C.opts().svcTime) || {};   // 1115 예배 · 모임 — 정한 요일 · 시간을 작게
   h += opts.map(v => '<button class="opt" data-act="aone" data-k="' + k + '" data-v="' + esc(v) + '" aria-pressed="' + (cur === v) + '">' + esc(v) + (tm[v] ? '<small class="otm">' + esc(svcTimeText(tm[v])) + '</small>' : '') + '</button>').join('');
   h += plusHtml(L, k, C.label(k), open, noEtc) + '</div>';
@@ -4597,12 +4690,12 @@ function visOptChange(fnc, msg) {   // 출석과 같은 길 — 화면 먼저, �
   saveOptTab(VIS_OPT_TAB, optsRows(o, VIS_OPT_FIELDS)).then(() => { if (msg) toast(msg, 2000); }).catch(e => { DATA.visOpts = JSON.parse(before); render(); toast('알약 목록을 시트에 쓰지 못했습니다\n' + e.message); });
   return true;
 }
-function attOptChange(fnc, msg) {   // 화면 먼저 바꾸고 시트에 쓴다. 실패하면 예전 목록으로
+function attOptChange(fnc, msg, after) {   // 화면 먼저 바꾸고 시트에 쓴다. 실패하면 예전 목록으로. after = 시트에 쓴 뒤 이어서 할 일(자리 배치 따라가기)
   if (!dataOk(true)) return false;
   const before = JSON.stringify(DATA.attOpts || null), o = JSON.parse(JSON.stringify(ATTO()));
   if (!fnc(o)) return false;
   DATA.attOpts = o; render();
-  saveAttOpts(o).then(() => { if (msg) toast(msg, 2000); }).catch(e => { DATA.attOpts = JSON.parse(before); render(); toast('알약 목록을 시트에 쓰지 못했습니다\n' + e.message); });
+  saveAttOpts(o).then(() => { if (after) after(); if (msg) toast(msg, 2000); }).catch(e => { DATA.attOpts = JSON.parse(before); render(); toast('알약 목록을 시트에 쓰지 못했습니다\n' + e.message); });
   return true;
 }
 function attOptCommit(inp) {
@@ -4700,6 +4793,95 @@ function attPreviewHtml(L) {
   if (!r.items.length) return '<p class="hint">' + (norm(L.form.paste) ? '사람을 찾지 못했습니다. 이름 · 날짜(또는 예배) 를 줄마다 적고, 사람 사이는 빈 줄로 띄워 주세요.' : '') + '</p>';
   return '<div class="h-sec">이렇게 적습니다<small>' + r.items.length + '명' + (r.skipped ? ' · 건너뜀 ' + r.skipped : '') + '</small></div><div class="tl">' + r.items.map(a => attRowHtml(Object.assign({ id: '' }, a), true)).join('') + '</div>';
 }
+// ── 1115-4 ③ 자리 배치(겹 화면 'seatmap') — 자리 알약을 가로 6칸 판에 놓는다. 판단은 care-core 의 seat* 가 한다 ──
+//   L.items = 고치는 중인 배치(사본) · L.base = 열 때 모양(바뀌었나 보려고) · L.sel = 고른 알약. '완료' 를 눌러야 저장한다(× 는 버림 — HB 11/15).
+//   ⚠️ 시트를 다 읽기 전에는 열지도 저장하지도 않는다 — 덜 읽은 알약 목록에 맞추면 놓아 둔 자리가 '없는 알약' 으로 빠진 채 저장된다(1115-X 와 같은 까닭).
+const SEAT_CH = 46, SEAT_DROP_ASK = '바꾼 자리 배치를 저장하지 않고 닫을까요?';
+function seatPills() { return (ATTO().seat || []).slice(); }
+function seatL() { const L = topLayer(); return L && L.type === 'seatmap' ? L : null; }
+function seatDirty(L) { L.dirty = JSON.stringify(L.items) !== L.base; }
+function seatStyle(c) { return 'left:' + (c.x / SEAT_COLS * 100) + '%;top:' + (c.y * SEAT_CH) + 'px;width:' + (c.w / SEAT_COLS * 100) + '%;height:' + (c.h * SEAT_CH) + 'px'; }
+function seatEl(n) { return [...document.querySelectorAll('#layers > .layer:last-child .sblk')].find(e => e.dataset.n === n) || null; }
+// 이 기기에 적고 계정에도 — 배치 칸만 고친다(merge). 문서의 다른 칸 · 시각(at)은 건드리지 않는다: 배치는 제 시각(seats.at)으로 맞춘다(mergeSeats)
+function saveSeats(items) {
+  const seats = seatPack(items, Date.now()); save({ seats });
+  if (USER && DB) DB.doc('users/' + USER.uid + '/' + CFG_DOC).set({ seats }, { merge: true }).catch(() => {});
+}
+function seatFollow(next) { if (next) saveSeats(next); }   // 알약 이름 바꿈 · 지움을 따라간다(바뀔 것이 없으면 null → 안 쓴다)
+function openSeatMap() {
+  if (!dataOk()) { toast('시트를 읽는 중입니다\n자리 배치는 읽기가 끝난 뒤에 열립니다'); return; }
+  const v = seatView(saved().seats, seatPills());
+  openLayer('seatmap', { items: v.items, base: JSON.stringify(v.items), sel: '' });
+}
+function lSeatMap(L) {
+  const ok = dataOk(), v = ok ? seatView({ items: L.items }, seatPills()) : { items: L.items, tray: [] };
+  if (ok) L.items = v.items;
+  const cur = L.items.find(i => i.n === L.sel); if (!cur) L.sel = '';
+  let h = lhead('자리 배치', L) + '<div class="ph-body" style="padding-bottom:110px"><div class="smap"><div class="sfront">앞 · 강단</div>';
+  h += '<div class="sgrid" style="height:' + seatRows(L.items) * SEAT_CH + 'px">' + L.items.map(i => '<div class="sblk' + (i.n === L.sel ? ' sel' : '') + '" data-n="' + esc(i.n) + '" tabindex="0" role="button" aria-pressed="' + (i.n === L.sel) +
+    '" aria-label="' + esc(i.n) + ', 폭 ' + i.w + '칸 높이 ' + i.h + '칸" style="' + seatStyle(i) + '"><span class="in">' + esc(i.n) + '</span><span class="hd" aria-hidden="true"></span></div>').join('') + '<div class="sghost" hidden></div></div>';
+  h += '<div class="sbar">' + (cur ? '<b>' + esc(cur.n) + '</b><small>' + cur.w + ' × ' + cur.h + '</small><button data-act="seatout">빼기</button>'
+    : '<p class="hint">끌면 옮겨집니다. 한 번 누르면 골라지고, 오른쪽 아래 모서리를 당기면 크기가 바뀝니다.</p>') + '</div>';
+  h += '<div class="fld"><span class="lb">아직 안 놓은 자리 알약</span>' + (v.tray.length ? '<div class="opts">' + v.tray.map(n => '<button class="opt" data-act="seatadd" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') + '</div>'
+    : '<p class="hint" style="margin:0">' + (L.items.length ? '모든 자리 알약을 놓았습니다.' : "자리 알약이 아직 없습니다. 출석 입력의 '자리' 칸에서 + 로 먼저 만들어 주세요.") + '</p>') + '</div>';
+  return h + '</div></div><div class="ph-foot"><button class="btn pri" data-act="seatsave">완료</button></div>';
+}
+// 끌기 · 모서리 당기기 — 손가락을 따라 움직이고(놓일 칸은 점선), 떼면 칸에 붙는다. 겹치면 주황으로 바뀌고 제자리로.
+//   끄는 동안은 그 요소만 직접 고치고(다시 그리지 않음), 떼면 L.items 를 바꾸고 다시 그린 뒤 뗀 자리에서 칸 자리로 스르륵(FLIP — 그린 뒤에 건다: 움직이는 요소는 morph 가 통째로 바꾼다)
+const STD = { on: false };
+document.addEventListener('pointerdown', e => {
+  const L = seatL(); if (!L || e.button || !e.target.closest) return;
+  if (!e.target.closest('.sgrid')) return;
+  const b = e.target.closest('.sblk');
+  if (!b) { if (L.sel) { L.sel = ''; render(); } return; }
+  const it = L.items.find(i => i.n === b.dataset.n); if (!it) return;
+  e.preventDefault();
+  const size = !!e.target.closest('.hd') && L.sel === it.n;
+  if (L.sel !== it.n) { L.sel = it.n; render(); }
+  const el = seatEl(it.n); if (!el) return;
+  try { el.focus({ preventScroll: true }); } catch (err) { }   // PC: 누른 뒤 화살표 키로 이어서
+  Object.assign(STD, { on: true, n: it.n, el, id: e.pointerId, size, px: e.clientX, py: e.clientY, dx: 0, dy: 0, o: seatBox(it), c: seatBox(it), moved: false, cw: el.parentElement.clientWidth / SEAT_COLS });
+  try { el.setPointerCapture(e.pointerId); } catch (err) { }
+});
+document.addEventListener('pointermove', e => {
+  if (!STD.on || e.pointerId !== STD.id) return;
+  const L = seatL(); if (!L) { STD.on = false; return; }
+  STD.dx = e.clientX - STD.px; STD.dy = e.clientY - STD.py;
+  if (!STD.moved) { if (Math.hypot(STD.dx, STD.dy) < 5) return; STD.moved = true; }
+  const el = STD.el.isConnected ? STD.el : (STD.el = seatEl(STD.n)); if (!el) return;
+  const c = STD.c = STD.size ? seatSizeTo(STD.o, STD.dx / STD.cw, STD.dy / SEAT_CH) : seatDragTo(STD.o, STD.dx / STD.cw, STD.dy / SEAT_CH);
+  const bad = !!seatWhyNot(L.items, STD.n, c), g = el.parentElement, gh = g.querySelector('.sghost');
+  g.style.height = seatRows(L.items, c.y + c.h) * SEAT_CH + 'px';
+  el.classList.add('lift'); el.classList.toggle('bad', bad);
+  if (STD.size) { el.style.cssText = seatStyle(c); const sm = document.querySelector('#layers > .layer:last-child .sbar small'); if (sm) sm.textContent = c.w + ' × ' + c.h; }
+  else { el.style.transform = 'translate(' + STD.dx + 'px,' + STD.dy + 'px)'; if (gh) { gh.style.cssText = seatStyle(c); gh.hidden = false; gh.classList.toggle('bad', bad); } }
+});
+function seatEnd(e, cancel) {
+  if (!STD.on || (e && e.pointerId !== STD.id)) return; STD.on = false;
+  const L = seatL(); if (!L || !STD.moved) return;
+  const c = STD.c, o = STD.o; let f = o;
+  if (!cancel && (c.x !== o.x || c.y !== o.y || c.w !== o.w || c.h !== o.h)) {
+    const why = seatWhyNot(L.items, STD.n, c), next = why ? null : seatPut(L.items, STD.n, c);
+    if (next) { L.items = next; seatDirty(L); f = c; } else toast(why || '놓을 수 없는 자리입니다', 2600);
+  }
+  render();
+  if (STD.size || RM.matches) return;
+  const el = seatEl(STD.n), rx = STD.dx - (f.x - o.x) * STD.cw, ry = STD.dy - (f.y - o.y) * SEAT_CH;
+  if (el && (Math.abs(rx) > 1 || Math.abs(ry) > 1)) el.animate([{ transform: 'translate(' + rx + 'px,' + ry + 'px)' }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+document.addEventListener('pointerup', e => seatEnd(e, false));
+document.addEventListener('pointercancel', e => seatEnd(e, true));
+// PC — 고른 알약을 화살표로 한 칸씩, Shift + 화살표로 크기. Enter · 빈칸 = 고르기
+document.addEventListener('keydown', e => {
+  const L = seatL(), b = L && e.target.closest && e.target.closest('.sblk'); if (!b) return;
+  const it = L.items.find(i => i.n === b.dataset.n); if (!it) return;
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); L.sel = L.sel === it.n ? '' : it.n; render(); return; }
+  const m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]; if (!m) return;
+  e.preventDefault(); L.sel = it.n;
+  const c = seatBox(it); if (e.shiftKey) { c.w += m[0]; c.h += m[1]; } else { c.x += m[0]; c.y += m[1]; }
+  if (c.x >= 0 && c.y >= 0) { const why = seatWhyNot(L.items, it.n, c); if (why) toast(why, 2000); else { L.items = seatPut(L.items, it.n, c); seatDirty(L); } }
+  render();
+});
 function lAttPaste(L) {
   let h = lhead('출석 붙여 넣기', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<p class="muted">메모장에 적던 꼴 그대로 붙여 넣으세요. 사람 사이는 빈 줄로 띄웁니다.<br>첫 줄 = 이름, 그다음 날짜(11/8) · 예배 · 모임 · 처음부터/헌금부터 · 끝까지/나감 · 자리 · ○○와 함께 — 나머지는 메모가 됩니다.</p>';
@@ -6215,7 +6397,7 @@ addEventListener('resize', () => { if (document.querySelector('.sk-c')) skFrame(
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, glance: lGlance, inbox: lInbox, meet: lMeet };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, glance: lGlance, inbox: lInbox, meet: lMeet, seatmap: lSeatMap };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -6291,7 +6473,7 @@ function closeLayer(force) {
   const lay = $('layers'), el = lay.lastElementChild; if (!S.layers.length) return;
   const top = topLayer();
   if (top.type === 'imp' && top.running) { toast('저장하는 중입니다 — 끝날 때까지 기다려 주세요'); return; }
-  if (!force && ['edit', 'planedit', 'attedit', 'attpaste', 'imp'].includes(top.type) && top.dirty && !confirm(top.type === 'imp' ? (top.failed ? '일부만 저장된 채로 닫을까요?\n✓ 표시된 것은 시트에 들어가 있습니다.' : '붙여 넣은 것을 저장하지 않고 닫을까요?') : '적던 내용을 버릴까요?')) return;
+  if (!force && ['edit', 'planedit', 'attedit', 'attpaste', 'imp', 'seatmap'].includes(top.type) && top.dirty && !confirm(top.type === 'seatmap' ? SEAT_DROP_ASK : top.type === 'imp' ? (top.failed ? '일부만 저장된 채로 닫을까요?\n✓ 표시된 것은 시트에 들어가 있습니다.' : '붙여 넣은 것을 저장하지 않고 닫을까요?') : '적던 내용을 버릴까요?')) return;
   const done = () => { S.layers.pop(); S.menu = null; render(); };
   if (!el || RM.matches) return done();
   el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
@@ -6481,6 +6663,19 @@ document.addEventListener('click', e => {
   if (a === 'earlypeek') { S.peek = true; render(); return; }
   if (a === 'earlyback') { S.peek = false; render(); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
+  if (a === 'seatmap') { openSeatMap(); return; }
+  if (a === 'seatadd' || a === 'seatout' || a === 'seatsave') {   // 1115-4 ③ 자리 배치
+    const L = seatL(); if (!L) return;
+    if (a === 'seatadd') {
+      const c = seatFree(L.items, 2, 1), next = c && seatPut(L.items, v, c);
+      if (!next) { toast('더 놓을 자리가 없습니다'); return; }
+      L.items = next; L.sel = norm(v); seatDirty(L); render(); toast('빈 곳에 놓았습니다\n끌어서 제자리로 옮기세요', 2200); return;
+    }
+    if (a === 'seatout') { if (!L.sel) return; L.items = seatOut(L.items, L.sel); L.sel = ''; seatDirty(L); render(); toast('배치에서 뺐습니다\n알약은 그대로 남습니다', 2200); return; }
+    if (!dataOk()) { toast('시트를 읽는 중입니다\n읽기가 끝난 뒤에 저장됩니다'); return; }
+    if (L.dirty) saveSeats(L.items);
+    const had = L.dirty; L.dirty = false; closeLayer(true); if (had) toast('자리 배치를 저장했습니다', 2000); return;
+  }
   if (a === 'attinfo') { S.attPop = v; render(); return; }
   if (a === 'attpopx') { S.attPop = null; render(); return; }
   if (a === 'attpopedit') { S.attPop = null; render(); openAttEdit(v); return; }
@@ -6552,9 +6747,10 @@ document.addEventListener('click', e => {
       const nv = prompt('새 이름', vv); if (nv == null || norm(nv) === vv || !norm(nv)) { render(); return; }
       busy(async () => { try { if (await attrRename(T, vv, nv)) { L.form[kk] = L.form[kk].map(x => x === vv ? norm(nv) : x); render(); } } catch (e) { toast('바꾸지 못했습니다\n' + e.message); } }); return;
     }
-    if (a === 'aoptdel') { if (!confirm("'" + vv + "' 알약을 지울까요?\n" + C.note)) { render(); return; } if (C.change(o => attOptRemove(o, kk, vv), '알약을 지웠습니다\n' + vv) && L.form[kk] === vv) L.form[kk] = ''; render(); return; }
+    const seatPill = kk === 'seat' && C.opts === ATTO;   // 1115-4 ③ 자리 알약 이름을 바꾸거나 지우면 배치도 따라간다(시트에 쓴 뒤에)
+    if (a === 'aoptdel') { if (!confirm("'" + vv + "' 알약을 지울까요?\n" + C.note)) { render(); return; } if (C.change(o => attOptRemove(o, kk, vv), '알약을 지웠습니다\n' + vv, seatPill && (() => seatFollow(seatDrop(saved().seats, vv)))) && L.form[kk] === vv) L.form[kk] = ''; render(); return; }
     const nv = prompt('새 이름', vv); if (nv == null || norm(nv) === vv) { render(); return; }
-    if (!C.change(o => attOptRename(o, kk, vv, nv), '이름을 바꿨습니다\n' + vv + ' → ' + norm(nv))) { toast('바꾸지 못했습니다\n비었거나 같은 이름이 있습니다'); render(); return; }
+    if (!C.change(o => attOptRename(o, kk, vv, nv), '이름을 바꿨습니다\n' + vv + ' → ' + norm(nv), seatPill && (() => seatFollow(seatRename(saved().seats, vv, nv))))) { toast('바꾸지 못했습니다\n비었거나 같은 이름이 있습니다'); render(); return; }
     if (L.form[kk] === vv) L.form[kk] = norm(nv); render(); return;
   }
   if (a === 'attsave') { const L = topLayer(); if (L && L.type === 'attedit') busy(async () => { try { await saveAttend(L); } catch (e) { toast('출석을 저장하지 못했습니다\n' + e.message); } }); return; }
@@ -6729,13 +6925,13 @@ function swEnd(el, close, mode) {
   const back = () => { el.style.transition = 'transform .26s cubic-bezier(.22,.8,.24,1)'; el.style.transform = ''; setTimeout(() => { el.style.transition = ''; }, 280); };
   if (!close) return back();
   const top = topLayer();
-  if (top && ['edit', 'planedit', 'attedit', 'attpaste'].includes(top.type) && top.dirty && !confirm('적던 내용을 버릴까요?')) return back();
+  if (top && ['edit', 'planedit', 'attedit', 'attpaste', 'seatmap'].includes(top.type) && top.dirty && !confirm(top.type === 'seatmap' ? SEAT_DROP_ASK : '적던 내용을 버릴까요?')) return back();
   el.style.transition = 'transform .2s ease-in'; el.style.transform = mode === 'x' ? 'translateX(100%)' : 'translateY(100%)';
   setTimeout(() => { el.style.transition = ''; S.layers.pop(); S.menu = null; render(); }, 210);
 }
 document.addEventListener('touchstart', e => {
   const el = e.target.closest && e.target.closest('#layers > .layer'); if (!el || el !== $('layers').lastElementChild || e.touches.length !== 1) return;
-  if (e.target.closest('input,textarea,.pills,.omenu,.rlist')) return;
+  if (e.target.closest('input,textarea,.pills,.omenu,.rlist,.sgrid')) return;   // .sgrid: 자리 배치 판(알약을 끄는 손짓과 겹친다)
   const t = e.touches[0], head = e.target.closest('.ph-head');
   const top = topLayer(), nav = top && (top.type === 'detail' || top.type === 'glance') && !e.target.closest('.sugg,[data-noswipe]');   // 1113-E 2 열람: 옆으로 밀면 이전 · 다음 기록
   const mode = t.clientX <= 24 ? 'x' : (head || el.scrollTop <= 0) && !e.target.closest('.sugg,[data-noswipe]') ? (nav ? 'hy' : 'y') : nav ? 'h' : '';   // 1113-D A 머리줄 · 또는 맨 위에 올려 둔 때면 어디서든
