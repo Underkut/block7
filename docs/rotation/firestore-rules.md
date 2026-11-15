@@ -73,7 +73,7 @@ HB 계정은 BLOCK7 과 같은 이메일 · 비밀번호 계정이다. 같은 �
 - `rota/{HB uid}/img/{id}` — 숙소 예약 화면 사진 한 장(`d`: 줄인 JPEG, `visit`, `at`, 교역자가 올렸으면 `by`). 책에는 사진 id 만 들어 있다.
 - 모양과 맞추는 규칙은 `rotation/index.html` 의 `rotation-core`, 시험은 `tests/test_rotation.js`.
 - 문서 한 장은 1MB 까지다. 앱은 900KB 를 넘기면 올리지 않고 알린다.
-- `users/{uid}`(BLOCK7 · Sweeter) · `cellbook/{uid}`(셀 inside)는 건드리지 않는다.
+- `users/{uid}`(BLOCK7 · Sweeter)는 건드리지 않는다. `cellbook/{uid}`(셀 inside)는 **AI 열쇠를 읽기만**(R9 — 예약 사진 · 메일 읽기). 셀 inside 규칙이 이미 본인 읽기를 허락하므로 규칙을 고칠 것은 없다.
 
 ## 예전 덩어리 (기록)
 

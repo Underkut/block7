@@ -24,6 +24,7 @@
 //  ⑳ HB 3차(R5b): 금요 이름 · WN 광고(마지막 금요일만) · 설교 접기(빈 칸 무시) · 담임 · 초청 사람 · 글 → 사람 · 계정 이메일 · 월 달력 줄 · 금요 · 수요 표 날들
 //  ㉒ 부산 입력 A안(R5b-C): 고르는 목록(숙소 · 교통편 · 특이사항 갈래) 기본값 · 더하기 · 순서 · 고치기(지난 기록도) · 합치기 · 지우기 · 맞추기 / 특이사항 / 박수 / 가져오기 3판
 //  ㉕ 내 일정(R8b): 오늘 · 다음 차례 · 가까운 부산 · 그다음 · 횟수 / 한 줄이 한 주 / 부산 준비 / 내 화면 취향(첫 화면 · 이름 서식) · 책에 안 섞임 / 내 이름 자리
+//  ㉖ 예약 읽기(R9): AI 답 다듬기 · 맞는 방문 · 초안 채우기(목록 이름 · 원화만 금액 · 취소 기한 · 환불 불가 · 취소됨) · 예약번호 저장 · 책은 안 고침
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -37,7 +38,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -427,7 +428,7 @@ sc.eq('㉒ 가져오기 3판: 앞 판으로 들어온 방문의 숙소를 바로
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
-sc.eq('⑧ users · cellbook 은 부르지 않는다', /collection\('(users|cellbook)'\)/.test(HTML), false);
+sc.eq('⑧ users 는 부르지 않는다 · cellbook 은 AI 열쇠 읽기 한 곳뿐(R9)', [/collection\('users'\)/.test(HTML), (HTML.match(/collection\('cellbook'\)/g) || []).length, /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.get\(\)/.test(HTML)], [false, 1, true]);
 sc.eq('⑧ 로그인 칸 이름은 rota (다른 앱 로그인과 섞이지 않게)', HTML.includes("firebase.initializeApp(FB_CFG, 'rota')"), true);
 sc.eq('⑧ block7.my 로 열리면 sweeter.my/rotation/ 으로', HTML.includes("location.replace('https://sweeter.my/rotation/'"), true);
 sc.eq('⑧ 버전 두 곳이 같다(2번째 줄 주석 · APP_VERSION)', HTML.split('\n')[1].includes(A.APP_VERSION), true);
@@ -597,6 +598,36 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉕ 내 이름 자리: 여러 번 · 앞뒤가 한글이면(다른 이름의 일부) 건너뜀 · 가운뎃점 · 빈칸 · 괄호 옆은 찾음', [A.nameSpans('가가 · 나나 / 가가', '가가'), A.nameSpans('가가다 · 다가가 · (가가)', '가가'), A.nameSpans('가가', ''), A.nameSpans('', '가가')], [[[0, 2], [10, 12]], [[13, 15]], [], []]);
   sc.eq('㉕ HB 의 ui 는 책 밖 맨 위 칸에 · 교역자는 자기 칸에(거절돼도 이 기기엔 남음)', [/\.doc\(FB\.user\.uid\)\.set\(\{ ui: UI_OF\(\) \}, \{ merge: true \}\)/.test(HTML), /staffPatch\(FB\.user\.email, 'ui', '', UI_OF\(\), Date\.now\(\)\)/.test(HTML)], [true, true]);
   sc.eq('㉕ 사람 알약: 열 때마다 내가 먼저(이 기기에 기억한 사람보다 앞)', /function mePerson\(ps\) \{ return ps\.find\(p => p\.id === S\.mine\) \|\| ps\.find\(p => p\.id === selfPid\(\)\) \|\| ps\.find\(p => p\.id === PREF\.me\) \|\| ps\[0\]; \}/.test(HTML), true);
+}
+
+// ㉖ 예약 읽기 (R9) — 지어낸 숙소 이름
+{
+  const P = A.parseBookings;
+  sc.eq('㉖ 울타리 · 앞말이 붙어도 배열만 읽는다', P('여기 있습니다\n```json\n[{"hotel":"바다 호텔","checkIn":"2026-11-27","checkOut":"2026-11-29","total":"₩180,000","currency":"krw","ref":12345}]\n```').map(b => [b.hotel, b.checkIn, b.checkOut, b.total, b.currency, b.ref]), [['바다 호텔', '2026-11-27', '2026-11-29', 180000, 'KRW', '12345']]);
+  sc.eq('㉖ 객체 하나 · 점 날짜 · 빈 답 · 깨진 답', [P('{"hotel":"언덕 스테이","checkIn":"2026.12.04"}')[0].checkIn, P('[]'), P('예약 없음'), P('[{"hotel":"","checkIn":""}]')], ['2026-12-04', [], [], []]);
+  sc.eq('㉖ 체크아웃이 체크인보다 앞이면 버림 · 환불 불가면 기한 지움 · 시각 두 자리', (b => [b.checkOut, b.cancelBy, b.nofree])(A.normBooking({ hotel: 'x', checkIn: '2026-11-27', checkOut: '2026-11-26', cancelBy: '2026-11-20', nofree: true })).concat(A.normBooking({ hotel: 'x', checkIn: '2026-11-27', cancelBy: '2026-11-20', cancelAt: '9:00' }).cancelAt), ['', '', true, '09:00']);
+  sc.eq('㉖ 박수 = 체크인 ~ 체크아웃', [A.bookingNights({ checkIn: '2026-11-27', checkOut: '2026-11-29' }), A.bookingNights({ checkIn: '2026-11-27', checkOut: '' })], [2, 0]);
+
+  const b = A.normBook({ people: [{ id: 'a', name: '가가', roles: ['busan'] }], visits: [
+    { id: 'v|2026-11-29', who: ['a'], days: '금토일', stay: [{ kind: 'hotel', name: '바다 호텔', ref: 'R-1', status: 'done' }] },
+    { id: 'v|2026-12-13', who: ['a'], days: '토일', stay: [] }] });
+  const V = (ci) => (A.bookingVisit(b, { checkIn: ci }) || {}).id || null;
+  sc.eq('㉖ 맞는 방문: 머무는 날 안 · 첫날 하루 전 · 밖이면 없음', [V('2026-11-27'), V('2026-11-28'), V('2026-12-11'), V('2026-12-12'), V('2026-12-01'), V('')], ['v|2026-11-29', 'v|2026-11-29', 'v|2026-12-13', 'v|2026-12-13', null, null]);
+  sc.eq('㉖ 예약번호 저장(다듬기에서 살아남음) · 이미 넣은 예약', [b.visits[0].stay[0].ref, A.bookingSeen(b, { ref: 'R-1' }), A.bookingSeen(b, { ref: 'R-2' }), A.bookingSeen(b, { ref: '' })], ['R-1', true, false, false]);
+
+  const list = [{ kind: 'hotel', name: '바다 호텔' }, { kind: 'hotel', name: '언덕스테이 해변점' }, { kind: 'home', name: '어느 댁' }];
+  const d0 = { kind: 'home', name: '', status: '', cost: 0, nights: 1, for: '남', imgs: ['iabcdef1'] };
+  const bk = A.normBooking({ hotel: 'Hotel 바다', checkIn: '2026-11-27', checkOut: '2026-11-29', total: 180000, currency: 'KRW', ref: 'R-9', cancelBy: '2026-11-24', cancelAt: '23:59' });
+  const d1 = A.bookingToDraft(d0, bk, list);
+  sc.eq('㉖ 초안: 목록의 같은 숙소 이름으로 · 호텔 · 박 · 금액 · 예약 완료 · 기한 · 예약번호 · 누가 · 사진은 그대로', [d1.kind, d1.name, d1._new, d1.nights, d1.cost, d1.status, d1.cancelBy, d1.cancelAt, d1.ref, d1.for, d1.imgs], ['hotel', '바다 호텔', false, 2, 180000, 'done', '2026-11-24', '23:59', 'R-9', '남', ['iabcdef1']]);
+  sc.eq('㉖ 원래 초안은 그대로(복사본에 채움)', [d0.kind, d0.name], ['home', '']);
+  const d2 = A.bookingToDraft(Object.assign({}, d0, { cost: 50000, cancelBy: '2026-11-01' }), A.normBooking({ hotel: '처음 보는 숙소', checkIn: '2026-11-27', total: 120, currency: 'USD', nofree: true, cancelled: true }), list);
+  sc.eq('㉖ 목록에 없으면 새 호텔 · 원화가 아니면 금액 그대로 · 환불 불가 · 취소됨', [d2.name, d2._new, d2.cost, d2.nofree, d2.cancelBy, d2.status], ['처음 보는 숙소', true, 50000, true, undefined, 'cancel']);
+  sc.eq('㉖ 띄어쓰기 · 덧말이 달라도 목록 이름과 맞춘다', A.bookingToDraft(d0, A.normBooking({ hotel: '언덕 스테이 해변점 (부산)', checkIn: '2026-11-27' }), list).name, '언덕스테이 해변점');
+  sc.eq('㉖ 한 줄 알림', [A.bookingLine(bk), A.bookingLine(A.normBooking({ hotel: 'x', checkIn: '2026-11-27', total: 120, currency: 'USD', cancelled: true }))], ['Hotel 바다 · 11/27~11/29 · 180,000원', 'x · 11/27 · USD 120 · 취소됨']);
+  sc.eq('㉖ AI 에 보낼 말: JSON 배열 · 짐작 금지 · 사진/메일 갈림', [/JSON 배열/.test(A.bookingPrompt('img')), /짐작해서 채우지 말 것/.test(A.bookingPrompt('mail')), /메일/.test(A.bookingPrompt('mail')), /그림/.test(A.bookingPrompt('img'))], [true, true, true, true]);
+  sc.eq('㉖ ⚠️ 읽은 것은 초안에만 — 책을 고치는 저장(visitApply · saveBook)을 부르지 않는다', (() => { const f = HTML.slice(HTML.indexOf('function fillStay('), HTML.indexOf('async function readStayImg(')); return [f.length > 50, /visitApply|saveBook|cloudSave/.test(f)]; })(), [true, false]);
+  sc.eq('㉖ 열쇠: 셀 inside 사본 → 계정 cellbook 읽기만(쓰지 않음) · 교역자는 안 됨', [/lsGet\('cell_ai_key', ''\)/.test(HTML), /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.get\(\)/.test(HTML), /collection\('cellbook'\)[^;]*\.(set|update|delete)\(/.test(HTML), /function aiCan\(\) \{ return DEMO \|\| \(!!FB\.user && !isStaff\(\)\); \}/.test(HTML)], [true, true, false, true]);
 }
 
 sc.done();
