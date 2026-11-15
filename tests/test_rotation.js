@@ -23,6 +23,7 @@
 //  ⑲ R5: 부재(빨강) · 고정 조건(노랑) · 자동 배열이 피함 · 챙길 것 · 지난 방문 복사 · 시트로 내보내기 · 사람 한눈에
 //  ⑳ HB 3차(R5b): 금요 이름 · WN 광고(마지막 금요일만) · 설교 접기(빈 칸 무시) · 담임 · 초청 사람 · 글 → 사람 · 계정 이메일 · 월 달력 줄 · 금요 · 수요 표 날들
 //  ㉒ 부산 입력 A안(R5b-C): 고르는 목록(숙소 · 교통편 · 특이사항 갈래) 기본값 · 더하기 · 순서 · 고치기(지난 기록도) · 합치기 · 지우기 · 맞추기 / 특이사항 / 박수 / 가져오기 3판
+//  ㉕ 내 일정(R8b): 오늘 · 다음 차례 · 가까운 부산 · 그다음 · 횟수 / 한 줄이 한 주 / 부산 준비 / 내 화면 취향(첫 화면 · 이름 서식) · 책에 안 섞임 / 내 이름 자리
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -36,7 +37,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -510,7 +511,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   { const blk = (txt) => { const m = txt.match(/^[ \t]*\/\/ ── 교역자 로테이션\(rota\) — 여기서부터 ──[\s\S]*?^[ \t]*\/\/ ── 교역자 로테이션 — 여기까지 ──/m); return m ? m[0].split('\n').map(l => l.trim()).filter(Boolean).join('\n') : null; };
     const doc = blk(fs.readFileSync(path.join(__dirname, '..', 'docs', 'rotation', 'firestore-rules.md'), 'utf8')), rules = blk(fs.readFileSync(path.join(__dirname, 'rules', 'rota.rules'), 'utf8'));
     sc.eq('㉓ 문서의 규칙 덩어리 = 에뮬레이터로 시험한 규칙', [!!doc, doc === rules], [true, true]);
-    sc.eq('㉓ 규칙: 교역자 칸에 넣을 수 있는 칸 = normStaff 가 읽는 칸', /hasOnly\(\['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt'\]\)/.test(rules || ''), true); }
+    sc.eq('㉓ 규칙: 교역자 칸에 넣을 수 있는 칸 = normStaff 가 읽는 칸 + 내 화면 취향(ui)', /hasOnly\(\['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt', 'ui'\]\)/.test(rules || ''), true); }
   // 교역자 앱이 고친 방문 → 자기 칸에 쓸 것
   { const v0 = J(bk.visits.find(x => x.id === 'v|2026-11-22'));
     const v1 = Object.assign(J(v0), { stay: hotel('바꾼 호텔'), note: '몰래 메모', who: ['pb'] });
@@ -544,6 +545,58 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   const b3 = mk(); A.put(b3, 'people', Object.assign({}, b3.people.find(p => p.id === 'c2'), { can: [{ from: '2026-11-04' }] }), 'u', 2);
   const s3 = Object.fromEntries(A.propose(b3, '2026-11').slots.map(s => [s.id, s.pid]));
   sc.eq('㉔ 분당 자리도 그 날 가능 일정을 적은 분이 먼저(11/4 수요 설교)', s3['2026-11-04|wed|preach'], 'c2');
+}
+
+// ㉕ 내 일정 (R8b) — 지어낸 이름. 오늘 = 2026-11-15(주일)
+{
+  const mk = () => { const b = A.normBook(null);
+    A.put(b, 'people', { id: 'a', name: '가가', roles: ['preach', 'offer', 'lead', 'busan'], email: 'ga@example.com', away: [{ from: '2026-12-24', to: '2026-12-26', note: '휴가' }] }, 'u', 1);
+    A.put(b, 'people', { id: 'b', name: '나나', roles: ['preach', 'offer', 'lead', 'busan'] }, 'u', 1);
+    A.put(b, 'slots', { id: '2026-11-08|sun1|offer', who: ['a'] }, 'u', 1);   // 지난 것
+    A.put(b, 'slots', { id: '2026-11-15|ll|offer', who: ['a'] }, 'u', 1);     // 오늘
+    A.put(b, 'slots', { id: '2026-11-18|wed|preach', who: ['a'] }, 'u', 1);   // 다음 차례
+    for (const sv of ['sun1', 'sun3']) A.put(b, 'slots', { id: '2026-11-22|' + sv + '|offer', who: ['a'] }, 'u', 1);
+    A.put(b, 'visits', { id: 'v|2026-11-29', who: ['a', 'b'], days: '금토일', fri: true, stay: [{ kind: 'hotel', name: '호텔 나', status: 'done', cancelBy: '2026-11-25' }], travel: [{ dir: 'down', mode: 'KTX', time: '금 09:10' }] }, 'u', 1);
+    A.put(b, 'slots', { id: '2026-12-11|fri|offer', who: ['a'] }, 'u', 1);
+    A.put(b, 'slots', { id: '2026-12-13|ll|lead', who: ['a'] }, 'u', 1);
+    A.put(b, 'visits', { id: 'v|2027-01-03', who: ['a'], days: '금토일', fri: true }, 'u', 1);   // 3주 밖 부산
+    A.put(b, 'slots', { id: '2027-01-17|sun2|preach', who: ['a'] }, 'u', 1);   // 8주 밖
+    return b; };
+  const b = mk(), ah = A.myAhead(b, 'a', '2026-11-15', 8);
+  sc.eq('㉕ 8주 창 = 이번 주 주일부터 8주(1/9 토)', [ah.from, ah.to], ['2026-11-15', '2027-01-09']);
+  sc.eq('㉕ 오늘 것 · 다음 차례(오늘 뒤 가장 가까운 분당 자리)', [ah.todays.map(r => r.id), ah.next.id], [['2026-11-15|ll|offer'], '2026-11-18|wed|preach']);
+  sc.eq('㉕ 가까운 부산 = 3주 안에 떠나는 방문(머무는 첫날 11/27)', [ah.trip.id, ah.trip.date, ah.trip.end], ['v|2026-11-29', '2026-11-27', '2026-11-29']);
+  sc.eq('㉕ 그다음: 오늘 · 다음 차례 · 가까운 부산은 빼고 날짜순 — 3주 밖 부산은 줄로 남는다 · 지난 것 · 8주 밖은 없음', ah.rest.map(r => r.id), ['2026-11-22|sun1|offer', '2026-12-11|fri|offer', '2026-12-13|ll|lead', 'v|2027-01-03']);
+  sc.eq('㉕ 8주 횟수(같은 날 주일 예배는 한 번)', ah.tally, { preach: 1, offer: 3, lead: 1, busan: 2 });
+  sc.eq('㉕ 지금 머무는 방문도 가까운 부산', A.myAhead(b, 'a', '2026-11-28', 8).trip.id, 'v|2026-11-29');
+  sc.eq('㉕ 맡은 것이 없는 분: 모두 비고 횟수 0', (x => [x.todays, x.next, x.trip, x.rest, x.tally.offer])(A.myAhead(b, 'b', '2026-12-06', 8)), [[], null, null, [], 0]);
+  sc.eq('㉕ 날 수 세기', [A.dayGap('2026-11-15', '2026-11-18'), A.dayGap('2026-12-30', '2027-01-02'), A.dayGap('2026-11-15', '2026-11-15')], [3, 3, 0]);
+  const wk = A.myWeeks(b, 'a', '2026-11-15', 8);
+  sc.eq('㉕ 한 줄이 한 주: 여덟 줄 · 주일마다', wk.map(w => w.sun), ['2026-11-15', '2026-11-22', '2026-11-29', '2026-12-06', '2026-12-13', '2026-12-20', '2026-12-27', '2027-01-03']);
+  sc.eq('㉕ 11/15 주: 주일 헌금 · 수요 설교', [wk[0].sunItems.map(r => r.role), wk[0].mid.map(r => r.id), wk[0].fri, wk[0].bs], [['offer'], ['2026-11-18|wed|preach'], [], []]);
+  sc.eq('㉕ 주를 넘는 부산(금토 + 다음 주일): 떠나는 주에 적고 다음 주에는 이어짐(cont)', [wk[1].bs.map(x => [x.id, x.cont]), wk[2].bs.map(x => [x.id, x.cont])], [[['v|2026-11-29', false]], [['v|2026-11-29', true]]]);
+  sc.eq('㉕ 금요 · 예배인도 · 내가 적은 부재는 그 주 줄에', [wk[3].fri.map(r => r.id), wk[4].sunItems.map(r => r.role), wk[5].away.map(a => a.note), wk[4].away], [['2026-12-11|fri|offer'], ['lead'], ['휴가'], []]);
+  const tc = A.tripChecks(b, b.visits.find(v => v.id === 'v|2026-11-29'), 'a'), by = Object.fromEntries(tc.items.map(x => [x.key, x]));
+  sc.eq('㉕ 부산 준비: 숙소 됨(취소 기한) · 내려감 됨 · 올라옴 아직 · 넷째 금요일은 금요 이름 없음 · 겹침 없음', [by.stay.state, by.stay.cancelBy, by.down.state, by.down.text, by.up.state, 'fri' in by, by.clash.state, 'staff' in by], ['done', '2026-11-25', 'done', 'KTX 금 09:10', 'todo', false, 'done', false]);
+  sc.eq('㉕ 부산 준비 셈: 알림은 빼고 넷 가운데 셋', [tc.done, tc.total], [3, 4]);
+  const b2 = mk(); A.put(b2, 'slots', { id: '2026-11-29|sun2|offer', who: ['a'] }, 'u', 2); A.put(b2, 'marks', { id: 'm|2026-11-29', tags: ['극동방송'] }, 'u', 2);
+  const tc2 = A.tripChecks(b2, b2.visits.find(v => v.id === 'v|2026-11-29'), 'a'), by2 = Object.fromEntries(tc2.items.map(x => [x.key, x]));
+  sc.eq('㉕ 부산에 있는 날 분당 자리 = 겹침(빨강) · 극동방송 주에 동행이 비면 아직', [by2.clash.state, by2.clash.slots, by2.staff.state, tc2.done, tc2.total], ['bad', ['2026-11-29|sun2|offer'], 'todo', 2, 5]);
+  sc.eq('㉕ 숙소가 없거나 대화 중이면 아직 · 첫째 금요일 = AWAKE(알림만) · 부재인 날이면 겹침', (() => { const v = b.visits.find(x => x.id === 'v|2027-01-03'); const x = A.tripChecks(b, v, 'a').items; const c = mk(); A.put(c, 'visits', { id: 'v|2026-12-27', who: ['a'], days: '토일', stay: [{ name: '댁', kind: 'home', status: 'ask' }] }, 'u', 3);
+    const y = Object.fromEntries(A.tripChecks(c, c.visits.find(q => q.id === 'v|2026-12-27'), 'a').items.map(q => [q.key, q])); return [x[0].state, x.find(q => q.key === 'fri').state + ' ' + x.find(q => q.key === 'fri').text, y.stay.state, y.stay.open, y.clash.state, y.clash.away]; })(), ['todo', 'info AWAKE', 'todo', true, 'bad', '2026-12-26']);
+  // 내 화면 취향
+  sc.eq('㉕ 처음 값: HB = 마지막에 본 화면 · 교역자 = 내 일정 · 이름은 굵게 + 노랑', [A.normUi(null), A.normUi(null, true)], [{ home: 'last', name: { b: true, c: '', h: 'yellow' }, at: 0 }, { home: 'month:mine', name: { b: true, c: '', h: 'yellow' }, at: 0 }]);
+  sc.eq('㉕ 모르는 화면 · 색은 버린다 · 굵게 끔 · 음영 없음은 그대로 남는다', A.normUi({ home: 'nowhere', name: { b: 0, c: 'neon', h: '' }, at: 9, extra: 1 }), { home: 'last', name: { b: false, c: '', h: '' }, at: 9 });
+  sc.eq('㉕ 교역자에게 없는 화면(사람 탭)은 내 일정으로', [A.normUi({ home: 'people' }, true).home, A.normUi({ home: 'people' }).home], ['month:mine', 'people']);
+  sc.eq('㉕ 첫 화면 → 탭 · 보기 (마지막에 본 화면은 손대지 않음)', [A.homeTo('last'), A.homeTo('week'), A.homeTo('month:mine'), A.homeTo('busan'), A.homeTo('x')], [null, { tab: 'week' }, { tab: 'month', mview: 'mine' }, { tab: 'busan' }, null]);
+  sc.eq('㉕ 고를 수 있는 첫 화면은 탭 · 보기 이름 그대로', [A.HOMES.filter(h => h.startsWith('month:')).map(h => h.slice(6)).every(k => new RegExp('\\n  ' + k + ': \\{ name:').test(HTML)), A.HOMES.length], [true, 10]);
+  const pt = A.staffPatch('ga@example.com', 'ui', '', { home: 'busan', name: { b: true, c: 'blue', h: '' } }, 7000);
+  sc.eq('㉕ 교역자가 쓰는 조각 — ui 한 칸(고친 때 포함)', pt, { email: 'ga@example.com', at: 7000, ui: { home: 'busan', name: { b: true, c: 'blue', h: '' }, at: 7000 } });
+  sc.eq('㉕ ⚠️ 책에는 섞이지 않는다 — 받아들이기는 ui 를 읽지 않고(바뀐 줄 없음), 교역자 칸 다듬기에도 없다', [A.absorb(b, [pt]).changed, 'ui' in A.normStaff(pt), JSON.stringify(A.absorb(b, [pt]).book) === JSON.stringify(A.normBook(b))], [[], false, true]);
+  sc.eq('㉕ 조각을 합쳐도 숙소 · 부재는 그대로', (d => [d.awayAt, d.ui.home])(A.staffMerge({ email: 'ga@example.com', away: [], awayAt: 5 }, pt)), [5, 'busan']);
+  sc.eq('㉕ 내 이름 자리: 여러 번 · 앞뒤가 한글이면(다른 이름의 일부) 건너뜀 · 가운뎃점 · 빈칸 · 괄호 옆은 찾음', [A.nameSpans('가가 · 나나 / 가가', '가가'), A.nameSpans('가가다 · 다가가 · (가가)', '가가'), A.nameSpans('가가', ''), A.nameSpans('', '가가')], [[[0, 2], [10, 12]], [[13, 15]], [], []]);
+  sc.eq('㉕ HB 의 ui 는 책 밖 맨 위 칸에 · 교역자는 자기 칸에(거절돼도 이 기기엔 남음)', [/\.doc\(FB\.user\.uid\)\.set\(\{ ui: UI_OF\(\) \}, \{ merge: true \}\)/.test(HTML), /staffPatch\(FB\.user\.email, 'ui', '', UI_OF\(\), Date\.now\(\)\)/.test(HTML)], [true, true]);
+  sc.eq('㉕ 사람 알약: 열 때마다 내가 먼저(이 기기에 기억한 사람보다 앞)', /function mePerson\(ps\) \{ return ps\.find\(p => p\.id === S\.mine\) \|\| ps\.find\(p => p\.id === selfPid\(\)\) \|\| ps\.find\(p => p\.id === PREF\.me\) \|\| ps\[0\]; \}/.test(HTML), true);
 }
 
 sc.done();
