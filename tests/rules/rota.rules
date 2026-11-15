@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ── 교역자 로테이션(rota) — 여기서부터 ──
+    match /rota/{uid} {
+      function signedIn() { return request.auth != null; }
+      function isOwner() { return signedIn() && request.auth.uid == uid; }
+      function verified() { return signedIn() && request.auth.token.email_verified == true; }
+      function inTeam(d) { return verified() && request.auth.token.email in d.get('team', []); }
+      function isMember() { return inTeam(get(/databases/$(database)/documents/rota/$(uid)).data); }
+      allow read: if isOwner() || inTeam(resource.data);
+      allow write: if isOwner();
+      match /img/{id} {
+        allow read: if isOwner() || isMember();
+        allow create: if isOwner() || (isMember() && request.resource.data.by == request.auth.uid);
+        allow update, delete: if isOwner() || (isMember() && resource.data.by == request.auth.uid);
+      }
+      match /staff/{sid} {
+        allow read: if isOwner() || isMember();
+        allow create, update: if isMember() && request.auth.uid == sid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.keys().hasOnly(['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt']);
+        allow delete: if isOwner() || (signedIn() && request.auth.uid == sid);
+      }
+    }
+    // ── 교역자 로테이션 — 여기까지 ──
+  }
+}
