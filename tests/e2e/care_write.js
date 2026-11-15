@@ -532,7 +532,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
   eq('⑮ (1108-C2) 아래 탭 차례 — 심방 · 출석 · 성도 · 달력 · 계획 · 한눈에', await page.$$eval('.ph-nav button', x => x.map(e => e.textContent)), ['심방', '출석', '성도', '달력', '계획', '한눈에']);
   await page.click('.ph-nav [data-act="tab"][data-v="people"]'); await page.waitForTimeout(700);
-  eq('⑮ (1108-C2) 성도 탭에는 출석 요약 칸이 없고 단추는 + 기록', [await page.$$eval('.attsum', x => x.length), await page.$$eval('.fab[data-act="addrec"]', x => x.length)], [0, 1]);
+  eq('⑮ (1108-C2) 성도 탭에는 출석 요약 칸이 없고 단추는 + (NEW 상자 — 1115-5)', [await page.$$eval('.attsum', x => x.length), await page.$$eval('.fab[data-act="newbox"]', x => x.length)], [0, 1]);
   await page.click('.ph-nav [data-act="tab"][data-v="attend"]'); await page.waitForTimeout(700);
   eq('⑮ 출석 탭 단추는 + 출석', await page.$$eval('.fab[data-act="attadd"]', x => x.length), 1);
   await page.click('.fab[data-act="attadd"]'); await tidy();
