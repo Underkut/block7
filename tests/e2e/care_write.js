@@ -44,6 +44,7 @@
 //  ㊸ (1113-E) 할 일 종류마다 한 줄씩(액션 탭 한 줄 = 한 할 일 · 뺀 줄은 취소) · 성도 구분별 알약
 //  ㊹ (1113-E 4-4) 질문 = 말풍선 아이콘 · 성도 · 달력 할일/질문 줄
 //  ㊺ (1114) 목록에서 바로 체크 — 할 일 알약 · 질문 말풍선 → 액션 · 다음 질문 탭, 그 자리에 회색 · 알약 밖은 열람
+//  ㊼ (1115-V) 한눈에 = 요약 카드 첫 화면 — 큰 카드 하나 + 카드 일곱 · 옛 세 탭 없음 · 카드 → 겹 화면(× 닫기) · 옆 카드로 · 구분 알약 · 할 일은 사람별
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -473,8 +474,8 @@ eq('⑲-2 읽는 중에 누른 입력 단추는 예약만 — 못 읽으면 버�
   for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   await reload();
   await page.click('.ph-nav [data-act="tab"][data-v="collect"]'); await tidy();
-  await page.click('[data-act="grp"][data-v="act"]'); await tidy();
-  const row = k => '.kgrp:has-text("' + k + '") .todo:has-text("파파파") [data-act="b7open"]';
+  await page.click('[data-act="gcard"][data-v="todo"]'); await tidy();   // 1115-V 할 일은 '챙길 것' 카드 안, 사람별 묶음
+  const row = k => '.layer .kgrp:has-text("파파파") .todo:has-text("' + k + '") [data-act="b7open"]';
   await page.click(row('중보')); await tidy();
   eq('⑬ 보낼 글 — 종류 · 이름', await page.inputValue('.layer [data-f="text"]'), '중보 · 파파파');
   await page.click('.layer [data-act="b7date"]:has-text("내일")');
@@ -487,7 +488,7 @@ eq('⑲-2 읽는 중에 누른 입력 단추는 예약만 — 못 읽으면 버�
   eq('⑬ 쪽지에 나눈 이야기는 없다', JSON.stringify(ib).includes('사적인'), false);
   const AT = () => tab('액션').rows, aRow = (rec, t) => AT().find(r => r[1] === rec && r[3] === t) || [];
   eq("⑬ 액션 탭 — 그 할 일 줄에 'BLOCK7 할일' = 보낸 날 · 상태는 '할 일'", [aRow('C950', '중보')[9], aRow('C950', '중보')[7]], [D1s, '할 일']);
-  eq('⑬ 보낸 뒤 단추에 날짜', await page.$$eval('.kgrp:has-text("중보") .todo:has-text("파파파") .b7b.sent', x => x.length), 1);
+  eq('⑬ 보낸 뒤 단추에 날짜', await page.$$eval('.layer .kgrp:has-text("파파파") .todo:has-text("중보") .b7b.sent', x => x.length), 1);
   // 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
   await page.evaluate(() => { window.__inboxFail = 1; });
   const nAct = AT().length;
@@ -1685,6 +1686,39 @@ eq('⑲-2 읽는 중에 누른 입력 단추는 예약만 — 못 읽으면 버�
     await page.evaluate(() => loadData(true)); await page.waitForTimeout(1200);
     eq('㊺ 시트를 다시 읽어도 체크한 것은 회색으로 그 자리에(앱을 연 동안)', await page.$eval(qs, e => e.closest('.oi').classList.contains('done')), true);
     await page.evaluate(() => { S.layers.length = 0; S.show = []; S.view = 'list'; render(); });
+  }
+
+  // ㊼ (1115-V) 한눈에 카드
+  {
+    await page.evaluate(() => { S.layers.length = 0; S.show = []; S.gRole = ''; S.view = 'collect'; render(); }); await page.waitForTimeout(200);
+    eq('㊼ 첫 화면 — 큰 카드(심방+출석) 하나 · 카드 일곱 · 옛 세 탭 없음', [await page.$$eval('#app .gl-hero', x => x.length), await page.$$eval('#app .gl-cd', x => x.map(e => e.dataset.v)), await page.$$eval('#app .seg', x => x.length)], [1, ['map', 'flow', 'role', 'vis', 'quiet', 'att', 'todo'], 0]);
+    eq('㊼ 카드마다 한 줄 요약과 그림', await page.$$eval('#app .gl-cg .gl-cd', x => x.every(e => e.querySelector('.hd').textContent.length > 0)), true);
+    if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300); await page.screenshot({ path: process.env.SHOT + '/glance-home.png', fullPage: true }); }
+    await page.click('#app [data-act="gcard"][data-v="map"]'); await page.waitForTimeout(450);
+    const GL = '.layer:last-child';
+    eq('㊼ 카드 → 겹 화면 · 제목 · × · 이름 칸', [await page.$eval(GL + ' .ph-head h3', e => e.textContent), await page.$$eval(GL + ' .ph-head [data-act="close"]', x => x.length), await page.$$eval(GL + ' .gl-map button', x => x.length) > 0], ['돌봄 지도', 1, true]);
+    const tot = await page.$$eval(GL + ' .gl-map button', x => x.length);
+    const role = await page.$eval(GL + ' .gl-chips button:nth-child(2)', e => e.dataset.v);
+    await page.click(GL + ' .gl-chips button:nth-child(2)'); await page.waitForTimeout(200);
+    eq('㊼ 구분 알약 → 그 구분 사람만(줄어듦) · 눌린 표시', [await page.$$eval(GL + ' .gl-map button', x => x.length) <= tot, await page.$eval(GL + ' .gl-chips button:nth-child(2)', e => e.getAttribute('aria-pressed')), await page.evaluate(() => S.gRole) === role], [true, 'true', true]);
+    await page.click(GL + ' .gl-chips button:nth-child(1)'); await page.waitForTimeout(200);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/glance-map.png', fullPage: false });
+    for (const [k, title] of [['flow', '심방 흐름'], ['role', '구분 나란히'], ['vis', '심방 격자'], ['quiet', '안 보이는 분'], ['att', '출석 격자'], ['todo', '챙길 것']]) {
+      await page.click(GL + ' .gl-nav [data-act="gnav"][data-v="' + k + '"]'); await page.waitForTimeout(650);
+      eq('㊼ 옆 카드로 — ' + title, await page.$eval(GL + ' .ph-head h3', e => e.textContent), title);
+      if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/glance-' + k + '.png', fullPage: false });
+    }
+    eq('㊼ 겹 화면은 하나 그대로(카드를 넘겨도 쌓이지 않음)', await page.evaluate(() => S.layers.length), 1);
+    eq('㊼ 챙길 것 — 약속한 일은 사람별 묶음 · 체크 단추', [await page.$$eval(GL + ' .kgrp.gl-pg', x => x.length) > 0, await page.$$eval(GL + ' .kgrp.gl-pg .todo .ck', x => x.length) > 0], [true, true]);
+    await page.evaluate(() => { const L = topLayer(); L.key = 'both'; render(); }); await page.waitForTimeout(200);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/glance-both.png', fullPage: false });
+    await page.evaluate(() => { const L = topLayer(); L.key = 'flow'; S.attrK = 'tag'; render(); }); await page.waitForTimeout(200);
+    eq("㊼ 심방 흐름 안에 예전 속성별('무엇을 나눴나') — 막대를 누르면 그 자리에 기록", await page.$$eval(GL + ' .brow', x => x.length) > 0, true);
+    await page.click(GL + ' .brow [data-act="gopen"]'); await page.waitForTimeout(200);
+    eq('㊼ 펼치면 사람 알약 · 기록 줄', [await page.$$eval(GL + ' .brow .gl-pills button', x => x.length) > 0, await page.$$eval(GL + ' .brow .lrow', x => x.length) > 0], [true, true]);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+    eq('㊼ ESC → 닫힘', await page.evaluate(() => S.layers.length), 0);
+    await page.evaluate(() => { S.gopen = {}; S.view = 'list'; render(); });
   }
 
   eq('⑦ 화면 오류 없음', errs, []);

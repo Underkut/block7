@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -350,6 +350,97 @@ body.dragging{cursor:grabbing}
 .lrow{display:grid;grid-template-columns:58px 1fr;gap:8px;font-size:13px;padding:5px 0;width:100%}
 .lrow .d{font-family:var(--mono);font-size:11.5px;color:var(--tx3)}
 
+/* 1115-V 한눈에 카드 */
+.gl-chips{display:flex;gap:6px;overflow-x:auto;margin:0 -18px 12px;padding:0 18px 2px;scrollbar-width:none}
+.gl-chips::-webkit-scrollbar{display:none}
+.gl-chips button{white-space:nowrap;padding:5px 12px;border-radius:999px;background:var(--s2);color:var(--tx2);font-size:13px}
+.gl-chips button[aria-pressed="true"]{background:var(--ac);color:var(--on-ac);font-weight:500}
+.gl-sec{font-size:12.5px;font-weight:600;color:var(--tx2);margin:16px 2px 6px;display:flex;justify-content:space-between;align-items:baseline}
+.gl-sec small{font-weight:400;color:var(--tx3);font-size:11.5px}
+.gl-cg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gl-cd{display:flex;flex-direction:column;gap:7px;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:11px;min-width:0}
+.gl-cd.wide{width:100%}
+.gl-cd .l,.gl-hero .l{font-size:11.5px;color:var(--tx2);display:flex;justify-content:space-between}
+.gl-cd .l i{font-style:normal;color:var(--tx3)}
+.gl-cd .hd,.gl-hero .hd{font-size:14.5px;font-weight:500;line-height:1.35}
+.gl-cd .hd em,.gl-hero .hd em,.gl-say em{font-style:normal;color:var(--ac)}
+.gl-hero.hot .hd em{color:var(--mk-red)}
+.gl-cd small,.gl-hero small{font-size:11.5px;color:var(--tx3);line-height:1.4}
+.gl-cd .g{display:block;margin-top:auto}
+.gl-hero{display:grid;grid-template-columns:1fr 104px;gap:12px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:12px}
+.gl-hero.hot{background:color-mix(in srgb,var(--mk-red) 9%,var(--paper));border-color:transparent}
+.gl-hero>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.gl-hero .gq small{text-align:center;font-size:10.5px}
+.b-ok{background:var(--deep)}.b-mid{background:color-mix(in srgb,var(--deep) 55%,var(--paper))}.b-low{background:color-mix(in srgb,var(--deep) 26%,var(--paper))}
+.b-warn,.b-old{background:var(--warn)}.b-red{background:var(--mk-red)}.b-none{background:var(--s2);box-shadow:inset 0 0 0 1px var(--line2)}
+.gl-dots{display:grid;grid-template-columns:repeat(10,1fr);gap:2.5px}
+.gl-dots i{aspect-ratio:1;border-radius:3px;display:block}
+.gl-sp{display:flex;align-items:flex-end;gap:3px;border-bottom:1px solid var(--line2)}
+.gl-sp div{flex:1;display:flex;flex-direction:column-reverse;gap:1px}
+.gl-sp i{display:block;border-radius:1.5px;min-height:2px}
+.gl-q4{display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.gl-q4 span{border-radius:7px;padding:6px 0;background:var(--s2);color:var(--tx2)}
+.gl-q4 .a{background:var(--mk-red);color:#fff;font-weight:600}.gl-q4 .b{background:var(--warn-soft);color:var(--warn)}
+.gl-rb{display:grid;grid-template-columns:minmax(0,auto) 1fr;gap:4px 6px;align-items:center;font-size:11px;color:var(--tx2)}
+.gl-rb span:nth-child(odd){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px}
+.gl-rb .t{height:6px;border-radius:99px;background:var(--s2);overflow:hidden}
+.gl-rb .t i{display:block;height:100%;background:var(--deep)}.gl-rb .t i.w{background:var(--warn)}
+.gl-gm{display:grid;gap:2px}
+.gl-gm i{height:7px;border-radius:2px;background:var(--s2);display:block}
+.gl-gm i.b-ok{background:var(--deep)}.gl-gm i.b-warn{background:var(--warn)}
+.gl-sr{display:grid;grid-template-columns:minmax(0,auto) 1fr;gap:4px 6px;font-size:11.5px;align-items:center}
+.gl-st{display:inline-flex;gap:2px;vertical-align:-1px;margin-right:6px}
+.gl-st i{width:7px;height:7px;border-radius:50%;background:var(--s2);box-shadow:inset 0 0 0 1px var(--line2)}
+.gl-st i.o{background:var(--deep);box-shadow:none}.gl-st i.l{background:var(--warn);box-shadow:none}.gl-st i.h{background:color-mix(in srgb,var(--deep) 55%,var(--paper));box-shadow:none}
+.gl-stk{display:flex;height:9px;border-radius:99px;overflow:hidden;gap:2px;background:var(--s2)}
+.gl-lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--tx2);margin:4px 0 8px}
+.gl-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.gl-say{font-size:15.5px;font-weight:500;margin:2px 0 8px}
+.gl-cov{height:10px;border-radius:99px;background:var(--s2);display:flex;overflow:hidden;gap:2px;margin:4px 0 8px}
+.gl-gl{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--tx2);margin:14px 0 5px}
+.gl-gl b{font-weight:600;color:var(--tx);font-size:13.5px}
+.gl-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:4px}
+.gl-map button{font-size:12px;text-align:center;padding:7px 2px;border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gl-map .b-ok{color:var(--on-ac)}.gl-map .b-old{color:#fff}.gl-map .b-none{color:var(--tx3)}
+.gl-hs{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;padding:12px 0 4px;border-top:1px solid var(--line);margin-top:12px}
+.gl-hs small{font-weight:400;color:var(--tx3);font-size:12px}
+.gl-hs.r{color:var(--mk-red)}.gl-hs.w{color:var(--warn)}.gl-hs.g{color:var(--ac)}
+.gl-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:7px 0;align-items:baseline;width:100%;text-align:left;font-size:14px}
+.gl-row b{font-weight:500}
+.gl-row small{color:var(--tx3);font-size:12px}
+.gl-row .why{display:block;color:var(--tx2);font-size:12.5px}
+.gl-row .r{font-family:var(--mono);font-size:12px;color:var(--tx3);white-space:nowrap}
+.gl-row .r.w{color:var(--warn)}.gl-row .r.d{color:var(--mk-red)}
+.gl-quad{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.gl-quad div{border-radius:12px;padding:10px 11px;background:var(--paper);border:1px solid var(--line)}
+.gl-quad .q1{background:color-mix(in srgb,var(--mk-red) 9%,var(--paper));border-color:transparent}.gl-quad .q2{background:var(--warn-soft);border-color:transparent}
+.gl-quad span{display:block;font-size:12px;color:var(--tx2)}
+.gl-quad b{font-size:22px;font-weight:500}
+.gl-quad b i{font-style:normal;font-size:12px;font-weight:400;color:var(--tx2)}
+.gl-cmp{display:grid;gap:2px}
+.gl-cmp button{display:grid;grid-template-columns:minmax(72px,auto) 1fr auto;gap:10px;align-items:center;font-size:13.5px;padding:7px 6px;border-radius:8px;text-align:left}
+.gl-cmp button[aria-pressed="true"]{background:var(--ac-soft)}
+.gl-cmp .s8{display:flex;align-items:flex-end;gap:2px;height:20px}
+.gl-cmp .s8 i{flex:1;background:color-mix(in srgb,var(--deep) 55%,var(--paper));border-radius:1.5px;min-height:1.5px}
+.gl-cmp .s8 i:last-child{background:var(--deep)}
+.gl-cmp .n{font-size:12.5px;color:var(--tx2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.gl-cmp .n.w{color:var(--warn)}
+.gl-mx{display:grid;gap:2px;align-items:center;font-size:13px}
+.gl-mx .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px;text-align:left;max-width:84px}
+.gl-mx .h{font-size:9.5px;color:var(--tx3);text-align:center;white-space:nowrap}
+.gl-mx .c{height:20px;border-radius:4px;background:var(--s1);display:flex;align-items:center;justify-content:center}
+.gl-mx .c i{display:block;border-radius:50%;background:var(--deep)}
+.gl-mx .c .d1{width:6px;height:6px}.gl-mx .c .d2{width:9px;height:9px}.gl-mx .c .d3{width:12px;height:12px}
+.gl-mx.att .c i{width:11px;height:11px}
+.gl-mx .c .al{background:var(--warn)}.gl-mx .c .ah{background:color-mix(in srgb,var(--deep) 55%,var(--paper))}
+.gl-mx .fl{font-size:11.5px;color:var(--tx3);white-space:nowrap;padding-left:6px;min-width:6px}
+.gl-mx .fl em{font-style:normal;color:var(--warn)}
+.gl-pills{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 8px}
+.gl-pills button{font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--s2)}
+.gl-pills small{color:var(--tx3)}
+.gl-pg h4::before{display:none}
+.gl-nav{display:flex;justify-content:space-between;gap:10px;margin-top:26px;padding-top:12px;border-top:1px solid var(--line)}
+.gl-nav button{font-size:13px;color:var(--tx2);padding:6px 2px}
 /* 대시보드 */
 .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 14px}
 .tile{display:flex;flex-direction:column;gap:2px;padding:11px 11px 10px;border-radius:14px;background:var(--s1);border:1px solid var(--line);min-width:0;text-align:left}
@@ -832,7 +923,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-5';
+const APP_VERSION = 'v. 26-1115-6';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2737,6 +2828,88 @@ function splitPeriods(visits, today) {
   return { last4: visits.filter(v => v.ymd >= c4), prev4: visits.filter(v => v.ymd >= p4 && v.ymd < c4) };
 }
 function countBy(visits, pick) { const m = {}; visits.forEach(v => [].concat(pick(v)).forEach(k => { if (k !== '' && k != null) m[k] = (m[k] || 0) + 1; })); return m; }
+
+// ───────── 1115-V 한눈에 카드 — 셈은 여기 한 곳, 화면(vCollect · lGlance)은 그리기만 ─────────
+// 새로 적는 칸은 없다: 심방 기록(구분 · 깊이 · 우선순위 · 할 일) · 다음 질문 · 계획 · 출석 탭만 읽는다.
+// ⚠️ 출석률(%)은 만들지 말 것 — 출석 탭은 '본 분' 만 적혀 결석을 알 수 없다. '안 보임' 은 그분의 평소 흐름(attQuiet)과 견준다.
+const GL_NEAR = 28, GL_FAR = 56;                 // 돌봄 지도 색 — 4주 안 · 8주 안 · 그 뒤
+const GL_BACK_GAP = 28;                          // '다시 보임' — 이만큼 비었다가 지난 7일 안에 적힘
+const ATT_LATE = ['말씀 중', '헌금부터'], ATT_EARLY = ['기도 때 나감', '말씀 뒤 나감', '중간에 나감'];
+function attMark(a) { return ATT_LATE.includes(norm(a.from)) ? 'l' : ATT_EARLY.includes(norm(a.to)) ? 'h' : 'o'; }
+// o: { model, visits(전부), attend, plans, qn, roster(이름들), today, stale(날), role('' = 전체), roles(구분 차례) }
+function glanceModel(o) {
+  const t = o.today, role = o.role || '', stale = o.stale || STALE_DAYS_DEFAULT, P = (o.model && o.model.people) || {};
+  const all = (o.visits || []).filter(v => v.ymd), live = all.filter(v => !v.archived);
+  const w12 = weeksBack(12, t), w8 = weeksBack(8, t), by = {};
+  const get = n => { const k = nameKey(n); return k ? (by[k] || (by[k] = { name: n, roles: [], vs: [], at: [] })) : null; };
+  all.forEach(v => { const w = vWho(v); (w.length ? w : [v.name]).forEach(n => { const p = get(n); if (p) p.vs.push(v); }); });
+  Object.keys(P).forEach(n => { const p = by[nameKey(n)]; if (p) { p.name = n; p.roles = (P[n].roles || []).slice(); } });
+  (o.attend || []).forEach(a => { if (!a.date) return; const p = get(a.name); if (p) p.at.push(a); });
+  (o.roster || []).forEach(n => get(n));
+  let people = Object.keys(by).map(k => by[k]);
+  if (role) people = people.filter(p => p.roles.includes(role));
+  people.forEach(p => {
+    p.vs.sort((a, b) => b.ymd.localeCompare(a.ymd)); p.at.sort((a, b) => b.date.localeCompare(a.date));
+    p.last = p.vs.length ? p.vs[0].ymd : ''; p.days = p.last ? daysBetween(p.last, t) : null;
+    p.band = !p.last ? 'none' : p.days <= GL_NEAR ? 'ok' : p.days <= GL_FAR ? 'mid' : 'old';
+    p.weeks = w12.map(w => { let lv = 0; p.vs.forEach(v => { if (v.ymd >= w.s && v.ymd <= w.e) lv = Math.max(lv, v.depthN || 1); }); return lv; });
+    p.att = w8.map(w => { const xs = p.at.filter(a => a.date >= w.s && a.date <= w.e); if (!xs.length) return ''; const ms = xs.map(attMark); return ms.includes('o') ? 'o' : ms[0]; });
+    p.attLast = p.at.length ? p.at[0].date : ''; p.attDays = p.attLast ? daysBetween(p.attLast, t) : null;
+    p.recent = p.days != null && p.days < stale;
+  });
+  const vs = role ? live.filter(v => v.allRoles.includes(role)) : live;
+  // 돌봄 지도
+  const cnt = { ok: 0, mid: 0, old: 0, none: 0 }; people.forEach(p => cnt[p.band]++);
+  const order = (o.roles || []).slice(), gmap = {};
+  people.forEach(p => { const r = role || p.roles.find(x => order.includes(x)) || p.roles[0] || ''; (gmap[r] = gmap[r] || []).push(p); });
+  const rank = { old: 0, none: 1, mid: 2, ok: 3 };
+  const groups = Object.keys(gmap).sort((a, b) => (a === '' ? 1 : b === '' ? -1 : (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99)))
+    .map(r => ({ role: r, people: gmap[r].sort((a, b) => rank[a.band] - rank[b.band] || (b.days || 0) - (a.days || 0) || a.name.localeCompare(b.name)), met: gmap[r].filter(p => p.band === 'ok' || p.band === 'mid').length }));
+  // 심방 흐름
+  const sp = splitPeriods(vs, t), tc = countBy(sp.last4, v => v.allTags), tp = countBy(sp.prev4, v => v.allTags);
+  const tags = Object.keys(Object.assign({}, tc, tp)).map(x => ({ tag: x, n: tc[x] || 0, p: tp[x] || 0 })).sort((a, b) => b.n - a.n || b.p - a.p);
+  const up = tags.filter(x => x.n - x.p > 0).sort((a, b) => (b.n - b.p) - (a.n - a.p))[0];
+  const flow = { weekly: weeklyDepth(vs, t, 8), last4: sp.last4.length, prev4: sp.prev4.length, met: new Set([].concat(...sp.last4.map(vWho)).map(nameKey)).size,
+    deep: sp.last4.filter(v => v.depthN === 3).length, tags, up: up ? up.tag : '' };
+  // 구분 나란히 — 구분 알약과 상관없이 늘 전체를 견준다
+  const allP = Object.keys(by).map(k => by[k]);
+  const roles = order.map(r => { const ps = allP.filter(p => p.roles.includes(r)); if (!ps.length) return null;
+    const met = ps.filter(p => p.vs.length && daysBetween(p.vs[0].ymd, t) <= GL_FAR).length;
+    return { role: r, total: ps.length, met, low: met * 2 < ps.length, weekly: w8.map(w => live.filter(v => v.ymd >= w.s && v.ymd <= w.e && v.allRoles.includes(r)).length) }; }).filter(Boolean);
+  // 심방 격자 — 끊긴 지 오래된 분부터
+  const grid = people.filter(p => p.vs.length).sort((a, b) => a.last.localeCompare(b.last) || a.name.localeCompare(b.name));
+  // 출석
+  const names = new Set(people.map(p => nameKey(p.name)));
+  const quiet = attQuiet(o.attend, t).filter(q => names.has(nameKey(q.name))), qk = new Set(quiet.map(q => nameKey(q.name)));
+  const attP = people.filter(p => p.at.length), changed = [], back = [], first = [];
+  attP.forEach(p => {
+    const k = nameKey(p.name), m3 = p.at.slice(0, 3).map(attMark), nl = m3.filter(x => x === 'l').length, nh = m3.filter(x => x === 'h').length;
+    if (!qk.has(k) && m3.length >= 2 && nl + nh >= 2) changed.push({ p, late: nl, early: nh });
+    if (p.attDays <= 7) { const prev = p.at.find(a => a.date < p.attLast); if (!prev) { if (p.at.length === 1) first.push(p); } else if (daysBetween(prev.date, p.attLast) >= GL_BACK_GAP) back.push({ p, gap: daysBetween(prev.date, p.attLast) }); }
+  });
+  const wsNow = w8[7].s, wsPrev = w8[6].s;
+  const attGrid = attP.slice().sort((a, b) => (qk.has(nameKey(b.name)) - qk.has(nameKey(a.name))) || a.attLast.localeCompare(b.attLast) || a.name.localeCompare(b.name));
+  const att = { quiet: quiet.map(q => ({ q, p: by[nameKey(q.name)] })), changed, back, first, grid: attGrid, weekN: w8.map((w, j) => attP.filter(p => p.att[j]).length),
+    now: attP.filter(p => p.attLast >= wsNow).length, prev: attP.filter(p => p.at.some(a => a.date >= wsPrev && a.date < wsNow)).length };
+  // 심방+출석 — 출석이 두 번 넘게 적힌 분만(평소 흐름이 있는 분)
+  const reg = attP.filter(p => p.at.length >= 2), q4 = { a: [], b: [], c: [], d: [] };
+  reg.forEach(p => { const qu = qk.has(nameKey(p.name)); q4[qu ? (p.recent ? 'b' : 'a') : (p.recent ? 'd' : 'c')].push(p); });
+  q4.a.sort((a, b) => a.attLast.localeCompare(b.attLast)); q4.b.sort((a, b) => a.attLast.localeCompare(b.attLast)); q4.c.sort((a, b) => (a.last || '').localeCompare(b.last || ''));
+  // 챙길 것
+  const urgent = [], acts = [], qs = [];
+  people.forEach(p => { const lv = p.vs.filter(v => !v.archived), pv = lv.find(v => norm(v.prio)); if (pv && pv.prio === '긴급') urgent.push({ p, v: pv }); });
+  const inRole = v => !role || v.allRoles.includes(role);
+  live.filter(inRole).forEach(v => {
+    v.actions.forEach((a, i) => { if (!a.done) acts.push({ v, a, i, days: daysBetween(v.ymd, t) }); });
+    ((((o.qn || {})[v.id] || {}).items) || []).forEach(q => { if (!q.done) qs.push({ v, t: q.t }); });
+  });
+  acts.sort((a, b) => b.days - a.days);
+  const end = ymdAdd(weekStartOf(t), 6);
+  const plans = (o.plans || []).filter(p => p.status === PLAN_ST.todo && (p.date || '') >= t && (p.date || '') <= end && (!role || whoKeys(p.name).some(n => names.has(nameKey(n)))))
+    .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+  const todo = { urgent, acts, qs, plans, oldest: acts.length ? acts[0].days : 0 };
+  return { role, people, map: { cnt, total: people.length, met: cnt.ok + cnt.mid, groups }, flow, roles, grid, far: grid.filter(p => p.band === 'old').length, att, both: q4, todo, visits: vs };
+}
 </script>
 
 <script>
@@ -3673,7 +3846,7 @@ document.addEventListener('visibilitychange', async () => {
 
 // ───────────────────────────── 화면 상태 ─────────────────────────────
 const S = { keep: new Set(), attTab: { type: 'atttab', form: {}, omenu: null, adding: null }, show: [], tvShut: {}, detOpen: {}, view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
-  wk: 0, mo: today().slice(0, 7), mday: today(), grp: 'dash', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
+  wk: 0, mo: today().slice(0, 7), mday: today(), gRole: '', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
 const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
 function M() { return DATA.model; }
 function V() { const L = filterVisits(M().visits, S.filt, S.quick, S.showArch, S.q); return S.show.length ? L.filter(v => onlyItems(v).length) : L; }
@@ -4533,66 +4706,155 @@ function hbars(rows) {
   const mx = Math.max(1, ...rows.map(r => r.n));
   return '<div class="hb">' + rows.map(r => '<div class="hr" data-tip="' + esc(r.tip) + '"><span class="k">' + r.lab + '</span><span class="tr"><i style="width:' + (r.n / mx * 100) + '%' + (r.c ? ';background:var(--' + r.c + ')' : '') + '"></i>' + (r.p != null ? '<b style="left:' + Math.min(100, r.p / mx * 100) + '%"></b>' : '') + '</span><span class="n">' + r.n + '</span></div>').join('') + '</div>';
 }
-function vDash(L) {
-  const t = today(), { last4, prev4 } = splitPeriods(L, t), pf = prefs();
-  const ppl = new Set([].concat(...last4.map(vWho))), deep = last4.filter(v => v.depthN === 3).length, acts = [].concat(...last4.map(v => v.actions));
-  const byT = countBy(last4, v => v.actions.map(a => a.t)), topT = Object.keys(byT).sort((a, b) => byT[b] - byT[a])[0], d = last4.length - prev4.length;
-  let h = '<div class="tiles">' +
-    '<div class="tile"><span class="l">최근 4주 심방</span><b>' + last4.length + '<small>번</small></b><span class="s">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + '그 전 4주 ' + prev4.length + '번</span></div>' +
-    '<div class="tile"><span class="l">만난 사람</span><b>' + ppl.size + '<small>명</small></b><span class="s">깊은 대화 ' + deep + '번</span></div>' +
-    '<button class="tile" data-act="grp" data-v="act"><span class="l">남은 할 일</span><b>' + [].concat(...L.filter(v => !v.archived).map(v => v.actions)).filter(a => !a.done).length + '<small>개</small></b><span class="s">최근 4주 적은 것 ' + acts.length + '개' + (topT ? ' · ' + esc(topT) + ' 최다' : '') + '</span></button></div>';
-  { const heard = last4.filter(v => v.basis === '전언').length; if (heard) h += '<p class="muted" style="margin:-4px 0 12px">최근 4주 기록 중 <span class="nx-heard">전해 들음</span> ' + heard + '건 — 본인에게 직접 듣지 않은 이야기입니다.</p>'; }   // 1112-N 6
-  h += '<div class="panel"><div class="pt"><b>주별 심방</b><span>최근 8주</span></div><div class="lg"><span><i style="background:var(--deep)"></i>깊음</span><span><i style="background:' + mixDeep(58) + '"></i>중간</span><span><i style="background:' + mixDeep(26) + '"></i>얕음</span></div>' + chartWeekly(L) + '</div>';
-  const FO = filterOptions(M().visits, DATA.opts), liveActs = [].concat(...L.filter(v => !v.archived).map(v => v.actions));
-  h += '<div class="panel"><div class="pt"><b>할 일</b><span>마친 것 / 전체 · 보관 기록 빼고</span></div><div class="prog">' + FO.act.map(t => {
-    const all = liveActs.filter(a => a.t === t), dn = all.filter(a => a.done).length; if (!all.length) return '';
-    return '<button class="pg" data-act="grp" data-v="act" data-tip="' + esc(t) + ' · 남은 ' + (all.length - dn) + ' · 마침 ' + dn + '"><span class="k"><i style="background:var(--' + (ACT_KIND[t] || 'k4') + ')"></i>' + esc(t) + '</span><span class="tr"><i style="width:' + (dn / all.length * 100) + '%;background:var(--' + (ACT_KIND[t] || 'k4') + ')"></i></span><span class="n">남은 <b>' + (all.length - dn) + '</b> · ' + dn + '/' + all.length + '</span></button>';
-  }).join('') + '</div></div>';
-  h += '<div class="panel"><div class="pt"><b>어느 구분을 만났나</b><span>최근 8주 · 진할수록 많이</span></div>' + chartHeat(L, FO.role) + '</div>';
-  const mc = countBy(last4, v => v.methodLabel);
-  const mr = Object.keys(mc).sort((a, b) => mc[b] - mc[a]).map(m => ({ lab: '<span class="meth">' + (MI[m] || MI['기타']) + esc(m) + '</span>', n: mc[m], tip: m + ' · ' + mc[m] + '번' }));
-  h += '<div class="panel"><div class="pt"><b>어떻게 만났나</b><span>최근 4주</span></div>' + (mr.length ? hbars(mr) : '<p class="empty">없습니다.</p>') + '</div>';
-  const tc = countBy(last4, v => v.allTags), tp = countBy(prev4, v => v.allTags);
-  const tr = Object.keys(Object.assign({}, tc, tp)).map(x => ({ lab: '#' + esc(x), n: tc[x] || 0, p: tp[x] || 0, tip: '#' + x + ' · 최근 4주 ' + (tc[x] || 0) + '번 · 그 전 4주 ' + (tp[x] || 0) + '번' })).sort((a, b) => b.n - a.n || b.p - a.p);
-  h += '<div class="panel"><div class="pt"><b>자주 나온 이야기</b><span>막대 최근 4주 · 세로선 그 전 4주</span></div>' + (tr.length ? hbars(tr) : '<p class="empty">없습니다.</p>') + '</div>';
-  const P = peopleList(M(), M().visits.filter(v => !v.archived), t, pf.stale).filter(p => p.stale).sort((a, b) => (a.last || '').localeCompare(b.last || ''));
-  h += '<div class="panel"><div class="pt"><b>' + Math.round(pf.stale / 7) + '주 넘게 못 만난 분</b><span>' + P.length + '명</span></div>' + (P.length ? P.slice(0, 8).map(p => '<button class="lrow" data-act="person" data-v="' + esc(p.name) + '" style="grid-template-columns:1fr auto"><span><b style="font-weight:500">' + nm(p.name) + '</b> <span class="roles">' + esc(p.roles.join(' · ')) + '</span></span><span style="color:var(--warn)">' + relDay(p.last, t) + '</span></button>').join('') : '<p class="empty">없습니다.</p>') + '</div>';
-  return h;
+// ── 1115-V 한눈에 = 요약 카드 첫 화면('다 · 묶어서 놓기') + 카드마다 펼친 겹 화면. 셈은 care-core glanceModel
+//   예전 '대시보드 · 할 일 · 속성별' 세 탭은 없다 — 할 일은 '챙길 것', 속성별은 '심방 흐름' 의 '무엇을 나눴나' 로 들어왔다.
+//   구분 알약(S.gRole)은 한눈에 안에서만 쓴다(깔때기 조건과 따로 — 다른 탭에 걸리지 않게, HB 11/15).
+let GLC = null;   // 한 번 그릴 때 한 번만 센다(render 가 비운다)
+const GL_CARDS = [['both', '심방+출석'], ['map', '돌봄 지도'], ['flow', '심방 흐름'], ['role', '구분 나란히'], ['vis', '심방 격자'], ['quiet', '안 보이는 분'], ['att', '출석 격자'], ['todo', '챙길 것']];
+function glRoles() { return filterOptions(M().visits, DATA.opts).role; }
+function GM() {
+  if (!GLC) { const roles = glRoles(); if (S.gRole && !roles.includes(S.gRole)) S.gRole = '';
+    GLC = glanceModel({ model: M(), visits: M().visits, attend: AT(), plans: DATA.plans, qn: DATA.qn, roster: DATA.roster, today: today(), stale: prefs().stale, role: S.gRole, roles }); }
+  return GLC;
 }
+function glChips() { return '<div class="gl-chips" data-noswipe>' + [''].concat(glRoles()).map(r => '<button data-act="grole" data-v="' + esc(r) + '" aria-pressed="' + (S.gRole === r) + '">' + esc(r || '전체') + '</button>').join('') + '</div>'; }
+function glWk(d) { return d >= 364 ? Math.floor(d / 364) + '년' : Math.max(1, Math.floor(d / 7)) + '주'; }
+// 작은 그림들 — 카드와 펼친 화면이 같은 것을 크기만 달리 쓴다
+function glDots(G, max) { const ps = [].concat(...G.map.groups.map(g => g.people)); return '<div class="gl-dots">' + ps.slice(0, max).map(p => '<i class="b-' + p.band + '"></i>').join('') + '</div>' + (ps.length > max ? '<small>+' + (ps.length - max) + '명</small>' : ''); }
+function glBars(G, h) { const mx = Math.max(1, ...G.flow.weekly.map(w => w.t)); return '<div class="gl-sp" style="height:' + h + 'px">' + G.flow.weekly.map(w => '<div>' + [[3, 'ok'], [2, 'mid'], [1, 'low'], [0, 'low']].map(x => w.c[x[0]] ? '<i class="b-' + x[1] + '" style="height:' + (w.c[x[0]] / mx * h) + 'px"></i>' : '').join('') + '</div>').join('') + '</div>'; }
+function glQuad(G) { const q = G.both; return '<div class="gl-q4"><span class="' + (q.a.length ? 'a' : '') + '">' + q.a.length + '</span><span class="b">' + q.b.length + '</span><span>' + q.c.length + '</span><span>' + q.d.length + '</span></div>'; }
+function glRoleBars(G, max) { return '<div class="gl-rb">' + G.roles.slice(0, max).map(r => '<span>' + esc(r.role) + '</span><span class="t"><i class="' + (r.low ? 'w' : '') + '" style="width:' + (r.met / r.total * 100) + '%"></i></span>').join('') + '</div>'; }
+function glMini(rows, n, f) { return rows.length ? '<div class="gl-gm" style="grid-template-columns:repeat(' + n + ',1fr)">' + rows.map(r => r.map(c => '<i class="' + f(c) + '"></i>').join('')).join('') + '</div>' : ''; }
+function glStrip(att) { return '<span class="gl-st">' + att.map(c => '<i class="' + (c ? (c === 'l' ? 'l' : c === 'h' ? 'h' : 'o') : '') + '"></i>').join('') + '</span>'; }
+const glV = c => c ? (c === 3 ? 'b-ok' : c === 2 ? 'b-mid' : 'b-low') : '', glA = c => c === 'l' ? 'b-warn' : c === 'h' ? 'b-mid' : c ? 'b-ok' : '';
+function glTodoBar(G) { const t = G.todo; return '<div class="gl-stk"><i class="b-red" style="flex:' + t.urgent.length + '"></i><i class="b-warn" style="flex:' + t.acts.length + '"></i><i class="b-mid" style="flex:' + t.qs.length + '"></i><i class="b-ok" style="flex:' + t.plans.length + '"></i></div>' +
+  '<div class="gl-lg"><span><i class="b-red"></i>급히 ' + t.urgent.length + '</span><span><i class="b-warn"></i>남은 할 일 ' + t.acts.length + '</span><span><i class="b-mid"></i>물어볼 것 ' + t.qs.length + '</span><span><i class="b-ok"></i>잡힌 심방 ' + t.plans.length + '</span></div>'; }
+function glCard(k, hd, g, sub, cls) { return '<button class="gl-cd ' + (cls || '') + '" data-act="gcard" data-v="' + k + '"><span class="l">' + GL_CARDS.find(c => c[0] === k)[1] + '<i>›</i></span><b class="hd">' + hd + '</b>' + (g ? '<span class="g">' + g + '</span>' : '') + (sub ? '<small>' + sub + '</small>' : '') + '</button>'; }
 function vCollect() {
-  let h = head('한눈에', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">';
-  h += '<div class="seg" role="group">' + [['dash', '대시보드'], ['act', '할 일'], ['attr', '속성별']].map(x => '<button data-act="grp" data-v="' + x[0] + '" aria-pressed="' + (S.grp === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' + fline();
-  const L = V();
-  if (S.grp === 'dash') return h + vDash(L) + '</div>' + nav();
-  if (S.grp === 'act') {
-    const FO = filterOptions(M().visits, DATA.opts); let nDone = 0, any = false;
-    FO.act.forEach(t => {
-      const items = [].concat(...L.map(v => v.actions.map((a, i) => ({ v, a, i })).filter(o => o.a.t === t)));
-      const open = items.filter(o => !o.a.done); nDone += items.length - open.length; if (!open.length) return; any = true;
-      h += '<div class="kgrp" style="--k:var(--' + (ACT_KIND[t] || 'k4') + ')"><h4>' + esc(t) + ' <em>남은 ' + open.length + '</em></h4>' + open.map(o => todoRow(o.v, o.a, o.i, true)).join('') + '</div>';
-    });
-    if (!any) h += '<p class="empty">남은 할 일이 없습니다.</p>';
-    if (nDone) {
-      h += '<button class="donefold" data-act="showdone">' + (S.showDone ? '마친 일 접기 ⌃' : '마친 일 ' + nDone + '개 보기 ⌄') + '</button>';
-      if (S.showDone) L.forEach(v => v.actions.forEach((a, i) => { if (a.done) h += todoRow(v, a, i, true); }));
-    }
-    return h + '</div>' + nav();
-  }
-  const ak2 = S.attrK, FO = filterOptions(M().visits, DATA.opts);
-  h += '<div class="opts" style="margin:4px 0 6px">' + [['tag', '태그'], ['role', '구분'], ['method', '방식'], ['depth', '깊이']].map(x => '<button class="opt" data-act="attrk" data-v="' + x[0] + '" aria-pressed="' + (ak2 === x[0]) + '">' + x[1] + '</button>').join('') + '</div>';
-  const pick = v => ak2 === 'tag' ? v.allTags : ak2 === 'role' ? v.allRoles : ak2 === 'method' ? [v.methodLabel] : [v.depthN];
-  let rows = FO[ak2].map(val => ({ val, vs: L.filter(v => pick(v).includes(val)) })).filter(r => r.vs.length);
-  if (ak2 !== 'depth') rows.sort((a, b) => b.vs.length - a.vs.length);
+  const G = GM(), f = G.flow, d = f.last4 - f.prev4, q = G.both, at = G.att, td = G.todo, hasAtt = AT().length > 0;
+  let h = head('한눈에', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">' + glChips();
+  // 맨 위 큰 카드 — 심방+출석
+  h += '<button class="gl-hero' + (q.a.length ? ' hot' : '') + '" data-act="gcard" data-v="both"><span><span class="l">심방+출석</span><b class="hd">' +
+    (!hasAtt ? '출석을 적으면<br>심방과 함께 보여 드립니다' : q.a.length ? '출석이 끊겼는데<br>아직 못 만난 분 <em>' + q.a.length + '명</em>' : '출석이 끊긴 분 가운데<br>못 만난 분이 없습니다') + '</b>' +
+    '<small>' + (q.a.length ? q.a.slice(0, 3).map(p => esc(p.name) + ' ' + glWk(p.attDays) + '째').join(' · ') + (q.a.length > 3 ? ' 외 ' + (q.a.length - 3) : '') : hasAtt ? '안 보이는 분 ' + at.quiet.length + '명' : '') + '</small></span>' +
+    '<span class="gq">' + glQuad(G) + '<small>출석 끊김 × 심방</small></span></button>';
+  h += '<div class="gl-sec">심방<small>보관 기록 빼고</small></div><div class="gl-cg">' +
+    glCard('map', G.map.total ? G.map.total + '명 중 <em>' + G.map.met + '명</em> 만남' : '아직 기록이 없습니다', glDots(G, 60), '8주 넘음 ' + G.map.cnt.old + ' · 기록 없음 ' + G.map.cnt.none) +
+    glCard('flow', '4주 <em>' + f.last4 + '번</em>' + (d > 0 ? ' ▲' + d : d < 0 ? ' ▼' + -d : ''), glBars(G, 34), f.up ? '#' + esc(f.up) + ' 늘어남' : '만난 사람 ' + f.met + '명') +
+    glCard('role', (lows => lows.length ? '<em>' + lows.slice(0, 2).map(r => esc(r.role)).join(' · ') + '</em>' + (lows.length > 2 ? ' 외 ' + (lows.length - 2) : '') + ' 비었음' : G.roles.length ? '고르게 만나고 있습니다' : '구분이 없습니다')(G.roles.filter(r => r.low)), glRoleBars(G, 5), G.roles.length > 5 ? '외 ' + (G.roles.length - 5) + '개 구분' : '') +
+    glCard('vis', '8주 넘게 끊긴 분 <em>' + G.far + '명</em>', glMini(G.grid.slice(0, 6).map(p => p.weeks), 12, glV), G.grid.length + '명 × 12주') + '</div>';
+  h += '<div class="gl-sec">출석<small>적힌 분 기준</small></div><div class="gl-cg">' +
+    glCard('quiet', '<em>' + at.quiet.length + '명</em> · 달라진 분 ' + at.changed.length, at.quiet.length ? '<span class="gl-sr">' + at.quiet.slice(0, 3).map(x => '<span>' + esc(x.q.name) + '</span>' + glStrip(x.p.att)).join('') + '</span>' : '', at.back.length ? '다시 보인 분 ' + at.back.length : '') +
+    glCard('att', '이번 주 <em>' + at.now + '명</em> 적음', glMini(at.grid.slice(0, 6).map(p => p.att), 8, glA), '지난주 ' + at.prev + '명') + '</div>';
+  h += '<div class="gl-sec">챙길 것</div><button class="gl-cd wide" data-act="gcard" data-v="todo"><span class="l">챙길 것<i>›</i></span><b class="hd">남은 할 일 <em>' + td.acts.length + '</em>' + (td.acts.length ? ' · 가장 오래된 ' + td.oldest + '일' : '') + '</b>' + glTodoBar(G) + '</button>';
+  return h + '</div>' + nav();
+}
+// ── 펼친 화면 ──
+function glRow(p, why, r, cls) { return '<button class="gl-row" data-act="person" data-v="' + esc(p.name) + '"><span><b>' + nm(p.name) + '</b> <small>' + esc(p.roles.join(' · ')) + '</small>' + (why ? '<span class="why">' + why + '</span>' : '') + '</span><span class="r ' + (cls || '') + '">' + r + '</span></button>'; }
+function glSec(t, s, c) { return '<div class="gl-hs ' + (c || '') + '">' + t + (s ? '<small>' + s + '</small>' : '') + '</div>'; }
+function glLast(p) { return p.last ? '심방 ' + relDay(p.last, today()) : '심방 기록 없음'; }
+function glRoleTable(G) {
+  if (!G.roles.length) return '<p class="empty">구분이 없습니다.</p>';
+  const mx = Math.max(1, ...[].concat(...G.roles.map(r => r.weekly)));
+  return '<div class="gl-cmp">' + G.roles.map(r => '<button data-act="grole" data-v="' + esc(r.role) + '" aria-pressed="' + (S.gRole === r.role) + '"><span>' + esc(r.role) + '</span><span class="s8">' + r.weekly.map(v => '<i style="height:' + (v / mx * 20) + 'px"></i>').join('') + '</span><span class="n' + (r.low ? ' w' : '') + '">' + r.met + '/' + r.total + '명</span></button>').join('') + '</div>';
+}
+function glAttrs(G) {   // 예전 '속성별' 탭 — 막대를 누르면 그 자리에서 사람 · 기록
+  const L = G.visits, ak = S.attrK, FO = filterOptions(M().visits, DATA.opts);
+  let h = '<div class="opts" style="margin:4px 0 6px">' + [['tag', '주제'], ['method', '방식'], ['depth', '깊이']].map(x => '<button class="opt" data-act="attrk" data-v="' + x[0] + '" aria-pressed="' + (ak === x[0]) + '">' + x[1] + '</button>').join('') + '</div>';
+  const pick = v => ak === 'tag' ? v.allTags : ak === 'method' ? [v.methodLabel] : [v.depthN];
+  let rows = (FO[ak] || []).map(val => ({ val, vs: L.filter(v => pick(v).includes(val)) })).filter(r => r.vs.length);
+  if (ak !== 'depth') rows.sort((a, b) => b.vs.length - a.vs.length);
   const mx = Math.max(1, ...rows.map(r => r.vs.length));
-  if (!rows.length) h += '<p class="empty">이 조건에 맞는 기록이 없습니다.</p>';
+  if (!rows.length) return h + '<p class="empty">기록이 없습니다.</p>';
   rows.forEach(r => {
-    const key = ak2 + ':' + r.val, op = !!S.gopen[key], ppl = new Set([].concat(...r.vs.map(vWho)));
-    const name = ak2 === 'depth' ? '<span style="display:inline-flex;gap:6px;align-items:center">' + dm(r.val) + DEPTH_NAME[r.val] + '</span>' : ak2 === 'tag' ? '#' + esc(r.val) : ak2 === 'method' ? '<span class="meth" style="font-size:14px;color:var(--tx)">' + (MI[r.val] || MI['기타']) + esc(r.val) + '</span>' : esc(r.val);
-    h += '<div class="brow"><button style="width:100%" data-act="gopen" data-v="' + esc(key) + '"><div class="t"><span>' + name + '</span><em>' + r.vs.length + '번 · ' + ppl.size + '명 ' + (op ? '⌃' : '⌄') + '</em></div><div class="bar"><i style="width:' + (r.vs.length / mx * 100) + '%"></i></div></button>';
-    if (op) h += '<div class="in">' + r.vs.map(v => '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + mdw(v.ymd) + '</span><span><b style="font-weight:500">' + whoHtml(v.name) + '</b> · ' + esc(visitPreview(v) || '(내용 없음)') + '</span></button>').join('') + '</div>';
+    const key = ak + ':' + r.val, op = !!S.gopen[key], pc = {}; r.vs.forEach(v => vWho(v).forEach(n => { pc[n] = (pc[n] || 0) + 1; }));
+    const name = ak === 'depth' ? '<span style="display:inline-flex;gap:6px;align-items:center">' + dm(r.val) + DEPTH_NAME[r.val] + '</span>' : ak === 'tag' ? '#' + esc(r.val) : '<span class="meth" style="font-size:14px;color:var(--tx)">' + (MI[r.val] || MI['기타']) + esc(r.val) + '</span>';
+    h += '<div class="brow"><button style="width:100%" data-act="gopen" data-v="' + esc(key) + '"><div class="t"><span>' + name + '</span><em>' + r.vs.length + '번 · ' + Object.keys(pc).length + '명 ' + (op ? '⌃' : '⌄') + '</em></div><div class="bar"><i style="width:' + (r.vs.length / mx * 100) + '%"></i></div></button>';
+    if (op) h += '<div class="in"><div class="gl-pills">' + Object.keys(pc).sort((a, b) => pc[b] - pc[a]).slice(0, 24).map(n => '<button data-act="person" data-v="' + esc(n) + '">' + nm(n) + ' <small>' + pc[n] + '</small></button>').join('') + '</div>' +
+      r.vs.slice(0, 30).map(v => '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + mdw(v.ymd) + '</span><span><b style="font-weight:500">' + whoHtml(v.name) + '</b> · ' + esc(visitPreview(v) || '(내용 없음)') + '</span></button>').join('') + (r.vs.length > 30 ? '<p class="muted">외 ' + (r.vs.length - 30) + '번</p>' : '') + '</div>';
     h += '</div>';
   });
-  return h + '</div>' + nav();
+  return h;
+}
+function glMatrix(ps, cols, heads, cell, right, cls) {
+  let h = '<div class="gl-mx ' + (cls || '') + '" style="grid-template-columns:minmax(52px,auto) repeat(' + cols + ',1fr) auto"><span></span>' + heads.map(x => '<span class="h">' + x + '</span>').join('') + '<span></span>';
+  ps.forEach(p => { h += '<button class="nm" data-act="person" data-v="' + esc(p.name) + '">' + nm(p.name) + '</button>' + cell(p).map(c => '<span class="c">' + c + '</span>').join('') + '<span class="fl">' + right(p) + '</span>'; });
+  return h + '</div>';
+}
+const GL_BODY = {
+  both(G) {
+    const q = G.both, t = today();
+    if (!AT().length) return '<p class="empty">아직 출석 기록이 없습니다. 출석 탭에 적으시면, 출석이 끊긴 분과 심방 기록을 여기서 함께 봅니다.</p>';
+    let h = '<div class="gl-quad"><div class="q1"><span>안 보임 · 심방 없음</span><b>' + q.a.length + '<i>명</i></b></div><div class="q2"><span>안 보임 · 최근 만남</span><b>' + q.b.length + '<i>명</i></b></div><div><span>잘 나옴 · 심방 오래됨</span><b>' + q.c.length + '<i>명</i></b></div><div><span>잘 나옴 · 최근 만남</span><b>' + q.d.length + '<i>명</i></b></div></div>' +
+      '<p class="muted">출석이 두 번 넘게 적힌 분만 셉니다. \'안 보임\' = ' + ATT_QUIET_DAYS / 7 + '주 넘게 안 적힘 · \'최근 만남\' = ' + Math.round(prefs().stale / 7) + '주 안에 심방.</p>';
+    const row = p => glRow(p, glStrip(p.att) + '출석 ' + glWk(p.attDays) + '째 없음', glLast(p), p.last ? '' : 'w');
+    h += glSec('먼저 볼 분', '출석이 끊겼고 못 만남 · ' + q.a.length, 'r') + (q.a.length ? q.a.map(row).join('') : '<p class="empty">없습니다.</p>');
+    if (q.b.length) h += glSec('출석은 끊겼지만 최근에 만난 분', q.b.length, 'w') + q.b.map(row).join('');
+    if (q.c.length) h += glSec('잘 나오지만 심방이 오래된 분', q.c.length) + q.c.slice(0, 30).map(p => glRow(p, glStrip(p.att) + '마지막 출석 ' + md(p.attLast), glLast(p))).join('');
+    return h;
+  },
+  map(G) {
+    const m = G.map, c = m.cnt;
+    if (!m.total) return '<p class="empty">아직 기록이 없습니다.</p>';
+    let h = '<div class="gl-say">' + m.total + '명 중 8주 안에 만난 분 <em>' + m.met + '명</em></div><div class="gl-cov"><i class="b-ok" style="flex:' + c.ok + '"></i><i class="b-mid" style="flex:' + c.mid + '"></i><i class="b-warn" style="flex:' + c.old + '"></i><i class="b-none" style="flex:' + c.none + '"></i></div>' +
+      '<div class="gl-lg"><span><i class="b-ok"></i>4주 안 ' + c.ok + '</span><span><i class="b-mid"></i>8주 안 ' + c.mid + '</span><span><i class="b-warn"></i>8주 넘음 ' + c.old + '</span><span><i class="b-none"></i>기록 없음 ' + c.none + '</span></div>';
+    m.groups.forEach(g => { h += '<div class="gl-gl"><b>' + esc(g.role || '구분 없음') + '</b><span>8주 안에 만남 ' + g.met + '/' + g.people.length + '</span></div><div class="gl-map">' + g.people.map(p => '<button class="b-' + p.band + '" data-act="person" data-v="' + esc(p.name) + '">' + esc(p.name) + '</button>').join('') + '</div>'; });
+    return h + '<p class="muted" style="margin-top:14px">이름을 누르면 그분 화면이 열립니다. \'기록 없음\' 은 시트 \'성도\' 탭이나 출석에만 있는 분입니다.</p>';
+  },
+  flow(G) {
+    const f = G.flow, d = f.last4 - f.prev4, heard = G.visits.filter(v => v.basis === '전언' && daysBetween(v.ymd, today()) < 28).length;
+    let h = '<div class="tiles"><div class="tile"><span class="l">최근 4주 심방</span><b>' + f.last4 + '<small>번</small></b><span class="s">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + '그 전 4주 ' + f.prev4 + '번</span></div>' +
+      '<div class="tile"><span class="l">만난 사람</span><b>' + f.met + '<small>명</small></b><span class="s">최근 4주</span></div><div class="tile"><span class="l">깊은 대화</span><b>' + f.deep + '<small>번</small></b><span class="s">최근 4주</span></div></div>';
+    if (heard) h += '<p class="muted" style="margin:-4px 0 12px">최근 4주 기록 중 <span class="nx-heard">전해 들음</span> ' + heard + '건 — 본인에게 직접 듣지 않은 이야기입니다.</p>';
+    h += '<div class="panel"><div class="pt"><b>주별 심방</b><span>최근 8주</span></div><div class="lg"><span><i style="background:var(--deep)"></i>깊음</span><span><i style="background:' + mixDeep(58) + '"></i>중간</span><span><i style="background:' + mixDeep(26) + '"></i>얕음</span></div>' + chartWeekly(G.visits) + '</div>';
+    h += '<div class="panel"><div class="pt"><b>구분 나란히</b><span>8주 흐름 · 8주 안에 만난 분</span></div>' + glRoleTable(G) + '</div>';
+    return h + '<div class="panel"><div class="pt"><b>무엇을 나눴나</b><span>보관 기록 빼고 · 누르면 펼침</span></div>' + glAttrs(G) + '</div>';
+  },
+  role(G) { return '<p class="muted">구분마다 지난 8주의 심방 흐름과, 그 구분 성도 가운데 8주 안에 만난 분입니다. 절반에 못 미치면 주황으로 보입니다. 줄을 누르면 한눈에 전체를 그 구분으로 봅니다.</p>' + glRoleTable(G); },
+  vis(G) {
+    if (!G.grid.length) return '<p class="empty">아직 기록이 없습니다.</p>';
+    const ws = weeksBack(12, today()), n = S.glN || 60;
+    return '<div class="gl-lg"><span>점이 클수록 깊은 대화</span><span>끊긴 지 오래된 분부터</span></div>' +
+      glMatrix(G.grid.slice(0, n), 12, ws.map((w, j) => w.now ? '이번' : j % 4 === 0 ? md(w.s) : ''), p => p.weeks.map(c => c ? '<i class="d' + c + '"></i>' : ''), p => p.band === 'old' ? '<em>' + glWk(p.days) + '</em>' : '') +
+      (G.grid.length > n ? '<button class="send" data-act="glmore" style="margin-top:10px">더 보기 (' + (G.grid.length - n) + ')</button>' : '');
+  },
+  quiet(G) {
+    const a = G.att;
+    if (!AT().length) return '<p class="empty">아직 출석 기록이 없습니다.</p>';
+    let h = '<div class="gl-lg"><span>점 = 최근 8주 (오른쪽이 이번 주)</span><span><i class="b-warn" style="border-radius:50%"></i>늦게 옴</span><span><i class="b-mid" style="border-radius:50%"></i>일찍 감</span></div>';
+    h += glSec('늘 오던 분이 안 보임', ATT_QUIET_DAYS / 7 + '주 넘게 · ' + a.quiet.length, 'w') + (a.quiet.length ? a.quiet.map(x => glRow(x.p, glStrip(x.p.att) + '마지막 ' + md(x.q.last) + (x.q.svc ? ' ' + esc(x.q.svc) : ''), glWk(x.q.days) + '째', x.q.days >= 28 ? 'd' : 'w')).join('') : '<p class="empty">없습니다.</p>');
+    if (a.changed.length) h += glSec('달라진 모습', '최근 3번') + a.changed.map(x => glRow(x.p, glStrip(x.p.att) + (x.late ? '늦게 옴 ' + x.late + '번' : '') + (x.late && x.early ? ' · ' : '') + (x.early ? '일찍 감 ' + x.early + '번' : ''), md(x.p.attLast))).join('');
+    if (a.back.length || a.first.length) h += glSec('반가운 소식', '지난 7일', 'g') + a.back.map(x => glRow(x.p, glStrip(x.p.att) + glWk(x.gap) + ' 만에 다시 보임', md(x.p.attLast))).join('') + a.first.map(p => glRow(p, glStrip(p.att) + '처음 적힌 분', md(p.attLast))).join('');
+    return h;
+  },
+  att(G) {
+    const a = G.att, ws = weeksBack(8, today()), n = S.glN || 60;
+    if (!a.grid.length) return '<p class="empty">아직 출석 기록이 없습니다.</p>';
+    return '<div class="gl-lg"><span><i class="b-ok" style="border-radius:50%"></i>왔음</span><span><i class="b-warn" style="border-radius:50%"></i>늦게 옴</span><span><i class="b-mid" style="border-radius:50%"></i>일찍 감</span><span>안 보이는 분부터</span></div>' +
+      glMatrix(a.grid.slice(0, n), 8, ws.map(w => w.now ? '이번' : md(w.s)), p => p.att.map(c => c ? '<i class="a' + c + '"></i>' : ''), () => '', 'att') +
+      '<div class="gl-mx att" style="grid-template-columns:minmax(52px,auto) repeat(8,1fr) auto"><span class="nm" style="color:var(--tx3)">적힌 분</span>' + a.weekN.map(x => '<span class="h" style="font-size:11px">' + x + '</span>').join('') + '<span></span></div>' +
+      (a.grid.length > n ? '<button class="send" data-act="glmore" style="margin-top:10px">더 보기 (' + (a.grid.length - n) + ')</button>' : '') +
+      '<p class="muted" style="margin-top:12px">출석 탭에 적힌 것만 보입니다. 빈 칸은 \'안 적힘\' 이지 결석이 아닐 수 있습니다.</p>';
+  },
+  todo(G) {
+    const t = G.todo; let h = glTodoBar(G);
+    if (t.urgent.length) h += glSec('급히', "우선순위 '긴급' · " + t.urgent.length, 'r') + t.urgent.map(u => '<button class="gl-row" data-act="open" data-v="' + esc(u.v.key) + '"><span><b>' + nm(u.p.name) + '</b> <small>' + esc(u.p.roles.join(' · ')) + '</small><span class="why">' + esc(u.v.core || visitPreview(u.v) || '') + '</span></span><span class="r">' + relDay(u.v.ymd, today()) + '</span></button>').join('');
+    h += glSec('약속한 일', '남은 ' + t.acts.length + ' · 사람별 · 오래된 순', 'w');
+    if (!t.acts.length) h += '<p class="empty">남은 할 일이 없습니다.</p>';
+    const by = [], ix = {}; t.acts.forEach(x => { const n = whoShort(x.v.name); if (ix[n] == null) { ix[n] = by.length; by.push({ n, xs: [] }); } by[ix[n]].xs.push(x); });
+    by.forEach(g => { h += '<div class="kgrp gl-pg"><h4>' + esc(g.n) + ' <em>남은 ' + g.xs.length + ' · ' + g.xs[0].days + '일 지남</em></h4>' + g.xs.map(x => todoRow(x.v, x.a, x.i, false)).join('') + '</div>'; });
+    const done = []; G.visits.forEach(v => v.actions.forEach((a, i) => { if (a.done) done.push([v, a, i]); }));
+    if (done.length) { h += '<button class="donefold" data-act="showdone">' + (S.showDone ? '마친 일 접기 ⌃' : '마친 일 ' + done.length + '개 보기 ⌄') + '</button>'; if (S.showDone) h += done.map(x => todoRow(x[0], x[1], x[2], true)).join(''); }
+    if (t.qs.length) h += glSec('물어볼 것', '다음 심방 질문 · 아직 안 물은 것 ' + t.qs.length) + t.qs.slice(0, 40).map(q => '<button class="gl-row" data-act="open" data-v="' + esc(q.v.key) + '"><span><b>' + esc(whoShort(q.v.name)) + '</b><span class="why">' + esc(q.t) + '</span></span><span class="r">' + md(q.v.ymd) + ' 심방</span></button>').join('');
+    h += glSec('이번 주 잡힌 심방', t.plans.length, 'g') + (t.plans.length ? t.plans.map(p => '<button class="gl-row" data-act="person" data-v="' + esc(whoKeys(p.name)[0] || p.name) + '"><span><b>' + esc(whoShort(p.name)) + '</b>' + (norm(p.why) ? '<span class="why">물어볼 것 ' + qnParse(p.why).length + '</span>' : '') + '</span><span class="r">' + mdw(p.date) + (p.time ? ' ' + esc(p.time) : '') + '</span></button>').join('') : '<p class="empty">없습니다.</p>');
+    return h;
+  },
+};
+function glNeighbors(k) { const i = GL_CARDS.findIndex(c => c[0] === k); return { prev: i > 0 ? GL_CARDS[i - 1][0] : '', next: i >= 0 && i < GL_CARDS.length - 1 ? GL_CARDS[i + 1][0] : '' }; }
+function lGlance(L) {
+  const c = GL_CARDS.find(x => x[0] === L.key) || GL_CARDS[0], nb = glNeighbors(c[0]), ti = k => GL_CARDS.find(x => x[0] === k)[1];
+  return lhead(c[1], L) + '<div class="ph-body">' + glChips() + GL_BODY[c[0]](GM(), L) +
+    '<div class="gl-nav">' + (nb.prev ? '<button data-act="gnav" data-v="' + nb.prev + '" data-k="-1">‹ ' + ti(nb.prev) + '</button>' : '<span></span>') + (nb.next ? '<button data-act="gnav" data-v="' + nb.next + '" data-k="1">' + ti(nb.next) + ' ›</button>' : '<span></span>') + '</div></div>';
 }
 
 // ───────────────────────────── 새 기록 · 고치기 (겹 화면) ─────────────────────────────
@@ -5616,7 +5878,7 @@ function sheetHtml() {
     }).join('') + '</div></div>';
     h += '</div>';
   });
-  return h + '<div class="sh-foot"><button class="btn pri" data-act="unsheet">' + V().length + '개 기록 보기</button><div class="hint">기록 · 성도 · 달력 · 한눈에가 같은 조건을 씁니다</div></div></div>';
+  return h + '<div class="sh-foot"><button class="btn pri" data-act="unsheet">' + V().length + '개 기록 보기</button><div class="hint">기록 · 성도 · 달력이 같은 조건을 씁니다</div></div></div>';
 }
 
 // ───────────────────────────── 들어오기 전 화면 (로그인 · 연결 · 고르기) ─────────────────────────────
@@ -5667,12 +5929,12 @@ addEventListener('resize', () => { if (document.querySelector('.sk-c')) skFrame(
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, inbox: lInbox, meet: lMeet };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, glance: lGlance, inbox: lInbox, meet: lMeet };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
   const app = $('app'), lay = $('layers');
-  CANDS = null;
+  CANDS = null; GLC = null;
   { let tb = $('trialBar'); const on = USER && trialOn(); if (on && !tb) { tb = document.createElement('div'); tb.id = 'trialBar'; tb.className = 'trialbar'; document.body.appendChild(tb); } if (tb) { tb.hidden = !on; if (on) tb.textContent = '시험 시트 · ' + (saved().sheet.name || ''); } }   // 1112-N 시험 시트 띠 — 어느 화면에서든(불러오는 중에도) 먼저
   if (!ready()) { app.innerHTML = gate(); lay.innerHTML = ''; skFrame(app); if (EARLY && !app.querySelector('.sk')) EARLY = null; return; }
   const y = window.scrollY, foc = document.activeElement && document.activeElement.id === 'q';  // (찾기 칸은 searchInput 이 따로 다룬다 — 여기는 다른 단추를 눌렀을 때)
@@ -6098,7 +6360,10 @@ document.addEventListener('click', e => {
   else if (a === 'lmode') { save({ lmode: listMode() === 'brief' ? 'full' : 'brief' }); render(); const vl = $('vlist'); if (vl && !RM.matches) vl.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' }); return; }
   else if (a === 'arch') { S.showArch = !S.showArch; toast(S.showArch ? '보관 기록도 함께 봅니다' : '보관 기록을 다시 감춥니다'); }
   else if (a === 'mday') S.mday = v;
-  else if (a === 'grp') { S.grp = v; if (S.view !== 'collect') { goTab('collect'); return; } }
+  else if (a === 'grole') { S.gRole = S.gRole === v ? '' : v; if (!v) S.gRole = ''; }
+  else if (a === 'gcard') { S.glN = 0; openLayer('glance', { key: v }); return; }
+  else if (a === 'gnav') { const el = $('layers').lastElementChild; if (el && topLayer().type === 'glance') { S.glN = 0; detGo(el, v, +k || 1); } return; }
+  else if (a === 'glmore') S.glN = (S.glN || 60) + 60;
   else if (a === 'attrk') S.attrK = v;
   else if (a === 'gopen') S.gopen[v] = !S.gopen[v];
   else if (a === 'showdone') S.showDone = !S.showDone;
@@ -6168,7 +6433,7 @@ document.addEventListener('touchstart', e => {
   const el = e.target.closest && e.target.closest('#layers > .layer'); if (!el || el !== $('layers').lastElementChild || e.touches.length !== 1) return;
   if (e.target.closest('input,textarea,.pills,.omenu,.rlist')) return;
   const t = e.touches[0], head = e.target.closest('.ph-head');
-  const top = topLayer(), nav = top && top.type === 'detail' && !e.target.closest('.sugg,[data-noswipe]');   // 1113-E 2 열람: 옆으로 밀면 이전 · 다음 기록
+  const top = topLayer(), nav = top && (top.type === 'detail' || top.type === 'glance') && !e.target.closest('.sugg,[data-noswipe]');   // 1113-E 2 열람: 옆으로 밀면 이전 · 다음 기록
   const mode = t.clientX <= 24 ? 'x' : (head || el.scrollTop <= 0) && !e.target.closest('.sugg,[data-noswipe]') ? (nav ? 'hy' : 'y') : nav ? 'h' : '';   // 1113-D A 머리줄 · 또는 맨 위에 올려 둔 때면 어디서든
   if (!mode) return;
   Object.assign(SW, { el, mode, x0: t.clientX, y0: t.clientY, t0: Date.now(), d: 0, on: false });
@@ -6201,7 +6466,8 @@ document.addEventListener('touchend', () => {
 document.addEventListener('touchcancel', () => { if (SW.el && SW.on) { if (SW.mode === 'h') detGo(SW.el, null, 0); else swEnd(SW.el, false); } SW.el = null; });
 // 1113-E 2 열람 화면의 이전 · 다음 — 목록에 보이는 차례(V()) 그대로. 목록 밖에서 연 기록이면 모든 기록 차례
 function detNeighbors() {
-  const L = topLayer(); if (!L || L.type !== 'detail') return {};
+  const L = topLayer(); if (L && L.type === 'glance') return glNeighbors(L.key);   // 1115-V 한눈에 카드끼리도 옆으로
+  if (!L || L.type !== 'detail') return {};
   let list = V(); if (!list.some(v => v.key === L.key)) list = M().visits.filter(v => !v.archived || v.key === L.key);
   const i = list.findIndex(v => v.key === L.key); return i < 0 ? {} : { prev: list[i - 1] ? list[i - 1].key : '', next: list[i + 1] ? list[i + 1].key : '' };
 }
