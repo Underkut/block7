@@ -162,7 +162,7 @@ async function route(r) {
     return json({});
   }
   let mm;
-  if ((mm = p.match(/^\/values\/(.+):clear$/))) { const m2 = decodeURIComponent(mm[1]).match(/^'((?:[^']|'')*)'!A(\d+):B$/), T = tab(m2[1]); for (let i = +m2[2] - 1; i < T.rows.length; i++) { if (T.rows[i]) { T.rows[i][0] = ''; T.rows[i][1] = ''; } } LOG.push(['clear', m2[1], +m2[2]]); return json({}); }
+  if ((mm = p.match(/^\/values\/(.+):clear$/))) { const m2 = decodeURIComponent(mm[1]).match(/^'((?:[^']|'')*)'!A(\d+):[BC]$/), T = tab(m2[1]); for (let i = +m2[2] - 1; i < T.rows.length; i++) { if (T.rows[i]) { T.rows[i][0] = ''; T.rows[i][1] = ''; T.rows[i][2] = ''; } } LOG.push(['clear', m2[1], +m2[2]]); return json({}); }
   if ((mm = p.match(/^\/values\/(.+):append$/))) { const R = parseRange(mm[1]);
     if (HOOK.failAppend && R.title === HOOK.failAppend) { HOOK.failAppend = ''; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
     body.values.forEach(v => { tab(R.title).rows.push(v.slice()); LOG.push(['append', R.title, v]); }); return json({}); }
@@ -767,13 +767,25 @@ async function route(r) {
   // 끌어 옮기기 (마우스: 바로 끌기) — '새벽기도' 를 맨 앞으로
   await page.click('.fab[data-act="attadd"]'); await tidy();
   const box = async v => { const r = await page.$eval(LY + ' [data-act="aone"][data-k="svc"][data-v="' + v + '"]', e => { const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }); return r; };
+  const svc0 = await page.evaluate(() => topLayer().form.svc);
   const [sx, sy] = await box('새벽기도'), [tx, ty] = await box('주일 1부');
   await page.mouse.move(sx, sy); await page.mouse.down(); await page.mouse.move(sx + 10, sy, { steps: 3 }); await page.mouse.move(tx - 8, ty, { steps: 12 }); await page.mouse.up(); await page.waitForTimeout(1200);
   eq('⑳ 끌어 옮기면 순서가 탭에 그대로', OT().slice(0, 2), ['새벽기도', '주일 1부']);
-  eq('⑳ 끌기는 고르기가 아니다(눌린 것 없음)', await page.$$eval(LY + ' [data-act="aone"][data-k="svc"][aria-pressed="true"]', x => x.length), 0);
+  eq('⑳ 끌기는 고르기가 아니다(눌린 것은 열 때 저절로 고른 그대로 — 1115)', await page.$$eval(LY + ' [data-act="aone"][data-k="svc"][aria-pressed="true"]', x => x.map(e => e.dataset.v)), [svc0].filter(Boolean));
   // 오른쪽 단추 → 메뉴 → 이름 바꾸기 · 지우기
   await page.click(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"]', { button: 'right' }); await page.waitForTimeout(300);
-  eq('⑳ 오른쪽 단추 = 메뉴', await page.$$eval(LY + ' .omenu button', x => x.map(e => e.textContent)), ['이름 바꾸기', '지우기', '취소']);
+  eq('⑳ 오른쪽 단추 = 메뉴 (예배 · 모임은 요일 · 시간도 — 1115)', await page.$$eval(LY + ' .omenu button', x => x.map(e => e.textContent)), ['이름 바꾸기', '요일 · 시간', '지우기', '취소']);
+  // ㊺ (1115) 요일 · 시작 · 마침 → 탭 셋째 열 · 알약에 작게 · 다음 출석 입력은 그 시간이면 그 알약
+  await page.click(LY + ' .omenu [data-act="aopttime"]'); await page.waitForTimeout(200);
+  const nowD = await page.evaluate(() => new Date().getDay());
+  await page.click(LY + ' .omenu [data-act="aopttd"][data-v="' + nowD + '"]'); await page.waitForTimeout(150);
+  await page.fill(LY + ' .omenu [data-omt="s"]', '00:00'); await page.fill(LY + ' .omenu [data-omt="e"]', '23:59');
+  await page.click(LY + ' .omenu [data-act="aopttsave"]'); await page.waitForTimeout(1200);
+  const TT = () => (tab('출석 선택지') || { rows: [] }).rows.find(r => r[0] === '예배 · 모임' && r[1] === '새벽기도');
+  eq('㊺ 시간 저장 → 탭 셋째 열 · 머리글 시간', [tab('출석 선택지').rows[0][2], TT()[2]], ['시간', ['일', '월', '화', '수', '목', '금', '토'][nowD] + ' 00:00~23:59']);
+  eq('㊺ 알약에 시간이 작게', await page.$eval(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"] .otm', e => e.textContent), ['일', '월', '화', '수', '목', '금', '토'][nowD] + ' 00:00~23:59');
+  eq('㊺ 지금 열면 그 알약 · 시간 없으면 시간 없는 맨 앞', await page.evaluate(() => [svcPick(ATTO(), new Date()), svcPick(ATTO(), new Date(Date.now() + 864e5)) === ATTO().svc.find(v => !(ATTO().svcTime || {})[v])]), ['새벽기도', true]);
+  await page.click(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"]', { button: 'right' }); await page.waitForTimeout(300);
   await page.evaluate(() => { window.prompt = () => '새벽 기도회'; });
   await page.click(LY + ' [data-act="aoptren"]'); await page.waitForTimeout(1200);
   eq('⑳ 이름 바꾸기 → 탭에서도', OT().slice(0, 1), ['새벽 기도회']);
