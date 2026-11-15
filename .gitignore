@@ -13,3 +13,4 @@ gcal-functions/src/node_modules/
 # 보안 규칙 시험(에뮬레이터) — npm install 로 생기는 것 (tests/rules/README 참고)
 tests/rules/node_modules/
 tests/rules/package*.json
+tests/rules/*.log
