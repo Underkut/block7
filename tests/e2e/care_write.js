@@ -543,7 +543,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
   const AT_ = () => tab('출석').rows, tH = () => AT_()[0], tc = (r, k) => r[tH().indexOf(k)];
   const todayK = await page.evaluate(() => today());
-  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '섬김', '메모', '적은 시각']);
+  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '섬김', '메모', '적은 시각', '구분']);
   eq('⑮ 한 줄 — 이름 · 예배 · 모임 · 자리 · 날짜(오늘) · 출석ID', AT_().slice(1).map(r => [tc(r, '성도'), tc(r, '예배 · 모임'), tc(r, '자리'), tc(r, '날짜') === todayK, /^T/.test(tc(r, '출석ID'))]), [['새손님', '개인 기도', '기도실', true, true]]);
   eq('⑮ (시험 준비) 머머머는 심방 기록이 있는 분', await page.evaluate(() => !!M().people['머머머']), true);
   await page.click('.ph-head [data-act="attpaste"]'); await tidy();
@@ -817,6 +817,36 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   eq('⑳ 누르자마자 움직이면(화면 굴리기) 메뉴도 끌기도 아니다', await page.$$eval(LY + ' .omenu', x => x.length), 0);
   eq('⑳ 지난 출석 기록은 그대로', tab('출석').rows.slice(nR).map(r => r[col('예배 · 모임')]), ['새벽기도', '새벽기도']);
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  }
+
+  // ㊽ (1115-4) 출석 입력 '구분'(속성 탭과 같은 알약 · 그분 심방 구분으로 미리) · '혼자' 체크 → 함께 칸 '혼자' · 결과 글 '혼자'
+  {
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  const LY = '.layer:last-child';
+  await page.evaluate(() => openAttEdit(null, '머머머')); await tidy();
+  const want = await page.evaluate(() => { const RO = attRoleBase(); return (M().people['머머머'].roles || []).filter(r => RO.includes(r)); });
+  eq('㊽ 구분 알약이 속성 탭 것 그대로 · 그분 심방 구분이 미리 골라짐', [await page.$$eval(LY + ' .pills[data-k="roles"] [data-act="ftog"]', x => x.map(e => e.dataset.v)), await page.$$eval(LY + ' .pills[data-k="roles"] [aria-pressed="true"]', x => x.map(e => e.dataset.v))],
+    [await page.evaluate(() => attRoleBase()), want]);
+  for (const v of want) await page.click(LY + ' .pills[data-k="roles"] [data-v="' + v + '"]');
+  await page.click(LY + ' .pills[data-k="roles"] [data-v="청년부"]');
+  await page.click(LY + ' [data-act="attsolo"]'); await page.waitForTimeout(200);
+  eq("㊽ '혼자' 를 켜면 함께 알약은 안 골린 채 옅게", [await page.evaluate(() => topLayer().form.with), await page.$$eval(LY + ' .pills[data-k="with"] [aria-pressed="true"]', x => x.length), await page.$$eval(LY + ' .pills.dim[data-k="with"]', x => x.length)], ['혼자', 0, 1]);
+  const nR = tab('출석').rows.length;
+  await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
+  const H = tab('출석').rows[0], r = tab('출석').rows[nR] || [];
+  eq("㊽ 저장 — 구분 칸 · 함께 칸 '혼자'", [r[H.indexOf('성도')], r[H.indexOf('구분')], r[H.indexOf('함께')]], ['머머머', '청년부', '혼자']);
+  const id = r[H.indexOf('출석ID')];
+  eq("㊽ 결과 글은 '혼자 함께' 가 아니라 '혼자'", await page.evaluate(id => attSub(AT().find(a => a.id === id)).split(' · ').filter(x => x === '청년부' || /혼자|함께/.test(x)), id), ['청년부', '혼자']);
+  // 예전 탭(구분 머리글 없음)에서 고치기 → 머리글을 오른쪽 끝에 더하고 그 칸에 쓴다
+  { const rows = tab('출석').rows, c = rows[0].indexOf('구분'); rows.forEach(x => x.splice(c, 1)); }
+  await page.evaluate(() => loadData(true)); await page.waitForTimeout(1200);
+  await page.evaluate(id => openAttEdit(id), id); await tidy();
+  eq('㊽ 예전 탭 — 구분은 빈 채로 열린다 · 혼자 체크는 그대로', [await page.$$eval(LY + ' .pills[data-k="roles"] [aria-pressed="true"]', x => x.length), await page.$eval(LY + ' [data-act="attsolo"]', e => e.checked)], [0, true]);
+  await page.click(LY + ' .pills[data-k="roles"] [data-v="장년부"]');
+  await page.click(LY + ' [data-act="attsolo"]'); await page.waitForTimeout(200);
+  await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
+  const H3 = tab('출석').rows[0], r3 = tab('출석').rows.find(x => x[H3.indexOf('출석ID')] === id);
+  eq("㊽ 고치기 — '구분' 머리글이 끝에 생기고 · 그 칸에 · 혼자를 끄면 함께는 빈칸", [H3[H3.length - 1], r3[H3.indexOf('구분')], r3[H3.indexOf('함께')]], ['구분', '장년부', '']);
   }
 
   // ㉒ (1108-B4) 달력에 출석 켜고 끄기

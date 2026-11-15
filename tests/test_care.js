@@ -51,7 +51,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT, glanceModel, attMark,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attWithText, attRoleList, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
@@ -1180,6 +1180,18 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊼ 구분 나란히는 알약과 상관없이 전체', R.roles.length, 2);
   sc.eq('㊼ 빈 자료여도 죽지 않는다', A.glanceModel({ today: T }).map.total, 0);
   sc.eq('㊼ 출석 표시 — 늦게 l · 일찍 h · 그 밖 o', [A.attMark({ from: '헌금부터' }), A.attMark({ to: '중간에 나감' }), A.attMark({ from: '찬양 중', to: '끝까지' })], ['l', 'h', 'o']);
+}
+
+// ㊽ 1115-4 출석 '구분' · '혼자' — 이름은 지어낸 것
+{
+  sc.eq("㊽ 출석 탭 머리글에 '구분'", A.ATT_HEAD.includes('구분'), true);
+  const P = A.parseAttend([['출석ID', '성도', '날짜', '구분', '함께'], ['T1', '가나다', '2026-11-15', '청년부, 새가족', '혼자']]);
+  sc.eq("㊽ 구분 읽기 · 함께 '혼자'", [P[0].role, P[0].with], ['청년부, 새가족', '혼자']);
+  sc.eq('㊽ 구분 쓰기 — 머리글 자리대로', J(A.attRow(['성도', '구분'], { name: '가나다', role: '장년부' })), ['가나다', '장년부']);
+  sc.eq('㊽ 구분만 바꾸면 그 칸만', J(A.attPatch(P[0], Object.assign({}, P[0], { role: '청년부' }))), { '구분': '청년부' });
+  sc.eq('㊽ 구분 목록 — 알약 + 직접 적기(쉼표) · 겹침 빼기', A.attRoleList(['청년부'], '새가족, 청년부 ,'), ['청년부', '새가족']);
+  sc.eq("㊽ 결과 글 — '혼자' 는 그대로, 그 밖은 'ㅇㅇ 함께'", [A.attWithText('혼자'), A.attWithText('아내'), A.attWithText('')], ['혼자', '아내 함께', '']);
+  sc.eq("㊽ '혼자' 는 함께 알약 기본값에 끼지 않는다", A.attOptDefaults([{ with: '혼자' }, { with: '혼자' }, { with: '아내' }]).with, ['아내']);
 }
 
 sc.done();
