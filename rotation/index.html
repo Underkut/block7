@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1114-11 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · 부산 입력 A안(요약 + 항목마다 판 · 저장 단추) -->
+<!-- 교역자 로테이션 v. 26-1115-1 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R6a 함께 쓰는 길(팀 이메일 · 교역자 칸 · 받아들이기) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -342,7 +342,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1114-11';
+const APP_VERSION = 'v. 26-1115-1';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 예배 — off: 그 주 주일에서 며칠 뒤인가. ⚠️ 모든 주간은 **주일에 시작**한다(HB 11/14): 주일 → 화 → 수 → 금 → 토
 const SVC = {
@@ -408,6 +408,11 @@ const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 const num = (v) => (typeof v === 'number' && isFinite(v) && v > 0 ? Math.floor(v) : 0);
 const ids = (v) => (Array.isArray(v) ? [...new Set(v.filter(x => typeof x === 'string' && x).map(x => x.slice(0, 40)))].slice(0, 6) : []);
 function base(o) { const b = { id: str(o.id, 80), at: num(o.at), by: str(o.by, 64) }; if (o.del) b.del = true; return b; }
+function ranges(v) { return (Array.isArray(v) ? v : []).filter(x => x && isYmd(x.from) && isYmd(x.to || x.from)).map(x => { const a = { from: x.from, to: x.to && x.to >= x.from ? x.to : x.from }; const n = str(x.note, 40); if (n) a.note = n; return a; })
+    .sort((a, c) => (a.from < c.from ? -1 : 1)).slice(-40); }
+/* 칸마다 고친 때 (R6): 줄 전체의 at 으로 겨루면 HB 가 같은 방문의 메모만 고쳐도 교역자가 적은 숙소가 밀린다.
+   그래서 교역자도 적는 칸(숙소 · 교통 · 부재 · 가능 일정)은 따로 f+'At'(고친 때) · f+'By'(교역자가 적었으면 그 사람 id) 를 둔다. */
+function fieldStamp(b, o, f) { const at = num(o[f + 'At']); if (at) { b[f + 'At'] = at; const by = str(o[f + 'By'], 40); if (by) b[f + 'By'] = by; } }
 function normPerson(o) {
   if (!o || typeof o !== 'object' || !str(o.id, 80)) return null;
   const b = base(o); if (b.del) return b;
@@ -416,9 +421,8 @@ function normPerson(o) {
   const al = Array.isArray(o.alias) ? [...new Set(o.alias.map(x => str(x, 30)).filter(Boolean))].slice(0, 6) : [];
   if (al.length) b.alias = al;   // 시트에 다르게 적힌 이름 (글 → 사람 옮기기에 씀)
   const em = str(o.email, 80).toLowerCase(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) b.email = em;   // 로그인 계정 (내 일정 · R6)
-  const aw = (Array.isArray(o.away) ? o.away : []).filter(x => x && isYmd(x.from) && isYmd(x.to || x.from)).map(x => { const a = { from: x.from, to: x.to && x.to >= x.from ? x.to : x.from }; const n = str(x.note, 40); if (n) a.note = n; return a; })
-    .sort((a, c) => (a.from < c.from ? -1 : 1)).slice(-40);
-  if (aw.length) b.away = aw;
+  // 부재(away) · 가능 일정(can, R6) — 같은 모양: 기간 + 까닭. 칸마다 고친 때(awayAt · canAt)와 누가(awayBy · canBy, 교역자가 적었으면 그 사람 id)
+  for (const f of ['away', 'can']) { const r = ranges(o[f]); if (r.length) b[f] = r; fieldStamp(b, o, f); }
   const pin = Array.isArray(o.pin) ? [...new Set(o.pin.map(t => str(t, 20)).filter(Boolean))].slice(0, 6) : [];
   if (pin.length) b.pin = pin;
   b.roles = Array.isArray(o.roles) ? Object.keys(PROLES).filter(r => o.roles.includes(r)) : [];
@@ -477,6 +481,7 @@ function normVisit(o) {
   b.who = ids(o.who); b.days = normDays(o.days); b.fri = !!o.fri;
   b.stay = (Array.isArray(o.stay) ? o.stay : []).map(normStay).filter(Boolean).slice(0, 8);
   b.travel = (Array.isArray(o.travel) ? o.travel : []).map(normTravel).filter(Boolean).slice(0, 8);
+  fieldStamp(b, o, 'stay'); fieldStamp(b, o, 'travel');
   for (const k of ['staff', 'group', 'edu']) b[k] = str(o[k], 120);
   b.note = str(o.note, 1000);
   const is = (Array.isArray(o.issues) ? o.issues : []).map(x => x && typeof x === 'object' ? { cat: str(x.cat, 20), text: str(x.text, 600) } : null).filter(x => x && x.cat && x.text).slice(0, 20);
@@ -609,7 +614,7 @@ function pickBook(local, cloud) {
    book = R1(v. 26-1114-1) · b2 = R2 ~ v. 26-1114-4 · b3 = v. 26-1114-5 부터(성도 인도자 · 숙소 취소 기한 · 사진 · 요일 하나씩).
    읽을 때는 모두 합친다(맞추기는 지우지 않으니 옛 칸에만 있는 것도 살아난다). 쓸 때는 WRITE_FIELD 하나 + 옛 칸은 지운다(OLD_FIELDS) —
    문서 한 장 1MB 에 같은 책이 여러 벌 쌓이지 않게. 낡은 앱이 다시 옛 칸에 써도 다음에 또 합치고 지운다. */
-const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5'], WRITE_FIELD = 'b6';   // b6 = v. 26-1114-11 부터(고르는 목록 opts · 방문 특이사항)
+const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6'], WRITE_FIELD = 'b7';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6)
 function pickDoc(local, doc) {
   const cur = doc && doc[WRITE_FIELD] ? doc[WRITE_FIELD] : null;
   const olds = OLD_FIELDS.map(k => doc && doc[k]).filter(Boolean);
@@ -618,9 +623,85 @@ function pickDoc(local, doc) {
   return { book: m, push: !cur || olds.length > 0 || !sameBook(m, cur) };
 }
 
+
+/* ---- 함께 쓰기 (R6) ----
+   HB 책(rota/{HB uid})은 옮기지 않는다. 사람 탭 '계정 이메일' 이 든 분만 읽을 수 있게 그 목록(team)을 문서에 붙이고,
+   교역자는 자기 칸 rota/{HB uid}/staff/{자기 uid} 에만 쓴다(보안 규칙은 '자기 uid · 자기 이메일' 만 본다 — 책 안의 어느 줄인지는 규칙이 못 가린다).
+   무엇을 받아들일지는 여기서 정한다(absorb): 그 이메일의 사람 한 분 · 그 분이 든 부산 방문의 숙소 · 교통 · 그 분의 부재 · 가능 일정만.
+   칸마다 고친 때로 겨뤄 나중 것이 이긴다. 교역자 칸은 지우지 않으니, 어느 기기가 늦게 받아도 다시 맞춰진다. */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function teamOf(book) { return [...new Set(live(normBook(book).people).map(p => p.email).filter(Boolean))].sort().slice(0, 60); }
+const STAFF_VISIT = { stay: normStay, travel: normTravel };
+function normStaff(o) {
+  if (!o || typeof o !== 'object') return null;
+  const email = str(o.email, 80).toLowerCase(); if (!EMAIL_RE.test(email)) return null;
+  const s = { email, at: num(o.at), visits: {} };
+  const vs = o.visits && typeof o.visits === 'object' && !Array.isArray(o.visits) ? o.visits : {};
+  for (const k of Object.keys(vs).filter(k => /^v\|/.test(k) && isYmd(k.slice(2))).sort().slice(-200)) {
+    const e = vs[k]; if (!e || typeof e !== 'object') continue; const n = {};
+    for (const f of Object.keys(STAFF_VISIT)) if (Array.isArray(e[f]) && num(e[f + 'At'])) { n[f] = e[f].map(STAFF_VISIT[f]).filter(Boolean).slice(0, 8); n[f + 'At'] = num(e[f + 'At']); }
+    if (Object.keys(n).length) s.visits[k] = n;
+  }
+  for (const f of ['away', 'can']) if (Array.isArray(o[f]) && num(o[f + 'At'])) { s[f] = ranges(o[f]); s[f + 'At'] = num(o[f + 'At']); }
+  return s;
+}
+// 교역자 칸들 → 책. 바뀐 줄 id 를 함께 돌려준다(바뀐 게 없으면 같은 책). 넣는 책은 고치지 않는다.
+function absorb(book, staffs) {
+  book = normBook(book);
+  const byEmail = {}; for (const p of live(book.people)) if (p.email) byEmail[p.email] = p;
+  const best = {};   // '목록|줄 id' → { 칸: { val, at, by } } — 모두 모은 뒤 한 번에 넣는다(교역자 순서와 상관없이 같은 결과)
+  const offer = (list, row, f, val, at, by) => {
+    if (!(at > (row[f + 'At'] || 0))) return;
+    const k = list + '|' + row.id, b = best[k] || (best[k] = {});
+    if (!b[f] || at > b[f].at || (at === b[f].at && by < b[f].by)) b[f] = { val, at, by };
+  };
+  for (const raw of staffs || []) {
+    const s = normStaff(raw); if (!s) continue;
+    const p = byEmail[s.email]; if (!p) continue;   // 사람 탭에 그 이메일이 없으면 받지 않는다
+    for (const f of ['away', 'can']) if (s[f + 'At']) offer('people', p, f, s[f], s[f + 'At'], p.id);
+    for (const vid of Object.keys(s.visits)) {
+      const v = book.visits.find(x => x.id === vid); if (!v || v.del || !v.who.includes(p.id)) continue;   // 자기가 든 방문만
+      const e = s.visits[vid];
+      for (const f of Object.keys(STAFF_VISIT)) if (e[f + 'At']) offer('visits', v, f, e[f], e[f + 'At'], p.id);
+    }
+  }
+  const changed = [];
+  for (const k of Object.keys(best).sort()) {
+    const [list, id] = [k.slice(0, k.indexOf('|')), k.slice(k.indexOf('|') + 1)];
+    const cur = book[list].find(x => x.id === id), n = Object.assign({}, cur); let top = 0;
+    for (const f of Object.keys(best[k])) { const b = best[k][f];
+      if (Array.isArray(b.val) && !b.val.length && list === 'people') delete n[f]; else n[f] = b.val;
+      n[f + 'At'] = b.at; n[f + 'By'] = b.by; top = Math.max(top, b.at); }
+    n.at = Math.max((cur.at || 0) + 1, top); n.by = 'staff:' + (best[k][Object.keys(best[k])[0]].by);
+    const nn = LISTS[list](n); if (!nn) continue;
+    book[list] = book[list].map(x => (x.id === id ? nn : x));
+    book.at = Math.max(book.at || 0, nn.at); changed.push(id);
+  }
+  return { book, changed };
+}
+// 교역자 앱이 자기 칸에 쓸 조각 — set(…, { merge: true }) 로 그 방문 · 그 칸만 바뀐다
+function staffPatch(email, kind, key, val, now) {
+  if (kind === 'stay' || kind === 'travel') return { email, at: now, visits: { [key]: { [kind]: val, [kind + 'At']: now } } };
+  if (kind === 'away' || kind === 'can') return { email, at: now, [kind]: val, [kind + 'At']: now };
+  return null;
+}
+// 그 조각을 이 기기 사본에 합친다 (Firestore 의 merge 와 같은 모양: 객체는 안으로, 배열 · 값은 통째로)
+function staffMerge(doc, patch) {
+  const out = JSON.parse(JSON.stringify(doc || {}));
+  (function into(t, p) { for (const k of Object.keys(p)) { const v = p[k];
+    if (v && typeof v === 'object' && !Array.isArray(v)) { if (!t[k] || typeof t[k] !== 'object' || Array.isArray(t[k])) t[k] = {}; into(t[k], v); } else t[k] = v; } })(out, patch || {});
+  return out;
+}
+// 로그인한 이메일의 사람 (교역자 앱 · 내 일정)
+function personByEmail(book, email) { email = String(email || '').toLowerCase(); return email ? live(book.people).find(p => p.email === email) || null : null; }
 /* ---- 한 줄 바꾸기 (화면이 부른다) ---- */
+// 교역자도 적는 칸 — 바뀌면 그 칸의 고친 때를 지금으로, '누가(교역자)' 표시는 지운다 (R6, absorb 와 겨룸)
+const STAMPED = { visits: ['stay', 'travel'], people: ['away', 'can'] };
 function put(book, list, item, by, now) {
-  const fn = LISTS[list]; const n = fn(Object.assign({}, item, { at: now, by }));
+  const fn = LISTS[list]; const it = Object.assign({}, item, { at: now, by });
+  if (STAMPED[list]) { const n0 = fn(it), cur = book[list].find(x => x.id === it.id);
+    if (n0 && !n0.del) for (const f of STAMPED[list]) if (JSON.stringify(n0[f] || []) !== JSON.stringify((cur && !cur.del && cur[f]) || [])) { it[f + 'At'] = now; delete it[f + 'By']; } }
+  const n = fn(it);
   if (!n) return false;
   book[list] = book[list].filter(x => x.id !== n.id).concat(n).sort((a, c) => (a.id < c.id ? -1 : 1));
   book.at = Math.max(book.at || 0, now);
@@ -1037,7 +1118,7 @@ const PREF = Object.assign({ tab: 'week' }, lsGet(PREF_KEY, {}));
 function applyTheme() { const t = PREF.theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
 applyTheme();
 const savePref = () => lsSet(PREF_KEY, PREF);
-const S = { book: normBook(DEMO ? null : lsGet(BOOK_KEY, null)), sun: sunOf(todayYmd()), ym: todayYmd().slice(0, 7), open: null, pane: null };
+const S = { book: normBook(DEMO ? null : lsGet(BOOK_KEY, null)), sun: sunOf(todayYmd()), ym: todayYmd().slice(0, 7), open: null, pane: null, staff: [] };
 const TABS = [{ id: 'week', label: '이번 주' }, { id: 'month', label: '달력표' }, { id: 'busan', label: '부산' }, { id: 'people', label: '사람' }];
 
 /* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호) ----------
@@ -1047,7 +1128,7 @@ const TABS = [{ id: 'week', label: '이번 주' }, { id: 'month', label: '달력
 const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
   storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
 const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
-const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsub: null, loading: null, synced: false };
+const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsub: null, unsubStaff: null, loading: null, synced: false };
 function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); setTimeout(() => rej(new Error('시간 초과')), 20000); document.head.appendChild(el); }); }
 async function fbInit() {
   if (DEMO) { FB.ready = true; FB.user = { email: '미리보기 (저장 안 됨)', uid: 'demo' }; return; }
@@ -1060,12 +1141,20 @@ async function fbInit() {
     FB.auth.onAuthStateChanged(u => {
       FB.user = u; FB.ready = true; FB.synced = false;
       if (FB.unsub) { FB.unsub(); FB.unsub = null; }
+      if (FB.unsubStaff) { FB.unsubStaff(); FB.unsubStaff = null; }
+      S.staff = [];
       if (u) FB.unsub = FB.db.collection('rota').doc(u.uid).onSnapshot(d => {
         const r = pickDoc(S.book, d.exists ? d.data() : null);
         S.book = r.book; lsSet(BOOK_KEY, S.book); FB.synced = true; FB.err = '';
-        if (r.push) cloudSave();
+        const ab = staffAbsorb(), team = JSON.stringify(teamOf(S.book)) !== JSON.stringify((d.exists && d.data().team) || []);
+        if (r.push || ab || team) cloudSave();
         if (!editing()) rerender();
       }, e => { FB.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 넣어야 합니다.' : '자료를 불러오지 못했습니다.'; rerender(); });
+      // 교역자 칸들 (R6) — 각자 적은 숙소 · 교통 · 부재 · 가능 일정. 규칙을 아직 안 바꿨으면 조용히 넘어간다(HB 자료에는 영향 없음)
+      if (u) FB.unsubStaff = FB.db.collection('rota').doc(u.uid).collection('staff').onSnapshot(qs => {
+        S.staff = qs.docs.map(x => x.data());
+        if (FB.synced && staffAbsorb()) { lsSet(BOOK_KEY, S.book); cloudSave(); if (!editing()) rerender(); }
+      }, () => { S.staff = []; });
       rerender();
     });
   })();
@@ -1081,6 +1170,8 @@ async function fbLogin() {
 }
 async function fbLogout() { try { await FB.auth.signOut(); } catch (_) { } closeMenu(); toast('로그아웃했습니다\n이 기기 사본은 남아 있습니다'); rerender(); }
 function byNow() { return FB.user ? FB.user.uid : 'local'; }
+// 교역자 칸을 책에 받아들인다 — 바뀐 게 있으면 true (absorb: 자기 것만 · 칸마다 나중 것)
+function staffAbsorb() { if (!S.staff || !S.staff.length) return false; const r = absorb(S.book, S.staff); if (!r.changed.length) return false; S.book = r.book; return true; }
 function saveBook() {
   if (!lsSet(BOOK_KEY, S.book)) toast('이 기기에 저장하지 못했습니다\n저장 공간을 확인해 주세요');
   clearTimeout(saveBook.t); saveBook.t = setTimeout(cloudSave, 600);
@@ -1090,7 +1181,8 @@ function cloudSave() {
   const size = JSON.stringify(S.book).length;
   if (size > 900000) { toast('자료가 너무 커져 계정에 올리지 못했습니다\n오래된 기록 정리가 필요합니다'); return; }
   // ⚠️ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸(OLD_FIELDS)은 지운다 — 읽을 때 이미 합쳤다 (pickDoc)
-  const data = { [WRITE_FIELD]: S.book, v: APP_VERSION, at: Date.now() };
+  // team = 이 책을 읽어도 되는 이메일들(사람 탭 '계정 이메일') — 보안 규칙이 이것을 본다 (R6)
+  const data = { [WRITE_FIELD]: S.book, team: teamOf(S.book), v: APP_VERSION, at: Date.now() };
   for (const k of OLD_FIELDS) data[k] = firebase.firestore.FieldValue.delete();
   FB.db.collection('rota').doc(FB.user.uid).set(data, { merge: true })
     .catch(e => { toast(e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다\n이 기기에는 남아 있습니다' : '계정에 저장하지 못했습니다\n이 기기에는 남아 있습니다'); });
@@ -1486,7 +1578,8 @@ function personBox(p) {
   return `<div class="subrow" style="gap:4px"><span class="flabel">한눈에</span>
       <span class="small">마지막 부산 ${st.last ? mdd(st.last) : '—'} · 석 달 ${st.busan3}번</span>
       <span class="small">다가오는 자리 ${nx.length ? esc(nx.join(' · ')) : '—'}</span></div>
-    <div class="field"><span class="flabel">부재 — 안 되는 날 (자동 배열이 피하고, 넣으면 빨강)</span>
+    ${(p.can || []).length ? `<div class="field"><span class="flabel">가능 일정 — 본인이 적음</span>${p.can.map(a => `<span class="small">${mdd(a.from)}${a.to !== a.from ? ' ~ ' + mdd(a.to) : ''}${a.note ? ' · ' + esc(a.note) : ''}</span>`).join('')}</div>` : ''}
+    <div class="field"><span class="flabel">부재 — 안 되는 날 (자동 배열이 피하고, 넣으면 빨강)${p.awayBy ? ' · 본인이 적음' : ''}</span>
       ${(p.away || []).map((a, i) => `<div class="frow"><span class="small">${mdd(a.from)}${a.to !== a.from ? ' ~ ' + mdd(a.to) : ''}${a.note ? ' · ' + esc(a.note) : ''}</span><span class="spacer"></span><button class="txtbtn" data-rmaway="${i}" data-pid="${esc(p.id)}">빼기</button></div>`).join('')}
       <div class="frow"><input class="inp" style="width:auto;flex:1" type="date" id="aw-from" required placeholder="시작" aria-label="부재 시작"><span class="muted">~</span><input class="inp" style="width:auto;flex:1" type="date" id="aw-to" required placeholder="끝(하루면 비움)" aria-label="부재 끝 (하루면 비워 두기)"></div>
       <div class="frow"><input class="inp" style="flex:1" id="aw-note" placeholder="까닭 (예: 수술 · 캠프 · 휴가)" maxlength="40"><button class="btn ghost" data-act="addaway" data-pid="${esc(p.id)}">더하기</button></div></div>
@@ -1606,6 +1699,8 @@ function newVisit(date) {
 const stPillOf = (st) => ({ '': '<span class="pill warn">미정</span>', ask: '<span class="pill warn">대화 중</span>', done: '<span class="pill ok">예약 완료</span>', cancel: '<span class="pill">취소</span>' })[st.status];
 function stayLineOf(v, s) { return [(s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도 댁' : '호텔')), (s.nights || autoNights(v)) + '박', s.kind === 'hotel' && s.cost ? won(s.cost) : ''].filter(Boolean).join(' · '); }
 function staySub(s) { return [s.cancelBy ? '취소 ' + mdd(s.cancelBy) + (s.cancelAt ? ' ' + s.cancelAt : '') + '까지' : s.nofree ? '환불 불가' : '', (s.imgs || []).length ? '예약 화면 ' + s.imgs.length + '장' : ''].filter(Boolean).join(' · '); }
+// 교역자가 직접 적은 칸이면 '○○ 님이 적음' (R6 — HB 가 고치면 사라진다)
+function byNote(pid, pm) { const p = pid && (pm || peopleMap(S.book))[pid]; return p && !p.del ? p.name + ' 님이 적음' : ''; }
 function travelLineOf(t) { return (t.dir === 'down' ? '내려감 ' : '올라옴 ') + [t.mode, t.time].filter(Boolean).join(' ') + (t.who ? ' (' + t.who + ')' : ''); }
 function paneVisit() {
   const v = curVisit(); if (!v) return `<div class="phead"><span></span><b>부산 방문</b>${xBtn}</div><p class="muted">지워진 방문입니다.</p>`;
@@ -1619,9 +1714,9 @@ function paneVisit() {
   <div class="pbody" style="gap:8px">
     ${cf.length ? `<div class="alerts" style="margin:0">${cf.map(c => `<div class="alert ${c.level}">${esc(conflictText(S.book, c, pm))}</div>`).join('')}</div>` : ''}
     ${sec('who', '교역자 · 요일', (who ? esc(who) : '<span class="muted">교역자 미정</span>') + ' · ' + daysHtml(days) + (v.fri && bf ? ' · ' + friLabel(sun) : ''))}
-    ${v.stay.map((s, i) => sec('stay', '숙소', esc(stayLineOf(v, s)), stPillOf(s), i, esc(staySub(s)))).join('')}
+    ${v.stay.map((s, i) => sec('stay', '숙소', esc(stayLineOf(v, s)), stPillOf(s), i, esc([staySub(s), i === 0 ? byNote(v.stayBy, pm) : ''].filter(Boolean).join(' · ')))).join('')}
     ${v.stay.length ? `<button class="txtbtn" data-vsec="stay" data-i="-1" style="justify-self:start">+ 숙소 하나 더 (남 · 여 따로일 때)</button>` : sec('stay', '숙소', '', '', -1)}
-    ${sec('travel', '교통', v.travel.map(t => esc(travelLineOf(t))).join('<br>'))}
+    ${sec('travel', '교통', v.travel.map(t => esc(travelLineOf(t))).join('<br>'), '', null, esc(byNote(v.travelBy, pm)))}
     ${sec('team', '동행 · 모임', [v.staff ? '동행 ' + esc(v.staff) : '', v.group ? '주일모임 ' + esc(v.group) : '', v.edu ? '교육 ' + esc(v.edu) : ''].filter(Boolean).join('<br>'))}
     ${sec('issue', '특이사항', (v.issues || []).map(x => `<span class="pill">${esc(x.cat)}</span> ${esc(x.text)}`).join('<br>'))}
     ${sec('note', '메모', esc(v.note))}

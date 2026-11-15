@@ -13,6 +13,7 @@
 //  ⑩ 겹침 검사: 부산에 머무는 날의 판교 자리(주일 · 금요 · 수요) = 빨강, 맡지 않는 일 · 두 주 연속 · 숙소 미정 · 극동방송 동행 없음 = 노랑
 //  ⑪ 자리 넣고 빼기: 비면 지우기 표지 · 같은 값이면 안 씀
 //  ⑫ 예배마다 들어가는지(HB 11/14): 일을 맡아도 빼 둔 예배가 있다 · 예전 자료는 '모두'
+//  ㉓ 함께 쓰기(R6): 들어올 이메일 · 교역자 칸 · 받아들이기(자기 것만 · 칸마다 나중 것)
 //  ⑬ 낡은 앱과 함께: 새 앱은 b2 칸에만 쓰고 book · b2 를 합쳐 읽는다 · 같은 때면 긴 사본이 이긴다
 //  ⑭ 시트 기록 가져오기: 이름 → 사람 · 이미 적은 칸은 그대로 · 지운 것 안 살아남 · 두 번 해도 같음 · 지우지 않음
 //  ⑮ 화요예배(옛 기록) · 지난 주 노랑 안 깔기
@@ -34,7 +35,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
+  stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -201,19 +202,19 @@ sc.eq('⑫ 고르기 판: 네 예배 모두 같게 고를 때 빠진 예배를 �
 const full = A.normBook({ people: [{ id: 'x', name: '가가', roles: ['preach'], no: ['sun1|preach'], at: 5 }], visits: [{ id: 'v|2025-12-31', days: '수목', who: ['x'], at: 5 }, { id: 'v|2025-12-28', who: ['x'], at: 5 }] });
 const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripped.visits.filter(v => v.date !== '2025-12-31');   // R1 이 떨군 모양 (같은 at)
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
-const d1 = A.pickDoc(full, { b6: J(full), b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
-sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b5)을 떨군 채 써도 b6 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b6: J(full) });
-sc.eq('⑬ b6 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1 = A.pickDoc(full, { b7: J(full), b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
+sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b6)을 떨군 채 써도 b7 과 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
+const d1b = A.pickDoc(full, { b7: J(full) });
+sc.eq('⑬ b7 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
-sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b6 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
+sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b7 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
-sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b6 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
+sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b7 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
 const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [], at: 9 });
-const d3 = A.pickDoc(full, { b5: old2, b6: J(full) });
-sc.eq('⑬ 낡은 앱(b5)에서 새로 적은 줄도 받아 b6 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
+const d3 = A.pickDoc(full, { b6: old2, b7: J(full) });
+sc.eq('⑬ 낡은 앱(b6)에서 새로 적은 줄도 받아 b7 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b6'/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b7'/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -434,5 +435,82 @@ sc.eq('⑧ 가져오기 파일 칸은 메뉴 밖에 한 번만 (메뉴가 다시
 { const m2 = HTML.match(/\{ (pick: panePick[^}]*)\}\[S\.pane\.kind\]/); const fns = m2 ? m2[1].split(',').map(x => x.split(':')[1].trim()) : ['?'];
   sc.eq('⑧ 판 그리는 함수가 모두 있다', fns.filter(f => !new RegExp('function ' + f + '\\(').test(HTML)), []); }
 sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘림 11/14) · 표 가로 스크롤은 막지 않는다(touch-action 없음)', /html\{overflow-x:hidden/.test(HTML) && /\.stage\{overflow:hidden/.test(HTML) && !/touch-action:pan-y/.test(HTML), true);
+
+// ㉓ 함께 쓰기 (R6) — 지어낸 이름 · 이메일
+{
+  const T0 = 1000;
+  const bk = A.normBook({
+    people: [{ id: 'pa', name: '가나다', roles: ['preach'], email: 'Ga@Example.com', at: T0 }, { id: 'pb', name: '라마바', roles: [], email: 'ra@example.com', at: T0 },
+      { id: 'pc', name: '사아자', roles: [], at: T0 }, { id: 'pd', name: '지운분', email: 'del@example.com', at: T0, del: true }],
+    visits: [{ id: 'v|2026-11-22', who: ['pa'], days: '토일', note: '처음', stay: [{ kind: 'hotel', name: '첫 호텔', status: '' }], at: T0 },
+      { id: 'v|2026-11-29', who: ['pb'], days: '토일', at: T0 }, { id: 'v|2026-12-06', who: ['pa', 'pb'], days: '토일', at: T0 }] });
+  const hotel = (n) => [{ kind: 'hotel', name: n, status: 'done', cost: 90000 }];
+  sc.eq('㉓ 들어올 이메일 = 사람 탭 계정 이메일(작은 글자 · 지운 분 · 이메일 없는 분 빼고)', A.teamOf(bk), ['ga@example.com', 'ra@example.com']);
+  sc.eq('㉓ 로그인 이메일 → 그 사람 (대소문자 상관없이)', [A.personByEmail(bk, 'GA@example.com').id, A.personByEmail(bk, 'zz@example.com'), A.personByEmail(bk, '')], ['pa', null, null]);
+  // 교역자 칸 다듬기
+  const st = A.normStaff({ email: 'GA@example.com', at: 5, visits: { 'v|2026-11-22': { stay: hotel('새 호텔'), stayAt: 2000, who: ['pb'], note: '몰래' }, 'bad': { stay: [], stayAt: 9 }, 'v|2026-13-01': { stay: [], stayAt: 9 }, 'v|2026-11-29': { travel: [{ dir: 'down', mode: 'KTX' }] } }, away: [{ from: '2026-12-01', to: '2026-12-03', note: '수술' }], awayAt: 2100, role: 'owner' });
+  sc.eq('㉓ 교역자 칸: 이메일은 작은 글자 · 모르는 칸(who · note · role) · 틀린 날짜 · 고친 때 없는 칸은 버린다', [st.email, Object.keys(st.visits), Object.keys(st.visits['v|2026-11-22']), st.away.length, st.role], ['ga@example.com', ['v|2026-11-22'], ['stay', 'stayAt'], 1, undefined]);
+  sc.eq('㉓ 이메일이 없거나 틀린 칸은 통째로 버린다', [A.normStaff({ visits: {} }), A.normStaff({ email: 'nope' }), A.normStaff(null)], [null, null, null]);
+  // 받아들이기
+  const sA = { email: 'ga@example.com', visits: { 'v|2026-11-22': { stay: hotel('새 호텔'), stayAt: 2000 }, 'v|2026-11-29': { stay: hotel('남의 방문'), stayAt: 2000 } }, away: [{ from: '2026-12-01', to: '2026-12-03' }], awayAt: 2100 };
+  const r1 = A.absorb(bk, [sA]);
+  const v1 = r1.book.visits.find(v => v.id === 'v|2026-11-22');
+  sc.eq('㉓ 자기가 든 방문의 숙소를 받는다 — 고친 때 · 누가(그 사람) · 줄 at 은 커진다', [v1.stay[0].name, v1.stayAt, v1.stayBy, v1.at > T0, v1.note], ['새 호텔', 2000, 'pa', true, '처음']);
+  sc.eq('㉓ 자기가 안 든 방문은 받지 않는다', r1.book.visits.find(v => v.id === 'v|2026-11-29').stay, []);
+  sc.eq('㉓ 자기 부재를 받는다', [r1.book.people.find(p => p.id === 'pa').away, r1.book.people.find(p => p.id === 'pa').awayBy], [[{ from: '2026-12-01', to: '2026-12-03' }], 'pa']);
+  sc.eq('㉓ 넣은 책은 그대로 (새 책을 돌려준다)', bk.visits.find(v => v.id === 'v|2026-11-22').stay[0].name, '첫 호텔');
+  sc.eq('㉓ 바뀐 줄 id', r1.changed.sort(), ['pa', 'v|2026-11-22']);
+  const r1b = A.absorb(r1.book, [sA]);
+  sc.eq('㉓ 두 번 받아도 같다(바뀐 줄 없음 · 책 같음)', [r1b.changed, JSON.stringify(r1b.book) === JSON.stringify(r1.book)], [[], true]);
+  sc.eq('㉓ 사람 탭에서 이메일을 지우면 그 분 칸은 받지 않는다', A.absorb(A.normBook(Object.assign(J(bk), { people: bk.people.map(p => p.id === 'pa' ? Object.assign({}, p, { email: '' }) : p) })), [sA]).changed, []);
+  sc.eq('㉓ 지운 분의 이메일로는 받지 않는다', A.absorb(bk, [{ email: 'del@example.com', away: [{ from: '2026-12-01' }], awayAt: 3000 }]).changed, []);
+  // HB 가 나중에 숙소를 고쳤으면 HB 가 이긴다 / 메모만 고쳤으면 교역자 숙소는 그대로 받는다
+  const hb1 = J(bk); hb1.visits[0] = Object.assign({}, hb1.visits[0], { stay: hotel('HB 호텔'), stayAt: 2500, at: 2500 });
+  sc.eq('㉓ HB 가 그 뒤에 숙소를 고쳤으면 HB 것', A.absorb(A.normBook(hb1), [sA]).book.visits.find(v => v.id === 'v|2026-11-22').stay[0].name, 'HB 호텔');
+  const hb2 = J(bk); hb2.visits[0] = Object.assign({}, hb2.visits[0], { note: 'HB 메모', at: 2500 });
+  const r2 = A.absorb(A.normBook(hb2), [sA]).book.visits.find(v => v.id === 'v|2026-11-22');
+  sc.eq('㉓ HB 가 그 뒤에 메모만 고쳤으면 메모는 HB · 숙소는 교역자 (줄 at 이 아니라 칸마다 고친 때)', [r2.note, r2.stay[0].name, r2.at > 2500], ['HB 메모', '새 호텔', true]);
+  // 두 분이 함께 간 방문: 나중 것이 이기고 순서와 상관없다
+  const sB = { email: 'ra@example.com', visits: { 'v|2026-12-06': { stay: hotel('라 호텔'), stayAt: 3000 } } };
+  const sA2 = { email: 'ga@example.com', visits: { 'v|2026-12-06': { stay: hotel('가 호텔'), stayAt: 2900 }, 'v|2026-12-06x': {} } };
+  const o1 = A.absorb(bk, [sA2, sB]).book, o2 = A.absorb(bk, [sB, sA2]).book;
+  sc.eq('㉓ 함께 간 방문 — 나중에 적은 분 것 · 순서 상관없이 같은 책', [o1.visits.find(v => v.id === 'v|2026-12-06').stay[0].name, JSON.stringify(o1) === JSON.stringify(o2)], ['라 호텔', true]);
+  // 두 HB 기기: A 는 받아들였고 B 는 모른 채 메모를 고쳤다 → 합치면 숙소가 밀렸다가, 다시 받아들이면 돌아온다
+  const devA = r1.book, devB = A.normBook(J(bk)); devB.visits[0] = A.normBook({ visits: [Object.assign({}, devB.visits[0], { note: 'B 메모', at: v1.at + 5 })] }).visits[0];
+  const merged = A.mergeBook(devA, devB), healed = A.absorb(merged, [sA]).book.visits.find(v => v.id === 'v|2026-11-22');
+  sc.eq('㉓ 두 HB 기기가 엇갈려도 교역자 칸을 다시 받으면 숙소가 돌아온다(교역자 칸은 지우지 않으므로)', [healed.note, healed.stay[0].name], ['B 메모', '새 호텔']);
+  // 교역자가 숙소를 다 지웠으면 빈 것으로
+  sc.eq('㉓ 교역자가 나중에 비우면 빈 숙소', A.absorb(r1.book, [{ email: 'ga@example.com', visits: { 'v|2026-11-22': { stay: [], stayAt: 4000 } } }]).book.visits.find(v => v.id === 'v|2026-11-22').stay, []);
+  // 맞추기 · 계정 칸에 고친 때가 남는다
+  const rt = A.normBook(J(r1.book));
+  sc.eq('㉓ 고친 때 · 누가 · 가능 일정은 다듬기를 지나도 남는다', [rt.visits.find(v => v.id === 'v|2026-11-22').stayAt, A.normBook({ people: [{ id: 'q', name: '하하', can: [{ from: '2026-12-20' }], canAt: 7, canBy: 'q' }] }).people[0].can], [2000, [{ from: '2026-12-20', to: '2026-12-20' }]]);
+  // 교역자 앱이 쓰는 조각
+  const pt = A.staffPatch('ga@example.com', 'stay', 'v|2026-11-22', hotel('조각'), 5000);
+  sc.eq('㉓ 쓰는 조각 — 그 방문 · 그 칸만', pt, { email: 'ga@example.com', at: 5000, visits: { 'v|2026-11-22': { stay: hotel('조각'), stayAt: 5000 } } });
+  const doc0 = { email: 'ga@example.com', visits: { 'v|2026-11-22': { travel: [{ dir: 'down', mode: 'KTX' }], travelAt: 10 }, 'v|2026-12-06': { stay: [], stayAt: 9 } }, away: [], awayAt: 3 };
+  const doc1 = A.staffMerge(doc0, pt);
+  sc.eq('㉓ 조각을 합쳐도 다른 방문 · 다른 칸은 그대로', [doc1.visits['v|2026-11-22'].travelAt, doc1.visits['v|2026-11-22'].stayAt, doc1.visits['v|2026-12-06'].stayAt, doc1.awayAt], [10, 5000, 9, 3]);
+  // HB 가 고칠 때(put): 숙소 · 교통 · 부재가 바뀌면 그 칸의 고친 때가 지금, 다른 칸만 바뀌면 그대로
+  { const b = A.normBook(J(r1.book)); const v = J(b.visits.find(x => x.id === 'v|2026-11-22'));
+    A.put(b, 'visits', Object.assign({}, v, { note: '메모만' }), 'hb', 6000);
+    const a1 = b.visits.find(x => x.id === 'v|2026-11-22');
+    sc.eq('㉓ HB 가 메모만 고치면 숙소의 고친 때 · 누가는 그대로', [a1.stayAt, a1.stayBy, a1.at], [2000, 'pa', 6000]);
+    A.put(b, 'visits', Object.assign({}, J(a1), { stay: hotel('HB 가 바꿈') }), 'hb', 7000);
+    const a2 = b.visits.find(x => x.id === 'v|2026-11-22');
+    sc.eq('㉓ HB 가 숙소를 고치면 숙소의 고친 때 = 지금, 누가 표시는 지움 · 교통은 그대로', [a2.stayAt, a2.stayBy, a2.travelAt], [7000, undefined, undefined]);
+    sc.eq('㉓ … 그 뒤 예전 교역자 칸은 HB 것을 못 이긴다', A.absorb(b, [sA]).book.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, 'HB 가 바꿈');
+    const p0 = J(b.people.find(x => x.id === 'pa')); A.put(b, 'people', Object.assign({}, p0, { away: [] }), 'hb', 8000);
+    const p1 = b.people.find(x => x.id === 'pa');
+    sc.eq('㉓ HB 가 부재를 지우면 부재의 고친 때 = 지금(교역자 예전 부재가 되살아나지 않음)', [p1.away, p1.awayAt, A.absorb(b, [sA]).changed], [undefined, 8000, []]);
+    const nb = A.normBook({}); A.put(nb, 'visits', { id: 'v|2026-12-13', who: [], note: 'x' }, 'hb', 9000);
+    sc.eq('㉓ 숙소 없는 새 방문은 고친 때를 두지 않는다', nb.visits[0].stayAt, undefined);
+  }
+  // 콘솔에 붙이는 덩어리(문서) = 에뮬레이터로 시험한 규칙(tests/rules/rota.rules)
+  { const blk = (txt) => { const m = txt.match(/^[ \t]*\/\/ ── 교역자 로테이션\(rota\) — 여기서부터 ──[\s\S]*?^[ \t]*\/\/ ── 교역자 로테이션 — 여기까지 ──/m); return m ? m[0].split('\n').map(l => l.trim()).filter(Boolean).join('\n') : null; };
+    const doc = blk(fs.readFileSync(path.join(__dirname, '..', 'docs', 'rotation', 'firestore-rules.md'), 'utf8')), rules = blk(fs.readFileSync(path.join(__dirname, 'rules', 'rota.rules'), 'utf8'));
+    sc.eq('㉓ 문서의 규칙 덩어리 = 에뮬레이터로 시험한 규칙', [!!doc, doc === rules], [true, true]);
+    sc.eq('㉓ 규칙: 교역자 칸에 넣을 수 있는 칸 = normStaff 가 읽는 칸', /hasOnly\(\['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt'\]\)/.test(rules || ''), true); }
+  sc.eq('㉓ 모르는 갈래는 조각을 만들지 않는다', A.staffPatch('ga@example.com', 'note', 'v|2026-11-22', 'x', 1), null);
+}
 
 sc.done();
