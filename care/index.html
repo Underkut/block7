@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -345,6 +345,20 @@ body.dragging{cursor:grabbing}
 .sbar button{padding:8px 4px;font-size:13px;color:var(--warn)}
 .asv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
 .asv-n{font-size:12px;color:var(--ac);white-space:nowrap;min-width:6.5em}.asv-n small{margin-left:5px;color:var(--tx3);font-size:11px;font-family:var(--mono)}
+button.asv-n{text-align:left}button.asv-n:active{opacity:.55}
+.svsub{text-align:center;font-size:12.5px;color:var(--tx3);margin:0 0 12px}
+.svgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.svb{padding:3px;min-width:0;display:flex}
+.svb .in{flex:1;min-width:0;border-radius:12px;border:1px solid var(--line2);background:var(--paper);padding:4px 5px 6px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.svb.has .in{border-color:color-mix(in srgb,var(--ac) 45%,var(--line2));background:color-mix(in srgb,var(--ac) 7%,var(--paper))}
+.svb:not(.has) .in{opacity:.55}
+.svb .sn{display:block;font-size:10.5px;color:var(--tx3);line-height:1.3}
+.svb .sp{font-size:13.5px;line-height:1.6}
+.svx{margin-top:10px;padding:9px 12px 10px;border-radius:12px;border:1px dashed var(--line2)}
+.svx .sn{display:block;font-size:11.5px;color:var(--tx3);margin-bottom:2px}
+.svx .sp{font-size:14.5px;line-height:1.85}
+.svb .an,.svx .an{display:inline;white-space:nowrap;padding:0;margin:0;font:inherit;color:var(--tx);background:none;border:0;cursor:pointer}
+.svb .an:active,.svx .an:active{opacity:.55}
 .asv-p{font-size:14.5px;line-height:1.85;min-width:0}
 .asv-p .an{display:inline;white-space:nowrap;padding:0;margin:0;font:inherit;color:var(--tx);background:none;border:0;cursor:pointer}
 .asv-p .an:active{opacity:.55}
@@ -1037,7 +1051,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-12';
+const APP_VERSION = 'v. 26-1115-13';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2736,6 +2750,17 @@ function seatRename(map, from, to) {
   return items.map(i => nameKey(i.n) === a ? Object.assign({}, i, { n: b }) : i);
 }
 function seatDrop(map, n) { const k = nameKey(n), items = seatClean(map); return items.some(i => nameKey(i.n) === k) ? items.filter(i => nameKey(i.n) !== k) : null; }
+// 1115-4 ④ 배치 위에 그 예배 · 모임에 온 분을 얹는다 — 출석의 '자리' 값과 알약 이름이 같으면(띄어쓰기 무시) 그 블록에.
+//   { blocks: 놓인 자리마다 who(적은 차례), rows: 그릴 줄 수, off: 자리는 적었지만 배치에 없는 자리별 묶음, none: 자리를 안 적은 분 }
+function seatFill(items, atts) {
+  const blocks = (items || []).map(i => Object.assign({}, i, { who: [] })), by = {}, off = new Map(), none = []; let rows = 0;
+  blocks.forEach(b => { by[nameKey(b.n)] = b; rows = Math.max(rows, b.y + b.h); });
+  (atts || []).slice().sort((x, y) => x.row - y.row).forEach(a => {
+    const k = nameKey(a.seat);
+    if (!k) none.push(a); else if (by[k]) by[k].who.push(a); else { if (!off.has(k)) off.set(k, { n: norm(a.seat), who: [] }); off.get(k).who.push(a); }
+  });
+  return { blocks, rows, off: [...off.values()], none };
+}
 // 저장할 모양 — 깨끗이 고른 줄 + 저장한 시각(기기끼리 맞출 때 이 시각으로 가린다)
 function seatPack(items, now) { return { items: seatClean({ items }), at: now }; }
 // 이름 칸 — 쉼표(, ， 、)로 여럿. 앞뒤 빈칸을 떼고, 띄어쓰기만 다른 같은 이름은 한 번만
@@ -4497,12 +4522,12 @@ function vAttend() {
   const days = []; list.forEach(a => { const d = days[days.length - 1]; if (d && d.date === a.date) d.items.push(a); else days.push({ date: a.date, items: [a] }); });
   days.forEach(d => {
     h += '<div class="dhead"><b>' + dayLabel(d.date) + '</b><span>' + all.filter(x => x.date === d.date).length + '명</span></div><div class="asg">';
-    h += attSvcGroups(d.items).map(g => '<div class="asv"><span class="asv-n">' + esc(g.svc || '출석') + '<small>' + g.items.length + '</small></span><div class="asv-p">' +
+    h += attSvcGroups(d.items).map(g => '<div class="asv"><button class="asv-n" data-act="seatsee" data-v="' + esc(d.date + '|' + g.svc) + '" aria-label="' + esc(g.svc || '출석') + ' 자리 보기">' + esc(g.svc || '출석') + '<small>' + g.items.length + '</small></button><div class="asv-p">' +
       g.items.map(a => '<button class="an" data-act="attinfo" data-v="' + esc(a.id) + '">' + nm(a.name) + '</button>').join(' ') + '</div></div>').join('');
     h += '</div>';
   });
   if (all.length > n) h += '<button class="send" data-act="attmore" style="margin-top:10px">더 보기 (' + (all.length - n) + ')</button>';
-  return h + attPopHtml() + '</div>' + nav();
+  return h + (S.layers.length ? '' : attPopHtml()) + '</div>' + nav();
 }
 // 하루치 출석 → 예배 · 모임 묶음. 묶음 차례 = 그 묶음을 처음 적은 차례, 묶음 안 = 적은 차례(시트 줄 차례)
 function attSvcGroups(items) {
@@ -4812,6 +4837,21 @@ function openSeatMap() {
   if (!dataOk()) { toast('시트를 읽는 중입니다\n자리 배치는 읽기가 끝난 뒤에 열립니다'); return; }
   const v = seatView(saved().seats, seatPills());
   openLayer('seatmap', { items: v.items, base: JSON.stringify(v.items), sel: '' });
+}
+// ── 1115-4 ④ 자리 보기(겹 화면 'seatsee') — 출석 목록에서 예배 · 모임 이름을 누르면: 놓아 둔 배치 위에 그날 그 모임에 온 분 이름.
+//   블록 높이는 이름 수만큼 늘어난다(줄은 이름 단위로만 바뀐다). 배치에 없는 자리 · 자리를 안 적은 분은 아래 따로. 좌상단 연필 = 배치 고치기
+function seatWho(list) { return list.map(a => '<button class="an" data-act="attinfo" data-v="' + esc(a.id) + '">' + nm(a.name) + '</button>').join(' '); }
+function lSeatSee(L) {
+  const list = AT().filter(a => a.date === L.date && nameKey(a.svc) === nameKey(L.svc)), f = seatFill(seatView(saved().seats, seatPills()).items, list);
+  let h = lhead(esc(L.svc || '출석'), L, ['seatmap', '자리 배치 고치기', 'pen']) + '<div class="ph-body"><p class="svsub">' + esc(dayName(L.date)) + ' · ' + list.length + '명</p><div class="smap">';
+  if (f.blocks.length) h += '<div class="sfront">앞 · 강단</div><div class="svgrid" style="grid-template-rows:repeat(' + f.rows + ',minmax(' + SEAT_CH + 'px,auto))">' + f.blocks.map(b =>
+    '<div class="svb' + (b.who.length ? ' has' : '') + '" data-n="' + esc(b.n) + '" style="grid-column:' + (b.x + 1) + '/span ' + b.w + ';grid-row:' + (b.y + 1) + '/span ' + b.h + '"><div class="in"><span class="sn">' + esc(b.n) + '</span>' +
+    (b.who.length ? '<div class="sp">' + seatWho(b.who) + '</div>' : '') + '</div></div>').join('') + '</div>';
+  else h += '<p class="hint" style="text-align:center;margin:0 0 6px">아직 놓아 둔 자리 배치가 없습니다.<br>왼쪽 위 연필로 자리 알약을 놓으면 여기에 이름이 얹힙니다.</p>';
+  h += f.off.map(g => '<div class="svx" data-n="' + esc(g.n) + '"><span class="sn">' + esc(g.n) + (f.blocks.length ? ' · 배치에 없는 자리' : '') + '</span><div class="sp">' + seatWho(g.who) + '</div></div>').join('');
+  if (f.none.length) h += '<div class="svx none"><span class="sn">자리 기록 없음</span><div class="sp">' + seatWho(f.none) + '</div></div>';
+  if (!list.length) h += '<p class="empty" style="text-align:center">이 모임의 출석 기록이 없습니다.</p>';
+  return h + '</div>' + attPopHtml() + '</div>';
 }
 function lSeatMap(L) {
   const ok = dataOk(), v = ok ? seatView({ items: L.items }, seatPills()) : { items: L.items, tray: [] };
@@ -6397,7 +6437,7 @@ addEventListener('resize', () => { if (document.querySelector('.sk-c')) skFrame(
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, glance: lGlance, inbox: lInbox, meet: lMeet, seatmap: lSeatMap };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick, imp: lImp, glance: lGlance, inbox: lInbox, meet: lMeet, seatmap: lSeatMap, seatsee: lSeatSee };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -6474,7 +6514,7 @@ function closeLayer(force) {
   const top = topLayer();
   if (top.type === 'imp' && top.running) { toast('저장하는 중입니다 — 끝날 때까지 기다려 주세요'); return; }
   if (!force && ['edit', 'planedit', 'attedit', 'attpaste', 'imp', 'seatmap'].includes(top.type) && top.dirty && !confirm(top.type === 'seatmap' ? SEAT_DROP_ASK : top.type === 'imp' ? (top.failed ? '일부만 저장된 채로 닫을까요?\n✓ 표시된 것은 시트에 들어가 있습니다.' : '붙여 넣은 것을 저장하지 않고 닫을까요?') : '적던 내용을 버릴까요?')) return;
-  const done = () => { S.layers.pop(); S.menu = null; render(); };
+  const done = () => { S.layers.pop(); S.menu = null; S.attPop = null; render(); };
   if (!el || RM.matches) return done();
   el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
 }
@@ -6663,7 +6703,8 @@ document.addEventListener('click', e => {
   if (a === 'earlypeek') { S.peek = true; render(); return; }
   if (a === 'earlyback') { S.peek = false; render(); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
-  if (a === 'seatmap') { openSeatMap(); return; }
+  if (a === 'seatmap') { S.attPop = null; openSeatMap(); return; }
+  if (a === 'seatsee') { const i = v.indexOf('|'); S.attPop = null; openLayer('seatsee', { date: v.slice(0, i), svc: v.slice(i + 1) }); return; }   // 1115-4 ④
   if (a === 'seatadd' || a === 'seatout' || a === 'seatsave') {   // 1115-4 ③ 자리 배치
     const L = seatL(); if (!L) return;
     if (a === 'seatadd') {
@@ -6927,7 +6968,7 @@ function swEnd(el, close, mode) {
   const top = topLayer();
   if (top && ['edit', 'planedit', 'attedit', 'attpaste', 'seatmap'].includes(top.type) && top.dirty && !confirm(top.type === 'seatmap' ? SEAT_DROP_ASK : '적던 내용을 버릴까요?')) return back();
   el.style.transition = 'transform .2s ease-in'; el.style.transform = mode === 'x' ? 'translateX(100%)' : 'translateY(100%)';
-  setTimeout(() => { el.style.transition = ''; S.layers.pop(); S.menu = null; render(); }, 210);
+  setTimeout(() => { el.style.transition = ''; S.layers.pop(); S.menu = null; S.attPop = null; render(); }, 210);
 }
 document.addEventListener('touchstart', e => {
   const el = e.target.closest && e.target.closest('#layers > .layer'); if (!el || el !== $('layers').lastElementChild || e.touches.length !== 1) return;
@@ -7033,7 +7074,7 @@ document.addEventListener('touchcancel', () => sdEnd(true));
 document.addEventListener('keydown', e => {   // 1113-E 2 PC: 열람 화면에서 ← → 로 이전 · 다음 기록
   if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isField(document.activeElement)) { const L = topLayer(); if (L && L.type === 'detail') { const nb = detNeighbors(), d = e.key === 'ArrowRight' ? 1 : -1, to = d > 0 ? nb.next : nb.prev; if (to) detGo($('layers').lastElementChild, to, d); return; } }
   if (e.key !== 'Escape') return;
-  if (S.attPop && !S.layers.length) { S.attPop = null; render(); } else if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
+  if (S.attPop) { S.attPop = null; render(); } else if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
 });
 render();
 fbInit().catch(e => { AUTH_READY = true; render(); toast('로그인 준비에 실패했습니다\n' + e.message); });
