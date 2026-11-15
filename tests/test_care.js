@@ -29,6 +29,7 @@
 //  ㊳ (1112-N 5) AI 입력대기함 — 대기 줄만 · 규격 오류는 '오류' + 사유(상한) · 접수ID 붙이기 · 줄 다시 찾기(접수ID · 없으면 같은 패킷) · 완료 칸 · ChatGPT 지시문(지금 시트 주소)
 //  ㊴ (1112-N 6) 화면 정리 — 상세 기록 Markdown 안전하게(제목 · 목록 · 굵게만, 나머지는 글자) · 성도 화면 요약(최근 핵심 · 장기 관찰 · 다음 질문 = 기록 + 계획) · 같은 날 계획 찾기
 //  ㊼ (1115-V) 한눈에 카드 셈 — 돌봄 지도(4주 · 8주 · 그 뒤 · 기록 없음) · 구분 알약 · 구분 나란히 · 심방+출석 네 칸 · 안 보임 · 달라짐 · 다시 보임 · 챙길 것
+//  ㊾ (1115-4 ③) 자리 배치 — 가로 6칸 · 겹치면 안 놓임(다른 알약은 그대로) · 빈 곳 찾기 · 끌기 · 당기기 · 알약 이름 따라가기 · 틀린 저장값 거르기 · 배치는 제 시각으로 기기끼리 맞춤
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -44,6 +45,7 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
+  SEAT_COLS, SEAT_ROWS_MAX, seatOver, seatValid, seatWhyNot, seatClean, seatView, seatRows, seatFree, seatPut, seatOut, seatDragTo, seatSizeTo, seatRename, seatDrop, seatPack,
   joinMulti, splitEtc, blankRecord, parseTalk, talkText, talkTags, talkPreview, talkTopicsOf, talkTagCounts, talkNext, talkCycle, talkPaste, talkTagSync, recordTags, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, b7Text, b7Note, b7MarkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
@@ -240,7 +242,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
 {
   const NOW = 1000;
   const S1 = { id: 'S1', name: '진짜 시트' }, S2 = { id: 'S2', name: '사본' };
-  sc.eq('⑪ 올리는 칸 — 파일 · 기준값 · 일정 제목 앞뒤 글자 · 대화 보기뿐(심방 내용 · 시험 상태 없음)', J(A.CFG_FIELDS), ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf', 'talk']);
+  sc.eq('⑪ 올리는 칸 — 파일 · 기준값 · 일정 제목 앞뒤 글자 · 대화 보기 · 자리 배치뿐(심방 내용 · 시험 상태 없음)', J(A.CFG_FIELDS), ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf', 'talk', 'seats']);
   sc.eq('⑪ 문서 자리', A.CFG_DOC, 'data/care');
   sc.eq('⑪ 고르기 — 시험 상태 · 모르는 칸은 뺀다', J(A.pickCfg({ sheet: S1, test: { before: [['x']] }, junk: 1, at: 5 })), { sheet: S1, at: 5 });
   // 폰에서 골랐다(시각 없음 — 예전 판), 계정엔 아직 없다 → 지금 시각을 붙여 올린다
@@ -1192,6 +1194,86 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('㊽ 구분 목록 — 알약 + 직접 적기(쉼표) · 겹침 빼기', A.attRoleList(['청년부'], '새가족, 청년부 ,'), ['청년부', '새가족']);
   sc.eq("㊽ 결과 글 — '혼자' 는 그대로, 그 밖은 'ㅇㅇ 함께'", [A.attWithText('혼자'), A.attWithText('아내'), A.attWithText('')], ['혼자', '아내 함께', '']);
   sc.eq("㊽ '혼자' 는 함께 알약 기본값에 끼지 않는다", A.attOptDefaults([{ with: '혼자' }, { with: '혼자' }, { with: '아내' }]).with, ['아내']);
+}
+
+// ㊾ (1115-4 ③) 자리 배치 — 이름은 모두 지어낸 자리 이름
+{
+  const B = (n, x, y, w, h) => ({ n, x, y, w, h });
+  const base = [B('맨 앞', 0, 0, 6, 1), B('앞 왼쪽', 0, 1, 2, 2), B('앞 가운데', 2, 1, 2, 2), B('앞 오른쪽', 4, 1, 2, 2)];
+  sc.eq('㊾ 가로는 6칸', A.SEAT_COLS, 6);
+  // 놓아도 되나
+  sc.eq('㊾ 빈 곳이면 된다', A.seatWhyNot(base, '앞 왼쪽', { x: 0, y: 3, w: 2, h: 2 }), '');
+  sc.eq('㊾ 제자리(자기 자신과는 안 겹친다)', A.seatWhyNot(base, '앞 왼쪽', { x: 0, y: 1, w: 2, h: 2 }), '');
+  sc.eq('㊾ 다른 알약과 겹치면 안 된다', !!(/겹칩니다/.test(A.seatWhyNot(base, '앞 왼쪽', { x: 1, y: 1, w: 2, h: 2 }))), true);
+  sc.eq('㊾ 가로 6칸을 넘으면 안 된다', !!(/6칸/.test(A.seatWhyNot(base, '앞 오른쪽', { x: 5, y: 3, w: 2, h: 1 }))), true);
+  sc.eq('㊾ 0칸으로는 못 줄인다', !!(/줄일 수 없/.test(A.seatWhyNot(base, '앞 오른쪽', { x: 4, y: 1, w: 0, h: 2 }))), true);
+  sc.eq('㊾ 세로 상한', !!(/줄까지/.test(A.seatWhyNot(base, '앞 오른쪽', { x: 4, y: A.SEAT_ROWS_MAX, w: 1, h: 1 }))), true);
+  sc.eq('㊾ 소수 칸 · 빈 값은 안 된다', !!(!!A.seatWhyNot(base, '앞 오른쪽', { x: 0.5, y: 3, w: 1, h: 1 }) && !!A.seatWhyNot(base, '앞 오른쪽', null)), true);
+  // 놓기 — 다른 알약은 한 칸도 안 움직인다
+  let r = A.seatPut(base, '앞 왼쪽', { x: 0, y: 3, w: 3, h: 1 });
+  sc.eq('㊾ 옮기고 크기 바꾸기 — 그 알약만 바뀐다', J(r), [base[0], B('앞 왼쪽', 0, 3, 3, 1), base[2], base[3]]);
+  sc.eq('㊾ 원래 목록은 그대로(새 목록을 돌려준다)', J(base[1]), B('앞 왼쪽', 0, 1, 2, 2));
+  sc.eq('㊾ 겹치면 안 놓인다(null) — 밀어내지 않는다', A.seatPut(base, '앞 왼쪽', { x: 2, y: 1, w: 2, h: 2 }), null);
+  r = A.seatPut(base, '2층', { x: 0, y: 3, w: 2, h: 1 });
+  sc.eq('㊾ 새 알약 놓기 — 끝에 더한다', J(r[4]), B('2층', 0, 3, 2, 1));
+  sc.eq('㊾ 띄어쓰기만 다른 이름은 같은 알약', A.seatPut(base, '앞왼쪽', { x: 0, y: 3, w: 2, h: 1 }).length, 4);
+  sc.eq('㊾ 빼기 — 그 알약만', J(A.seatOut(base, '앞 가운데').map(i => i.n)), ['맨 앞', '앞 왼쪽', '앞 오른쪽']);
+  // 빈 곳 찾기
+  sc.eq('㊾ 빈 곳 — 위에서부터 왼쪽부터', J(A.seatFree(base, 2, 1)), { x: 0, y: 3, w: 2, h: 1 });
+  sc.eq('㊾ 빈 곳 — 사이 틈이 맞으면 거기', J(A.seatFree([B('가', 0, 0, 2, 1), B('나', 4, 0, 2, 1)], 2, 1)), { x: 2, y: 0, w: 2, h: 1 });
+  sc.eq('㊾ 빈 판', J(A.seatFree([], 2, 1)), { x: 0, y: 0, w: 2, h: 1 });
+  sc.eq('㊾ 꽉 차면 null', A.seatFree([B('가', 0, 0, 6, A.SEAT_ROWS_MAX)], 1, 1), null);
+  // 줄 수 — 늘 빈 줄 하나
+  sc.eq('㊾ 줄 수 — 적어도 6줄 + 빈 줄 하나', A.seatRows(base), 7);
+  sc.eq('㊾ 줄 수 — 놓인 데까지 + 빈 줄 하나', A.seatRows([B('가', 0, 8, 1, 2)]), 11);
+  sc.eq('㊾ 줄 수 — 끄는 중인 알약의 아래 끝까지', A.seatRows(base, 9), 10);
+  sc.eq('㊾ 줄 수 — 상한을 넘지 않는다', A.seatRows([B('가', 0, A.SEAT_ROWS_MAX - 1, 1, 1)]), A.SEAT_ROWS_MAX);
+  // 끌기 · 당기기 (칸 단위로 붙는다 · 판 밖으로 안 나간다)
+  const o = { x: 2, y: 1, w: 2, h: 2 };
+  sc.eq('㊾ 끌기 — 반 칸 넘게 가면 다음 칸', J(A.seatDragTo(o, 0.6, 1.4)), { x: 3, y: 2, w: 2, h: 2 });
+  sc.eq('㊾ 끌기 — 왼쪽 · 위 끝에서 멈춘다', J(A.seatDragTo(o, -9, -9)), { x: 0, y: 0, w: 2, h: 2 });
+  sc.eq('㊾ 끌기 — 오른쪽 끝에서 멈춘다(폭만큼 안쪽)', J(A.seatDragTo(o, 9, 0)), { x: 4, y: 1, w: 2, h: 2 });
+  sc.eq('㊾ 당기기 — 폭 · 높이', J(A.seatSizeTo(o, 1.2, 0.7)), { x: 2, y: 1, w: 3, h: 3 });
+  sc.eq('㊾ 당기기 — 1칸보다 작아지지 않는다', J(A.seatSizeTo(o, -9, -9)), { x: 2, y: 1, w: 1, h: 1 });
+  sc.eq('㊾ 당기기 — 오른쪽 끝을 넘지 않는다', J(A.seatSizeTo(o, 9, 0)), { x: 2, y: 1, w: 4, h: 2 });
+  // 저장값 거르기
+  const dirty = { items: [B(' 맨 앞 ', 0, 0, 6, 1), B('맨앞', 0, 2, 1, 1), B('겹침', 5, 0, 1, 1), B('', 0, 3, 1, 1), B('밖', 5, 3, 2, 1), { n: '글자', x: '0', y: 4, w: 1, h: 1 }, null, B('뒤', 0, 5, 2, 1)], at: 7 };
+  sc.eq('㊾ 거르기 — 겹친 이름 · 겹친 자리 · 빈 이름 · 판 밖 · 틀린 값은 버린다', J(A.seatClean(dirty)), [B('맨 앞', 0, 0, 6, 1), B('뒤', 0, 5, 2, 1)]);
+  sc.eq('㊾ 거르기 — 빈 값', [J(A.seatClean(null)), J(A.seatClean({}))], [[], []]);
+  { const many = []; for (let i = 0; i < 40; i++) many.push(B('자리' + i, i % 6, Math.floor(i / 6), 1, 1)); sc.eq('㊾ 거르기 — 알약 상한까지만', A.seatClean({ items: many }).length, A.ATT_OPT_MAX); }
+  sc.eq('㊾ 저장할 모양 — 줄 + 시각뿐', J(A.seatPack(dirty.items, 99)), { items: [B('맨 앞', 0, 0, 6, 1), B('뒤', 0, 5, 2, 1)], at: 99 });
+  // 알약 목록에 맞추기
+  let v = A.seatView({ items: base }, ['앞 가운데', '맨앞', '2층', '로비', '앞 왼쪽']);
+  sc.eq('㊾ 맞추기 — 알약에 없는 자리는 안 보인다 · 이름은 알약 꼴로', J(v.items.map(i => i.n)), ['맨앞', '앞 왼쪽', '앞 가운데']);
+  sc.eq('㊾ 맞추기 — 아직 안 놓은 알약(알약 차례)', J(v.tray), ['2층', '로비']);
+  sc.eq('㊾ 맞추기 — 배치가 없으면 모두 안 놓은 알약', J(A.seatView(undefined, ['가', '나'])), { items: [], tray: ['가', '나'] });
+  // 이름 따라가기
+  sc.eq('㊾ 알약 이름을 바꾸면 따라간다', J(A.seatRename({ items: base }, '앞 왼쪽', '왼쪽 앞')[1]), B('왼쪽 앞', 0, 1, 2, 2));
+  sc.eq('㊾ 안 놓은 알약 이름을 바꾸면 할 일 없음', A.seatRename({ items: base }, '로비', '입구'), null);
+  sc.eq('㊾ 이미 놓인 이름으로는 안 바꾼다', A.seatRename({ items: base }, '앞 왼쪽', '맨 앞'), null);
+  sc.eq('㊾ 알약을 지우면 빠진다', J(A.seatDrop({ items: base }, '맨 앞').map(i => i.n)), ['앞 왼쪽', '앞 가운데', '앞 오른쪽']);
+  sc.eq('㊾ 안 놓은 알약을 지우면 할 일 없음', A.seatDrop({ items: base }, '로비'), null);
+  // 기기끼리 — 배치는 제 시각으로
+  const S1 = { id: 'S1', name: '시트' }, M1 = { items: [B('가', 0, 0, 1, 1)], at: 50 }, M2 = { items: [B('가', 1, 0, 2, 1)], at: 80 };
+  r = A.mergeCfg({ sheet: S1, at: 10, seats: M1 }, null, 100);
+  sc.eq('㊾ 계정에 없으면 배치도 함께 올린다', J(r.push), { sheet: S1, seats: M1, at: 10 });
+  r = A.mergeCfg({ sheet: S1, at: 10 }, { sheet: S1, at: 10, seats: M1 }, 100);
+  sc.eq('㊾ 다른 기기가 놓은 배치를 받는다(시트 고르기는 그대로)', J([r.local, r.push]), [{ sheet: S1, at: 10, seats: M1 }, null]);
+  r = A.mergeCfg({ sheet: S1, at: 10, seats: M2 }, { sheet: S1, at: 10, seats: M1 }, 100);
+  sc.eq('㊾ 이 기기 배치가 더 나중이면 올린다', J([r.local, r.push]), [null, { sheet: S1, seats: M2, at: 10 }]);
+  r = A.mergeCfg({ sheet: S1, at: 10, seats: M1 }, { sheet: S1, at: 10, seats: M2 }, 100);
+  sc.eq('㊾ 계정 배치가 더 나중이면 받는다', J([r.local.seats, r.push]), [M2, null]);
+  r = A.mergeCfg({ sheet: S1, at: 10, seats: M1 }, { sheet: S1, at: 10, seats: M1 }, 100);
+  sc.eq('㊾ 같으면 아무것도 안 한다', J([r.local, r.push]), [null, null]);
+  // 낡은 창이 계정 문서를 통째로 다시 써서 배치가 빠졌다(문서 시각은 더 나중) → 시트 고르기는 받고, 배치는 지키고 다시 올린다
+  const S2 = { id: 'S2', name: '다른 시트' };
+  r = A.mergeCfg({ sheet: S1, at: 10, seats: M2, test: { id: 'T' } }, { sheet: S2, at: 60 }, 100);
+  sc.eq('㊾ 낡은 창이 배치를 떨궈도 지킨다 — 이 기기', J(r.local), { test: { id: 'T' }, sheet: S2, at: 60, seats: M2 });
+  sc.eq('㊾ 낡은 창이 배치를 떨궈도 지킨다 — 다시 올림', J(r.push), { sheet: S2, at: 60, seats: M2 });
+  // 이 기기가 시트를 더 나중에 골랐어도 배치는 계정의 더 나중 것
+  r = A.mergeCfg({ sheet: S2, at: 90, seats: M1 }, { sheet: S1, at: 10, seats: M2 }, 100);
+  sc.eq('㊾ 시트는 올리고 배치는 받는다', J([r.local.seats, r.push]), [M2, { sheet: S2, seats: M2, at: 90 }]);
+  sc.eq('㊾ 올리는 것에 성도 이름 칸이 없다(알약 이름 · 위치 · 크기 · 시각뿐)', !!(Object.keys(A.seatPack(base, 1)).join() === 'items,at' && Object.keys(A.seatPack(base, 1).items[0]).join() === 'n,x,y,w,h'), true);
 }
 
 sc.done();
