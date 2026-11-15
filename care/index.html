@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1115-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -316,6 +316,21 @@ body.dragging{cursor:grabbing}
 .attsum small{font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .attsum svg{width:18px;height:18px;stroke:var(--tx3);stroke-width:1.8;fill:none;flex:none}
 .planbadge.att{border-style:solid}
+.asv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
+.asv-n{font-size:12px;color:var(--ac);white-space:nowrap;min-width:6.5em}.asv-n small{margin-left:5px;color:var(--tx3);font-size:11px;font-family:var(--mono)}
+.asv-p{font-size:14.5px;line-height:1.85;min-width:0}
+.asv-p .an{display:inline;white-space:nowrap;padding:0;margin:0;font:inherit;color:var(--tx);background:none;border:0;cursor:pointer}
+.asv-p .an:active{opacity:.55}
+.apop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(90vw,360px);max-height:80vh;overflow:auto;background:var(--paper);border-radius:16px;box-shadow:var(--shadow);z-index:41;padding:6px 8px 18px}
+.apop-h{display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
+.apop-h b{text-align:center;font-size:16px;font-weight:600}
+.apop-h .ic{width:40px;height:40px;display:grid;place-items:center;color:var(--tx2)}
+.apop-h .ic svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none}
+.apop-s{text-align:center;font-size:12.5px;color:var(--tx3);margin:0 0 12px}
+.apop-g{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;padding:0 12px;font-size:14px}
+.apop-g .k{color:var(--tx3);font-size:12.5px;padding-top:1px}
+.apop-m{margin:12px 12px 0;padding-top:10px;border-top:1px solid var(--line);font-size:13.5px;color:var(--tx2);white-space:pre-wrap}
+.apop-e{text-align:center;margin:4px 0 0}
 .planbadge{font-size:11px;color:var(--tx2);border:1px dashed var(--tx3);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .wl.plan .why{font-size:12.5px;color:var(--tx3);margin-top:3px}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);margin-top:6px}
@@ -995,7 +1010,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-10';
+const APP_VERSION = 'v. 26-1115-11';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -4386,14 +4401,33 @@ function vAttend() {
   const quiet = attQuiet(all, today());
   if (quiet.length) h += '<div class="h-sec" style="margin-top:6px">요즘 안 보이는 분<small>' + ATT_QUIET_DAYS / 7 + '주 넘게 · 늘 오던 분</small></div>' + quiet.map(o => '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(o.name) + '">' + nm(o.name) + '<small>마지막 ' + md(o.last) + (o.svc ? ' ' + esc(o.svc) : '') + ' · ' + Math.floor(o.days / 7) + '주째 · 출석 ' + o.n + '번</small></button><button class="send" data-act="b7person" data-v="' + esc(o.name) + '">BLOCK7</button></div>').join('');
   if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+" 로 한 분씩 적거나, 오른쪽 위 붙여 넣기로 메모를 그대로 넣어 보세요.<br>예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
-  let last = null;
-  list.forEach(a => {
-    if (a.date !== last) { if (last !== null) h += '</div>'; h += '<div class="dhead"><b>' + dayLabel(a.date) + '</b><span>' + all.filter(x => x.date === a.date).length + '명</span></div><div class="tl">'; last = a.date; }
-    h += attRowHtml(a, true);
+  // 1115-4 ② 날짜는 머리줄에만 — 그 아래는 예배 · 모임마다 한 줄, 이름은 적은 차례대로 가로로(빈칸으로 가름). 이름을 누르면 정보 팝업
+  const days = []; list.forEach(a => { const d = days[days.length - 1]; if (d && d.date === a.date) d.items.push(a); else days.push({ date: a.date, items: [a] }); });
+  days.forEach(d => {
+    h += '<div class="dhead"><b>' + dayLabel(d.date) + '</b><span>' + all.filter(x => x.date === d.date).length + '명</span></div><div class="asg">';
+    h += attSvcGroups(d.items).map(g => '<div class="asv"><span class="asv-n">' + esc(g.svc || '출석') + '<small>' + g.items.length + '</small></span><div class="asv-p">' +
+      g.items.map(a => '<button class="an" data-act="attinfo" data-v="' + esc(a.id) + '">' + nm(a.name) + '</button>').join(' ') + '</div></div>').join('');
+    h += '</div>';
   });
-  if (last !== null) h += '</div>';
   if (all.length > n) h += '<button class="send" data-act="attmore" style="margin-top:10px">더 보기 (' + (all.length - n) + ')</button>';
-  return h + '</div>' + nav();
+  return h + attPopHtml() + '</div>' + nav();
+}
+// 하루치 출석 → 예배 · 모임 묶음. 묶음 차례 = 그 묶음을 처음 적은 차례, 묶음 안 = 적은 차례(시트 줄 차례)
+function attSvcGroups(items) {
+  const by = new Map();
+  items.slice().sort((x, y) => x.row - y.row).forEach(a => { const k = nameKey(a.svc); if (!by.has(k)) by.set(k, { svc: a.svc, items: [] }); by.get(k).items.push(a); });
+  return [...by.values()];
+}
+// 1115-4 ② 이름을 누르면 — 그 출석의 보조 정보를 정리한 팝업. 좌상단 연필 = 고치기, 우상단 × · 바깥 누르기 · ESC = 닫기
+function attPopHtml() {
+  const a = S.attPop && AT().find(x => x.id === S.attPop); if (!a) { S.attPop = null; return ''; }
+  const how = [a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → ');
+  const rows = [['어떻게', how], ['자리', a.seat], ['함께', attWithText(a.with)], ['섬김', a.serve], ['구분', a.role]].filter(r => r[1]);
+  return '<div class="omenu-bg" data-act="attpopx"></div><div class="apop" role="dialog" aria-label="출석 정보">' +
+    '<div class="apop-h"><button class="ic" data-act="attpopedit" data-v="' + esc(a.id) + '" aria-label="고치기">' + IC.pen + '</button><b>' + nm(a.name) + '</b><button class="ic" data-act="attpopx" aria-label="닫기">' + IC.x + '</button></div>' +
+    '<div class="apop-s">' + esc(dayName(a.date)) + ' · ' + esc(a.svc || '출석') + '</div>' +
+    (rows.length ? '<div class="apop-g">' + rows.map(r => '<span class="k">' + r[0] + '</span><span>' + esc(r[1]) + '</span>').join('') + '</div>' : (a.memo ? '' : '<p class="muted apop-e">더 적은 것이 없습니다.</p>')) +
+    (a.memo ? '<div class="apop-m">' + esc(a.memo) + '</div>' : '') + '</div>';
 }
 // ── 1108-B3 출석 입력 — 칸마다 알약 + 직접 적기(접어 둠) · 알약은 여기서 더하고, 끌어 옮기고, 길게 눌러 고치고 지운다 ──
 function ATTO() { return attOptsUse(DATA.attOpts, AT()); }
@@ -6277,7 +6311,7 @@ function tabIndex(v) { return TABS_NAV.findIndex(t => t[0] === (v === 'month' ? 
 function goTab(v) {
   if (v === S.view) { window.scrollTo({ top: 0, behavior: RM.matches ? 'auto' : 'smooth' }); return; }
   const dir = Math.sign(tabIndex(v) - tabIndex(S.view)) || (v === 'month' ? 1 : -1);
-  swap(dir, () => { S.view = v; S.sheet = false; window.scrollTo(0, 0); });
+  swap(dir, () => { S.view = v; S.sheet = false; S.attPop = null; window.scrollTo(0, 0); });
 }
 function stepPeriod(d) {
   if (S.view === 'week') S.wk += d;
@@ -6447,6 +6481,9 @@ document.addEventListener('click', e => {
   if (a === 'earlypeek') { S.peek = true; render(); return; }
   if (a === 'earlyback') { S.peek = false; render(); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
+  if (a === 'attinfo') { S.attPop = v; render(); return; }
+  if (a === 'attpopx') { S.attPop = null; render(); return; }
+  if (a === 'attpopedit') { S.attPop = null; render(); openAttEdit(v); return; }
   if (a === 'attsolo') { const L = topLayer(); if (L && L.type === 'attedit') { L.form.with = L.form.with === ATT_SOLO ? '' : ATT_SOLO; if (L.open) L.open.with = false; L.dirty = true; render(); } return; }
   if (a === 'favgo') { openAttEdit(null, v); return; }
   if (a === 'attopen') { if (v) openAttEdit(v); return; }
@@ -6800,7 +6837,7 @@ document.addEventListener('touchcancel', () => sdEnd(true));
 document.addEventListener('keydown', e => {   // 1113-E 2 PC: 열람 화면에서 ← → 로 이전 · 다음 기록
   if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !isField(document.activeElement)) { const L = topLayer(); if (L && L.type === 'detail') { const nb = detNeighbors(), d = e.key === 'ArrowRight' ? 1 : -1, to = d > 0 ? nb.next : nb.prev; if (to) detGo($('layers').lastElementChild, to, d); return; } }
   if (e.key !== 'Escape') return;
-  if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
+  if (S.attPop && !S.layers.length) { S.attPop = null; render(); } else if (S.sheet) { S.sheet = false; render(); } else if (S.menu) { S.menu = null; render(); } else if (S.layers.length) closeLayer();
 });
 render();
 fbInit().catch(e => { AUTH_READY = true; render(); toast('로그인 준비에 실패했습니다\n' + e.message); });
