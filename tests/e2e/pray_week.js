@@ -71,13 +71,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok('W3 처음엔 접힘', await p.evaluate(W => document.querySelector('.layer.in .wk-sub[data-sub="' + W.d + '"]').hidden, W), null);
   await p.evaluate(W => document.querySelector('.layer.in [data-a="wk-fold"][data-id="' + W.d + '"]').click(), W); await sleep(700);
   ok('W3 그룹 이름 누르면 펼침 · 서브 그룹 · 줄 보임 · 위를 따라 옅게', await p.evaluate(([W, S]) => { const b = document.querySelector('.layer.in .wk-sub[data-sub="' + W.d + '"]'); const c = b.querySelector('.wk-c[data-wk="l|' + S.k + '|LS2|' + W.d + '"][data-v="0"]'); return !b.hidden && !!b.querySelector('.wk-c[data-wk="s|' + S.k + '|' + W.d + '"]') && c.classList.contains('on') && c.classList.contains('pale'); }, [W, S]), null);
-  const lsel = '.layer.in .wk-c[data-wk="l|' + S.k + '|LS2|' + W.d + '"][data-v="' + W.wd + '"]';
+  const dX = (W.wd + 2) % 7, lsel = '.layer.in .wk-c[data-wk="l|' + S.k + '|LS2|' + W.d + '"][data-v="' + dX + '"]';
   await p.evaluate(sel => { const c = document.querySelector(sel), r = c.getBoundingClientRect(), o = { pointerId: 11, pointerType: 'touch', clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true, button: 0 }; c.dispatchEvent(new PointerEvent('pointerdown', o)); document.dispatchEvent(new PointerEvent('pointerup', o)); }, lsel); await sleep(400);
   const st = await p.evaluate(([W, S, sel]) => ({ ln: (findG(DB, S.k).lines.find(l => l.id === 'LS2').days || []).slice(), lnCls: document.querySelector(sel).className,
     sub: document.querySelector('.layer.in .wk-c[data-wk="s|' + S.k + '|' + W.d + '"][data-v="' + W.wd + '"]').className,
     top: document.querySelector('.layer.in .wk-c[data-wk="t|' + W.d + '"][data-v="' + W.wd + '"]').className }), [W, S, lsel]);
-  ok('W3 줄 칸을 끄면 그 줄만 제 요일(오늘 빼고 여섯 날)', st.ln.length === 6 && !st.ln.includes(W.wd) && !/\bon\b/.test(st.lnCls) && !/pale/.test(st.lnCls), st);
+  ok('1 옅은(위를 따르던) 줄의 칸을 누르면 누른 날만 켜지고 나머지는 꺼짐', st.ln.length === 1 && st.ln[0] === dX && /\bon\b/.test(st.lnCls) && !/pale/.test(st.lnCls), st);
   ok('W3 위(서브 · 그룹) 칸은 반달 ◐', /half/.test(st.sub) && /half/.test(st.top), st);
+  const info = await p.evaluate(([W, S]) => { const q = s => document.querySelector('.layer.in ' + s); const w = s => q(s).getBoundingClientRect().width;
+    return { n: q('[data-wkc="t|' + W.d + '"]').textContent, ns: q('[data-wkc="s|' + S.k + '|' + W.d + '"]').textContent,
+      wTop: w('.wk-tr .wk-g'), wSub: w('.wk-sr .wk-g') + 14, wLn: w('.wk-lr .wk-g') + 24,
+      xTop: q('.wk-tr .wk-c').getBoundingClientRect().x, xSub: q('.wk-sr .wk-c').getBoundingClientRect().x, xLn: q('.wk-lr .wk-c').getBoundingClientRect().x,
+      col: getComputedStyle(q('.wk-lr .wk-pn')).color }; }, [W, S]);
+  ok('2 이름 칸 숫자 = 기도 요일 수(그룹 7 · 서브 그룹 7 — 반달인 날도 셈)', info.n === '7' && info.ns === '7', info);
+  ok('4 펼친 줄도 칸이 같은 세로선에 (이름 칸 폭이 같음)', Math.abs(info.xTop - info.xSub) < 1 && Math.abs(info.xTop - info.xLn) < 1 && Math.abs(info.wTop - info.wSub) < 1.5, info);
+  ok('3 기도 항목 이름이 pn 색을 따름(표시색 변수)', await p.evaluate(() => !!document.querySelector('.layer.in .wk-pn')), info.col);
   await p.evaluate(() => { popLayer(); }); await sleep(400);
   const vis = await p.evaluate(S => ({ deck: mapDeck().map(d => d.id), shown: [...document.querySelectorAll('#v-map .pn')].map(b => b.dataset.id) }), S);
   ok('W3 지도 · 한 장 기도에서 오늘 아닌 줄(사랑)은 숨고 같은 서브 그룹의 다른 줄(바다)은 보임', vis.shown.includes(S.p1) && !vis.shown.includes(S.p2) && vis.deck.includes(S.p1) && !vis.deck.includes(S.p2), vis);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1116-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1116-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1116-3';
+const APP_VERSION = 'v. 26-1116-4';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2429,12 +2429,14 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .wk-sub{padding-bottom:4px}
 .wk-sr,.wk-lr{min-height:38px}
 .wk-sr .wk-c,.wk-lr .wk-c{height:38px}
-.wk-g.sub{background:color-mix(in srgb,var(--gc) 55%,transparent);margin-left:14px;flex-basis:calc(38% - 14px);height:30px;font-size:12.5px;cursor:default}
-.wk-g.ln{background:transparent;color:var(--tx2);font-weight:400;font-size:12.5px;margin-left:24px;flex-basis:calc(38% - 24px);height:30px;padding:0 6px;cursor:default;box-shadow:inset 2px 0 color-mix(in srgb,var(--tx) 14%,transparent)}
+.wk-g.sub{background:color-mix(in srgb,var(--gc) 55%,transparent);margin-left:14px;flex-basis:calc(min(38%,200px) - 14px);height:30px;font-size:12.5px;cursor:default}
+.wk-g.ln{background:transparent;color:var(--tx2);font-weight:400;font-size:12.5px;margin-left:24px;flex-basis:calc(min(38%,200px) - 24px);height:30px;padding:0 6px;cursor:default;box-shadow:inset 2px 0 color-mix(in srgb,var(--tx) 14%,transparent)}
+.wk-pn{font-style:normal;color:var(--pc,var(--tx2))}
+.wk-g.ln b{font-weight:400;opacity:.45}
 .wk-g.open{box-shadow:0 0 0 1.5px color-mix(in srgb,#fff 45%,transparent) inset}
 .wk-c+.wk-c{box-shadow:inset 1px 0 color-mix(in srgb,var(--tx) 9%,transparent)}
 .wk-h{min-height:40px;color:var(--tx2);font-size:13px}
-.wk-g{flex:0 0 38%;max-width:200px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;height:34px;padding:0 10px;margin-right:6px;border:0;border-radius:9px;background:var(--gc,transparent);color:#fff;font:inherit;font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
+.wk-g{flex:0 0 min(38%,200px);max-width:none;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;height:34px;padding:0 10px;margin-right:6px;border:0;border-radius:9px;background:var(--gc,transparent);color:#fff;font:inherit;font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
 .wk-h .wk-g{background:transparent}
 .wk-g span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wk-g small{opacity:.6;font-weight:400;font-size:11.5px}
@@ -2450,7 +2452,7 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .wk-c.pale{--wo:.28}
 .wk-lg{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--ac);vertical-align:-1px;margin:0 4px 0 1px}
 .wk-lg.hf{box-sizing:border-box;border:1.3px solid var(--ac);background:linear-gradient(90deg,var(--ac) 50%,transparent 50%)}
-.wk-lg.pl{opacity:.28}
+.wk-lg.pa{opacity:.28}
 .wk-sr .wk-dot,.wk-sr .wk-hf,.wk-lr .wk-dot,.wk-lr .wk-hf{width:16px;height:16px;margin:-8px 0 0 -8px}
 .wk-c[data-wk]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .wk-h .wk-c{flex-direction:column;line-height:1.15}
@@ -4296,20 +4298,23 @@ LAYERS.week = () => {
   const head = '<div class="wk-r wk-h"><span class="wk-g"></span>' + WEEK.map((w, d) => '<span class="wk-c' + (d === 0 ? ' sun' : '') + (d === wd ? ' now' : '') + '">' + (d === 0 ? '주일' : w) + '<small class="wk-n" data-wkn="' + d + '">' + wkCount(d) + '</small></span>').join('') + '</div>';
   // 칸은 data-a 없이 — 누르기 · 끌어 칠하기를 아래 WK 손짓이 함께 받는다. 동그라미는 늘 두고 켜짐만 바꿔 디졸브로 보인다
   const cells = (key, nm) => WEEK.map((w, d) => { const c = wkCellState(key, d); return '<button class="wk-c' + c.cls + (d === wd ? ' now' : '') + '" data-wk="' + esc(key) + '" data-v="' + d + '" aria-pressed="' + c.on + '" aria-label="' + esc(nm) + ' ' + w + '요일"><i class="wk-dot"></i><i class="wk-hf"></i></button>'; }).join('');
-  const lineRow = (l, gid, pid) => { const nm = lineToText(DB, l) || l.text || ''; return '<div class="wk-r wk-lr"><span class="wk-g ln"><span>' + esc(nm) + '</span></span>' + cells('l|' + gid + '|' + l.id + '|' + (pid || ''), nm) + '</div>'; };
+  const lineName = l => (l.segs || []).length ? (l.segs || []).map(seg => seg.map(pid => { const t = findT(DB, pid); if (!t || isShelved(t)) return ''; const m = mk(t); return '<i class="wk-pn"' + (m && m !== 'gray' ? ' style="--pc:' + markVar(m) + '"' : '') + '>' + esc(t.name) + '</i>'; }).filter(Boolean).join(' ')).filter(Boolean).join(' <b>/</b> ') : esc(l.text || '');   // 표시색을 따른다 (HB 1116)
+  const lineRow = (l, gid, pid) => { const nm = lineToText(DB, l) || l.text || ''; return '<div class="wk-r wk-lr"><span class="wk-g ln"><span>' + lineName(l) + '</span></span>' + cells('l|' + gid + '|' + l.id + '|' + (pid || ''), nm) + '</div>'; };
   const lineOk = l => (l.text && !(l.segs || []).length) || linePids(l).some(pid => { const t = findT(DB, pid); return t && !isShelved(t); });
   const rows = tops.map(g => {
     const kids = kidsOf(DB, g.id);
     const inner = (g.lines || []).filter(lineOk).map(l => lineRow(l, g.id, '')).join('') + kids.map(k =>
-      '<div class="wk-r wk-sr"><span class="wk-g sub" style="--gc:' + esc(k.color || g.color) + '"><span>' + esc(k.name) + '</span><small>' + groupHeadcount(DB, k) + '</small></span>' + cells('s|' + k.id + '|' + g.id, k.name) + '</div>' +
+      '<div class="wk-r wk-sr"><span class="wk-g sub" style="--gc:' + esc(k.color || g.color) + '"><span>' + esc(k.name) + '</span><small data-wkc="s|' + k.id + '|' + g.id + '">' + wkDayN('s|' + k.id + '|' + g.id) + '</small></span>' + cells('s|' + k.id + '|' + g.id, k.name) + '</div>' +
       (k.lines || []).filter(lineOk).map(l => lineRow(l, k.id, g.id)).join('')).join('');
-    return '<div class="wk-blk"><div class="wk-r wk-tr"><button class="wk-g' + (open[g.id] ? ' open' : '') + '" style="--gc:' + esc(g.color) + '" data-a="wk-fold" data-id="' + g.id + '" aria-expanded="' + !!open[g.id] + '"><span>' + esc(g.name) + '</span><small>' + groupHeadcount(DB, g) + '</small></button>' + cells('t|' + g.id, g.name) + '</div>' +
+    return '<div class="wk-blk"><div class="wk-r wk-tr"><button class="wk-g' + (open[g.id] ? ' open' : '') + '" style="--gc:' + esc(g.color) + '" data-a="wk-fold" data-id="' + g.id + '" aria-expanded="' + !!open[g.id] + '"><span>' + esc(g.name) + '</span><small data-wkc="t|' + g.id + '">' + wkDayN('t|' + g.id) + '</small></button>' + cells('t|' + g.id, g.name) + '</div>' +
       '<div class="wk-sub" data-sub="' + g.id + '"' + (open[g.id] ? '' : ' hidden') + '>' + (inner || '<div class="hint" style="padding:6px 14px">아래에 서브 그룹 · 기도 항목이 없습니다</div>') + '</div></div>';
   }).join('');
   const b = '<div class="hint">칸을 누르거나 끌어 지나가며 기도할 요일을 정합니다 · 그룹 이름을 누르면 서브 그룹 · 기도 항목이 펼쳐집니다</div><div class="wk">' + head + rows + '</div>' +
-    '<div class="hint" style="padding-top:14px"><i class="wk-lg"></i>그날 모두 나옴 · <i class="wk-lg hf"></i>일부만 나옴 · <i class="wk-lg pl"></i>따로 안 정해 위를 따름(그룹은 매일)<br>요일 아래 숫자 = 그날 지도에 나오는 그룹 수 · 지도의 요일 단추를 켜 두면 오늘 요일 것만 지도 · 한 장 기도 · There 차례에 나옵니다.</div>';
+    '<div class="hint" style="padding-top:14px"><i class="wk-lg"></i>그날 모두 나옴 · <i class="wk-lg hf"></i>일부만 나옴 · <i class="wk-lg pa"></i>따로 안 정해 위를 따름(그룹은 매일)<br>요일 아래 숫자 = 그날 지도에 나오는 그룹 수 · 지도의 요일 단추를 켜 두면 오늘 요일 것만 지도 · 한 장 기도 · There 차례에 나옵니다.</div>';
   return { title: '요일별 기도', body: b };
 };
+// 이름 칸 오른쪽 숫자 = 그 그룹이 기도하는 요일 수(반달인 날도 센다)
+function wkDayN(key) { const n = wkNode(key); return n ? [0, 1, 2, 3, 4, 5, 6].filter(d => n.cov(d) > 0).length : 0; }
 function wkCount(d) { return mapTopsAll().filter(g => dayCover(DB, g, effDays(g), d, true) > 0).length; }
 // 칸 열쇠 → { x: 바꿀 것(그룹 · 서브 그룹 · 줄), inh: 따르는 요일, cov(d) } — 위가 바뀌면 따르는 요일도 바뀌므로 쓸 때마다 새로 구한다
 function wkNode(key) {
@@ -4333,6 +4338,7 @@ function wkSync(root) {
     c.setAttribute('aria-pressed', st.on);
   });
   root.querySelectorAll('[data-wkn]').forEach(n => { n.textContent = wkCount(+n.dataset.wkn); });
+  root.querySelectorAll('[data-wkc]').forEach(n => { n.textContent = wkDayN(n.dataset.wkc); });
 }
 LAYERS.groups = () => {
   const tops = topGroups(DB);
@@ -5408,7 +5414,9 @@ function wkPaint(c) {
   const st = WK.st, k = c.dataset.wk + ':' + c.dataset.v; if (!st || st.seen.has(k)) return;
   st.seen.add(k);
   const n = wkNode(c.dataset.wk); if (!n) return;
-  dayToggle(n.x, n.inh, +c.dataset.v, st.val);
+  const key = c.dataset.wk;
+  if (st.solo && !ownDays(n.x) && !st.reset.has(key)) { st.reset.add(key); n.x.days = [+c.dataset.v]; }   // 손대지 않아 위를 따르던 줄 — 누른 날만 켜고 나머지는 끈다 (HB 1116)
+  else dayToggle(n.x, n.inh, +c.dataset.v, st.val);
   wkSync(c.closest('.wk'));
   const lay = c.closest('.layer'); if (lay) lay.querySelectorAll('[data-wkn]').forEach(x => { x.textContent = wkCount(+x.dataset.wkn); });
 }
@@ -5416,7 +5424,8 @@ document.addEventListener('pointerdown', e => {
   const c = e.target.closest && e.target.closest('.wk-c[data-wk]'); if (!c || (e.pointerType === 'mouse' && e.button !== 0)) return;
   e.preventDefault();
   const n = wkNode(c.dataset.wk); if (!n) return;
-  WK.st = { id: e.pointerId, val: effDays(n.x, n.inh).indexOf(+c.dataset.v) < 0, seen: new Set() };   // 처음 칸이 제 요일(따르는 것 포함)에 있으면 끄기, 없으면 켜기
+  const solo = !ownDays(n.x);   // 위를 따르던(옅은) 칸에서 시작 — 이번 손짓은 '고른 날만' 켜기
+  WK.st = { id: e.pointerId, solo, reset: new Set(), val: solo ? true : effDays(n.x, n.inh).indexOf(+c.dataset.v) < 0, seen: new Set() };   // 처음 칸이 제 요일(따르는 것 포함)에 있으면 끄기, 없으면 켜기
   try { c.releasePointerCapture(e.pointerId); } catch (er) {}
   wkPaint(c);
 });
