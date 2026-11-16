@@ -178,8 +178,9 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 판단(자료 모양 · 맞추기 · 한 주 보기)은 `<script id="rotation-core">` 에 모았고 `tests/test_rotation.js` 가 시험한다 — 고치면 시험부터 고친다.
 
 - 저장은 HB 파이어베이스 `rota/{uid}` 한 장(로그인 칸 이름 `rota`). 규칙 붙이기는 `docs/rotation/firestore-rules.md`.
-  쓰는 칸은 `WRITE_FIELD`(지금 `b8`) 하나, 옛 칸(`OLD_FIELDS`: `book` ~ `b7`)은 **읽어 합친 뒤 지운다**(`pickDoc` · `cloudSave`). 모양을 또 바꿔 낡은 앱이 떨굴 칸이 생기면 새 칸을 열고 지금 칸을 `OLD_FIELDS` 에 넣는다 — 낡은 칸에 쓰지 말 것.
+  쓰는 칸은 `WRITE_FIELD`(지금 `b9`) 하나, 옛 칸(`OLD_FIELDS`: `book` ~ `b8`)은 **읽어 합친 뒤 지운다**(`pickDoc` · `cloudSave`). 모양을 또 바꿔 낡은 앱이 떨굴 칸이 생기면 새 칸을 열고 지금 칸을 `OLD_FIELDS` 에 넣는다 — 낡은 칸에 쓰지 말 것.
   숙소 예약 화면 사진은 `rota/{uid}/img/{id}`(줄인 JPEG 한 장씩) — 책에는 id 만. 사람 `kind: 'lay'` = 교역자가 아닌 성도 인도자 · `kind: 'other'` = 담임 · 초청(담임목사님 · 사모님 · 강사) · `away` = 부재 · `pin` = 그 표시가 있는 주에는 분당 · `alias` = 시트에 다르게 적힌 이름 · `email` = 로그인 계정(내 일정 · R6).
+  부산 예배 인도(R12 A)는 방문의 `lead` 한 칸 — 금요 · 주일 · LL 마다 `{ m: 'staff' | 'lay' (+ p = 성도 id) | 'relay'(중계) }`, 없으면 비움. 옛 칸(`fri` · `sunLead` · `sunLay` · `ll`)은 `normLead` 가 읽을 때만 옮기고 다시 쓰지 않는다. 교역자 인도만 머무는 날을 본다(`visitLeads`).
   목록 셋(`opts`: 숙소 · 교통편 · 특이사항 갈래)은 기본값을 정해진 id(`optId`)로 적는다 — 이름을 고치면 방문 기록도 함께 바뀐다(`optEdit`). 특이사항(`issues`)은 메모와 따로. 부산 방문 판은 '저장' 을 눌러야 들어간다(× 는 버림).
   금1 · 금2 · 금3 은 화면 · 자료 어디서나 **AWAKE · REVIVED · ENCOUNTER**(`friName`, HB 11/14). 매월 마지막 금요일에만 'WN 광고' 칸(`fri|notice`).
   `users/{uid}` 는 건드리지 않는다. `cellbook/{uid}` 는 **AI 열쇠(`ai.key`) 읽기 한 곳뿐**(R9 — 셀 inside 에 넣은 제미나이 열쇠를 함께 씀, 쓰지 말 것 · `test_rotation` ⑧).
@@ -190,7 +191,7 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   ⚠️ 교역자에게 책 쓰기를 열지 말 것(보안 규칙은 책 안의 어느 줄인지 못 가린다). 규칙을 고치면 `tests/rules/` 에뮬레이터 시험을 돌리고 문서 덩어리와 같게 둔다(`test_rotation` ㉓).
   ⚠️ HB 계정(이메일 · 비밀번호)으로 '구글 로그인' 을 권하지 말 것 — 같은 지메일이면 비밀번호 로그인이 풀릴 수 있다.
   교역자 앱(`FB.role === 'staff'`)은 **HB 책을 저장하지 않는다**(`saveBook` · `cloudSave` 는 주인만) — 교역자 누름은 `staffOk` 한 곳에서 거르고, 고친 것은 `staffWrite` 로 자기 칸에만. 새 편집 화면을 만들면 `staffOk` 에 넣을지 정한다.
-  **내 화면 취향(R8b · `ui` = 첫 화면 + 내 이름 보이는 모양)** 은 책 밖이다 — HB 는 `rota/{uid}` 맨 위 `ui` 칸, 교역자는 자기 칸의 `ui`(`saveUi`). 책(`b8`)에 넣지 말 것 · `absorb` 가 읽게 하지 말 것(`test_rotation` ㉕).
+  **내 화면 취향(R8b · `ui` = 첫 화면 + 내 이름 보이는 모양)** 은 책 밖이다 — HB 는 `rota/{uid}` 맨 위 `ui` 칸, 교역자는 자기 칸의 `ui`(`saveUi`). 책(`b9`)에 넣지 말 것 · `absorb` 가 읽게 하지 말 것(`test_rotation` ㉕).
   '내 일정' 은 사람 알약이 모두에게 보이고 열 때마다 '나'(로그인 이메일의 사람)가 골라져 있다 — 목록 = 다음 차례 · 부산 준비, 격자 = 8주 표(`myAhead` · `tripChecks` · `myWeeks`). 내 이름 모양은 그린 뒤 `paintMe` 한 곳에서 입힌다.
   로그인 · 맞추기를 고치면 `tests/rules/rota.e2e.mjs`(실제 화면 + 에뮬레이터, 빈 기기 로그인 포함)를 돌린다. 구글 로그인 콘솔 설정은 `docs/rotation/google-login.md`.
 - ⚠️ **맞추기는 아무것도 지우지 않는다** — 줄마다 나중에 고친 것이 이기고, 지우는 것은 사람이 누른 표지(`del`)뿐이다. 표지를 버리지 말 것(버리면 낡은 기기의 줄이 되살아난다).
