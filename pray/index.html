@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1113-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1116-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1113-1';
+const APP_VERSION = 'v. 26-1116-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -531,6 +531,12 @@ function childrenOf(db, gid) { return db.G.filter(g => g.parent === gid); }
 function topGroups(db) { return db.G.filter(g => !g.parent || !findG(db, g.parent)); }
 // 지도에서 이 묶음 밑에 보이는 작은 묶음 — 제 자리(parent) + 연동해 둔 자리(also)
 function kidsOf(db, gid) { return db.G.filter(g => g.parent === gid || (g.also || []).indexOf(gid) >= 0); }
+// 요일별 기도 (HB 2026-11-16) — 그룹(대분류)의 기도 요일은 상세의 g.days(0 = 주일). 하나도 안 골랐으면 매일.
+//   지도의 '요일' 단추(DB.set.dayOn, 계정 공통)를 켜면 오늘 요일의 그룹만 지도 · 한 장 기도 · There 차례에 나온다.
+function groupOnDay(g, wd) { const d = (g && g.days) || []; return !d.length || d.indexOf(wd) >= 0; }
+function dayTops(db, tops, date) { if (!db.set.dayOn) return tops; const wd = parseYmd(date).getDay(); return tops.filter(g => groupOnDay(g, wd)); }
+// 보이는 그룹만 끌어 순서를 바꿨을 때 — 숨은 그룹은 제자리에 두고, 보이던 자리들에만 새 차례를 채운다
+function fillVisibleOrder(all, vis) { const v = new Set(vis); let k = 0; return all.map(id => v.has(id) ? vis[k++] : id); }
 
 // ── 연동 복제 (HB 2026-10-11) ──
 // 작은 묶음: **같은 묶음 하나**가 여러 자리에 보인다(also). 이름 · 줄을 고치면 어디서나 같다.
@@ -2397,6 +2403,22 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .hero-name{width:100%;border:0;background:transparent;outline:none;font-family:var(--serif);font-size:32px;font-weight:400;letter-spacing:-.01em;padding:4px 0;border-bottom:1px solid transparent;transition:border-color .2s}
 .hero-name:focus{border-bottom-color:var(--bd2)}
 .hero-sub{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wk{padding:6px 12px 0}
+.wk-r{display:flex;align-items:center;gap:2px;min-height:44px}
+.wk-r:not(.wk-h):nth-child(even){background:color-mix(in srgb,var(--tx) 4%,transparent);border-radius:10px}
+.wk-c+.wk-c{box-shadow:inset 1px 0 color-mix(in srgb,var(--tx) 9%,transparent)}
+.wk-h{min-height:34px;color:var(--tx2);font-size:13px}
+.wk-g{flex:0 0 38%;max-width:200px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;height:34px;padding:0 10px;margin-right:6px;border:0;border-radius:9px;background:var(--gc,transparent);color:#fff;font:inherit;font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
+.wk-h .wk-g{background:transparent}
+.wk-g span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wk-g small{opacity:.6;font-weight:400;font-size:11.5px}
+.wk-c{flex:1;min-width:0;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:0}
+.wk-h .wk-c{height:34px;cursor:default}
+.wk-c.sun{color:var(--danger,#e05555)}
+.wk-h .wk-c.now{color:var(--ac);font-weight:700}
+.wk-dot{width:20px;height:20px;border-radius:50%;background:var(--ac);display:block;animation:wkPop .22s cubic-bezier(.22,.8,.24,1)}
+@keyframes wkPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.wk-dot{animation:none}}
 [data-lp]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* 길게 누르기 단추 · 줄 — 글자 선택 · 미리보기가 뜨지 않게 (P2-3) */
 .tag{height:30px;padding:0 12px;border-radius:15px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;background:var(--s1);color:var(--tx2);border:1px solid var(--bd)}
 .tag.g{background:var(--gc);color:#fff;border-color:transparent}
@@ -3631,16 +3653,20 @@ function mapNeedDepth(k) {
 // ── ⑤ 지도 탭 ──
 // 지도 위 단추 — 순서는 이 기기에서 끌어 바꾼다. 켜짐/꺼짐은 색으로만:
 //  3줄 · + : 꺼짐 = 흐린 색 · 켜짐 = 일반색   타겟 : 꺼짐 흐림(모두 보임) · 일반색(고르는 중) · 강조색(고른 것만)
-const MAPBTN_DEF = ['done', 'depth', 'fold', 'add', 'pick', 'search'];
+const MAPBTN_DEF = ['day', 'done', 'depth', 'fold', 'add', 'pick', 'search'];
 function mapBtnOrder() {
   const o = devPref('mapBtns', []), base = Array.isArray(o) ? o.filter((k, i) => MAPBTN_DEF.indexOf(k) >= 0 && o.indexOf(k) === i) : [];
-  MAPBTN_DEF.forEach(k => { if (base.indexOf(k) < 0) { if (k === 'done') base.unshift(k); else base.push(k); } });   // 새 '기도함' 단추는 맨 왼쪽
+  MAPBTN_DEF.slice().reverse().forEach(k => { if (base.indexOf(k) < 0 && (k === 'done' || k === 'day')) base.unshift(k); });   // 새 '요일' · '기도함' 단추는 맨 왼쪽 (요일이 먼저)
+  MAPBTN_DEF.forEach(k => { if (base.indexOf(k) < 0) base.push(k); });
   return base;
 }
+// 요일 단추 그림 — 달력 안에 7
+const DAY_ICO = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/><polyline points="9.5 12.5 14.5 12.5 11.5 18"/></svg>';
 function mapBtns() {
   const has = DB.G.length, pm = UI.pickMode || 0;
   const dm = doneMode();
   const B = {
+    day: has ? '<button class="ib' + (DB.set.dayOn ? ' on' : ' dim') + '" data-bk="day" data-a="map-day" aria-pressed="' + !!DB.set.dayOn + '" aria-label="오늘 요일 그룹만 보기 (길게 누르면 요일별 기도 표)">' + DAY_ICO + '</button>' : '',
     done: has ? '<button class="ib' + (dm >= 2 ? ' on' : dm === 1 ? '' : ' dim') + '" data-bk="done" data-a="map-done-mode" aria-label="오늘 기도한 것 — ' + DONE_LBL[dm] + '">' + doneIco(dm) + '</button>' : '',
     depth: has ? '<button class="ib' + (mapDepth() === 3 ? ' dim' : '') + '" data-bk="depth" data-a="map-depth" aria-label="지도 펼침 단계 — ' + ['그룹만', '서브 그룹까지', '항목까지'][mapDepth() - 1] + '">' + depthIco(mapDepth()) + '</button>' : '',
     fold: has ? '<button class="ib mk-fold' + (UI.mkOpen ? ' on' : '') + '" data-bk="fold" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '',
@@ -3667,6 +3693,7 @@ function renderMap() {
     h += '<div class="hint">' + (n ? n + '곳 — ' + gh.slice(0, 6).map(g => '<b style="color:var(--tx2)">' + esc(g.name) + '</b>').concat(hits.slice(0, 12).map(p => esc(p.name) + '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')')).join(', ') : '찾는 것이 없습니다') + '</div>';
   }
   if (KB && !TOUCHDEV && kbHintMode() === 1) h += kbHintBar();
+  if (DB.set.dayOn && !mapTops().length) h += '<div class="hint" style="padding-top:24px">오늘(' + WEEK[parseYmd(TODAY).getDay()] + ')은 기도할 그룹이 없습니다.<br>요일 단추를 길게 눌러 요일별 기도 표에서 정해 주세요.</div>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter, depth: mapDepth(), pick: { ids: new Set(pickIds()), mode: UI.pickMode || 0 }, addOff: TOUCHDEV && !UI.addMode });
   return h;
 }
@@ -4201,7 +4228,7 @@ LAYERS.group = L => {
       groupHeadcount(DB, k) + '명' + (k.days.length ? ' · ' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') : '') + '</div></div>' + ico('chevR') + '</div></div>').join('') + '</div>' +
       '<div style="padding:8px 20px 0"><button class="ghost" data-a="add-sub" data-id="' + g.id + '">+ 서브 그룹</button></div>';
   }
-  b += '<div class="label">요일 · 때</div>' + daysRow(g) +
+  b += '<div class="label">' + (g.parent ? '요일 · 때' : '기도 요일 · 때<small>안 고르면 매일</small>') + '</div>' + daysRow(g) +
     '<input class="field" data-f="time" data-id="' + g.id + '" value="' + esc(g.time) + '" placeholder="때 — 오전 · 오후 · 저녁" autocomplete="off">';
   b += prioBlock(g) + markPicker(g) + topicsBlock(g);
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + g.id + '" placeholder="이 그룹을 위해 할 일">' + esc(g.memo) + '</textarea>' +
@@ -4220,6 +4247,16 @@ function lineView(l) {
   }).join(' ')).join(' <span class="sep">/</span> ') + '</div>';
 }
 // 묶음 목록 (순서 바꾸기)
+// 요일별 기도 표 (HB 2026-11-16) — 세로 = 그룹(대분류, 지도 차례) · 가로 = 주일 ~ 토. 칸을 눌러 그 그룹의 기도 요일(g.days)을 켜고 끈다
+LAYERS.week = () => {
+  const tops = mapTopsAll(), wd = parseYmd(TODAY).getDay();
+  const head = '<div class="wk-r wk-h"><span class="wk-g"></span>' + WEEK.map((w, d) => '<span class="wk-c' + (d === 0 ? ' sun' : '') + (d === wd ? ' now' : '') + '">' + (d === 0 ? '주일' : w) + '</span>').join('') + '</div>';
+  const rows = tops.map(g => '<div class="wk-r"><button class="wk-g" style="--gc:' + esc(g.color) + '" data-a="open-group" data-id="' + g.id + '"><span>' + esc(g.name) + '</span><small>' + groupHeadcount(DB, g) + '</small></button>' +
+    WEEK.map((w, d) => { const on = g.days.indexOf(d) >= 0; return '<button class="wk-c' + (d === wd ? ' now' : '') + '" data-a="week-day" data-id="' + g.id + '" data-v="' + d + '" aria-pressed="' + on + '" aria-label="' + esc(g.name) + ' ' + w + '요일">' + (on ? '<i class="wk-dot"></i>' : '') + '</button>'; }).join('') + '</div>').join('');
+  const b = '<div class="hint">칸을 눌러 그룹마다 기도할 요일을 정합니다 · 요일을 하나도 안 고른 그룹은 매일 나옵니다</div><div class="wk">' + head + rows + '</div>' +
+    '<div class="hint" style="padding-top:14px">지도의 요일 단추를 켜 두면 오늘 요일 그룹만 지도 · 한 장 기도 · There 차례에 나옵니다.</div>';
+  return { title: '요일별 기도', body: b };
+};
 LAYERS.groups = () => {
   const tops = topGroups(DB);
   const b = '<div class="hint">길게 눌러 지도의 순서를 바꿉니다 · 밀면 지우기 (서브 그룹도 함께)</div><div class="rows" data-sort="groups">' + tops.map(g =>
@@ -5275,6 +5312,18 @@ function mxRun(e, open) {
 }
 function btnTone(el, cls) { if (!el) return; el.classList.remove('dim', 'on'); if (cls) el.classList.add(cls); }
 function mapBtnEl(k) { return document.querySelector('#v-map .vh-acts [data-bk="' + k + '"]'); }
+// 요일별 기도 (HB 2026-11-16) — 누르면 오늘 요일 그룹만 · 다시 누르면 모두. 계정 공통(DB.set.dayOn)
+ACT['map-day'] = () => {
+  const on = !DB.set.dayOn, wd = WEEK[parseYmd(TODAY).getDay()];
+  mapFlip(() => { DB.set.dayOn = on; save(); renderView(); });
+  toast(on ? '오늘(' + wd + ') 기도할 그룹만\n보여 드립니다' : '모든 그룹을\n다시 보여 드립니다');
+};
+ACT['week-day'] = el => {
+  const g = findG(DB, el.dataset.id); if (!g) return;
+  const d = +el.dataset.v, k = g.days.indexOf(d);
+  if (k >= 0) g.days.splice(k, 1); else { g.days.push(d); g.days.sort(); }
+  save(); refresh();
+};
 ACT['map-pick-mode'] = () => {
   UI.pickMode = ((UI.pickMode || 0) + 1) % 3;   // 0 꺼짐(모두 보임) → 1 고르는 중 → 2 고른 것만
   const b = mapBtnEl('pick');
@@ -6018,7 +6067,10 @@ const KB = !!(window.matchMedia && matchMedia('(any-hover: hover) and (any-point
 let PT = KB ? 'mouse' : 'touch';
 document.body.classList.toggle('tch', PT !== 'mouse');
 document.addEventListener('pointerdown', e => { PT = e.pointerType || 'mouse'; document.body.classList.toggle('tch', PT !== 'mouse'); }, true);
-function mapTops() {
+// 지도에 보이는 그룹 차례 — 요일 단추가 켜져 있으면 오늘 요일 그룹만 (지도 · 한 장 기도 · There 차례가 모두 여기를 거친다)
+function mapTops() { return dayTops(DB, mapTopsAll(), TODAY); }
+// 숨은 그룹까지 모두 — 끌어 순서를 바꿀 때 숨은 그룹 자리를 지키는 데 쓴다
+function mapTopsAll() {
   let tops = topGroups(DB);
   const mode = DB.set.sorts.map || 'mine';
   const hc = g => groupHeadcount(DB, g);
@@ -6154,8 +6206,9 @@ function mapMove(k, dir) {
     const g = findG(DB, p.gid); if (!g) return;
     const sibs = g.parent ? childrenOf(DB, g.parent) : mapTops();
     const i = sibs.indexOf(g), j = i + dir; if (j < 0 || j >= sibs.length) return;
-    const ids = moveInArray(sibs.map(x => x.id), i, j);
+    let ids = moveInArray(sibs.map(x => x.id), i, j);
     if (!g.parent) {
+      ids = fillVisibleOrder(mapTopsAll().map(x => x.id), ids);   // 요일 단추로 숨은 그룹은 제자리
       // 큰 묶음은 작은 묶음들을 데리고 다닌다: 묶음 순서대로 DB.G 를 다시 엮는다
       const order = [];
       ids.forEach(id => { order.push(findG(DB, id)); childrenOf(DB, id).forEach(c => order.push(c)); });
@@ -6364,10 +6417,15 @@ function bdEnd(e) {
   if (st.to !== st.i0 && e && e.type === 'pointerup') {
     const keys = st.items.map(x => x.dataset.bk), k = keys.splice(st.i0, 1)[0]; keys.splice(st.to, 0, k);
     setDevPref('mapBtns', keys.concat(mapBtnOrder().filter(x => keys.indexOf(x) < 0)));   // 지금 안 보이는 단추 자리는 뒤에
+  } else if (st.b.dataset.bk === 'day' && e && e.type === 'pointerup' && Math.abs(e.clientX - st.x0) < 12) {
+    // 요일 단추는 길게 눌렀다 그 자리에서 떼면 요일별 기도 표 (옆으로 끌면 예전처럼 순서 바꾸기)
+    mapKeepScroll(renderView); pushLayer({ type: 'week' }); return;
   }
   mapKeepScroll(renderView);
 }
 document.addEventListener('pointerup', bdEnd); document.addEventListener('pointercancel', bdEnd);
+// 우클릭 — 요일 단추면 요일별 기도 표 (터치의 길게 누르기는 위 bdEnd 가 받는다)
+document.addEventListener('contextmenu', e => { const b = e.target.closest && e.target.closest('#v-map .vh-acts [data-bk="day"]'); if (!b) return; e.preventDefault(); if (PT === 'mouse' && !BD.st) pushLayer({ type: 'week' }); });
 document.addEventListener('click', e => { if (Date.now() - BD.swallow < 400 && e.target.closest && e.target.closest('[data-bk]')) { e.stopPropagation(); e.preventDefault(); } }, true);
 
 // ═══ 지도 끌어 옮기기 · 길게 눌러 상세 (HB 2026-10-11) ═══
@@ -6701,8 +6759,8 @@ function mdDrop(st, cancel) {
   const ph = st.ph, p = selParts(st.k);
   let apply = null, ask = null;
   if (st.kind === 'group') {
-    const ids = st.order.map(c => c === ph ? p.gid : c.dataset.gid).filter(Boolean);
-    if (ids.join() === mapTops().map(g => g.id).join()) { mdLand(st, () => mapRenderFlip()); return; }
+    const ids = fillVisibleOrder(mapTopsAll().map(g => g.id), st.order.map(c => c === ph ? p.gid : c.dataset.gid).filter(Boolean));   // 요일 단추로 숨은 그룹은 제자리
+    if (ids.join() === mapTopsAll().map(g => g.id).join()) { mdLand(st, () => mapRenderFlip()); return; }
     apply = () => {
       const order = [], seen = new Set();
       const add = g => { if (g && !seen.has(g.id)) { seen.add(g.id); order.push(g); } };

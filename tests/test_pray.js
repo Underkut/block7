@@ -35,7 +35,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, canNest, nestGroup, canPromote, promoteSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupOnDay, dayTops, fillVisibleOrder, groupHeadcount, linkSub, moveSub, unplaceSub, canNest, nestGroup, canPromote, promoteSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList, monthGlance,
@@ -1128,6 +1128,23 @@ console.log('\n시나리오 ㉙ — 저장 목록 정렬: ㄱㄴㄷ순 ⇄ ZYX�
   sc.eq('K2 저절로 늘어남은 화면 절반에서 멈춤', /window\.innerHeight \* 0\.5/.test(HTML) && /Math\.min\(max, ta\.scrollHeight \+ 2\)/.test(HTML), true);
   sc.eq('K2 정한 높이는 이 기기에만(pray.noteh) — 클라우드 DB 에 안 넣음', /const NOTE_H = 'pray\.noteh'/.test(HTML) && !/DB\.set\.noteH/.test(HTML), true);
   sc.eq('K2 손잡이 손짓은 아래 화면(시트 끌기)이 가져가지 않음', /touch-action:none;cursor:ns-resize/.test(HTML), true);
+}
+
+// 1116 요일별 기도 — 그룹 기도 요일(g.days) · 지도 '요일' 단추(DB.set.dayOn, 계정 공통)
+{
+  const { groupOnDay, dayTops, fillVisibleOrder, emptyDB, normDB } = A;
+  const db = normDB(emptyDB());
+  const G = (id, days) => ({ id, days });
+  const tops = [G('a', []), G('b', [1]), G('c', [0, 3]), G('d', [1, 5])];
+  sc.eq('요일 안 고른 그룹 = 매일', [0, 1, 6].map(w => groupOnDay(tops[0], w)), [true, true, true]);
+  sc.eq('고른 요일에만', [groupOnDay(tops[2], 0), groupOnDay(tops[2], 1), groupOnDay(tops[2], 3)], [true, false, true]);
+  sc.eq('단추 꺼짐 = 모두 그대로', dayTops(db, tops, '2026-11-16').map(g => g.id), ['a', 'b', 'c', 'd']);
+  db.set.dayOn = true;
+  sc.eq('켜짐 · 월요일(11/16) = 매일 + 월', dayTops(db, tops, '2026-11-16').map(g => g.id), ['a', 'b', 'd']);
+  sc.eq('켜짐 · 주일(11/15)', dayTops(db, tops, '2026-11-15').map(g => g.id), ['a', 'c']);
+  sc.eq('dayOn 은 계정 문서(DB.set)에 남는다', normDB(JSON.parse(JSON.stringify(db))).set.dayOn, true);
+  sc.eq('보이는 것만 끌어도 숨은 그룹은 제자리', fillVisibleOrder(['a', 'b', 'c', 'd', 'e'], ['d', 'a', 'c']), ['d', 'b', 'a', 'c', 'e']);
+  sc.eq('지도 · 한 장 기도 · There 차례가 모두 mapTops 를 거친다', /function mapTops\(\) \{ return dayTops\(DB, mapTopsAll\(\), TODAY\); \}/.test(HTML) && /mapTops\(\)\.forEach\(g => walk\(g, g\.id\)\)/.test(HTML), true);
 }
 
 sc.done();
