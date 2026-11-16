@@ -39,7 +39,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
+  stayPeriod, stayWhole, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -143,6 +143,9 @@ sc.eq('⑨ 주일 + 금토일월', A.stayDates(V('2026-11-15', '금토일월')),
 sc.eq('⑨ 주일 + 목금토일 (성탄 주간)', A.stayDates(V('2025-12-28', '목금토일')), ['2025-12-25', '2025-12-26', '2025-12-27', '2025-12-28']);
 sc.eq('⑨ 수요일 + 수목 (송구영신)', A.stayDates(V('2025-12-31', '수목')), ['2025-12-31', '2026-01-01']);
 sc.eq('⑨ 목요일 + 비어 있음 → 그 날 하루', A.stayDates(V('2025-12-25', '')), ['2025-12-25']);
+sc.eq('⑨ 머무는 기간 글 (R10): 금토주일 · 달 넘김 · 하루 · 비어 있음(토~주일)', [A.stayPeriod(V('2026-11-15', '금토일')), A.stayPeriod(V('2026-11-01', '토일')), A.stayPeriod(V('2025-12-31', '')), A.stayPeriod(V('2026-11-15', ''))],
+  ['11/13(금)~15(주일)', '10/31(토)~11/1(주일)', '12/31(수)', '11/14(토)~15(주일)']);
+sc.eq('⑨ 머무는 날이 이어지는가: 금토일 예 · 수토일 아니오', [A.stayWhole(V('2026-11-15', '금토일')), A.stayWhole(V('2026-11-15', '수토일'))], [true, false]);
 sc.eq('⑨ 기본 머무는 날', [A.defaultDays('2026-11-15'), A.defaultDays('2025-12-31')], ['토일', '수']);
 
 // ⑩ 겹침 검사
