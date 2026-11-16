@@ -29,6 +29,7 @@
 //  ㉘ 부산 인도(R11): 머무는 날과 따로 · 기본 비움 · 옛 칸 옮겨 읽기
 //  ㉙ 부산 인도 세 갈래(R12 A): 금요 · 주일 · LL 마다 교역자 / 성도(이름) / 중계 · 성도 인도자 겹침 · b9 · 낡은 앱(b8)과 합치기 · 방문 창
 //  ㉛ 부산 상영 계정 저장(R12 C4b): 주일 줄 shows · b10 · 낡은 앱(b9)과 합치기 · 교역자는 자기 방문 줄에(absorb) · 경고(금 · 토 · 주일 · 읽은 광고 기준) · 경고 자리
+//  ㉜ 인도 싣기 · 내보내기 새 판(R12 B): 칸 글(교역자 / 성도 이름 / 중계) · 시트 내보내기 · 부산 요약 · 내 일정(성도 인도자 줄) · 보기마다 글 배열 · CSV · 화면 자리
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -42,7 +43,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun };`, ctx);
+  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -365,8 +366,8 @@ for (const sv of ['sun1', 'sun2', 'sun3', 'll']) A.put(tb, 'slots', { id: '2026-
 A.put(tb, 'slots', { id: '2026-11-01|sun1|offer', who: ['a'] }, 'u', 1); A.put(tb, 'slots', { id: '2026-11-01|sun2|lead', who: ['b'] }, 'u', 1);
 A.put(tb, 'visits', { id: 'v|2026-11-01', who: ['b'] }, 'u', 1); A.put(tb, 'slots', { id: '2026-11-06|fri|preach', who: ['a', 'b'] }, 'u', 1);
 const tsv = A.sheetTSV(tb, '2026-11').split('\n');
-sc.eq('⑲ 내보내기: 머리 · 첫 주 설교 줄(인도 · 부산 포함) · 헌금 줄', [tsv[1].split('\t').length, tsv[2], tsv[3]], [9, '11/1\t설교\t담임목사님\t담임목사님\t담임목사님\t담임목사님\t나나\t\t나나', '\t헌금인도\t가가\t\t\t\t\t\t']);
-sc.eq('⑲ 내보내기: 금요 표 (여럿은 · 로, 부산 금요 이름)', tsv.find(r => r.startsWith('11/6\t')), '11/6\t가가 · 나나\t\t\tAWAKE');
+sc.eq('⑲ 내보내기: 머리 · 첫 주 설교 줄(인도 · 부산 포함) · 헌금 줄', [tsv[1].split('\t').length, tsv[2], tsv[3]], [11, '11/1\t설교\t담임목사님\t담임목사님\t담임목사님\t담임목사님\t나나\t\t나나\t\t', '\t헌금인도\t가가\t\t\t\t\t\t\t\t']);
+sc.eq('⑲ 내보내기: 금요 표 (여럿은 · 로, 부산 금요 이름)', tsv.find(r => r.startsWith('11/6\t')), '11/6\t가가 · 나나\t\t\tAWAKE\t');
 const ps1 = A.personStats(Object.assign(A.normBook(J(rb)), {}), 'a', '2026-11-14');
 sc.eq('⑲ 사람 한눈에: 다가오는 자리 · 앞으로의 부재', [ps1.next.map(r => r.date), ps1.away.length], [['2026-11-22', '2026-12-05'], 2]);
 
@@ -864,6 +865,53 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
       /<\/button>\$\{bsPill\(v, bw\) \? ' ' \+ BS_PILL : ''\}<\/td>/.test(HTML), /const can = bsCan\(P\.sun\), warn = bi < 0 && bsWarn\(\) === P\.sun;/.test(HTML)],
     [true, 3, true, true, true, true, true, true]);
   sc.eq('㉛ 광고를 새로 읽어 경고가 바뀌면 뒤 화면도 다시 그린다', /if \(bsWarn\(\) !== w0 && !editing\(\)\) render\(\);/.test(HTML), true);
+}
+
+// ㉜ 인도 싣기 · 내보내기 새 판 (R12 B, HB 11/16) — 지어낸 이름
+{
+  const b = A.normBook(null);
+  A.put(b, 'people', { id: 'a', name: '가가', roles: ['busan', 'preach'] }, 'u', 1); A.put(b, 'people', { id: 'b', name: '나나', roles: ['busan'] }, 'u', 1);
+  A.put(b, 'people', { id: 'l', name: '라라', kind: 'lay', roles: ['lead'] }, 'u', 1);
+  // 11/1(금1 주 · AWAKE 11/6 는 다음 주일 11/8 몫) · 11/8 방문: 금 교역자 · 주일 성도 라라 · LL 중계 · 11/22 방문: 토일만(금요 교역자는 안 머물러 안 보임)
+  A.put(b, 'visits', { id: 'v|2026-11-08', who: ['a'], days: '금토일', lead: { fri: { m: 'staff' }, sun: { m: 'lay', p: 'l' }, ll: { m: 'relay' } }, stay: [{ name: '호텔 가', status: 'done', cost: 90000, cancelBy: '2026-11-05' }], staff: '스텝' }, 'u', 1);
+  A.put(b, 'visits', { id: 'v|2026-11-22', who: ['b'], days: '토일', lead: { fri: { m: 'staff' }, sun: { m: 'staff' } } }, 'u', 1);
+  A.put(b, 'slots', { id: '2026-11-08|sun1|preach', who: ['a'] }, 'u', 1);
+  const v8 = b.visits.find(v => v.id === 'v|2026-11-08'), v22 = b.visits.find(v => v.id === 'v|2026-11-22');
+  sc.eq('㉜ 칸 글: 교역자 = \'교역자\' · 성도 = 그분 이름 · 중계 = \'중계\' · 안 머무는 교역자 인도 · 비움 = 빈칸',
+    [A.leadCell(b, v8, 'fri'), A.leadCell(b, v8, 'sun'), A.leadCell(b, v8, 'll'), A.leadCell(b, v22, 'fri'), A.leadCell(b, v22, 'sun'), A.leadCell(b, v22, 'll')], ['교역자', '라라', '중계', '', '교역자', '']);
+  sc.eq('㉜ 그 날의 인도(금요는 금요일 날짜로) · 한 줄 글', [A.leadsAt(b, '2026-11-06', 'fri'), A.leadsAt(b, '2026-11-08', 'sun'), A.leadsAt(b, '2026-11-08', 'll'), A.leadsAt(b, '2026-11-15', 'sun'), A.leadLine(b, v8)],
+    ['교역자', '라라', '중계', '', 'AWAKE 인도, 주일예배 · 라라, LL 중계']);
+  const all = A.exportRows(b, 'all', '2026-11', { today: '2026-11-01' });
+  sc.eq('㉜ 이번달 전체 = 시트 모양 그대로(sheetTSV 와 같은 글) + 끝에 부산 주일 · LL 인도 · 금요 인도 열', [A.tsvOf(all) === A.sheetTSV(b, '2026-11'), all[1].slice(-3), all.find(r => r[0] === '11/8' && r[1] === '설교').slice(-3), all.find(r => r[0] === '11/6').slice(-2)],
+    [true, ['부산 교역자', '부산 주일 인도', '부산 LL 인도'], ['가가', '라라', '중계'], ['AWAKE', '교역자']]);
+  sc.eq('㉜ 예배별 = 제목 줄 없이 같은 표 · 화면에서 편 \'한 주 더\' 도 싣는다', [A.exportRows(b, 'sheet', '2026-11', {})[0][0], A.exportRows(b, 'sheet', '2026-11', { ext: { fri: { b: 1, a: 0 } } }).find(r => r[0] === '10/30') ? 1 : 0], ['주일', 1]);
+  const gr = A.exportRows(b, 'grid', '2026-11', {});
+  sc.eq('㉜ 주간형 = 줄이 자리, 칸이 주 · 맨 아래 부산 · 금요 · 주일 · LL 인도', [gr[0].length, gr.find(r => r[0] === '1부 설교')[2], gr.slice(-4).map(r => [r[0], r[2], r[3]])],
+    [6, '가가', [['부산', '가가', ''], ['부산 금요 인도', '', ''], ['부산 주일 인도', '라라', ''], ['부산 LL 인도', '중계', '']]]);
+  sc.eq('㉜ 주간형 금요 인도는 그 주 금요일(11/1 주의 금요일 11/6 = 11/8 방문의 AWAKE)', gr.find(r => r[0] === '부산 금요 인도')[1], '교역자');
+  const bs = A.exportRows(b, 'busan', '2026-11', {});
+  sc.eq('㉜ 부산 요약: 머리 · 금요 · 주일 · LL 인도 칸 · 숙소 · 금액(숫자) · 취소 기한 · 동행',
+    [bs[0], bs[1], bs[2].slice(4, 8)], [['날짜', '요일', '교역자', '머무는 날', '금요예배', '금요 인도', '주일 인도', 'LL 인도', '숙소', '금액', '취소 기한', '동행'],
+      ['11/8', '주일', '가가', '금토주일', 'AWAKE', '교역자', '라라', '중계', '호텔 가', 90000, '11/5(목)', '스텝'], ['ENCOUNTER', '', '교역자', '']]);
+  const mine = A.exportRows(b, 'mine', '2026-11', { today: '2026-11-01', pid: 'a' });
+  sc.eq('㉜ 내 일정(목록): 이름 머리 · 날짜순 · 부산 줄에 인도 한 줄', [mine[0][0], mine[1], mine.slice(2).map(r => [r[0], r[2], r[3], r[4]])],
+    ['가가 님의 일정 · 11/1 ~ 12/26', ['날짜', '요일', '갈래', '맡은 일', '부산 인도'], [['11/6~11/8', '부산', '금토주일 · 호텔 가', 'AWAKE 인도, 주일예배 · 라라, LL 중계'], ['11/8', '주일', '1부 설교', '']]]);
+  const mg = A.exportRows(b, 'mine', '2026-11', { today: '2026-11-01', pid: 'a', grid: true });
+  sc.eq('㉜ 내 일정(8주 표): 한 줄이 한 주 · 부산 칸 · 부산 인도 칸', [mg[1], mg.length, mg[2].slice(4)], [['주', '주일', '수', '금', '부산', '부산 인도'], 10, ['11/6~11/8 금토주일', 'AWAKE 인도, 주일예배 · 라라, LL 중계']]);
+  sc.eq('㉜ 성도 인도자의 내 일정: 부산 방문에 들지 않아도 그 예배 날에 부산 "주일예배 인도" 한 줄(내 이름은 빼고 · 인도 갈래로 셈)',
+    [A.myItems(b, 'l', '2026-11-01', '2026-11-30').map(r => [r.kind, r.date, A.itemLabel(r)]), A.myAhead(b, 'l', '2026-11-01', 8).tally.lead, A.myWeeks(b, 'l', '2026-11-08', 1)[0].bl.length,
+      A.exportRows(b, 'mine', '2026-11', { today: '2026-11-01', pid: 'l' })[2].slice(2, 4)], [[['blead', '2026-11-08', '주일예배 인도']], 1, 1, ['부산', '주일예배 인도']]);
+  sc.eq('㉜ 사람 × 주 · 월 달력(부산이면 인도도) · 모르는 보기 · 고를 사람 없음',
+    [A.exportRows(b, 'matrix', '2026-11', {}).find(r => r[0] === '가가').slice(1, 3), A.exportRows(b, 'cal', '2026-11', { calf: 'busan' })[3][0], A.exportRows(b, 'cal', '2026-11', { calf: 'busan' })[2][0], A.exportRows(b, 'x', '2026-11', {}), A.exportRows(b, 'mine', '2026-11', { pid: 'zz' })],
+    [['', '설 부'], '8일 가가 · 주일예배 · 라라 · LL 중계', '1일', [], [['사람을 골라 주세요']]]);
+  sc.eq('㉜ CSV: 쉼표 · 따옴표는 감싸고 줄바꿈 · 탭은 빈칸 · TSV 는 탭', [A.csvOf([['a,b', 'c"d', 'e\nf'], [1]]), A.tsvOf([['a\tb', 2]])], ['"a,b","c""d",e f\r\n1', 'a b\t2']);
+  sc.eq('㉜ 자료 모양은 그대로 — 쓰는 칸 b10', /WRITE_FIELD = 'b10'/.test(HTML), true);
+  // 화면 자리
+  sc.eq('㉜ 내보내기 판: 보기 고르기(지금 보던 보기) · 이번달 전체(누르면 고르기가 흐려짐) · 복사 · CSV 오른쪽 · exportRows 한 곳에서',
+    [/openPane\(\{ kind: 'exp', v: VIEWS\[PREF\.mview\] \? PREF\.mview : 'sheet', all: false \}\)/.test(HTML), /<select class="inp expsel\$\{all \? ' dim' : ''\}" id="exp-view"/.test(HTML) && /if \(t\.id === 'exp-view'\) \{ S\.pane\.v = t\.value; S\.pane\.all = false;/.test(HTML), /data-act="expall" aria-pressed="\$\{all\}"/.test(HTML) && /if \(a === 'expall'\) \{ S\.pane\.all = !S\.pane\.all;/.test(HTML),
+      /<span class="spacer"><\/span><button class="btn" data-act="expcopy">복사<\/button><button class="btn ghost" data-act="expcsv">CSV<\/button>/.test(HTML), (HTML.match(/exportRows\(S\.book/g) || []).length], [true, true, true, true, 1]);
+  sc.eq('㉜ 화면: 부산 요약 \'예배 인도\' 칸 · 내 일정 부산 줄 · 8주 표 부산 칸 · 부산 준비 카드에 인도 알약',
+    [/<th class="h-bs">예배 인도<\/th>/.test(HTML), /<td style="text-align:left">\$\{leadChips\(v\)\}<\/td>/.test(HTML), (HTML.match(/leadChips\(v, ' · '\)/g) || []).length, /leadChips\(x\.v\)/.test(HTML), /leadChips\(v, ' · '\)\}\$\{others\.length/.test(HTML)], [true, true, 2, true, true]);
 }
 
 sc.done();
