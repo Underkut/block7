@@ -26,6 +26,8 @@
 //  ㉕ 내 일정(R8b): 오늘 · 다음 차례 · 가까운 부산 · 그다음 · 횟수 / 한 줄이 한 주 / 부산 준비 / 내 화면 취향(첫 화면 · 이름 서식) · 책에 안 섞임 / 내 이름 자리
 //  ㉖ 예약 읽기(R9): AI 답 다듬기 · 맞는 방문 · 초안 채우기(목록 이름 · 원화만 금액 · 취소 기한 · 환불 불가 · 취소됨) · 예약번호 저장 · 책은 안 고침
 //  ㉗ 메일에서 찾기(R9b): 찾는 말 · 메일 글 다듬기(주소 · 전화 · 링크 지움, 날짜 · 예약번호 남김) · 나중 메일이 이김 · 지난 예약 빼기 · 넣을 자리 · 열쇠 서버(메일 열쇠 따로 · 읽기만)
+//  ㉘ 부산 인도(R11): 머무는 날과 따로 · 기본 비움 · 옛 칸 옮겨 읽기
+//  ㉙ 부산 인도 세 갈래(R12 A): 금요 · 주일 · LL 마다 교역자 / 성도(이름) / 중계 · 성도 인도자 겹침 · b9 · 낡은 앱(b8)과 합치기 · 방문 창
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -39,7 +41,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, visitLeads, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
+  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -209,19 +211,19 @@ sc.eq('⑫ 고르기 판: 네 예배 모두 같게 고를 때 빠진 예배를 �
 const full = A.normBook({ people: [{ id: 'x', name: '가가', roles: ['preach'], no: ['sun1|preach'], at: 5 }], visits: [{ id: 'v|2025-12-31', days: '수목', who: ['x'], at: 5 }, { id: 'v|2025-12-28', who: ['x'], at: 5 }] });
 const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripped.visits.filter(v => v.date !== '2025-12-31');   // R1 이 떨군 모양 (같은 at)
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
-const d1 = A.pickDoc(full, { b8: J(full), b7: stripped, b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
-sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b7)을 떨군 채 써도 b8 과 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b8: J(full) });
-sc.eq('⑬ b8 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1 = A.pickDoc(full, { b9: J(full), b8: stripped, b7: stripped, b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
+sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b8)을 떨군 채 써도 b9 와 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
+const d1b = A.pickDoc(full, { b9: J(full) });
+sc.eq('⑬ b9 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
-sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b8 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
+sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b9 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
-sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b8 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
+sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b9 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
 const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [], at: 9 });
-const d3 = A.pickDoc(full, { b7: old2, b8: J(full) });
-sc.eq('⑬ 낡은 앱(b7)에서 새로 적은 줄도 받아 b8 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
+const d3 = A.pickDoc(full, { b8: old2, b9: J(full) });
+sc.eq('⑬ 낡은 앱(b8)에서 새로 적은 줄도 받아 b9 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b8'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b7'\]/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b9'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b8'\]/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -243,7 +245,7 @@ sc.eq('⑭ 앱에서 이미 적은 칸은 그대로 (시트 값으로 안 바뀜
 sc.eq('⑭ 앱에서 지운 방문은 되살아나지 않는다', A.live(ir.book.visits).some(v => v.date === '2026-11-22'), false);
 sc.eq('⑭ 새 칸은 들어온다 (방문 · 자리 · 글 · 화요 · 일정), 모르는 칸은 버림', [A.live(ir.book.visits).map(v => v.date), A.live(ir.book.slots).map(s => s.id), A.live(ir.book.marks).length],
   [['2025-12-31', '2026-11-15'], ['2026-05-12|tue|preach', '2026-11-15|sun1|offer', '2026-11-15|sun1|preach', '2026-11-15|sun2|offer'], 1]);
-sc.eq('⑭ 방문의 숙소 · 머무는 날 · 금요 · 메모도 들어온다', (v => [v.days, v.fri, v.stay[0].name, v.stay[0].cost, v.staff, v.note])(ir.book.visits.find(v => v.id === 'v|2026-11-15')), ['금토일', true, '호텔 가', 80000, '스텝', '메모']);
+sc.eq('⑭ 방문의 숙소 · 머무는 날 · 금요 · 메모도 들어온다', (v => [v.days, v.lead && v.lead.fri.m, v.stay[0].name, v.stay[0].cost, v.staff, v.note])(ir.book.visits.find(v => v.id === 'v|2026-11-15')), ['금토일', 'staff', '호텔 가', 80000, '스텝', '메모']);
 sc.eq('⑭ 셈: 새로 · 고침 · 그대로', ir.counts, { visits: 2, visitsUpd: 0, visitsKept: 1, slots: 3, slotsUpd: 0, slotsKept: 1, marks: 1, marksUpd: 0, marksKept: 0 });
 const ir2 = A.importBook(ir.book, imp, 'u');
 sc.eq('⑭ 두 번 가져와도 같다', [A.sameBook(ir.book, ir2.book), ir2.created, ir2.counts.slots], [true, [], 0]);
@@ -668,15 +670,15 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉗ 서버: 돌아갈 자리 — 로테이션 · 심방 노트 · BLOCK7 만', ['https://sweeter.my/rotation/', 'https://sweeter.my/care/', 'https://block7.my/', 'https://sweeter.my/', 'https://sweeter.my/cell/', 'https://sweeter.my.evil.com/rotation/'].map(okRet), [true, true, true, false, false, false]);
 }
 
-// ㉘ 부산에서 무엇을 인도하나 (R11, HB 11/16) — 머무는 날과 인도는 따로다. 기본값은 비움.
+// ㉘ 부산에서 무엇을 인도하나 (R11, HB 11/16) — 머무는 날과 인도는 따로다. 기본값은 비움. (R12 A 부터 모양은 lead 하나 — 옛 칸은 읽을 때 옮김)
 {
   const NV = (o) => A.normBook({ visits: [Object.assign({ id: 'v|2026-11-22', days: '금토일', at: 1 }, o)] }).visits[0];
   const v0 = NV({});
-  sc.eq('㉘ 기본은 비움 — 금요 · 주일 · LL 인도 칸이 없다(옛 방문도 그대로 같은 모양)', [v0.fri, 'sunLead' in v0, 'sunLay' in v0, 'll' in v0], [false, false, false, false]);
+  sc.eq('㉘ 기본은 비움 — 인도 칸이 없다(옛 방문도 그대로 같은 모양) · 옛 칸 이름도 남지 않음', ['lead' in v0, 'fri' in v0, 'sunLead' in v0, 'sunLay' in v0, 'll' in v0], [false, false, false, false, false]);
   const v1 = NV({ fri: true, sunLead: 'staff', ll: true });
-  sc.eq('㉘ 교역자가 금요 · 주일 · LL 을 인도', [v1.fri, v1.sunLead, v1.ll, 'sunLay' in v1], [true, 'staff', true, false]);
+  sc.eq('㉘ 옛 칸(R11 · b8) 교역자 금요 · 주일 · LL → lead 세 칸 교역자로 옮겨 읽음 · 옛 칸 이름은 버림', [v1.lead, 'fri' in v1, 'sunLead' in v1, 'll' in v1], [{ fri: { m: 'staff' }, sun: { m: 'staff' }, ll: { m: 'staff' } }, false, false, false]);
   const v2 = NV({ sunLead: 'lay', sunLay: 'pl' }), v3 = NV({ sunLead: 'staff', sunLay: 'pl' }), v4 = NV({ sunLead: '아무거나', ll: 'yes' });
-  sc.eq('㉘ 주일예배는 성도 인도자(그분 id) · 교역자면 성도 id 를 버림 · 모르는 값은 비움', [v2.sunLead, v2.sunLay, 'sunLay' in v3, 'sunLead' in v4, v4.ll], ['lay', 'pl', false, false, true]);
+  sc.eq('㉘ 옛 칸: 주일예배 성도 인도자(그분 id) · 교역자면 성도 id 를 버림 · 모르는 값은 비움', [v2.lead, v3.lead, v4.lead], [{ sun: { m: 'lay', p: 'pl' } }, { sun: { m: 'staff' } }, { ll: { m: 'staff' } }]);
   const nb = A.normBook({ people: [{ id: 'pl', name: '오세움', kind: 'lay', roles: [] }], visits: [] });
   sc.eq('㉘ 맡은 것 알약 — 금요 이름 · 주일 · LL (그 금요가 금1~3 일 때만 금요 이름)',
     [A.visitLeads(nb, NV({ fri: true, sunLead: 'staff', ll: true })).map(x => x.k + ':' + x.text),
@@ -684,17 +686,67 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
      A.visitLeads(nb, NV({ sunLead: 'lay' })).map(x => x.k + ':' + x.text),
      A.visitLeads(nb, NV({})).length],
     [['fri:ENCOUNTER 인도', 'sun:주일예배 인도', 'll:LL 인도'], ['lay:주일예배 · 오세움'], ['lay:주일예배 · 성도 인도자'], 0]);
-  sc.eq('㉘ 금요일에 머물지 않으면 금요 인도는 없다 · 주일에 머물지 않으면 주일 · LL 도 없다',
+  sc.eq('㉘ 금요일에 머물지 않으면 교역자 금요 인도는 없다 · 주일에 머물지 않으면 교역자 주일 · LL 도 없다',
     [A.visitLeads(nb, NV({ days: '토일', fri: true })).length, A.visitLeads(nb, A.normBook({ visits: [{ id: 'v|2026-11-18', days: '수', sunLead: 'staff', ll: true, at: 1 }] }).visits[0]).length], [0, 0]);
   const pb = A.normBook({ people: [{ id: 'a', name: '가', roles: ['busan'] }], visits: [] });
-  const pp = A.propose(pb, '2026-11');
-  sc.eq('㉘ 자동 배열 제안도 금요 인도를 비워 둔다(머무는 날은 금토일 그대로)', [pp.visits.some(v => v.fri), pp.visits.filter(v => v.days === '금토일').length > 0], [false, true]);
-  sc.eq('㉘ 새 방문을 만들 때 금요 인도는 비움', /put\(S\.book, 'visits', \{ id, who: \[\], days: [^}]*fri: false \}/.test(HTML), true);
-  // 낡은 앱(b7)이 인도 칸을 모른 채 다른 방문을 고쳐 써도, 새 칸(b8)의 인도는 남는다
-  const nw = A.normBook({ visits: [{ id: 'v|2026-11-22', days: '금토일', fri: true, sunLead: 'lay', sunLay: 'pl', ll: true, at: 5 }, { id: 'v|2026-11-29', days: '토일', at: 5 }] });
-  const ol = J(nw); delete ol.visits[0].sunLead; delete ol.visits[0].sunLay; delete ol.visits[0].ll; ol.visits[1].note = '낡은 앱이 고침'; ol.visits[1].at = 9;
-  const pk = A.pickDoc(null, { b8: J(nw), b7: ol });
-  sc.eq('㉘ 낡은 앱(b7)과 합쳐도 인도 칸은 그대로 · 낡은 앱이 고친 다른 방문도 받음', [(v => [v.sunLead, v.sunLay, v.ll])(pk.book.visits[0]), pk.book.visits[1].note, pk.push], [['lay', 'pl', true], '낡은 앱이 고침', true]);
+  const pp = A.propose(pb, '2026-11'), pw = A.applyProposal(J(pb), pp, 'u', 5);
+  sc.eq('㉘ 자동 배열 제안 · 적용도 인도를 비워 둔다(머무는 날은 금토일 그대로)', [pp.visits.some(v => v.fri || v.lead), A.live(pb.visits).concat(A.live((pw && pw.book || pb).visits)).some(v => v.lead), pp.visits.filter(v => v.days === '금토일').length > 0], [false, false, true]);
+  sc.eq('㉘ 새 방문을 만들 때 인도는 비움', /put\(S\.book, 'visits', \{ id, who: \[\], days: [^}]*'' \}, byNow\(\)/.test(HTML), true);
+}
+
+// ㉙ 부산 인도 세 갈래 (R12 A, HB 11/16) — 금요 · 주일예배 · 라이프라인 모두 '교역자 / 성도(이름) / 중계(인도자 없음)' 중 하나, 기본 비움
+{
+  const NV = (o, id, days) => A.normBook({ visits: [Object.assign({ id: id || 'v|2026-11-22', days: days || '금토일', at: 1 }, o)] }).visits[0];
+  const ppl = [{ id: 'pl', name: '오세움', kind: 'lay', roles: ['lead'] }, { id: 'pm', name: '하로운', kind: 'lay', roles: ['lead'] }, { id: 'a', name: '가', roles: ['busan', 'offer'] }];
+  const nb = A.normBook({ people: ppl, visits: [] });
+  const all = NV({ lead: { fri: { m: 'lay', p: 'pm' }, sun: { m: 'relay' }, ll: { m: 'lay', p: 'pl' } } });
+  sc.eq('㉙ 세 갈래 모두 받는다 — 금요 성도 · 주일 중계 · LL 성도', all.lead, { fri: { m: 'lay', p: 'pm' }, sun: { m: 'relay' }, ll: { m: 'lay', p: 'pl' } });
+  const bad = NV({ lead: { fri: { m: 'boss' }, sun: { m: 'relay', p: 'pl' }, ll: 'staff', tue: { m: 'staff' } } });
+  sc.eq('㉙ 다듬기: 모르는 갈래 · 모르는 예배 · 모양이 틀린 칸은 버림 · 중계 · 교역자에는 성도 id 가 붙지 않음', bad.lead, { sun: { m: 'relay' } });
+  sc.eq('㉙ lead 가 있으면 옛 칸은 보지 않는다(옮긴 뒤 다시 섞이지 않게)', NV({ lead: { sun: { m: 'relay' } }, fri: true, ll: true }).lead, { sun: { m: 'relay' } });
+  sc.eq('㉙ 빈 lead 는 칸 자체가 없다', 'lead' in NV({ lead: { fri: null } }), false);
+  sc.eq('㉙ 알약 — 성도는 그분 이름, 중계는 \'중계\'(무채색 · 테두리)',
+    A.visitLeads(nb, all).map(x => [x.k, x.svc, x.m, x.p, x.date, x.text].join('|')),
+    ['lay|fri|lay|pm|2026-11-20|ENCOUNTER · 하로운', 'relay|sun|relay||2026-11-22|주일예배 중계', 'lay|ll|lay|pl|2026-11-22|LL · 오세움']);
+  // 교역자가 토요일에 올라와도 주일은 중계 · 성도 인도로 적을 수 있다 — 교역자 인도만 머무는 날을 본다
+  const sat = NV({ lead: { fri: { m: 'staff' }, sun: { m: 'relay' }, ll: { m: 'lay', p: 'pl' } } }, 'v|2026-11-22', '금토');
+  sc.eq('㉙ 주일에 머물지 않아도 주일 중계 · LL 성도는 보인다(교역자 몫이 아님)', A.visitLeads(nb, sat).map(x => x.k), ['fri', 'relay', 'lay']);
+  const sat2 = NV({ lead: { sun: { m: 'staff' } } }, 'v|2026-11-22', '금토');
+  sc.eq('㉙ 주일에 머물지 않는데 교역자 주일 인도 = 안 보임(옛 자료)', A.visitLeads(nb, sat2).length, 0);
+  sc.eq('㉙ 금4 · 금5 주에는 부산 금요예배가 없다 — 금요 인도는 어느 갈래든 안 보임',
+    A.visitLeads(nb, NV({ lead: { fri: { m: 'relay' } } }, 'v|2026-11-29', '금토일')).length, 0);
+  sc.eq('㉙ 방문의 요일 범위 밖(수요 방문의 다음 주일)은 받지 않는다',
+    [A.leadOpen(NV({}, 'v|2026-11-18', '수'), 'sun'), A.leadOpen(NV({}, 'v|2026-11-22'), 'sun'), A.leadOpen(NV({}, 'v|2026-11-22'), 'fri'), A.leadOpen(NV({}, 'v|2026-11-29'), 'fri')], [false, true, true, false]);
+  sc.eq('㉙ 인도 날짜 — 금요 = 방문 주일 이틀 전, 주일 · LL = 방문 주일', [A.leadDate(all, 'fri'), A.leadDate(all, 'sun'), A.leadDate(all, 'll')], ['2026-11-20', '2026-11-22', '2026-11-22']);
+  sc.eq('㉙ leadIs · leadOf', [A.leadIs(all, 'sun', 'relay'), A.leadIs(all, 'sun', 'staff'), A.leadOf(all, 'fri').p, A.leadOf(NV({}), 'fri')], [true, false, 'pm', null]);
+  // 성도 인도자가 그 날 부산 예배를 인도하는데 분당 자리도 맡으면 빨강
+  const cb = A.normBook({ people: ppl, visits: [all], slots: [{ id: '2026-11-22|ll|lead', who: ['pl'], at: 1 }, { id: '2026-11-22|sun2|lead', who: ['pm'], at: 1 }] });
+  const cs = A.conflicts(cb, '2026-11-15', '2026-11-28', '2026-11-16').filter(c => c.lead);
+  sc.eq('㉙ 겹침: 부산 LL 성도 인도자가 분당 LL 인도도 맡음 = 빨강 한 건(다른 날 · 다른 분은 아님)', cs.map(c => [c.level, c.pid, c.slot, c.lead]), [['bad', 'pl', '2026-11-22|ll|lead', 'll']]);
+  sc.eq('㉙ 겹침 글', A.conflictText(cb, cs[0]), '오세움 — 11/22(주일) 부산 라이프라인 인도인데 분당 LL 예배인도');
+  sc.eq('㉙ 중계 · 교역자 인도는 이 겹침을 만들지 않는다(교역자는 머무는 날 겹침으로 이미 본다)',
+    A.conflicts(A.normBook({ people: ppl, visits: [NV({ lead: { sun: { m: 'relay' }, ll: { m: 'staff' } } })], slots: [{ id: '2026-11-22|ll|lead', who: ['pl'], at: 1 }] }), '2026-11-15', '2026-11-28', '2026-11-16').filter(c => c.lead).length, 0);
+  // 맞추기: 나중에 고친 인도가 이긴다 · 낡은 앱(b8)이 lead 를 모른 채 다른 방문을 고쳐 써도 lead 는 남는다
+  const nw = A.normBook({ people: ppl, visits: [Object.assign(J(all), { at: 5 }), { id: 'v|2026-11-29', days: '토일', at: 5 }] });
+  const ol = J(nw); delete ol.visits[0].lead; ol.visits[0].fri = true; ol.visits[0].at = 5; ol.visits[1].note = '낡은 앱이 고침'; ol.visits[1].at = 9;
+  const pk = A.pickDoc(null, { b9: J(nw), b8: ol });
+  sc.eq('㉙ 낡은 앱(b8)과 합쳐도 새 칸(b9)의 세 갈래는 그대로 · 낡은 앱이 고친 다른 방문도 받음 · 옛 칸을 치우려 한 번 씀',
+    [pk.book.visits[0].lead, pk.book.visits[1].note, pk.push], [all.lead, '낡은 앱이 고침', true]);
+  const late = J(nw); late.visits[0].lead = { sun: { m: 'staff' } }; late.visits[0].at = 7;
+  sc.eq('㉙ 다른 기기가 나중에 인도를 고치면 그쪽이 이긴다(어느 순서로 합쳐도)', [A.mergeBook(nw, late).visits[0].lead, A.mergeBook(late, nw).visits[0].lead], [{ sun: { m: 'staff' } }, { sun: { m: 'staff' } }]);
+  sc.eq('㉙ R11 자료(b8 만, 옛 칸) → 그대로 옮겨 읽고 b9 로 쓴다',
+    (r => [r.book.visits[0].lead, r.push])(A.pickDoc(null, { b8: { visits: [{ id: 'v|2026-11-22', days: '금토일', fri: true, sunLead: 'lay', sunLay: 'pl', ll: true, at: 3 }] } })),
+    [{ fri: { m: 'staff' }, sun: { m: 'lay', p: 'pl' }, ll: { m: 'staff' } }, true]);
+  // 가져오기 파일(시트의 금n 칸 = fri: true)도 같은 길로 옮겨진다
+  const ir = A.importBook(A.normBook({}), { kind: 'rota-import', v: 3, visits: [{ date: '2026-11-22', names: ['가'], days: '금토일', fri: true }] }, 'hb');
+  sc.eq('㉙ 시트 기록 가져오기의 금요 표시 → 교역자 금요 인도', ir && ir.book.visits[0].lead, { fri: { m: 'staff' } });
+  sc.eq('㉙ 부산 준비: 교역자 금요 인도만 금요예배 이름을 알림(성도 · 중계는 아님)',
+    [A.tripChecks(nb, NV({ lead: { fri: { m: 'staff' } } }), 'a').items.some(x => x.key === 'fri'), A.tripChecks(nb, all, 'a').items.some(x => x.key === 'fri')], [true, false]);
+  // 화면: 방문 창에 세 예배 × 세 갈래 단추 · 성도 이름 고르기 · 저장할 때 옛 칸을 쓰지 않음
+  sc.eq('㉙ 방문 창: 세 갈래 단추(data-dlead) · 성도 이름(data-dlay · data-lp) · 옛 단추(dfri · dsun · dll) 없음',
+    [/data-dlead="\$\{svc\}" data-v="\$\{m\}"/.test(HTML), /data-dlay="\$\{svc\}" data-lp=/.test(HTML), /data-act="dfri"|data-dsun=|data-act="dll"/.test(HTML)], [true, true, false]);
+  sc.eq('㉙ 저장: lead 하나만 쓰고 옛 칸(fri · sunLead · sunLay · ll)은 지움 · 교역자 인도는 그 요일에 머물 때만', /for \(const k of \['fri', 'sunLead', 'sunLay', 'll'\]\) delete x\[k\]/.test(HTML) && /m === 'staff' && !d\.days\.includes\(LEAD_DAY\[k\]\)/.test(HTML), true);
+  sc.eq('㉙ 중계 알약 무채색(테두리) · 교역자 인도 단추는 예배 색', /\.lchip\.relay\{/.test(HTML) && /\{ fri: 'frib', sun: 'sunb', ll: 'llb' \}\[svc\]/.test(HTML), true);
 }
 
 sc.done();
