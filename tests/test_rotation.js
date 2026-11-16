@@ -41,7 +41,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
+  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -747,6 +747,25 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
     [/data-dlead="\$\{svc\}" data-v="\$\{m\}"/.test(HTML), /data-dlay="\$\{svc\}" data-lp=/.test(HTML), /data-act="dfri"|data-dsun=|data-act="dll"/.test(HTML)], [true, true, false]);
   sc.eq('㉙ 저장: lead 하나만 쓰고 옛 칸(fri · sunLead · sunLay · ll)은 지움 · 교역자 인도는 그 요일에 머물 때만', /for \(const k of \['fri', 'sunLead', 'sunLay', 'll'\]\) delete x\[k\]/.test(HTML) && /m === 'staff' && !d\.days\.includes\(LEAD_DAY\[k\]\)/.test(HTML), true);
   sc.eq('㉙ 중계 알약 무채색(테두리) · 교역자 인도 단추는 예배 색', /\.lchip\.relay\{/.test(HTML) && /\{ fri: 'frib', sun: 'sunb', ll: 'llb' \}\[svc\]/.test(HTML), true);
+}
+
+
+// ㉚ 부산 주일 광고 (R12 C) — Monday 는 서버만 읽는다 · 카톡 글 모양 · 교역자는 보기 · 복사만 (지어낸 제목만)
+{
+  const o = { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 3, title: '겨울 수련회' }, { n: 1, title: '새벽 기도회' }], video: ['감사 영상'], check: ['꽃꽂이 모집'] },
+    video: [{ title: '가을 음악회 안내', url: 'https://youtu.be/AAA', notes: [{ at: '2026-11-20', text: '부산은 짧은 버전' }] }] };
+  sc.eq('㉚ 카톡 글: 영상(제목 · 주소) → 구두 광고(번호 1부터 다시) → 부산 주보의 영상 사용 · 확인 필요와 부산 이야기는 안 넣음', A.adsText(o),
+    '11/22(주일) 부산 주일예배 광고\n\n▶ 영상 광고\n가을 음악회 안내\nhttps://youtu.be/AAA\n\n▶ 구두 광고\n1. 새벽 기도회\n2. 겨울 수련회\n\n▶ 영상으로 (부산 주보)\n· 감사 영상');
+  sc.eq('㉚ 영상이 없는 주 · 부산 주보 그룹이 아직 없는 주', A.adsText({ sun: '2026-11-29', busan: { found: false, group: '26-1129' }, video: [] }), '11/29(주일) 부산 주일예배 광고\n\n▶ 영상 광고\n없음');
+  sc.eq('㉚ 구두 광고가 비면 없음', A.adsText({ sun: '2026-11-29', busan: { found: true, spoken: [] }, video: [] }).endsWith('▶ 구두 광고\n없음'), true);
+  sc.eq('㉚ 서버 답이 이상해도 깨지지 않는다 · http 아닌 주소는 버림', [A.adsText(null), A.normAds({ sun: '2026-11-22', video: [{ title: 'x', url: 'javascript:alert(1)' }, {}] }).video], ['', [{ title: 'x', url: '', notes: [] }]]);
+  sc.eq('㉚ 앱은 Monday 를 직접 부르지 않는다(열쇠가 폰에 오지 않게) — 서버 monday 함수만', [/api\.monday\.com/.test(HTML), /cloudfunctions\.net\/monday'/.test(HTML)], [false, true]);
+  sc.eq('㉚ 열쇠는 붙여 넣은 칸에서 바로 비우고 이 기기에 저장하지 않는다', /if \(el\) el\.value = '';/.test(HTML) && !/lsSet\([^)]*token/.test(HTML), true);
+  sc.eq('㉚ 교역자: 방문 판 · 내 일정에서 광고를 열 수 있고, 광고 판에서는 보기 · 복사만(열쇠 넣기 · 끊기 아님)',
+    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback'\]\.includes\(d\.act\)/.test(HTML)], [true, true, true]);
+  sc.eq('㉚ 교역자는 주인(HB)의 로테이션으로 묻는다', /mfn\('\/ads', \{ owner: FB\.team \|\| FB\.user\.uid, sun \}\)/.test(HTML), true);
+  sc.eq('㉚ 복사는 누른 자리에서 바로(아이폰) — adsCopy 안에 await 가 없다', !/await/.test((HTML.match(/function adsCopy\(\) \{[\s\S]*?\n\}/) || [''])[0]), true);
+  sc.eq('㉚ 광고는 책(b9)에 넣지 않는다 — 이 기기 사본만', /ADS_KEY = 'rota_ads_v1'/.test(HTML) && !/S\.book\.ads/.test(HTML), true);
 }
 
 sc.done();

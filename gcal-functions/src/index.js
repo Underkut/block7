@@ -14,6 +14,8 @@
  *   POST /status        (Bearer) 연결됐는지 · 어느 구글 계정인지
  *   POST /off           (Bearer) 연결 끊기 — 구글에 열쇠를 돌려주고 지운다
  *
+ * monday (HTTP) — 교역자 로테이션 R12 C: Monday 광고를 **읽기만** (monday.js · docs/rotation/monday-setup.md)
+ *
  * 비밀 두 개(HB 가 Cloud Shell 에서 한 번 넣는다 — docs/gcal/setup.md):
  *   GCAL_CLIENT_ID · GCAL_CLIENT_SECRET  (구글 클라우드 '사용자 인증 정보' 의 OAuth 클라이언트)
  */
@@ -158,3 +160,6 @@ exports.gcal = onRequest(
     }
   }
 );
+
+// 교역자 로테이션 R12 C — Monday 광고 읽기 (같은 묶음 gcal 에 함께 올라간다 · 따로 들고 있는 열쇠 mondayKeys/{uid})
+exports.monday = require("./monday").monday;
