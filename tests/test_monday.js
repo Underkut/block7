@@ -63,27 +63,30 @@ console.log('\n③ 영상 소식');
   const v = C.videoOf(it);
   sc.eq('③ 제목 · 주소', [v.title, v.url], ['가을 음악회 안내', 'https://youtu.be/AAA']);
   // C4a: 묶음(업데이트 + 답글) 중 하나라도 '부산' 이면 묶음째 · 답글은 그 아래 · 한국 시각
-  sc.eq('③ 부산 묶음만 · 최근 업데이트부터 · 본문에 부산이 없어도 답글에 있으면 묶음째(부모와 함께)',
+  sc.eq('③ 부산 묶음만 · 오래된 업데이트부터(위 = 오래된 글, HB 11/16) · 본문에 부산이 없어도 답글에 있으면 묶음째(부모와 함께)',
     v.notes.map(n => [n.at, n.text.slice(0, 9), n.replies.map(r => r.text)]),
-    [['2026-11-20', '부산 상영 없음', []], ['2026-11-18', '분당 최종본입니다', ['부산은 짧은 버전으로\n올렸습니다']], ['2026-11-10', '부산가가가가가가가', []]]);
-  sc.eq('③ 긴 글은 자른다 (1500자)', v.notes[2].text.length, 1501);
+    [['2026-11-10', '부산가가가가가가가', []], ['2026-11-18', '분당 최종본입니다', ['부산은 짧은 버전으로\n올렸습니다']], ['2026-11-20', '부산 상영 없음', []]]);
+  sc.eq('③ 긴 글은 자른다 (1500자)', v.notes[0].text.length, 1501);
+  sc.eq('③ 작성자가 없으면 빈 글', [v.notes[0].who, v.notes[1].replies[0].who], ['', '']);
   const th = C.busanNotes([
-    { id: '901', created_at: '2026-11-19T16:30:00Z', text_body: '부산   교회 버전\n\n\n\n따로   올립니다', replies: [
-      { created_at: '2026-11-20T03:00:00Z', text_body: '네 확인했습니다' },
-      { created_at: '2026-11-20T01:00:00Z', text_body: '@홍길동 파일 주소 보내 주세요' },
+    { id: '901', created_at: '2026-11-19T16:30:00Z', text_body: '부산   교회 버전\n\n\n\n따로   올립니다', creator: { name: ' 김가람 ' }, replies: [
+      { created_at: '2026-11-20T03:00:00Z', text_body: '네 확인했습니다', creator: { name: '홍길동' } },
+      { created_at: '2026-11-20T01:00:00Z', text_body: '@홍길동 파일 주소 보내 주세요', creator: null },
       { created_at: '2026-11-20T05:00:00Z', text_body: '   ' }] },
     { id: '902', created_at: '2026-11-21T01:00:00Z', text_body: '분당 자막 고쳤습니다', replies: [{ created_at: '2026-11-21T02:00:00Z', text_body: '분당만 바꾸면 됩니다' }] },
   ], 'https://example-church.monday.com/boards/1369332975/pulses/555');
-  sc.eq('③ 본문만 부산인 업데이트의 답글도 함께 · 답글은 오래된 것부터 · 빈 답글은 뺌 · 부산이 하나도 없는 묶음은 뺌',
-    J(th), [{ at: '2026-11-20', tm: '01:30', id: '901', text: '부산 교회 버전\n\n따로 올립니다', link: 'https://example-church.monday.com/boards/1369332975/pulses/555/posts/901',
-      replies: [{ at: '2026-11-20', tm: '10:00', text: '@홍길동 파일 주소 보내 주세요' }, { at: '2026-11-20', tm: '12:00', text: '네 확인했습니다' }] }]);
+  sc.eq('③ 본문만 부산인 업데이트의 답글도 함께 · 답글은 오래된 것부터 · 빈 답글은 뺌 · 부산이 하나도 없는 묶음은 뺌 · 작성자 이름(앞뒤 빈칸 뺌)',
+    J(th), [{ at: '2026-11-20', tm: '01:30', id: '901', who: '김가람', text: '부산 교회 버전\n\n따로 올립니다', link: 'https://example-church.monday.com/boards/1369332975/pulses/555/posts/901',
+      replies: [{ at: '2026-11-20', tm: '10:00', who: '', text: '@홍길동 파일 주소 보내 주세요' }, { at: '2026-11-20', tm: '12:00', who: '홍길동', text: '네 확인했습니다' }] }]);
+  sc.eq('③ 작성자 이름은 읽기 질문에서 (업데이트 · 답글 모두 creator { name } 만)', /updates\(limit: 30\) \{ id created_at text_body creator \{ name \} replies \{ id created_at text_body creator \{ name \} \} \}/.test(C.QUERIES.week), true);
+  sc.eq('③ 작성자 이름은 30자에서 자른다', C.busanNotes([{ text_body: '부산', creator: { name: '가'.repeat(40) } }])[0].who.length, 30);
   sc.eq('③ Monday 주소가 아니면 링크를 만들지 않는다', [C.busanNotes([{ id: '1', text_body: '부산' }], 'https://evil.example.com/x')[0].link, C.busanNotes([{ id: 'x"', text_body: '부산' }], 'https://a.monday.com/boards/1/pulses/2')[0].link],
     ['', 'https://a.monday.com/boards/1/pulses/2']);
   const lk = C.videoOf({ name: 'w', url: 'https://example-church.monday.com/boards/1/pulses/7', column_values: [], updates: [{ id: '3', created_at: '2026-11-20T00:00:00Z', text_body: '부산 같음' }] });
   sc.eq('③ 아이템 Monday 주소(Monday에서 보기) · 업데이트 주소', [lk.link, lk.notes[0].link], ['https://example-church.monday.com/boards/1/pulses/7', 'https://example-church.monday.com/boards/1/pulses/7/posts/3']);
   sc.eq('③ 아이템 주소 칸은 읽기 질문에서 (url)', /items \{ id name url /.test(C.QUERIES.week), true);
   const many = { name: 'x', column_values: [], updates: Array.from({ length: 10 }, (_, i) => ({ created_at: '2026-11-1' + i, text_body: '부산 ' + i, replies: [] })) };
-  sc.eq('③ 상한 6', C.videoOf(many).notes.length, 6);
+  sc.eq('③ 상한 6 — 최근 6개를 남긴 뒤 오래된 것부터', C.videoOf(many).notes.map(n => n.text), ['부산 4', '부산 5', '부산 6', '부산 7', '부산 8', '부산 9']);
   sc.eq('③ 주소 칸이 url 없이 글만이면 끝의 주소', C.videoOf({ name: 'y', column_values: [{ type: 'link', text: '제목 - https://youtu.be/BBB' }] }).url, 'https://youtu.be/BBB');
   sc.eq('③ http 가 아닌 주소는 버린다', C.videoOf({ name: 'z', column_values: [{ type: 'link', url: 'javascript:alert(1)' }] }).url, '');
   sc.eq('③ 리포터: 차 있으면 true · 비면 false · 열을 모르면 null', [C.videoOf({ name: 'a', column_values: [{ id: 'r', text: '홍길동' }] }, 'r').rep, C.videoOf({ name: 'a', column_values: [{ id: 'r', text: '' }] }, 'r').rep, C.videoOf({ name: 'a', column_values: [] }, null).rep], [true, false, null]);
