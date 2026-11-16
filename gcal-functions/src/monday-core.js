@@ -24,7 +24,7 @@ const QUERIES = {
     + " bus: boards(ids: $b) { groups(ids: $g) { title items_page(limit: 100) { items { id name column_values(ids: $c) { id text } } } } }"
     + " vid: boards(ids: $v) { items_page(limit: 20, query_params: { rules: $vr }) { items { id name url"
     + " column_values { id type text ... on LinkValue { url } }"
-    + " updates(limit: 30) { id created_at text_body replies { id created_at text_body } } } } } }",
+    + " updates(limit: 30) { id created_at text_body creator { name } replies { id created_at text_body creator { name } } } } } } }",
 };
 
 const squash = (t) => String(t == null ? "" : t).replace(/\s+/g, "");
@@ -87,10 +87,11 @@ function clean(t) {
   return t.length > NOTE_LEN ? t.slice(0, NOTE_LEN) + "…" : t;
 }
 const stamp = (x) => x.at + " " + x.tm;
+const whoOf = (x) => String((x && x.creator && x.creator.name) || "").replace(/\s+/g, " ").trim().slice(0, 30);
 // 업데이트 · 답글에서 '부산' 묶음만 (R12 C4a, HB 11/16)
 //   업데이트와 그 답글을 한 묶음으로 보고, **묶음 중 하나라도 '부산' 이면 묶음째** 돌려준다 — 답글은 그 업데이트 아래(오래된 것부터).
 //   (예전엔 한 줄로 섞어 '부산' 글만 남겨, 답글이 부모를 잃고 본문만 '부산' 인 업데이트의 답글은 빠졌다)
-//   묶음은 최근 업데이트부터 · link = 그 업데이트로 가는 Monday 주소(아이템 주소를 모르면 빈 글)
+//   묶음은 최근 NOTE_MAX 개를 남긴 뒤 **오래된 것부터**(위 = 오래된 글, HB 11/16) · who = 쓴 사람 이름(creator.name, 없으면 빈 글) · link = 그 업데이트로 가는 Monday 주소(아이템 주소를 모르면 빈 글)
 function busanNotes(updates, itemUrl) {
   const base = MON_URL.test(String(itemUrl || "")) ? String(itemUrl).replace(/\/+$/, "") : "";
   const has = (t) => String(t == null ? "" : t).includes("부산");
@@ -99,12 +100,12 @@ function busanNotes(updates, itemUrl) {
     if (!u) continue;
     const raw = (u.replies || []).filter(r => r && String(r.text_body || "").trim());
     if (!has(u.text_body) && !raw.some(r => has(r.text_body))) continue;
-    const replies = raw.map(r => Object.assign(kst(r.created_at), { text: clean(r.text_body) }))
+    const replies = raw.map(r => Object.assign(kst(r.created_at), { who: whoOf(r), text: clean(r.text_body) }))
       .sort((a, b) => (stamp(a) < stamp(b) ? -1 : stamp(a) > stamp(b) ? 1 : 0)).slice(0, REPLY_MAX);
     const id = /^\d+$/.test(String(u.id || "")) ? String(u.id) : "";
-    out.push(Object.assign(kst(u.created_at), { id, text: clean(u.text_body), link: base && id ? base + "/posts/" + id : base, replies }));
+    out.push(Object.assign(kst(u.created_at), { id, who: whoOf(u), text: clean(u.text_body), link: base && id ? base + "/posts/" + id : base, replies }));
   }
-  return out.sort((a, b) => (stamp(a) < stamp(b) ? 1 : stamp(a) > stamp(b) ? -1 : 0)).slice(0, NOTE_MAX);
+  return out.sort((a, b) => (stamp(a) < stamp(b) ? 1 : stamp(a) > stamp(b) ? -1 : 0)).slice(0, NOTE_MAX).reverse();
 }
 
 // 영상 소식 아이템 → { title, url, link, notes, rep }

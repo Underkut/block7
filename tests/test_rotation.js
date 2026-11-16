@@ -773,20 +773,25 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉚ 부산 관련 Monday 글 펼침은 다시 그려도 유지', /details\.adnotes/.test(HTML) && /\(P\.open \|\| \{\}\)\[v\.title\] \? ' open'/.test(HTML), true);
   // C4a — 묶음(업데이트 + 답글) · 링크 · 멘션 · 날짜 묶기 · 더 보기 · 말풍선
   const th = A.normAds({ sun: '2026-11-22', video: [{ title: 'v', link: 'https://example-church.monday.com/boards/1/pulses/2', notes: [
-    { id: '11', at: '2026-11-20', tm: '21:40', text: '부산 버전', link: 'https://example-church.monday.com/boards/1/pulses/2/posts/11', replies: [{ at: '2026-11-21', tm: '09:12', text: '@홍길동 확인' }, { text: '' }] },
-    { at: '2026-11-18', text: '부산 옛 서버 글' }, { id: 'x"><b', text: '부산', link: 'https://evil.example.com/' }] }] }).video[0];
-  sc.eq('㉚ 묶음 모양 · 빈 답글 뺌 · 옛 서버 한 줄은 답글 없는 묶음 · Monday 주소만 링크 · 이상한 id 는 버림', J(th), { title: 'v', url: '', link: 'https://example-church.monday.com/boards/1/pulses/2', notes: [
-    { id: '11', at: '2026-11-20', tm: '21:40', text: '부산 버전', link: 'https://example-church.monday.com/boards/1/pulses/2/posts/11', replies: [{ at: '2026-11-21', tm: '09:12', text: '@홍길동 확인' }] },
-    { id: '', at: '2026-11-18', tm: '', text: '부산 옛 서버 글', link: '', replies: [] }, { id: '', at: '', tm: '', text: '부산', link: '', replies: [] }], rep: null });
-  sc.eq('㉚ 날짜 묶기: 최근 날부터 · 같은 날은 늦은 것부터', J(A.adsByDay([{ at: '2026-11-18', tm: '09:00' }, { at: '2026-11-20', tm: '14:20' }, { at: '2026-11-20', tm: '21:40' }]).map(d => [d.at, d.notes.map(n => n.tm)])),
-    [['2026-11-20', ['21:40', '14:20']], ['2026-11-18', ['09:00']]]);
+    { id: '11', at: '2026-11-20', tm: '21:40', text: '부산 버전', link: 'https://example-church.monday.com/boards/1/pulses/2/posts/11', replies: [{ at: '2026-11-21', tm: '09:12', who: '김가람', text: '@홍길동 확인' }, { text: '' }] },
+    { at: '2026-11-18', text: '부산 옛 서버 글', who: 7 }, { id: 'x"><b', text: '부산', link: 'https://evil.example.com/' }] }] }).video[0];
+  sc.eq('㉚ 묶음 모양 · 빈 답글 뺌 · 옛 서버 한 줄은 답글 없는 묶음 · Monday 주소만 링크 · 이상한 id · 글이 아닌 작성자는 버림', J(th), { title: 'v', url: '', link: 'https://example-church.monday.com/boards/1/pulses/2', notes: [
+    { id: '11', at: '2026-11-20', tm: '21:40', who: '', text: '부산 버전', link: 'https://example-church.monday.com/boards/1/pulses/2/posts/11', replies: [{ at: '2026-11-21', tm: '09:12', who: '김가람', text: '@홍길동 확인' }] },
+    { id: '', at: '2026-11-18', tm: '', who: '', text: '부산 옛 서버 글', link: '', replies: [] }, { id: '', at: '', tm: '', who: '', text: '부산', link: '', replies: [] }], rep: null });
+  sc.eq('㉚ 작성자 이름은 시각 옆 (글 · 답글 모두, 없으면 안 그림)', /<span>\$\{esc\(n\.tm\)\}\$\{adsWhoTag\(n\.who\)\}<\/span>/.test(HTML) && /\+ r\.tm\)\}\$\{adsWhoTag\(r\.who\)\}<\/span>/.test(HTML) && /const adsWhoTag = \(w\) => \(w \?/.test(HTML), true);
+  sc.eq('㉚ 날짜 묶기: 위가 가장 오래된 날 · 같은 날도 이른 것부터 (아래로 갈수록 최신, HB 11/16)', J(A.adsByDay([{ at: '2026-11-20', tm: '21:40' }, { at: '2026-11-18', tm: '09:00' }, { at: '2026-11-20', tm: '14:20' }]).map(d => [d.at, d.notes.map(n => n.tm)])),
+    [['2026-11-18', ['09:00']], ['2026-11-20', ['14:20', '21:40']]]);
+  sc.eq('㉚ 다시 그릴 때 \'더 보기\' 높이를 맞춘 뒤 보던 자리를 되돌린다 (아이패드에서 판이 툭 튀던 것, HB 11/16 A → B)', /if \(S\.pane\.kind === 'ads'\) adsFit\(el\);\n  el\.scrollTop = top;/.test(HTML), true);
+  sc.eq('㉚ 새로 읽은 것이 같으면 다시 그리지 않고 \'읽은 때\' 만 바꾼다', /JSON\.stringify\(Q\.data\) === JSON\.stringify\(o\)\) \{ Object\.assign\(Q, \{ at, stale: false \}\); const w = \$\('#ads-when'\)/.test(HTML), true);
+  sc.eq('㉚ 펼친 글 맨 아래 꺾쇠로 접는다 · 펼침 기억도 함께 · 교역자도', /data-act="adsfold" aria-label="접기"/.test(HTML) && /dt\.open = false; S\.pane\.open = Object\.assign\(\{\}, S\.pane\.open, \{ \[dt\.dataset\.ni\]: false \}\)/.test(HTML) && /'admore', 'adsfold'\]\.includes\(d\.act\)/.test(HTML), true);
+  sc.eq('㉚ 카드 머리 색띠: 영상 = 파랑 · 구두 = 노랑 (라이트 · 다크 모두 값)', /class="adcard vid"><h4>영상 광고/.test(HTML) && /class="adcard spk"><h4>구두 광고/.test(HTML) && (HTML.match(/--adv-band:/g) || []).length === 3 && (HTML.match(/--ads-band:/g) || []).length === 3, true);
   sc.eq('㉚ 링크 규칙: 짧은 주소는 그대로(https 빼고) · 긴 주소(30자 넘음)는 사이트 이름만', ['https://youtu.be/AbCdEfGhIjk', 'https://www.youtube.com/watch?v=AbCdEfGhIjk&list=PL0', 'https://drive.google.com/drive/folders/1AbCdEfGh'].map(A.adsLinkLabel),
     ['youtu.be/AbCdEfGhIjk', 'youtube.com', 'drive.google.com']);
   sc.eq('㉚ 글 조각: 주소 · 끝 문장부호는 글로 · 멘션(앞이 빈칸 · 줄 처음) · 메일 주소는 멘션 아님',
     J(A.adsRich('@김예린 파일은 https://youtu.be/abc. 보세요\nhb@example.com (@이하준)')),
     [{ k: '@', v: '@김예린' }, { k: 't', v: ' 파일은 ' }, { k: 'a', v: 'https://youtu.be/abc', label: 'youtu.be/abc' }, { k: 't', v: '. 보세요\nhb@example.com (@이하준)' }]);
   sc.eq('㉚ 글 조각: javascript: 같은 주소는 링크가 아니다 · 빈 글은 빈 목록', [J(A.adsRich('javascript:alert(1)')), J(A.adsRich(''))], [[{ k: 't', v: 'javascript:alert(1)' }], []]);
-  sc.eq('㉚ 더 보기는 판에 기억(S.pane.more — 다시 그려도 그대로) · 교역자도 누를 수 있다', /S\.pane\.more = Object\.assign\(\{\}, S\.pane\.more/.test(HTML) && /const open = !!\(S\.pane\.more \|\| \{\}\)\[k\]/.test(HTML) && /'adsback', 'admore'\]\.includes\(d\.act\)/.test(HTML), true);
+  sc.eq('㉚ 더 보기는 판에 기억(S.pane.more — 다시 그려도 그대로) · 교역자도 누를 수 있다', /S\.pane\.more = Object\.assign\(\{\}, S\.pane\.more/.test(HTML) && /const open = !!\(S\.pane\.more \|\| \{\}\)\[k\]/.test(HTML) && /'adsback', 'admore', 'adsfold'\]\.includes\(d\.act\)/.test(HTML), true);
   sc.eq('㉚ 말풍선: 고른 단추 자리(--i) · 고르기 전엔 \'아직 고르지 않았습니다\' · 그룹이 없으면 리포터 말풍선 없음', /bi >= 0 \? `<div class="adbub" id="ads-bub" style="--i:\$\{bi\}"/.test(HTML) && /'<p class="adyet">아직 고르지 않았습니다<\/p>'/.test(HTML) && /!b\.found \? `<p class="adnone">\$\{esc\(ADS_NOGROUP\)\}<\/p>`/.test(HTML), true);
   sc.eq('㉚ 문구: 부산 관련 Monday 글 · Monday에서 보기 · 상영 고르기 설명', ['부산 관련 Monday 글 <span', "'Monday에서 보기'", '위 Monday 내용을 참고하여 부산 상영 여부를 선택해주세요'].every(t => HTML.includes(t)), true);
   sc.eq('㉚ 처음엔 아무것도 안 골라짐 (이 기기 기억이 없으면 빈 값)', /bs: ADS_BS\[m\[sun\]\] \? m\[sun\] : '' \}/.test(HTML), true);
@@ -795,7 +800,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉚ 앱은 Monday 를 직접 부르지 않는다(열쇠가 폰에 오지 않게) — 서버 monday 함수만', [/api\.monday\.com/.test(HTML), /cloudfunctions\.net\/monday'/.test(HTML)], [false, true]);
   sc.eq('㉚ 열쇠는 붙여 넣은 칸에서 바로 비우고 이 기기에 저장하지 않는다', /if \(el\) el\.value = '';/.test(HTML) && !/lsSet\([^)]*token/.test(HTML), true);
   sc.eq('㉚ 교역자: 방문 판 · 내 일정에서 광고를 열 수 있고, 광고 판에서는 보기 · 복사 · 부산 상영 고르기만(열쇠 넣기 · 끊기 아님)',
-    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback', 'admore'\]\.includes\(d\.act\) \|\| !!d\.adsbs;/.test(HTML)], [true, true, true]);
+    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback', 'admore', 'adsfold'\]\.includes\(d\.act\) \|\| !!d\.adsbs;/.test(HTML)], [true, true, true]);
   sc.eq('㉚ 교역자는 주인(HB)의 로테이션으로 묻는다', /mfn\('\/ads', \{ owner: FB\.team \|\| FB\.user\.uid, sun \}\)/.test(HTML), true);
   sc.eq('㉚ 복사는 누른 자리에서 바로(아이폰) — adsCopy 안에 await 가 없다', !/await/.test((HTML.match(/function adsCopy\(\) \{[\s\S]*?\n\}/) || [''])[0]), true);
   sc.eq('㉚ 광고는 책(b9)에 넣지 않는다 — 이 기기 사본만', /ADS_KEY = 'rota_ads_v1'/.test(HTML) && !/S\.book\.ads/.test(HTML), true);
