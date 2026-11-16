@@ -39,7 +39,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
+  stayPeriod, stayWhole, visitLeads, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -209,19 +209,19 @@ sc.eq('⑫ 고르기 판: 네 예배 모두 같게 고를 때 빠진 예배를 �
 const full = A.normBook({ people: [{ id: 'x', name: '가가', roles: ['preach'], no: ['sun1|preach'], at: 5 }], visits: [{ id: 'v|2025-12-31', days: '수목', who: ['x'], at: 5 }, { id: 'v|2025-12-28', who: ['x'], at: 5 }] });
 const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripped.visits.filter(v => v.date !== '2025-12-31');   // R1 이 떨군 모양 (같은 at)
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
-const d1 = A.pickDoc(full, { b7: J(full), b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
-sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b6)을 떨군 채 써도 b7 과 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b7: J(full) });
-sc.eq('⑬ b7 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1 = A.pickDoc(full, { b8: J(full), b7: stripped, b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
+sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b7)을 떨군 채 써도 b8 과 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
+const d1b = A.pickDoc(full, { b8: J(full) });
+sc.eq('⑬ b8 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
-sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b7 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
+sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b8 로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
-sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b7 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
+sc.eq('⑬ R2~ 자료(b2 만) → 그대로 읽고 b8 로 옮겨 쓴다', [d2b.book.visits.length, d2b.book.people[0].no, d2b.push], [2, ['sun1|preach'], true]);
 const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [], at: 9 });
-const d3 = A.pickDoc(full, { b6: old2, b7: J(full) });
-sc.eq('⑬ 낡은 앱(b6)에서 새로 적은 줄도 받아 b7 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
+const d3 = A.pickDoc(full, { b7: old2, b8: J(full) });
+sc.eq('⑬ 낡은 앱(b7)에서 새로 적은 줄도 받아 b8 로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b7'/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b8'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b7'\]/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -666,6 +666,35 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉗ 서버: 메일 권한은 읽기만(gmail.readonly) — 보내기 · 지우기 · 전체 권한 없음', [MS.includes('https://www.googleapis.com/auth/gmail.readonly'), MS.some(x => /gmail\.(send|modify|compose)|mail\.google\.com/.test(x)), MS.some(x => /calendar|drive/.test(x))], [true, false, false]);
   sc.eq('㉗ 서버: 메일 열쇠는 따로(gmailTokens) · 캘린더 권한과 합치지 않음(include_granted_scopes 빼기)', [/mail \? "gmailTokens" : "gcalTokens"/.test(src), /\.\.\.\(mail \? \{\} : \{ include_granted_scopes: "true" \}\)/.test(src), /set\(\{ uid, ret, mail, exp/.test(src), /tokDoc\(s\.uid, s\.mail === true\)/.test(src)], [true, true, true, true]);
   sc.eq('㉗ 서버: 돌아갈 자리 — 로테이션 · 심방 노트 · BLOCK7 만', ['https://sweeter.my/rotation/', 'https://sweeter.my/care/', 'https://block7.my/', 'https://sweeter.my/', 'https://sweeter.my/cell/', 'https://sweeter.my.evil.com/rotation/'].map(okRet), [true, true, true, false, false, false]);
+}
+
+// ㉘ 부산에서 무엇을 인도하나 (R11, HB 11/16) — 머무는 날과 인도는 따로다. 기본값은 비움.
+{
+  const NV = (o) => A.normBook({ visits: [Object.assign({ id: 'v|2026-11-22', days: '금토일', at: 1 }, o)] }).visits[0];
+  const v0 = NV({});
+  sc.eq('㉘ 기본은 비움 — 금요 · 주일 · LL 인도 칸이 없다(옛 방문도 그대로 같은 모양)', [v0.fri, 'sunLead' in v0, 'sunLay' in v0, 'll' in v0], [false, false, false, false]);
+  const v1 = NV({ fri: true, sunLead: 'staff', ll: true });
+  sc.eq('㉘ 교역자가 금요 · 주일 · LL 을 인도', [v1.fri, v1.sunLead, v1.ll, 'sunLay' in v1], [true, 'staff', true, false]);
+  const v2 = NV({ sunLead: 'lay', sunLay: 'pl' }), v3 = NV({ sunLead: 'staff', sunLay: 'pl' }), v4 = NV({ sunLead: '아무거나', ll: 'yes' });
+  sc.eq('㉘ 주일예배는 성도 인도자(그분 id) · 교역자면 성도 id 를 버림 · 모르는 값은 비움', [v2.sunLead, v2.sunLay, 'sunLay' in v3, 'sunLead' in v4, v4.ll], ['lay', 'pl', false, false, true]);
+  const nb = A.normBook({ people: [{ id: 'pl', name: '오세움', kind: 'lay', roles: [] }], visits: [] });
+  sc.eq('㉘ 맡은 것 알약 — 금요 이름 · 주일 · LL (그 금요가 금1~3 일 때만 금요 이름)',
+    [A.visitLeads(nb, NV({ fri: true, sunLead: 'staff', ll: true })).map(x => x.k + ':' + x.text),
+     A.visitLeads(nb, NV({ sunLead: 'lay', sunLay: 'pl' })).map(x => x.k + ':' + x.text),
+     A.visitLeads(nb, NV({ sunLead: 'lay' })).map(x => x.k + ':' + x.text),
+     A.visitLeads(nb, NV({})).length],
+    [['fri:ENCOUNTER 인도', 'sun:주일예배 인도', 'll:LL 인도'], ['lay:주일예배 · 오세움'], ['lay:주일예배 · 성도 인도자'], 0]);
+  sc.eq('㉘ 금요일에 머물지 않으면 금요 인도는 없다 · 주일에 머물지 않으면 주일 · LL 도 없다',
+    [A.visitLeads(nb, NV({ days: '토일', fri: true })).length, A.visitLeads(nb, A.normBook({ visits: [{ id: 'v|2026-11-18', days: '수', sunLead: 'staff', ll: true, at: 1 }] }).visits[0]).length], [0, 0]);
+  const pb = A.normBook({ people: [{ id: 'a', name: '가', roles: ['busan'] }], visits: [] });
+  const pp = A.propose(pb, '2026-11');
+  sc.eq('㉘ 자동 배열 제안도 금요 인도를 비워 둔다(머무는 날은 금토일 그대로)', [pp.visits.some(v => v.fri), pp.visits.filter(v => v.days === '금토일').length > 0], [false, true]);
+  sc.eq('㉘ 새 방문을 만들 때 금요 인도는 비움', /put\(S\.book, 'visits', \{ id, who: \[\], days: [^}]*fri: false \}/.test(HTML), true);
+  // 낡은 앱(b7)이 인도 칸을 모른 채 다른 방문을 고쳐 써도, 새 칸(b8)의 인도는 남는다
+  const nw = A.normBook({ visits: [{ id: 'v|2026-11-22', days: '금토일', fri: true, sunLead: 'lay', sunLay: 'pl', ll: true, at: 5 }, { id: 'v|2026-11-29', days: '토일', at: 5 }] });
+  const ol = J(nw); delete ol.visits[0].sunLead; delete ol.visits[0].sunLay; delete ol.visits[0].ll; ol.visits[1].note = '낡은 앱이 고침'; ol.visits[1].at = 9;
+  const pk = A.pickDoc(null, { b8: J(nw), b7: ol });
+  sc.eq('㉘ 낡은 앱(b7)과 합쳐도 인도 칸은 그대로 · 낡은 앱이 고친 다른 방문도 받음', [(v => [v.sunLead, v.sunLay, v.ll])(pk.book.visits[0]), pk.book.visits[1].note, pk.push], [['lay', 'pl', true], '낡은 앱이 고침', true]);
 }
 
 sc.done();

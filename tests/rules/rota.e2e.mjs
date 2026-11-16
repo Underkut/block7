@@ -17,7 +17,7 @@ const HB = su.localId;
 const T = 1000;
 const book = { v: 'x', at: T, people: [{ id: 'pa', name: '가나다', roles: ['preach', 'offer'], email: 'ga@example.com', at: T, by: 'hb' }, { id: 'pb', name: '라마바', roles: ['offer'], at: T, by: 'hb' }],
   slots: [{ id: '2026-11-22|sun1|offer', who: ['pb'], at: T, by: 'hb' }], visits: [{ id: 'v|2026-11-22', who: ['pa'], days: '토일', at: T, by: 'hb', note: '처음 메모' }, { id: 'v|2026-11-29', who: ['pb'], days: '토일', at: T, by: 'hb' }], marks: [], opts: [] };
-await admin(db => db.doc('rota/' + HB).set({ b7: book, v: 'seed', at: T }));
+await admin(db => db.doc('rota/' + HB).set({ b7: book,   /* 옛 칸에 둔 자료 — 앱이 b8 로 옮긴다 */ v: 'seed', at: T }));
 const browser = await chromium.launch();
 async function device(label) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -43,7 +43,7 @@ await until(() => hb.evaluate(() => FB.role === 'owner' && FB.synced));
 ok('① HB 는 주인(owner) · 사람 탭 있음 · 자료 그대로', await state(hb), { role: 'owner', synced: true, tabs: ['week', 'month', 'busan', 'people'], people: 2, err: '' });
 const d1 = await until(async () => { const d = await getDoc('rota/' + HB); return d && d.team ? d : null; });
 ok('① HB 앱이 team(들어올 이메일)을 문서에 적었다', d1 && d1.team, ['ga@example.com']);
-ok('① 빈 기기 로그인으로 계정 자료가 줄지 않았다', [d1.b7.people.length, d1.b7.visits.length, d1.b7.slots.length], [2, 2, 1]);
+ok('① 빈 기기 로그인으로 계정 자료가 줄지 않았다', [d1.b8.people.length, d1.b8.visits.length, d1.b8.slots.length], [2, 2, 1]);
 
 console.log('② 교역자 — 빈 기기에서 구글 로그인');
 const ga = await device('교역자');
@@ -84,20 +84,20 @@ ok('② 부재 · 가능 일정이 교역자 칸에', st2 && [st2.away, st2.can,
 console.log('③ HB 앱이 받아들인다');
 const hbv = await until(() => hb.evaluate(() => { const v = S.book.visits.find(x => x.id === 'v|2026-11-22'), p = S.book.people.find(x => x.id === 'pa'); return v.stay.length && p.can ? [v.stay[0].name, v.stayBy, p.away, p.awayBy, p.can.length] : null; }));
 ok('③ HB 화면: 교역자 숙소 · 부재 · 가능 일정 + 누가', hbv, ['교역자 호텔', 'pa', [{ from: '2026-12-01', to: '2026-12-03', note: '수술' }], 'pa', 1]);
-const d3 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b7.visits.find(x => x.id === 'v|2026-11-22'); return v.stay && v.stay.length ? d : null; });
-ok('③ HB 계정 문서에도 들어갔다(HB 앱이 씀)', d3 && [d3.b7.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d3.b7.visits.find(x => x.id === 'v|2026-11-22').note, d3.b7.people.length], ['교역자 호텔', '처음 메모', 2]);
+const d3 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b8.visits.find(x => x.id === 'v|2026-11-22'); return v.stay && v.stay.length ? d : null; });
+ok('③ HB 계정 문서에도 들어갔다(HB 앱이 씀)', d3 && [d3.b8.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d3.b8.visits.find(x => x.id === 'v|2026-11-22').note, d3.b8.people.length], ['교역자 호텔', '처음 메모', 2]);
 ok('③ HB 고르기 판: 교역자가 적은 가능 일정이 \'가능 일정\'(초록)으로', await hb.evaluate(async () => { openPane({ kind: 'pick', id: '2026-12-20|sun1|offer' }); await new Promise(r => setTimeout(r, 300)); const b = document.querySelector('#pane [data-who="pa"] .why'); const out = b ? [b.textContent.includes('가능 일정'), b.classList.contains('ok')] : null; closePane(); await new Promise(r => setTimeout(r, 600)); return out; }), [true, true]);
 ok('③ 숙소 이름이 HB 숙소 목록에 저절로 들어가지 않는다(목록은 HB 몫)', await hb.evaluate(() => S.book.opts.filter(o => o.type === 'stay' && !o.del).map(o => o.name)), []);
 // HB 가 메모만 고친다 → 교역자 숙소는 그대로
 await hb.evaluate(() => openPane({ kind: 'visit', id: 'v|2026-11-22' })); await hb.waitForTimeout(400);
 await hb.click('#pane [data-vsec="note"]'); await hb.waitForTimeout(150); await hb.fill('#pane textarea', 'HB 메모'); await hb.click('#pane [data-act="vsave"]'); await hb.waitForTimeout(800);
-const d4 = await getDoc('rota/' + HB), v4 = d4.b7.visits.find(x => x.id === 'v|2026-11-22');
+const d4 = await getDoc('rota/' + HB), v4 = d4.b8.visits.find(x => x.id === 'v|2026-11-22');
 ok('③ HB 가 메모를 고쳐도 교역자 숙소 · 누가는 그대로', [v4.note, v4.stay[0].name, v4.stayBy], ['HB 메모', '교역자 호텔', 'pa']);
 ok('③ 교역자 화면에도 HB 메모가 온다', await until(() => ga.evaluate(() => S.book.visits.find(v => v.id === 'v|2026-11-22').note === 'HB 메모')), true);
 
 console.log('③-2 내 화면 취향 (R8b) — 첫 화면 · 내 이름 모양은 계정에, 책은 그대로');
 {
-  const before = JSON.stringify((await getDoc('rota/' + HB)).b7);
+  const before = JSON.stringify((await getDoc('rota/' + HB)).b8);
   await ga.evaluate(() => { document.querySelector('[data-act="namefmt"]').click(); });
   await until(() => ga.evaluate(() => !!document.querySelector('#pane [data-nf="c"]')));
   await ga.evaluate(() => { document.querySelector('#pane [data-nf="c"]').click(); document.querySelector('#pane [data-nfc="blue"]').click(); });
@@ -112,7 +112,7 @@ console.log('③-2 내 화면 취향 (R8b) — 첫 화면 · 내 이름 모양�
   const d = await until(async () => { const x = await getDoc('rota/' + HB); return x && x.ui ? x : null; });
   await sleep(1200);
   const d2 = await getDoc('rota/' + HB);
-  ok('③-2 HB 의 첫 화면은 문서 맨 위 ui 칸에 · 책(b7) · team 은 한 글자도 그대로 · HB 책에 교역자 ui 가 섞이지 않았다', [d && d.ui.home, JSON.stringify(d2.b7) === before, d2.team, /"ui"|"home"/.test(JSON.stringify(d2.b7))], ['month:mine', true, ['ga@example.com'], false]);
+  ok('③-2 HB 의 첫 화면은 문서 맨 위 ui 칸에 · 책(b8) · team 은 한 글자도 그대로 · HB 책에 교역자 ui 가 섞이지 않았다', [d && d.ui.home, JSON.stringify(d2.b8) === before, d2.team, /"ui"|"home"/.test(JSON.stringify(d2.b8))], ['month:mine', true, ['ga@example.com'], false]);
   await hb.evaluate(() => closePane()); await sleep(300);
   await ga.reload(); await until(() => ga.evaluate(() => typeof FB !== 'undefined' && FB.role === 'staff' && FB.synced));
   ok('③-2 교역자가 다시 열면 고른 첫 화면(부산)이 먼저 뜬다', await ga.evaluate(() => PREF.tab), 'busan');
@@ -133,7 +133,7 @@ await hb2.click('[data-act="menu"]'); await hb2.fill('#fb-em', 'hb@example.com')
 await until(() => hb2.evaluate(() => FB.role === 'owner' && FB.synced));
 await sleep(1200);
 const d5 = await getDoc('rota/' + HB);
-ok('⑤ 두 번째 기기 로그인 뒤에도 자료 그대로(숙소 · 메모 · 부재 · 자리)', [d5.b7.people.length, d5.b7.visits.length, d5.b7.slots.length, d5.b7.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d5.b7.visits.find(x => x.id === 'v|2026-11-22').note, (d5.b7.people.find(p => p.id === 'pa').away || []).length], [2, 2, 1, '교역자 호텔', 'HB 메모', 1]);
+ok('⑤ 두 번째 기기 로그인 뒤에도 자료 그대로(숙소 · 메모 · 부재 · 자리)', [d5.b8.people.length, d5.b8.visits.length, d5.b8.slots.length, d5.b8.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d5.b8.visits.find(x => x.id === 'v|2026-11-22').note, (d5.b8.people.find(p => p.id === 'pa').away || []).length], [2, 2, 1, '교역자 호텔', 'HB 메모', 1]);
 
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
