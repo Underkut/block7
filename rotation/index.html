@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1116-12 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) -->
+<!-- 교역자 로테이션 v. 26-1116-13 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -528,7 +528,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1116-12';
+const APP_VERSION = 'v. 26-1116-13';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일은 언제나 '주일' (HB 11/16) — 자료(days 글자 · 교통 시각)는 '일' 그대로 둔다
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1139,8 +1139,30 @@ function conflictText(book, c, pm) {
     case 'away': return `${nm} — ${mdOf(c.date)} 부재${c.note ? '(' + c.note + ')' : ''}인데 ${c.slot ? '분당 ' + lab : '부산 방문'}`;
     case 'pin': return `${nm} — ${c.tag} 주에는 분당에 있어야 하는데 부산 방문 (${mdOf(c.date)})`;
     case 'staff': return `${mdOf(c.date)} 극동방송 주인데 동행 스텝이 비어 있습니다`;
+    case 'worship': return `${nm} — ${mdOf(c.date)}(${DOWS[dowOf(c.date)]}) 부산에 있는데 분당 ${c.service} 예배팀(${c.part})${c.tentative ? ' · 예배팀 로테이션 미정' : ''}`;
   }
   return '';
+}
+/* ---- 예배팀 일정 (R13) — 서버(gcal-functions 의 worship)가 2시간마다 받아 rota/{HB}/ext/worship 에 둔 것 ----
+   ext = { at, from, to, services: [{ date, time, sid, service, special, status, leaders:[{ w, name, pid? }], members:[{ pid, part }] }], dup, err? }
+   members 는 서버가 이미 우리 명단(wkeys) 분만 남겼다. 겹침: 그 날 부산에 머무는데 분당 예배팀에 듦 → 빨강(미정이면 노랑).
+   wkeys = 서버가 이름을 맞출 때 쓰는 명단(사람 id → 이름 · 다른 이름) — HB 앱이 문서 맨 위에 적는다(책 밖). */
+function wkeysOf(book) { const o = {}; for (const p of live(normBook(book).people).slice(0, 200)) { const n = [p.name].concat(p.alias || []).filter(Boolean); if (n.length) o[p.id] = n; } return o; }
+function worshipOn(ext, pid, date) {
+  const out = [];
+  for (const s of (ext && Array.isArray(ext.services) ? ext.services : [])) if (s && s.date === date) {
+    const parts = [];
+    if ((s.leaders || []).some(x => x && x.pid === pid)) parts.push('리더');
+    for (const m of s.members || []) if (m && m.pid === pid && m.part && m.part !== '리더' && !parts.includes(m.part)) parts.push(m.part);
+    if (parts.length) out.push({ s, parts });
+  }
+  return out;
+}
+function worshipClash(book, ext, from, to) {
+  const out = []; if (!ext || !Array.isArray(ext.services)) return out;
+  for (const v of live(book.visits)) for (const pid of v.who) for (const d of stayDates(v)) if (d >= from && d <= to)
+    for (const { s, parts } of worshipOn(ext, pid, d)) out.push({ level: s.status === 'tentative' ? 'warn' : 'bad', kind: 'worship', date: d, pid, visit: v.id, service: s.service || '예배', part: parts.join(' · '), tentative: s.status === 'tentative' });
+  return out;
 }
 // 칸마다 가장 센 표시 — { 자리 id 또는 방문 id: 'bad' | 'warn' }
 function levelMap(list) {
@@ -1784,7 +1806,38 @@ async function fbLogout() { try { await FB.auth.signOut(); } catch (_) { } close
    ⚠️ 교역자는 HB 책에 쓰지 않는다 — 저장은 자기 칸(staff/{uid})뿐. 이 기기 사본도 HB 칸(BOOK_KEY)과 따로(TEAM_KEY) 둔다. */
 const TEAM_KEY = 'rota_team_book_v1';
 function isStaff() { return FB.role === 'staff'; }
-function stopListen() { for (const k of ['unsub', 'unsubStaff']) if (FB[k]) { FB[k](); FB[k] = null; } S.staff = []; }
+function stopListen() { for (const k of ['unsub', 'unsubStaff', 'unsubW']) if (FB[k]) { FB[k](); FB[k] = null; } S.staff = []; S.worship = null; }
+// 예배팀 일정(R13) — 서버가 둔 rota/{HB}/ext/worship 을 읽기만. 규칙을 아직 안 붙였으면 조용히 넘어간다
+function listenWorship(owner) {
+  FB.unsubW = FB.db.collection('rota').doc(owner).collection('ext').doc('worship').onSnapshot(d => {
+    S.worship = d.exists ? d.data() : null; if (!editing()) rerender();
+  }, () => { S.worship = null; });
+}
+// 겹침 = 책 안의 겹침 + 예배팀 일정 겹침
+function conflictsW(book, from, to, today) {
+  const a = conflicts(book, from, to, today), b = worshipClash(book, DEMO ? demoWorship() : S.worship, from, to);
+  return b.length ? a.concat(b).sort((x, y) => (x.level !== y.level ? (x.level === 'bad' ? -1 : 1) : x.date < y.date ? -1 : x.date > y.date ? 1 : 0)) : a;
+}
+// 미리보기용 지어낸 예배팀 일정 — 첫 부산 방문의 교역자가 그 주일 2부 예배팀(건반)
+function demoWorship() {
+  const v = live(S.book.visits).filter(x => x.date >= todayYmd() && x.who.length).sort((a, b) => (a.date < b.date ? -1 : 1))[0];
+  return v ? { services: [{ date: v.date, service: '주일 2부', status: 'confirmed', leaders: [], members: [{ pid: v.who[0], part: '건반(1st)' }] }] } : null;
+}
+const WORSHIP_FN = 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/worship';
+async function worshipNow() {
+  if (!FB.user) return;
+  try {
+    const r = await fetch(WORSHIP_FN + '/now', { method: 'POST', headers: { Authorization: 'Bearer ' + await FB.user.getIdToken() } });
+    const j = await r.json().catch(() => ({}));
+    toast(j.wait ? '방금 받았습니다\n10분 뒤에 다시 받을 수 있습니다' : r.ok ? `예배팀 일정을 받았습니다\n예배 ${j.n || 0}개` : '예배팀 일정을 받지 못했습니다\n' + worshipErr(j.code));
+  } catch (e) { toast('서버에 닿지 못했습니다\n서버를 아직 올리지 않았을 수 있습니다'); }
+}
+function worshipErr(c) { return { key: '열쇠가 맞지 않습니다', limit: '오늘 받을 수 있는 횟수를 넘었습니다', off: '예배팀 쪽 서버가 잠시 꺼져 있습니다', shape: '받은 자료 모양이 다릅니다', nodoc: '로테이션 자료가 아직 계정에 없습니다' }[c] || '예배팀 서버 오류'; }
+function worshipLine() {
+  const w = S.worship; if (!w) return '아직 받은 적이 없습니다';
+  const t = w.at ? new Date(w.at) : null, when = t ? `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} 받음` : '';
+  return [when, `예배 ${(w.services || []).length}개`, w.err ? '마지막 받기 실패: ' + worshipErr(w.err) : '', (w.dup || []).length ? '같은 이름이 둘이라 못 맞춘 분: ' + w.dup.join(', ') : ''].filter(Boolean).join(' · ');
+}
 async function findTeam(u) {
   const em = String(u.email || ''), memo = 'rota_team_' + u.uid; if (!em) return '';
   try { const qs = await FB.db.collection('rota').where('team', 'array-contains', em).limit(5).get();
@@ -1798,11 +1851,12 @@ function startOwner(u) {
     const r = pickDoc(S.book, d.exists ? d.data() : null);
     S.book = r.book; lsSet(BOOK_KEY, S.book); FB.synced = true; FB.err = '';
     if (d.exists && uiFromCloud(d.data().ui)) refreshTabs();
-    const ab = staffAbsorb(), team = JSON.stringify(teamOf(S.book)) !== JSON.stringify((d.exists && d.data().team) || []);
+    const ab = staffAbsorb(), team = JSON.stringify(teamOf(S.book)) !== JSON.stringify((d.exists && d.data().team) || []) || (d.exists && (JSON.stringify(wkeysOf(S.book)) !== JSON.stringify(d.data().wkeys || {}) || !d.data().wpull));   // 문서가 없으면 만들지 않는다(빈 기기 · 팀 밖)
     if (r.push || ab || team) cloudSave();
     bsMigrate();
     if (!editing()) rerender();
   }, e => { FB.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 넣어야 합니다.' : '자료를 불러오지 못했습니다.'; rerender(); });
+  listenWorship(u.uid);
   // 교역자 칸들 — 각자 적은 숙소 · 교통 · 부재 · 가능 일정. 규칙을 아직 안 바꿨으면 조용히 넘어간다(HB 자료에는 영향 없음)
   FB.unsubStaff = FB.db.collection('rota').doc(u.uid).collection('staff').onSnapshot(qs => {
     S.staff = qs.docs.map(x => x.data());
@@ -1819,6 +1873,7 @@ function startStaff(u, team) {
     FB.base = pickDoc(null, d.exists ? d.data() : null).book; lsSet(TEAM_KEY, FB.base); FB.synced = true; FB.err = '';
     staffView(); bsMigrate(); if (!editing()) rerender();
   }, () => { FB.err = '팀 자료를 읽지 못했습니다.\n사람 탭의 계정 이메일이 바뀌었는지 HB 께 여쭤 주세요.'; rerender(); });
+  listenWorship(team);
   FB.unsubStaff = FB.db.collection('rota').doc(team).collection('staff').onSnapshot(qs => {
     S.staff = qs.docs.filter(x => x.id !== u.uid).map(x => x.data());
     const mine = qs.docs.find(x => x.id === u.uid); FB.my = mine ? mine.data() : FB.my;
@@ -1873,7 +1928,8 @@ function cloudSave() {
   if (size > 900000) { toast('자료가 너무 커져 계정에 올리지 못했습니다\n오래된 기록 정리가 필요합니다'); return; }
   // ⚠️ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸(OLD_FIELDS)은 지운다 — 읽을 때 이미 합쳤다 (pickDoc)
   // team = 이 책을 읽어도 되는 이메일들(사람 탭 '계정 이메일') — 보안 규칙이 이것을 본다 (R6)
-  const data = { [WRITE_FIELD]: S.book, team: teamOf(S.book), v: APP_VERSION, at: Date.now() };
+  // wkeys · wpull = 예배팀 일정 서버가 이름을 맞출 명단 · 켜짐 (R13 — 책 밖, 서버는 책을 읽지 않는다)
+  const data = { [WRITE_FIELD]: S.book, team: teamOf(S.book), wkeys: wkeysOf(S.book), wpull: true, v: APP_VERSION, at: Date.now() };
   for (const k of OLD_FIELDS) data[k] = firebase.firestore.FieldValue.delete();
   FB.db.collection('rota').doc(FB.user.uid).set(data, { merge: true })
     .catch(e => { toast(e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다\n이 기기에는 남아 있습니다' : '계정에 저장하지 못했습니다\n이 기기에는 남아 있습니다'); });
@@ -1976,7 +2032,7 @@ function leadChips(v, pre) { const ls = visitLeads(S.book, v); return ls.length 
 function daysHtml(d) { return [...(d || '')].map(c => (c === '토' || c === '일' ? esc(dayS(c)) : `<span class="dx">${esc(c)}</span>`)).join(''); }
 function viewWeek() {
   const sun = S.sun, plan = weekPlan(S.book, sun), pm = peopleMap(S.book), thisSun = sunOf(todayYmd());
-  const sat = addDays(sun, 6), cf = conflicts(S.book, sun, sat, todayYmd()), lv = levelMap(cf);
+  const sat = addDays(sun, 6), cf = conflictsW(S.book, sun, sat, todayYmd()), lv = levelMap(cf);
   const mk = plan.mark, order = PREF.wsort === 'new' ? 'new' : 'time';
   const row = (k, val, raw) => `<dt>${esc(k)}</dt><dd>${val ? (raw ? val : esc(val)) : '<span class="muted">—</span>'}</dd>`;
   // 분당 한 줄 — 누르면 고르기 판. 주일 설교 · 헌금은 네 예배가 같으면 한 줄, 다르면 예배마다 한 줄.
@@ -2125,7 +2181,7 @@ function bodyMine() {
   if (!ps.length) return '<p class="empty">사람 탭에서 교역자를 먼저 더해 주세요.</p>';
   const me = mePerson(ps), pm = peopleMap(S.book), today = todayYmd(), cur = S.ym === today.slice(0, 7), from = cur ? today : S.ym + '-01';
   const sun0 = sunOf(from), to = addDays(sun0, MINE_WEEKS * 7 - 1);
-  const cf = conflicts(S.book, addDays(sun0, -7), addDays(to, 7), today).filter(c => c.pid === me.id), lv = levelMap(cf);
+  const cf = conflictsW(S.book, addDays(sun0, -7), addDays(to, 7), today).filter(c => c.pid === me.id), lv = levelMap(cf);
   const lab = (r) => (r.grp === 'sun' ? r.svcs.map(x => SVC[x].short).join(' · ') + ' ' : '') + (r.role === 'notice' ? 'WN 광고' : r.role === 'lead' ? '예배인도' : r.grp !== 'sun' && r.role === 'offer' ? '헌금' : ROLE[r.role]);
   const isBad = (r) => r.kind === 'visit' ? lv[r.id] === 'bad' : r.ids.some(id => lv[id] === 'bad');
   const dw = (d) => (dowOf(d) === 0 ? '주일' : DOW[dowOf(d)]);
@@ -2278,7 +2334,7 @@ function bodyBusan(lv) {
 function viewMonth() {
   const suns = monthSundays(S.ym), pm = peopleMap(S.book), today = todayYmd(), thisSun = sunOf(today);
   const plans = suns.map(s => weekPlan(S.book, s));
-  const cf = suns.length ? conflicts(S.book, addDays(suns[0], -7), addDays(suns[suns.length - 1], 13), today) : [], lv = levelMap(cf);
+  const cf = suns.length ? conflictsW(S.book, addDays(suns[0], -7), addDays(suns[suns.length - 1], 13), today) : [], lv = levelMap(cf);
   const mview = VIEWS[PREF.mview] ? PREF.mview : 'sheet', fold = PREF.fold !== false;
   const short = (t) => t.length > 9 ? t.slice(0, 8) + '…' : t;
   const cellAt = (date, svc, role, extra) => { const id = slotId(date, svc, role); if (role === 'notice' && !isLastFri(date)) return `<td class="na"></td>`;
@@ -2352,7 +2408,7 @@ function viewBusan() {
   const pm = peopleMap(S.book), today = todayYmd(), thisMon = sunOf(today);   // 이번 주의 시작(주일)
   const vs = live(S.book.visits).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
   const up = vs.filter(v => v.date >= thisMon), past = vs.filter(v => v.date < thisMon).reverse();
-  const lv = levelMap(conflicts(S.book, thisMon, addDays(today, 400), today)), bw = bsWarn();
+  const lv = levelMap(conflictsW(S.book, thisMon, addDays(today, 400), today)), bw = bsWarn();
   const line = (v, cls) => { const bf = busanFri(visitSun(v.date)); const st = stayState(v);
     return `<button class="vrow${cls}" data-visit="${esc(v.id)}"><span class="dcol"><b>${md(v.date)}</b> <span class="${dowOf(v.date) === 0 ? 'muted' : 'dx'}">${dowOf(v.date) === 0 ? '주일' : DOW[dowOf(v.date)]}</span></span><span>${esc(whoText(S.book, v.who, '', pm)) || '<span class="muted">비어 있음</span>'}${bf && leadIs(v, 'fri', 'staff') ? ` ${friLabel(visitSun(v.date))}` : ''}${lv[v.id] === 'bad' ? ' <span class="pill bad">겹침</span>' : ''}${bsPill(v, bw) ? ' ' + BS_PILL : ''}</span>
       <span>${st === 'done' ? '<span class="pill ok">숙소 완료</span>' : st === 'open' ? '<span class="pill">숙소 미정</span>' : '<span class="pill">숙소 없음</span>'}</span>
@@ -2579,7 +2635,7 @@ function paneVisit() {
   const v = curVisit(); if (!v) return `<div class="phead"><span></span><b>부산 방문</b>${xBtn}</div><p class="muted">지워진 방문입니다.</p>`;
   if (S.pane.edit) return S.pane.edit.manage ? paneManage() : paneVEdit(v);
   const pm = peopleMap(S.book), sun = visitSun(v.date), bf = busanFri(sun);
-  const cf = conflicts(S.book, addDays(v.date, -7), addDays(v.date, 7), todayYmd()).filter(c => c.visit === v.id);
+  const cf = conflictsW(S.book, addDays(v.date, -7), addDays(v.date, 7), todayYmd()).filter(c => c.visit === v.id);
   const sec = (key, label, body, extra, i, sub) => `<button class="vsec${body ? '' : ' empty'}" data-vsec="${key}"${i != null ? ` data-i="${i}"` : ''}><span class="vh">${label}${extra ? ' ' + extra : ''}<i>${body ? '›' : '+'}</i></span><span class="vv">${body || '적은 것이 없습니다'}</span>${sub ? `<span class="vsub">${sub}</span>` : ''}</button>`;
   const days = sortDays(v.date, v.days || defaultDays(v.date));
   const who = whoText(S.book, v.who, '', pm);
@@ -3282,6 +3338,7 @@ function renderMenu() {
     ${acct}${FB.err ? `<p class="err" style="margin:0">${esc(FB.err)}</p>` : ''}
     <div class="field"><span class="flabel">화면</span><div class="seg3">${[['', '시스템'], ['light', '라이트'], ['dark', '다크']].map(([k, l]) => `<button data-theme="${k}" aria-pressed="${(PREF.theme || '') === k}">${l}</button>`).join('')}</div></div>
     <button class="btn ghost" data-act="home">첫 화면 정하기 <span class="muted">· ${esc(homeName(UI_OF().home))}</span></button>
+    ${!DEMO && FB.user && FB.role === 'owner' ? `<button class="btn ghost" data-act="wpull">예배팀 일정 지금 받기</button><p class="tiny muted" style="margin:-4px 0 0;text-align:center">${esc(worshipLine())}</p>` : ''}
     ${DEMO || isStaff() ? '' : `<button class="btn ghost" data-act="importpick">시트 기록 가져오기 (파일)</button>
       <p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>`}
     ${isDev() ? `<p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>` : ''}`;
@@ -3382,6 +3439,7 @@ document.addEventListener('click', (e) => {
     return myAvail(k, (l) => l.concat({ from: f, to: to < f ? f : to, note })); }
   if (d.avdel !== undefined) return myAvail(d.k === 'can' ? 'can' : 'away', (l) => l.filter((_, i) => i !== +d.avdel));
   if (a === 'logout') return fbLogout();
+  if (a === 'wpull') return worshipNow();
   if (a === 'upd') return checkUpdate(true);
   if (a === 'addp') return addPerson(false);
   if (a === 'addlay') return addPerson(true);

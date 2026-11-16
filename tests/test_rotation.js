@@ -43,7 +43,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange };`, ctx);
+  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, wkeysOf, worshipOn, worshipClash, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -912,6 +912,28 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
       /<span class="spacer"><\/span><button class="btn" data-act="expcopy">복사<\/button><button class="btn ghost" data-act="expcsv">CSV<\/button>/.test(HTML), (HTML.match(/exportRows\(S\.book/g) || []).length], [true, true, true, true, 1]);
   sc.eq('㉜ 화면: 부산 요약 \'예배 인도\' 칸 · 내 일정 부산 줄 · 8주 표 부산 칸 · 부산 준비 카드에 인도 알약',
     [/<th class="h-bs">예배 인도<\/th>/.test(HTML), /<td style="text-align:left">\$\{leadChips\(v\)\}<\/td>/.test(HTML), (HTML.match(/leadChips\(v, ' · '\)/g) || []).length, /leadChips\(x\.v\)/.test(HTML), /leadChips\(v, ' · '\)\}\$\{others\.length/.test(HTML)], [true, true, 2, true, true]);
+}
+
+// ㉝ 예배팀 일정(R13) — 서버가 둔 ext/worship 으로 '부산에 있는데 분당 예배팀' (지어낸 이름)
+console.log('\n㉝ 예배팀 일정 겹침');
+{
+  const b = A.normBook({ people: [{ id: 'pa', name: '가교역', alias: ['가 전도사'], roles: ['busan'] }, { id: 'pb', name: '나교역', roles: ['busan'] }, { id: 'px', name: '지운분', del: true }],
+    visits: [{ id: 'v|2026-11-22', date: '2026-11-22', who: ['pa'], days: '금토일' }] });
+  sc.eq('㉝ 서버에 줄 명단 = 지우지 않은 분의 이름 + 다른 이름', A.wkeysOf(b), { pa: ['가교역', '가 전도사'], pb: ['나교역'] });
+  const ext = { services: [
+    { date: '2026-11-22', service: '주일 2부', status: 'confirmed', leaders: [], members: [{ pid: 'pa', part: '건반(1st)' }] },
+    { date: '2026-11-20', service: '금요예배', status: 'tentative', leaders: [{ w: 'w1', name: '가교역', pid: 'pa' }], members: [{ pid: 'pa', part: '리더' }] },
+    { date: '2026-11-18', service: '수요예배', status: 'confirmed', leaders: [], members: [{ pid: 'pa', part: '싱어' }] },
+    { date: '2026-11-22', service: '주일 3부', status: 'changed', leaders: [], members: [{ pid: 'pb', part: '드럼' }] }] };
+  const c = A.worshipClash(b, ext, '2026-11-16', '2026-11-30');
+  sc.eq('㉝ 머무는 날의 예배팀만 · 확정/변경 = 빨강 · 미정 = 노랑 · 리더는 한 번', c.map(x => [x.date, x.level, x.service, x.part, x.visit]),
+    [['2026-11-20', 'warn', '금요예배', '리더', 'v|2026-11-22'], ['2026-11-22', 'bad', '주일 2부', '건반(1st)', 'v|2026-11-22']]);
+  sc.eq('㉝ 글', A.conflictText(b, c[0]), '가교역 — 11/20(금) 부산에 있는데 분당 금요예배 예배팀(리더) · 예배팀 로테이션 미정');
+  sc.eq('㉝ 기간 밖 · 받은 것 없음 → 없음', [A.worshipClash(b, ext, '2026-11-21', '2026-11-21').length, A.worshipClash(b, null, '2026-11-01', '2026-12-31').length], [0, 0]);
+  sc.eq('㉝ 방문 칸이 빨갛게', A.levelMap(c)['v|2026-11-22'], 'bad');
+  sc.eq('㉝ 앱은 예배팀 서버를 직접 부르지 않는다(열쇠는 서버에만)', [/tlcworship/.test(HTML), /SCHEDULE_API_KEY/.test(HTML)], [false, false]);
+  sc.eq('㉝ 주인만 wkeys · wpull 을 쓰고, 책(WRITE_FIELD) 안에 넣지 않는다', /wkeys: wkeysOf\(S\.book\), wpull: true/.test(HTML) && !/book\.wkeys/.test(HTML), true);
+  sc.eq('㉝ 교역자는 지금 받기 단추를 못 누른다', /'wpull'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 400)), false);
 }
 
 sc.done();

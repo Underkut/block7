@@ -163,3 +163,7 @@ exports.gcal = onRequest(
 
 // 교역자 로테이션 R12 C — Monday 광고 읽기 (같은 묶음 gcal 에 함께 올라간다 · 따로 들고 있는 열쇠 mondayKeys/{uid})
 exports.monday = require("./monday").monday;
+
+// 교역자 로테이션 R13 — 예배팀 일정 받기 (같은 묶음 gcal · 열쇠는 Secret Manager SCHEDULE_API_KEY)
+exports.worshipPull = require("./worship").worshipPull;
+exports.worship = require("./worship").worship;
