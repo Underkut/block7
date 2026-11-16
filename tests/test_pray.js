@@ -35,7 +35,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupOnDay, dayTops, fillVisibleOrder, groupHeadcount, linkSub, moveSub, unplaceSub, canNest, nestGroup, canPromote, promoteSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupOnDay, dayTops, fillVisibleOrder, ownDays, effDays, dayCover, dayToggle, ALL_DAYS, groupHeadcount, linkSub, moveSub, unplaceSub, canNest, nestGroup, canPromote, promoteSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList, monthGlance,
@@ -1144,7 +1144,38 @@ console.log('\n시나리오 ㉙ — 저장 목록 정렬: ㄱㄴㄷ순 ⇄ ZYX�
   sc.eq('켜짐 · 주일(11/15)', dayTops(db, tops, '2026-11-15').map(g => g.id), ['a', 'c']);
   sc.eq('dayOn 은 계정 문서(DB.set)에 남는다', normDB(JSON.parse(JSON.stringify(db))).set.dayOn, true);
   sc.eq('보이는 것만 끌어도 숨은 그룹은 제자리', fillVisibleOrder(['a', 'b', 'c', 'd', 'e'], ['d', 'a', 'c']), ['d', 'b', 'a', 'c', 'e']);
-  sc.eq('지도 · 한 장 기도 · There 차례가 모두 mapTops 를 거친다', /function mapTops\(\) \{ return dayTops\(DB, mapTopsAll\(\), TODAY\); \}/.test(HTML) && /mapTops\(\)\.forEach\(g => walk\(g, g\.id\)\)/.test(HTML), true);
+  sc.eq('지도 · 한 장 기도 · There 차례가 모두 mapTops 를 거친다', /function mapTops\(\) \{ return dayTops\(DB, mapTopsAll\(\), TODAY\); \}/.test(HTML) && /mapTops\(\)\.forEach\(g => walk\(g, g\.id, effDays\(g\)\)\)/.test(HTML), true);
+}
+
+// 1116-W3 하위 요일 — 서브 그룹 · 기도 항목 줄. 비면 위를 따름 · 그룹 칸은 ●(모두) ◐(일부) 빈칸(없음)
+{
+  const { normDB, emptyDB, effDays, dayCover, dayToggle, dayTops, merge3 } = A;
+  const db = normDB(emptyDB());
+  const L = (id, days) => days ? { id, segs: [], r: {}, text: id, days } : { id, segs: [], r: {}, text: id };
+  const top = { id: 'T', kind: 'group', days: [1, 3], lines: [L('t1')], parent: '' };
+  const sub = { id: 'S', kind: 'group', days: [], lines: [L('s1'), L('s2', [2])], parent: 'T', also: [] };
+  const daily = { id: 'D', kind: 'group', days: [], lines: [L('d1')], parent: '' };
+  db.G = [top, sub, daily];
+  const tE = effDays(top), sE = effDays(sub, tE);
+  sc.eq('W3 서브 그룹은 위를 따름', sE, [1, 3]);
+  sc.eq('W3 줄도 위를 따름 · 제 요일이 있으면 그것', [effDays(sub.lines[0], sE), effDays(sub.lines[1], sE)], [[1, 3], [2]]);
+  sc.eq('W3 그룹 칸: 월 = 일부(◐, 화요일 줄이 빠짐) · 화 = 일부(그 줄만) · 금 = 없음', [1, 2, 5].map(d => dayCover(db, top, tE, d, true)), [1, 1, 0]);
+  sc.eq('W3 매일 그룹은 모두 ●', [0, 4].map(d => dayCover(db, daily, effDays(daily), d, true)), [2, 2]);
+  db.set.dayOn = true;
+  sc.eq('W3 지도: 화요일엔 그룹은 따로 안 골랐어도 그 줄 때문에 나온다', dayTops(db, db.G.filter(g => !g.parent), '2026-11-17').map(g => g.id), ['T', 'D']);
+  sc.eq('W3 지도: 금요일엔 매일 그룹만', dayTops(db, db.G.filter(g => !g.parent), '2026-11-20').map(g => g.id), ['D']);
+  const ln = L('x'); dayToggle(ln, [1, 3], 1, false);
+  sc.eq('W3 따르던 줄을 끄면 따르던 요일을 옮겨 적고 그날만 뺌', ln.days, [3]);
+  dayToggle(ln, [1, 3], 3, false);
+  sc.eq('W3 줄의 요일을 다 끄면 다시 위를 따름', effDays(ln, [1, 3]), [1, 3]);
+  const g2 = { id: 'G', kind: 'group', days: [] }; dayToggle(g2, null, 0, false);
+  sc.eq('W3 매일 그룹 주일을 끄면 나머지 여섯 날', g2.days, [1, 2, 3, 4, 5, 6]);
+  const n = normDB(JSON.parse(JSON.stringify({ G: [{ id: 'A', lines: [{ id: 'a', segs: [], days: [2, 4] }, { id: 'b', segs: [] }] }] })));
+  sc.eq('W3 줄의 요일은 저장 · 불러오기에 남고, 없는 줄엔 칸이 안 생김', [n.G[0].lines[0].days, 'days' in n.G[0].lines[1]], [[2, 4], false]);
+  const base = { G: [{ id: 'A', lines: [{ id: 'a', segs: [], r: {}, text: '' }] }] };
+  const loc = JSON.parse(JSON.stringify(base)); loc.G[0].lines[0].days = [5];
+  const m3 = merge3(base, loc, JSON.parse(JSON.stringify(base)));
+  sc.eq('W3 다른 기기와 맞출 때 줄 요일이 살아남음', m3.G[0].lines[0].days, [5]);
 }
 
 sc.done();

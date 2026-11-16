@@ -42,7 +42,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const cnt = () => p.evaluate(() => [...document.querySelectorAll('.layer.in [data-wkn]')].map(x => +x.textContent));
   const c0 = await cnt();
   ok('③ 요일 아래 그룹 수 (매일 그룹 포함)', c0[W.wd] === 2 && c0[W.other] === 3, c0);
-  const cell = (g, d) => '.layer.in .wk-c[data-wk="' + g + '"][data-v="' + d + '"]';
+  const cell = (g, d) => '.layer.in .wk-c[data-wk="' + (g.indexOf('|') >= 0 ? g : 't|' + g) + '"][data-v="' + d + '"]';
   await p.evaluate(sel => { window._keep = document.querySelector(sel); }, cell(W.a, 0));
   // 끌어 칠하기: 교회 wd 칸에서 시작 → 가로로 옆 칸 → 세로로 아래(가족) 칸
   const pt = sel => p.evaluate(sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, sel);
@@ -54,12 +54,34 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }, [P1, P2, P3]);
   await sleep(300);
   const days = await p.evaluate(W => [findG(DB, W.c).days.slice(), findG(DB, W.a).days.slice()], W);
-  ok('② 끌어 지나간 칸(가로 → 세로) 모두 켜짐', days[0].includes(W.wd) && days[0].includes(d2) && days[1].includes(d2), days);
-  ok('② 동그라미 켜짐', await p.evaluate(sel => document.querySelector(sel).classList.contains('on'), cell(W.a, d2)), null);
+  ok('② 끌어 지나간 칸(가로 → 세로) — 교회는 켜지고, 옅게 매일이던 가족은 진한 일곱 날로(처음 칸이 꺼짐 → 켜기)', days[0].includes(W.wd) && days[0].includes(d2) && days[1].length === 7, days);
+  ok('② 동그라미 — 칠한 칸 켜짐 · 가족은 진하게', await p.evaluate(([a, b, c]) => document.querySelector(a).classList.contains('on') && document.querySelector(b).classList.contains('on') && !document.querySelector(c).classList.contains('pale'), [cell(W.c, d2), cell(W.a, d2), cell(W.a, (d2 + 1) % 7)]), null);
   ok('① 표를 다시 그리지 않음(다른 동그라미 깜빡임 없음)', await p.evaluate(sel => document.querySelector(sel) === window._keep, cell(W.a, 0)), null);
   const c1 = await cnt();
-  ok('③ 숫자도 바로 바뀜', c1[W.wd] === c0[W.wd] + 1, [c0, c1]);
+  ok('③ 숫자도 바로 바뀜', c1[W.wd] === c0[W.wd] + 1 && c1[d2] === c0[d2] + 1, [c0, c1]);
   ok('⑤ 디졸브 — 동그라미는 opacity 전환', await p.evaluate(() => getComputedStyle(document.querySelector('.wk-dot')).transitionProperty.includes('opacity')), null);
+  ok('A 매일 그룹(나라)은 일곱 칸 옅은 동그라미', await p.evaluate(sel => [...Array(7)].every((_, d) => { const c = document.querySelector(sel + '"][data-v="' + d + '"]'); return c.classList.contains('on') && c.classList.contains('pale'); }), '.layer.in .wk-c[data-wk="t|' + W.d), null);
+  // W3 — 펼치기 · 하위 줄 요일 · 반달 · 지도에서 숨김
+  await p.evaluate(() => { popLayer(); }); await sleep(400);
+  const S = await p.evaluate(W => {
+    const t = newTarget('person', '바다'), t2 = newTarget('person', '사랑'); DB.T.push(t, t2);
+    const k = newGroup('청년', '#55aa77'); k.parent = W.d; k.lines = [{ id: 'LS1', segs: [[t.id]], r: {}, text: '' }, { id: 'LS2', segs: [[t2.id]], r: {}, text: '' }]; DB.G.push(k);
+    save(); pushLayer({ type: 'week' }); return { k: k.id, p1: t.id, p2: t2.id };
+  }, W); await sleep(500);
+  ok('W3 처음엔 접힘', await p.evaluate(W => document.querySelector('.layer.in .wk-sub[data-sub="' + W.d + '"]').hidden, W), null);
+  await p.evaluate(W => document.querySelector('.layer.in [data-a="wk-fold"][data-id="' + W.d + '"]').click(), W); await sleep(700);
+  ok('W3 그룹 이름 누르면 펼침 · 서브 그룹 · 줄 보임 · 위를 따라 옅게', await p.evaluate(([W, S]) => { const b = document.querySelector('.layer.in .wk-sub[data-sub="' + W.d + '"]'); const c = b.querySelector('.wk-c[data-wk="l|' + S.k + '|LS2|' + W.d + '"][data-v="0"]'); return !b.hidden && !!b.querySelector('.wk-c[data-wk="s|' + S.k + '|' + W.d + '"]') && c.classList.contains('on') && c.classList.contains('pale'); }, [W, S]), null);
+  const lsel = '.layer.in .wk-c[data-wk="l|' + S.k + '|LS2|' + W.d + '"][data-v="' + W.wd + '"]';
+  await p.evaluate(sel => { const c = document.querySelector(sel), r = c.getBoundingClientRect(), o = { pointerId: 11, pointerType: 'touch', clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true, button: 0 }; c.dispatchEvent(new PointerEvent('pointerdown', o)); document.dispatchEvent(new PointerEvent('pointerup', o)); }, lsel); await sleep(400);
+  const st = await p.evaluate(([W, S, sel]) => ({ ln: (findG(DB, S.k).lines.find(l => l.id === 'LS2').days || []).slice(), lnCls: document.querySelector(sel).className,
+    sub: document.querySelector('.layer.in .wk-c[data-wk="s|' + S.k + '|' + W.d + '"][data-v="' + W.wd + '"]').className,
+    top: document.querySelector('.layer.in .wk-c[data-wk="t|' + W.d + '"][data-v="' + W.wd + '"]').className }), [W, S, lsel]);
+  ok('W3 줄 칸을 끄면 그 줄만 제 요일(오늘 빼고 여섯 날)', st.ln.length === 6 && !st.ln.includes(W.wd) && !/\bon\b/.test(st.lnCls) && !/pale/.test(st.lnCls), st);
+  ok('W3 위(서브 · 그룹) 칸은 반달 ◐', /half/.test(st.sub) && /half/.test(st.top), st);
+  await p.evaluate(() => { popLayer(); }); await sleep(400);
+  const vis = await p.evaluate(S => ({ deck: mapDeck().map(d => d.id), shown: [...document.querySelectorAll('#v-map .pn')].map(b => b.dataset.id) }), S);
+  ok('W3 지도 · 한 장 기도에서 오늘 아닌 줄(사랑)은 숨고 같은 서브 그룹의 다른 줄(바다)은 보임', vis.shown.includes(S.p1) && !vis.shown.includes(S.p2) && vis.deck.includes(S.p1) && !vis.deck.includes(S.p2), vis);
+  await p.evaluate(() => { pushLayer({ type: 'week' }); }); await sleep(500);
   await p.screenshot({ path: process.env.SHOT || '/tmp/pray_week.png' });
   console.log('\n결과: 통과 ' + pass + ' / 실패 ' + fail); await b.close(); process.exit(fail ? 1 : 0);
 })();
