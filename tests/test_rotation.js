@@ -41,7 +41,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText };`, ctx);
+  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -754,15 +754,26 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
 {
   const o = { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 3, title: '겨울 수련회' }, { n: 1, title: '새벽 기도회' }], video: ['감사 영상'], check: ['꽃꽂이 모집'] },
     video: [{ title: '가을 음악회 안내', url: 'https://youtu.be/AAA', notes: [{ at: '2026-11-20', text: '부산은 짧은 버전' }] }] };
-  sc.eq('㉚ 카톡 글: 영상(제목 · 주소) → 구두 광고(번호 1부터 다시) → 부산 주보의 영상 사용 · 확인 필요와 부산 이야기는 안 넣음', A.adsText(o),
-    '11/22(주일) 부산 주일예배 광고\n\n▶ 영상 광고\n가을 음악회 안내\nhttps://youtu.be/AAA\n\n▶ 구두 광고\n1. 새벽 기도회\n2. 겨울 수련회\n\n▶ 영상으로 (부산 주보)\n· 감사 영상');
-  sc.eq('㉚ 영상이 없는 주 · 부산 주보 그룹이 아직 없는 주', A.adsText({ sun: '2026-11-29', busan: { found: false, group: '26-1129' }, video: [] }), '11/29(주일) 부산 주일예배 광고\n\n▶ 영상 광고\n없음');
-  sc.eq('㉚ 구두 광고가 비면 없음', A.adsText({ sun: '2026-11-29', busan: { found: true, spoken: [] }, video: [] }).endsWith('▶ 구두 광고\n없음'), true);
-  sc.eq('㉚ 서버 답이 이상해도 깨지지 않는다 · http 아닌 주소는 버림', [A.adsText(null), A.normAds({ sun: '2026-11-22', video: [{ title: 'x', url: 'javascript:alert(1)' }, {}] }).video], ['', [{ title: 'x', url: '', notes: [] }]]);
+  // HB 가 준 C 양식 그대로(이름만 지어낸 이름)
+  const c15 = { sun: '2026-11-15', busan: { found: true, group: '26-1115', spoken: [{ n: 2, title: '금요 인카운터 예배' }, { n: 1, title: '추수 감사 주일' }], video: ['감사 영상'], check: ['꽃꽂이 모집'] },
+    video: [{ title: '2026 추수감사주일', url: 'https://youtu.be/AAA', rep: false, notes: [{ at: '2026-11-14', text: '부산은 짧은 버전' }] }] };
+  sc.eq('㉚ 카톡 글 = HB 양식 C (같은 영상 · 리포터 없음) · 유튜브 주소 · 부산 이야기 · 영상 사용 · 확인 필요는 안 넣음', A.adsText(c15, { who: '홍길동', bs: 'same' }),
+    '11/15(주일) 부산 주일예배 광고\n\n1부: 홍길동\n2부: 홍길동\n\n0: (영상) 2026 추수감사주일\n분당 있음 / 부산 있음 (1부 중계, 2부 파일)\n\n1. 추수 감사 주일\n2. 금요 인카운터 예배\n> 모두 영상내 비포함\n>> 구두광고 해야 함');
+  sc.eq('㉚ 부산 상영 세 갈래 · 고른 것이 없으면 같은 영상', ['same', 'diff', 'none', undefined, 'x'].map(bs => A.adsText(c15, { who: '홍길동', bs }).split('\n')[6]),
+    ['분당 있음 / 부산 있음 (1부 중계, 2부 파일)', '분당 있음 / 부산 있음 (1부 파일, 2부 파일)', '분당 있음 / 부산 없음', '분당 있음 / 부산 있음 (1부 중계, 2부 파일)', '분당 있음 / 부산 있음 (1부 중계, 2부 파일)']);
+  const r8 = J(c15); r8.video[0].rep = true;
+  sc.eq('㉚ 리포터가 배정되면 모두 영상내 포함 · 슬라이드 필요없음', A.adsText(r8, { who: '홍길동' }).split('\n').slice(-2), ['> 모두 영상내 포함', '>> 구두광고 슬라이드 필요없음']);
+  sc.eq('㉚ 영상이 없는 주 = 분당 없음 / 부산 없음 · 구두광고 해야 함 · 교역자 미정 · 부산 주보 그룹이 아직 없으면 알림',
+    A.adsText({ sun: '2026-11-29', busan: { found: false, group: '26-1129' }, video: [] }),
+    '11/29(주일) 부산 주일예배 광고\n\n1부: 미정\n2부: 미정\n\n0: (영상) 없음\n분당 없음 / 부산 없음\n\n(부산 주보에 아직 이 주일 그룹이 없습니다)\n> 모두 영상내 비포함\n>> 구두광고 해야 함');
+  const old = J(c15); delete old.video[0].rep;
+  sc.eq('㉚ 옛 서버(리포터를 모름)면 짐작하지 않고 알린다', A.adsText(old, { who: '홍길동' }).split('\n').slice(-1), ['> 리포터 배정을 읽지 못했습니다 (서버를 다시 올려 주세요)']);
+  sc.eq('㉚ 1부 · 2부 = 그 주일 부산 방문의 교역자 · 부산 상영은 이 기기에 주일별로(책에 안 넣음)', /visitSun\(v\.date\) === sun/.test(HTML) && /ADSBS_KEY = 'rota_adsbs_v1'/.test(HTML) && /adsText\(P\.data, adsOpt\(P\.sun\)\)/.test(HTML), true);
+  sc.eq('㉚ 서버 답이 이상해도 깨지지 않는다 · http 아닌 주소는 버림', [A.adsText(null), A.normAds({ sun: '2026-11-22', video: [{ title: 'x', url: 'javascript:alert(1)', rep: 'y' }, {}] }).video], ['', [{ title: 'x', url: '', notes: [], rep: null }]]);
   sc.eq('㉚ 앱은 Monday 를 직접 부르지 않는다(열쇠가 폰에 오지 않게) — 서버 monday 함수만', [/api\.monday\.com/.test(HTML), /cloudfunctions\.net\/monday'/.test(HTML)], [false, true]);
   sc.eq('㉚ 열쇠는 붙여 넣은 칸에서 바로 비우고 이 기기에 저장하지 않는다', /if \(el\) el\.value = '';/.test(HTML) && !/lsSet\([^)]*token/.test(HTML), true);
-  sc.eq('㉚ 교역자: 방문 판 · 내 일정에서 광고를 열 수 있고, 광고 판에서는 보기 · 복사만(열쇠 넣기 · 끊기 아님)',
-    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback'\]\.includes\(d\.act\)/.test(HTML)], [true, true, true]);
+  sc.eq('㉚ 교역자: 방문 판 · 내 일정에서 광고를 열 수 있고, 광고 판에서는 보기 · 복사 · 부산 상영 고르기만(열쇠 넣기 · 끊기 아님)',
+    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback'\]\.includes\(d\.act\) \|\| !!d\.adsbs;/.test(HTML)], [true, true, true]);
   sc.eq('㉚ 교역자는 주인(HB)의 로테이션으로 묻는다', /mfn\('\/ads', \{ owner: FB\.team \|\| FB\.user\.uid, sun \}\)/.test(HTML), true);
   sc.eq('㉚ 복사는 누른 자리에서 바로(아이폰) — adsCopy 안에 await 가 없다', !/await/.test((HTML.match(/function adsCopy\(\) \{[\s\S]*?\n\}/) || [''])[0]), true);
   sc.eq('㉚ 광고는 책(b9)에 넣지 않는다 — 이 기기 사본만', /ADS_KEY = 'rota_ads_v1'/.test(HTML) && !/S\.book\.ads/.test(HTML), true);

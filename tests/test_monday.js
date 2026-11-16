@@ -3,7 +3,7 @@
 // 지키는 것:
 //   ① **읽기만** — 보내는 질문은 QUERIES 셋(모두 query)뿐 · 쓰기 질문이 코드에 없다 · 목록 밖 이름은 멈춘다
 //   ② 부산 주보: 그 주일 그룹('YY-MMDD')의 '구두 광고' 숫자 아이템 **제목만**, 숫자 순 · '영상 사용' · '확인 필요' 는 따로 · 나머지는 뺌
-//   ③ 영상 소식: 방영일 = 그 주일 · 유튜브 주소 · 업데이트 · 댓글 중 '부산' 이 든 글만 최근 것부터(상한)
+//   ③ 영상 소식: 방영일 = 그 주일 · 유튜브 주소 · 업데이트 · 댓글 중 '부산' 이 든 글만 최근 것부터(상한) · 리포터는 있다 · 없다만(이름 X)
 //   ④ 보드 · 열이 바뀌면 짐작하지 않고 알린다
 //   ⑤ 서버: 로그인 필수 · 광고는 주인 본인이나 rota/{주인}.team 의 확인된 이메일만 · 주인의 열쇠로 · 결과를 저장하지 않는다
 //   ⑥ 열쇠는 mondayKeys/{uid} 에만 · Monday 에 맞는지 물어본 뒤에만 맡긴다
@@ -68,6 +68,8 @@ console.log('\n③ 영상 소식');
   sc.eq('③ 상한 6', C.videoOf(many).notes.length, 6);
   sc.eq('③ 주소 칸이 url 없이 글만이면 끝의 주소', C.videoOf({ name: 'y', column_values: [{ type: 'link', text: '제목 - https://youtu.be/BBB' }] }).url, 'https://youtu.be/BBB');
   sc.eq('③ http 가 아닌 주소는 버린다', C.videoOf({ name: 'z', column_values: [{ type: 'link', url: 'javascript:alert(1)' }] }).url, '');
+  sc.eq('③ 리포터: 차 있으면 true · 비면 false · 열을 모르면 null', [C.videoOf({ name: 'a', column_values: [{ id: 'r', text: '홍길동' }] }, 'r').rep, C.videoOf({ name: 'a', column_values: [{ id: 'r', text: '' }] }, 'r').rep, C.videoOf({ name: 'a', column_values: [] }, null).rep], [true, false, null]);
+  sc.eq('③ 리포터 이름은 돌려주지 않는다 (있다 · 없다만)', JSON.stringify(C.videoOf({ name: 'a', column_values: [{ id: 'r', text: '홍길동' }] }, 'r')).includes('홍길동'), false);
   sc.eq('③ 방영일 = 그 주일', J(C.weekVars({ group: 'g', spokenCol: 'c', dateCol: 'date__1' }, '2026-11-22').vr), [{ column_id: 'date__1', compare_value: ['EXACT', '2026-11-22'], operator: 'any_of' }]);
 }
 
@@ -82,7 +84,7 @@ console.log('\n④ 보드 · 열이 바뀌면');
   sc.eq('④ 구두 광고 열이 없으면 shape', C.plan(meta([], V, []), '2026-11-22').err, 'shape');
   sc.eq('④ 방영일이 날짜 열이 아니면 shape', C.plan(meta(B, [{ id: 'x', title: '방영일', type: 'text' }], []), '2026-11-22').err, 'shape');
   const p = C.plan(meta(B, V, [{ id: 'g0', title: 'Duplicate of 26-1115' }, { id: 'g1', title: '26 - 1122' }]), '2026-11-22');
-  sc.eq('④ 그룹 찾기 (빈칸 무시 · 복사본은 아님)', J(p), { group: 'g1', groupTitle: '26-1122', spokenCol: 'color1', dateCol: 'date__1' });
+  sc.eq('④ 그룹 찾기 (빈칸 무시 · 복사본은 아님) · 리포터 열이 없으면 repCol null', J(p), { group: 'g1', groupTitle: '26-1122', spokenCol: 'color1', dateCol: 'date__1', repCol: null });
   const p2 = C.plan(meta(B, V, [{ id: 'g0', title: 'Duplicate of 26-1115' }]), '2026-11-22');
   sc.eq('④ 그룹이 아직 없으면 found:false', J(C.weekOut({ bus: [{ groups: [] }], vid: [{ items_page: { items: [] } }] }, p2, '2026-11-22').busan), { found: false, group: '26-1122', spoken: [], video: [], check: [] });
 }
@@ -113,9 +115,9 @@ console.log('\n⑤ ⑥ 서버');
     if (b.query === C.QUERIES.me) data = { me: { id: '42' } };
     if (b.query === C.QUERIES.meta) data = { boards: [
       { id: C.BOARDS.busan, columns: [{ id: 'color1', title: '구두 광고', type: 'status' }], groups: [{ id: 'g1', title: '26-1122' }] },
-      { id: C.BOARDS.video, columns: [{ id: 'date__1', title: '방영일', type: 'date' }], groups: [] }] };
+      { id: C.BOARDS.video, columns: [{ id: 'date__1', title: '방영일', type: 'date' }, { id: 'rep1', title: '리포터', type: 'dropdown' }], groups: [] }] };
     if (b.query === C.QUERIES.week) data = { bus: [{ groups: [{ title: '26-1122', items_page: { items: [{ name: '새벽 기도회', column_values: [{ text: '1' }] }] } }] }],
-      vid: [{ items_page: { items: [{ name: '가을 음악회 안내', column_values: [], updates: [] }] } }] };
+      vid: [{ items_page: { items: [{ name: '가을 음악회 안내', column_values: [{ id: 'rep1', type: 'dropdown', text: '홍길동' }], updates: [] }] } }] };
     return { status: 200, ok: true, json: async () => ({ data }) };
   };
   const ctx = { require: fakeRequire, exports: {}, module: {}, fetch: fakeFetch, console: { error() {} }, Date, JSON, Object, String, Array, Error, Promise };
@@ -143,7 +145,7 @@ console.log('\n⑤ ⑥ 서버');
     const before = J(Object.keys(store)).sort(); sent.length = 0;
     const st = await call('/ads', 'tokST', { owner: 'hbUID0001', sun: '2026-11-22' });
     sc.eq('⑤ 교역자는 주인의 열쇠로 받는다', [st.code, sent.every(s => s.auth === 'GOODKEY-00000000000000000')], [200, true]);
-    sc.eq('⑤ 결과 모양', st.body, { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 1, title: '새벽 기도회' }], video: [], check: [] }, video: [{ title: '가을 음악회 안내', url: '', notes: [] }] });
+    sc.eq('⑤ 결과 모양', st.body, { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 1, title: '새벽 기도회' }], video: [], check: [] }, video: [{ title: '가을 음악회 안내', url: '', notes: [], rep: true }] });
     sc.eq('⑤ 보낸 질문은 목록 안의 것뿐 (meta · week)', sent.map(s => Object.keys(C.QUERIES).find(k => C.QUERIES[k] === s.query)), ['meta', 'week']);
     sc.eq('⑤ 결과를 저장하지 않는다', J(Object.keys(store)).sort(), before);
     sc.eq('⑤ 교역자는 주인 열쇠를 지우지 못한다 (자기 칸만)', ((await call('/off', 'tokST')), 'mondayKeys/hbUID0001' in store), true);
