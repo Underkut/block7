@@ -22,7 +22,7 @@
 cd ~/block7 && git pull && cd gcal-functions && firebase deploy --only functions:gcal
 ```
 - 성공 표시: `gcal(asia-northeast3)` 와 **`monday(asia-northeast3)`** 옆에 **Successful … operation** (처음이면 monday 가 *create*, 그 뒤로는 *update* 로 나옵니다)
-- 서버를 고친 판이 나오면 **이 1번만 다시** 합니다 (열쇠는 다시 넣지 않아도 됩니다). 예: rotation v. 26-1116-9(C4a) — 부산 관련 Monday 글을 답글과 묶음째로 · 'Monday에서 보기' 주소
+- 서버를 고친 판이 나오면 **이 1번만 다시** 합니다 (열쇠는 다시 넣지 않아도 됩니다). 예: rotation v. 26-1116-9(C4a) — 부산 관련 Monday 글을 답글과 묶음째로 · 'Monday에서 보기' 주소 / v. 26-1116-10(C4a+) — 글쓴이 이름 · 오래된 글부터
 - ⚠️ 배포 중에 **삭제(deletion)를 묻는 화면이 나오면 반드시 N**
 - `block7` 폴더가 없다고 나오면: `git clone https://github.com/Underkut/block7.git && cd block7/gcal-functions/src && npm install && cd .. && firebase deploy --only functions:gcal`
 
