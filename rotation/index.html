@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1116-6 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식) -->
+<!-- 교역자 로테이션 v. 26-1116-7 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -483,7 +483,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1116-6';
+const APP_VERSION = 'v. 26-1116-7';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일은 언제나 '주일' (HB 11/16) — 자료(days 글자 · 교통 시각)는 '일' 그대로 둔다
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1431,7 +1431,7 @@ function nameSpans(text, name) {
    rep = 그 영상에 리포터가 배정됐나(true/false, 서버가 모르면 null) — 이름은 오지 않는다.
    카톡용 글은 HB 양식(11/16):  날짜 · 1부/2부 내려간 교역자 · 0: (영상) 제목 + 분당/부산 상영 · 구두 광고 번호(1부터 다시) · 리포터에 따라 영상내 포함/비포함.
    ⚠️ '부산 이야기'(업데이트 · 댓글) · '확인 필요' · 유튜브 주소는 화면에만 — 카톡 글에 넣지 않는다. */
-const ADS_BS = { same: '분당 있음 / 부산 있음 (1부 중계, 2부 파일)', diff: '분당 있음 / 부산 있음 (1부 파일, 2부 파일)', none: '분당 있음 / 부산 없음' };
+const ADS_BS = { same: '분당 있음 / 부산 있음 (1부 중계, 2부 파일)', diff: '분당 있음 / 부산 버전 따로 있음 (1부 파일, 2부 파일)', none: '분당 있음 / 부산 없음' };
 function normAds(o) {
   o = o && typeof o === 'object' ? o : {}; const b = o.busan && typeof o.busan === 'object' ? o.busan : {};
   const strs = (a, n) => (Array.isArray(a) ? a : []).map(x => str(x, 200)).filter(Boolean).slice(0, n);
@@ -1460,7 +1460,7 @@ function adsText(o, opt) {
   else a.busan.spoken.forEach((x, i) => L.push((i + 1) + '. ' + x.title));
   const rep = adsRep(a);
   if (rep === true) L.push('> 모두 영상내 포함', '>> 구두광고 슬라이드 필요없음');
-  else if (rep === false) L.push('> 모두 영상내 비포함', '>> 구두광고 해야 함');
+  else if (rep === false) L.push('> 모두 영상내 비포함', '>> 구두광고 및 슬라이드 필요');
   else L.push('> 리포터 배정을 읽지 못했습니다 (서버를 다시 올려 주세요)');
   return L.join('\n');
 }
@@ -2860,10 +2860,10 @@ function paneAds() {
   if (P.state === 'err' || !a) return head + `<div class="pbody"><p class="note" style="margin:0;white-space:pre-line">${esc(P.msg || '광고를 읽지 못했습니다')}</p><button class="btn ghost" data-act="adsload" style="justify-self:start">다시 읽기</button></div>`;
   const b = a.busan, li = (t) => `<li>${esc(t)}</li>`, opt = adsOpt(P.sun), rep = adsRep(a);
   const vids = a.video.length ? a.video.map(v => `<div class="adv"><b>${esc(v.title)}</b>${v.url ? `<a class="tiny" href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.url)}</a>` : '<span class="tiny muted">유튜브 주소가 아직 없습니다</span>'}
-      ${v.notes.length ? `<details class="adnotes"><summary>부산 이야기 ${v.notes.length} <span class="muted">— 업데이트 · 댓글 중 '부산'</span></summary>${v.notes.map(n => `<p><span class="muted">${esc(mdOf(n.at || P.sun))}</span> ${esc(n.text)}</p>`).join('')}</details>` : ''}</div>`).join('')
+      ${v.notes.length ? `<details class="adnotes" data-ni="${esc(v.title)}"${(P.open || {})[v.title] ? ' open' : ''}><summary>부산 이야기 ${v.notes.length} <span class="muted">— 업데이트 · 댓글 중 '부산'</span></summary>${v.notes.map(n => `<p><span class="muted">${esc(mdOf(n.at || P.sun))}</span> ${esc(n.text)}</p>`).join('')}</details>` : ''}</div>`).join('')
       + `<div class="field"><span class="flabel">부산 상영 <span class="muted">— 부산 이야기를 보고 골라 주세요 (이 기기에 기억)</span></span><div class="seg3">${[['same', '같은 영상'], ['diff', '다른 버전'], ['none', '부산 없음']].map(([k, l]) => `<button data-adsbs="${k}" aria-pressed="${opt.bs === k}">${l}</button>`).join('')}</div><span class="tiny muted">${esc(ADS_BS[opt.bs])}</span></div>`
     : '<p class="muted small" style="margin:0">이 주일에는 영상 광고가 없습니다 (방영일이 비어 있음)</p>';
-  const repLine = rep === true ? '리포터 있음 — 모두 영상 안에 · 구두광고 슬라이드 필요없음' : rep === false ? '리포터 없음 — 모두 영상 밖 · 구두광고 해야 함' : '리포터 배정을 읽지 못했습니다 (서버를 다시 올려 주세요)';
+  const repLine = rep === true ? '리포터 있음 — 모두 영상 안에 · 구두광고 슬라이드 필요없음' : rep === false ? '리포터 없음 — 모두 영상 밖 · 구두광고 및 슬라이드 필요' : '리포터 배정을 읽지 못했습니다 (서버를 다시 올려 주세요)';
   const spoken = (!b.found ? `<p class="muted small" style="margin:0">부산 주보에 아직 '${esc(b.group)}' 그룹이 없습니다</p>`
     : (b.spoken.length ? `<ol class="adol">${b.spoken.map(x => li(x.title)).join('')}</ol>` : '<p class="muted small" style="margin:0">구두 광고가 없습니다</p>')
       + (b.video.length ? `<p class="flabel" style="margin:6px 0 0">영상으로 <span class="muted">(카톡 글에는 넣지 않음)</span></p><ul class="adol">${b.video.map(li).join('')}</ul>` : '')
@@ -2988,6 +2988,9 @@ function renderMenu() {
   for (const [id, v, f] of keep) { const el = $('#' + id); if (el) { if (v) el.value = v; if (f) el.focus(); } }
 }
 
+/* 부산 이야기 펼침은 판을 다시 그려도(새로 읽기 · 계정 맞추기) 그대로 둔다 — 예전엔 다시 그릴 때 접혀 '열렸다 바로 닫힘' 으로 보였다 */
+document.addEventListener('toggle', (e) => { const el = e.target; if (!el.matches || !el.matches('details.adnotes') || !S.pane || S.pane.kind !== 'ads') return;
+  S.pane.open = Object.assign({}, S.pane.open, { [el.dataset.ni]: el.open }); }, true);
 /* ---------- 누르기 ---------- */
 document.addEventListener('click', (e) => {
   const t = e.target.closest('button,[data-act]'); if (!t) return;
