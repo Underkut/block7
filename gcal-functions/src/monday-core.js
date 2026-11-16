@@ -52,7 +52,8 @@ function plan(meta, sun) {
   if (!spoken || !date) return { err: "shape" };
   const gt = groupTitle(sun);
   const g = (bs.groups || []).find(x => squash(x.title) === gt) || null;
-  return { group: g ? g.id : null, groupTitle: gt, spokenCol: spoken.id, dateCol: date.id };
+  const rep = colBy(vb.columns, "리포터");   // 없어도 된다 — 그때는 rep: null (모름)
+  return { group: g ? g.id : null, groupTitle: gt, spokenCol: spoken.id, dateCol: date.id, repCol: rep ? rep.id : null };
 }
 
 // 부산 주보 그룹의 아이템 → 구두 광고 (제목만)
@@ -86,13 +87,17 @@ function busanNotes(updates) {
     .map(x => ({ at: x.at, text: x.text.length > NOTE_LEN ? x.text.slice(0, NOTE_LEN) + "…" : x.text }));
 }
 
-// 영상 소식 아이템 → { title, url, notes }
-function videoOf(it) {
+// 영상 소식 아이템 → { title, url, notes, rep }
+//   rep = 리포터가 배정됐는가(true/false) — 배정되면 구두 광고가 모두 영상 안에 든다(HB 11/16). 열이 없으면 null.
+//   ⚠️ 리포터 **이름은 돌려주지 않는다** — 있는지만.
+function videoOf(it, repCol) {
   const link = (it.column_values || []).find(c => c.type === "link" && (c.url || c.text));
   let url = link ? String(link.url || "") : "";
   if (!url && link) { const m = /(https?:\/\/\S+)\s*$/.exec(String(link.text || "")); url = m ? m[1] : ""; }
   if (!/^https?:\/\//.test(url)) url = "";
-  return { title: String(it.name || "").trim(), url, notes: busanNotes(it.updates) };
+  const rc = repCol ? (it.column_values || []).find(c => c.id === repCol) : null;
+  const rep = repCol ? !!(rc && String(rc.text || "").trim()) : null;
+  return { title: String(it.name || "").trim(), url, notes: busanNotes(it.updates), rep };
 }
 
 // 두 번째 질문(week)의 변수
@@ -111,7 +116,7 @@ function weekOut(data, p, sun) {
   return {
     sun,
     busan: Object.assign({ found: !!g, group: p.groupTitle }, spokenOf(items)),
-    video: vids.map(videoOf).filter(v => v.title),
+    video: vids.map(it => videoOf(it, p.repCol)).filter(v => v.title),
   };
 }
 
