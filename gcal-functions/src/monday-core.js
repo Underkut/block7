@@ -9,7 +9,7 @@
  *   부산 주보 'TLCB 주보' — 주일마다 그룹(이름 'YY-MMDD'). '구두 광고' 상태 열이 숫자인 아이템의 **제목만**, 숫자 순.
  *     (HB: 글 내용 · '글' 열은 읽지 않는다)  '영상 사용' 은 따로 · '해당 없음' 은 뺌 · '확인 필요' 는 따로.
  *   '주일 영상 소식' — 방영일 = 그 주일인 아이템(제목 · 유튜브). 없으면 그 주엔 영상이 없다.
- *     '분당만 / 부산 다른 버전' 은 적는 칸이 없고 업데이트 · 댓글에 그때그때 적힌다(HB) → '부산' 이 든 글만 골라 준다.
+ *     '분당만 / 부산 다른 버전' 은 적는 칸이 없고 업데이트 · 댓글에 그때그때 적힌다(HB) → '부산' 이 든 묶음(업데이트 + 답글)만 골라 준다.
  */
 "use strict";
 
@@ -22,7 +22,7 @@ const QUERIES = {
   meta: "query ($ids: [ID!]) { boards(ids: $ids) { id name columns { id title type } groups { id title } } }",
   week: "query ($b: [ID!], $g: [String], $c: [String!], $v: [ID!], $vr: [ItemsQueryRule!]) {"
     + " bus: boards(ids: $b) { groups(ids: $g) { title items_page(limit: 100) { items { id name column_values(ids: $c) { id text } } } } }"
-    + " vid: boards(ids: $v) { items_page(limit: 20, query_params: { rules: $vr }) { items { id name"
+    + " vid: boards(ids: $v) { items_page(limit: 20, query_params: { rules: $vr }) { items { id name url"
     + " column_values { id type text ... on LinkValue { url } }"
     + " updates(limit: 30) { id created_at text_body replies { id created_at text_body } } } } } }",
 };
@@ -71,23 +71,44 @@ function spokenOf(items) {
   return out;
 }
 
-const NOTE_MAX = 6, NOTE_LEN = 400;
-// 업데이트 · 댓글에서 '부산' 이 든 글만 — 최근 것부터
-function busanNotes(updates) {
-  const all = [];
+const NOTE_MAX = 6, REPLY_MAX = 10, NOTE_LEN = 1500;
+// Monday 글로 가는 주소 — 아이템의 url(Monday 가 주는 그 아이템 주소)만 믿는다. 업데이트는 그 뒤에 '/posts/{id}'.
+const MON_URL = /^https:\/\/[a-z0-9-]+\.monday\.com\/[^\s"'<>]*$/i;
+// 한국 시각으로 날짜 · 시각 ('2026-11-19T16:00:00Z' → { at: '2026-11-20', tm: '01:00' })
+function kst(iso) {
+  const d = new Date(String(iso || ""));
+  if (isNaN(d)) return { at: "", tm: "" };
+  const k = new Date(d.getTime() + 9 * 3600e3).toISOString();
+  return { at: k.slice(0, 10), tm: k.slice(11, 16) };
+}
+// 줄바꿈은 살리고(읽기 쉽게) 빈칸만 하나로 · 너무 긴 글은 자른다
+function clean(t) {
+  t = String(t == null ? "" : t).replace(/\r/g, "").replace(/[ \t\u00a0]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return t.length > NOTE_LEN ? t.slice(0, NOTE_LEN) + "…" : t;
+}
+const stamp = (x) => x.at + " " + x.tm;
+// 업데이트 · 답글에서 '부산' 묶음만 (R12 C4a, HB 11/16)
+//   업데이트와 그 답글을 한 묶음으로 보고, **묶음 중 하나라도 '부산' 이면 묶음째** 돌려준다 — 답글은 그 업데이트 아래(오래된 것부터).
+//   (예전엔 한 줄로 섞어 '부산' 글만 남겨, 답글이 부모를 잃고 본문만 '부산' 인 업데이트의 답글은 빠졌다)
+//   묶음은 최근 업데이트부터 · link = 그 업데이트로 가는 Monday 주소(아이템 주소를 모르면 빈 글)
+function busanNotes(updates, itemUrl) {
+  const base = MON_URL.test(String(itemUrl || "")) ? String(itemUrl).replace(/\/+$/, "") : "";
+  const has = (t) => String(t == null ? "" : t).includes("부산");
+  const out = [];
   for (const u of updates || []) {
-    all.push(u);
-    for (const r of u.replies || []) all.push(r);
+    if (!u) continue;
+    const raw = (u.replies || []).filter(r => r && String(r.text_body || "").trim());
+    if (!has(u.text_body) && !raw.some(r => has(r.text_body))) continue;
+    const replies = raw.map(r => Object.assign(kst(r.created_at), { text: clean(r.text_body) }))
+      .sort((a, b) => (stamp(a) < stamp(b) ? -1 : stamp(a) > stamp(b) ? 1 : 0)).slice(0, REPLY_MAX);
+    const id = /^\d+$/.test(String(u.id || "")) ? String(u.id) : "";
+    out.push(Object.assign(kst(u.created_at), { id, text: clean(u.text_body), link: base && id ? base + "/posts/" + id : base, replies }));
   }
-  return all
-    .map(x => ({ at: String(x.created_at || "").slice(0, 10), text: String(x.text_body || "").replace(/\s+/g, " ").trim() }))
-    .filter(x => x.text && x.text.includes("부산"))
-    .sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))
-    .slice(0, NOTE_MAX)
-    .map(x => ({ at: x.at, text: x.text.length > NOTE_LEN ? x.text.slice(0, NOTE_LEN) + "…" : x.text }));
+  return out.sort((a, b) => (stamp(a) < stamp(b) ? 1 : stamp(a) > stamp(b) ? -1 : 0)).slice(0, NOTE_MAX);
 }
 
-// 영상 소식 아이템 → { title, url, notes, rep }
+// 영상 소식 아이템 → { title, url, link, notes, rep }
+//   link = 그 아이템의 Monday 주소('Monday에서 보기 ↗') — 읽기 질문의 url 칸에서만
 //   rep = 리포터가 배정됐는가(true/false) — 배정되면 구두 광고가 모두 영상 안에 든다(HB 11/16). 열이 없으면 null.
 //   ⚠️ 리포터 **이름은 돌려주지 않는다** — 있는지만.
 function videoOf(it, repCol) {
@@ -97,7 +118,8 @@ function videoOf(it, repCol) {
   if (!/^https?:\/\//.test(url)) url = "";
   const rc = repCol ? (it.column_values || []).find(c => c.id === repCol) : null;
   const rep = repCol ? !!(rc && String(rc.text || "").trim()) : null;
-  return { title: String(it.name || "").trim(), url, notes: busanNotes(it.updates), rep };
+  const mlink = MON_URL.test(String(it.url || "")) ? String(it.url) : "";
+  return { title: String(it.name || "").trim(), url, link: mlink, notes: busanNotes(it.updates, mlink), rep };
 }
 
 // 두 번째 질문(week)의 변수

@@ -3,7 +3,7 @@
 // 지키는 것:
 //   ① **읽기만** — 보내는 질문은 QUERIES 셋(모두 query)뿐 · 쓰기 질문이 코드에 없다 · 목록 밖 이름은 멈춘다
 //   ② 부산 주보: 그 주일 그룹('YY-MMDD')의 '구두 광고' 숫자 아이템 **제목만**, 숫자 순 · '영상 사용' · '확인 필요' 는 따로 · 나머지는 뺌
-//   ③ 영상 소식: 방영일 = 그 주일 · 유튜브 주소 · 업데이트 · 댓글 중 '부산' 이 든 글만 최근 것부터(상한) · 리포터는 있다 · 없다만(이름 X)
+//   ③ 영상 소식: 방영일 = 그 주일 · 유튜브 주소 · 업데이트 + 답글 묶음 중 '부산' 이 하나라도 든 묶음째, 최근 것부터(상한) · Monday 주소 · 리포터는 있다 · 없다만(이름 X)
 //   ④ 보드 · 열이 바뀌면 짐작하지 않고 알린다
 //   ⑤ 서버: 로그인 필수 · 광고는 주인 본인이나 rota/{주인}.team 의 확인된 이메일만 · 주인의 열쇠로 · 결과를 저장하지 않는다
 //   ⑥ 열쇠는 mondayKeys/{uid} 에만 · Monday 에 맞는지 물어본 뒤에만 맡긴다
@@ -57,13 +57,31 @@ console.log('\n③ 영상 소식');
     updates: [
       { created_at: '2026-11-18T01:00:00Z', text_body: '분당 최종본입니다', replies: [{ created_at: '2026-11-19T02:00:00Z', text_body: '부산은   짧은 버전으로\n올렸습니다' }] },
       { created_at: '2026-11-20T01:00:00Z', text_body: '부산 상영 없음', replies: [] },
-      { created_at: '2026-11-10T01:00:00Z', text_body: '부산'.padEnd(600, '가'), replies: [] },
+      { created_at: '2026-11-10T01:00:00Z', text_body: '부산'.padEnd(1600, '가'), replies: [] },
     ],
   };
   const v = C.videoOf(it);
   sc.eq('③ 제목 · 주소', [v.title, v.url], ['가을 음악회 안내', 'https://youtu.be/AAA']);
-  sc.eq('③ 부산 글만 · 최근 것부터 · 빈칸 하나로', J(v.notes.slice(0, 2)), [{ at: '2026-11-20', text: '부산 상영 없음' }, { at: '2026-11-19', text: '부산은 짧은 버전으로 올렸습니다' }]);
-  sc.eq('③ 긴 글은 자른다', v.notes[2].text.length, 401);
+  // C4a: 묶음(업데이트 + 답글) 중 하나라도 '부산' 이면 묶음째 · 답글은 그 아래 · 한국 시각
+  sc.eq('③ 부산 묶음만 · 최근 업데이트부터 · 본문에 부산이 없어도 답글에 있으면 묶음째(부모와 함께)',
+    v.notes.map(n => [n.at, n.text.slice(0, 9), n.replies.map(r => r.text)]),
+    [['2026-11-20', '부산 상영 없음', []], ['2026-11-18', '분당 최종본입니다', ['부산은 짧은 버전으로\n올렸습니다']], ['2026-11-10', '부산가가가가가가가', []]]);
+  sc.eq('③ 긴 글은 자른다 (1500자)', v.notes[2].text.length, 1501);
+  const th = C.busanNotes([
+    { id: '901', created_at: '2026-11-19T16:30:00Z', text_body: '부산   교회 버전\n\n\n\n따로   올립니다', replies: [
+      { created_at: '2026-11-20T03:00:00Z', text_body: '네 확인했습니다' },
+      { created_at: '2026-11-20T01:00:00Z', text_body: '@홍길동 파일 주소 보내 주세요' },
+      { created_at: '2026-11-20T05:00:00Z', text_body: '   ' }] },
+    { id: '902', created_at: '2026-11-21T01:00:00Z', text_body: '분당 자막 고쳤습니다', replies: [{ created_at: '2026-11-21T02:00:00Z', text_body: '분당만 바꾸면 됩니다' }] },
+  ], 'https://example-church.monday.com/boards/1369332975/pulses/555');
+  sc.eq('③ 본문만 부산인 업데이트의 답글도 함께 · 답글은 오래된 것부터 · 빈 답글은 뺌 · 부산이 하나도 없는 묶음은 뺌',
+    J(th), [{ at: '2026-11-20', tm: '01:30', id: '901', text: '부산 교회 버전\n\n따로 올립니다', link: 'https://example-church.monday.com/boards/1369332975/pulses/555/posts/901',
+      replies: [{ at: '2026-11-20', tm: '10:00', text: '@홍길동 파일 주소 보내 주세요' }, { at: '2026-11-20', tm: '12:00', text: '네 확인했습니다' }] }]);
+  sc.eq('③ Monday 주소가 아니면 링크를 만들지 않는다', [C.busanNotes([{ id: '1', text_body: '부산' }], 'https://evil.example.com/x')[0].link, C.busanNotes([{ id: 'x"', text_body: '부산' }], 'https://a.monday.com/boards/1/pulses/2')[0].link],
+    ['', 'https://a.monday.com/boards/1/pulses/2']);
+  const lk = C.videoOf({ name: 'w', url: 'https://example-church.monday.com/boards/1/pulses/7', column_values: [], updates: [{ id: '3', created_at: '2026-11-20T00:00:00Z', text_body: '부산 같음' }] });
+  sc.eq('③ 아이템 Monday 주소(Monday에서 보기) · 업데이트 주소', [lk.link, lk.notes[0].link], ['https://example-church.monday.com/boards/1/pulses/7', 'https://example-church.monday.com/boards/1/pulses/7/posts/3']);
+  sc.eq('③ 아이템 주소 칸은 읽기 질문에서 (url)', /items \{ id name url /.test(C.QUERIES.week), true);
   const many = { name: 'x', column_values: [], updates: Array.from({ length: 10 }, (_, i) => ({ created_at: '2026-11-1' + i, text_body: '부산 ' + i, replies: [] })) };
   sc.eq('③ 상한 6', C.videoOf(many).notes.length, 6);
   sc.eq('③ 주소 칸이 url 없이 글만이면 끝의 주소', C.videoOf({ name: 'y', column_values: [{ type: 'link', text: '제목 - https://youtu.be/BBB' }] }).url, 'https://youtu.be/BBB');
@@ -145,7 +163,7 @@ console.log('\n⑤ ⑥ 서버');
     const before = J(Object.keys(store)).sort(); sent.length = 0;
     const st = await call('/ads', 'tokST', { owner: 'hbUID0001', sun: '2026-11-22' });
     sc.eq('⑤ 교역자는 주인의 열쇠로 받는다', [st.code, sent.every(s => s.auth === 'GOODKEY-00000000000000000')], [200, true]);
-    sc.eq('⑤ 결과 모양', st.body, { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 1, title: '새벽 기도회' }], video: [], check: [] }, video: [{ title: '가을 음악회 안내', url: '', notes: [], rep: true }] });
+    sc.eq('⑤ 결과 모양', st.body, { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 1, title: '새벽 기도회' }], video: [], check: [] }, video: [{ title: '가을 음악회 안내', url: '', link: '', notes: [], rep: true }] });
     sc.eq('⑤ 보낸 질문은 목록 안의 것뿐 (meta · week)', sent.map(s => Object.keys(C.QUERIES).find(k => C.QUERIES[k] === s.query)), ['meta', 'week']);
     sc.eq('⑤ 결과를 저장하지 않는다', J(Object.keys(store)).sort(), before);
     sc.eq('⑤ 교역자는 주인 열쇠를 지우지 못한다 (자기 칸만)', ((await call('/off', 'tokST')), 'mondayKeys/hbUID0001' in store), true);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1116-8 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식) -->
+<!-- 교역자 로테이션 v. 26-1116-9 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -406,10 +406,44 @@ table.mx8 .f.bad{background:var(--bad);color:var(--on);box-shadow:none}
 .mrow.bad{background:var(--bad-soft)}
 .mlrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px}
 .mlrow>div{display:grid;gap:2px;min-width:0}.mlrow .sub{font-size:12px;color:var(--tx2)}.mlrow .btn{flex:none}
-.adsec{display:grid;gap:8px}.adsec h4{margin:0;font-size:13px;font-weight:500;color:var(--tx2)}
-.adv{display:grid;gap:3px;min-width:0}.adv a{color:var(--tx2);overflow-wrap:anywhere}
+/* 광고 판 (R12 C4a — A 카드형 · 날짜 묶기 · 말풍선) */
+.adwho{margin:0;font-size:14px;display:flex;gap:10px;align-items:baseline}.adwho span{font-size:12px;color:var(--tx3)}
+.adcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
+.adcard h4{margin:0;font-size:13px;font-weight:500;color:var(--tx3);letter-spacing:.02em}
+.adv{display:grid;gap:4px;min-width:0}.advt{font-size:16px;font-weight:500;line-height:1.45}
+.adlink{color:var(--wed);text-decoration:none;overflow-wrap:anywhere;justify-self:start}.adlink:hover{text-decoration:underline}
+.adarr{font-size:.85em;margin-left:2px}
+.adnw{position:relative;margin-top:4px;border-top:1px solid var(--line);padding-top:4px}
+.admon{position:absolute;right:0;top:9px;font-size:12px}
+.adnotes summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:5px 120px 5px 0;font-size:13px;color:var(--tx2)}
+.adnotes summary::-webkit-details-marker{display:none}
+.adchev{width:7px;height:7px;border-right:1.5px solid var(--tx3);border-bottom:1.5px solid var(--tx3);transform:rotate(-45deg);transition:transform .2s;flex:none;margin:0 2px}
+.adnotes[open] .adchev{transform:rotate(45deg)}
+.adcnt{font-size:11px;color:var(--tx3);border:1px solid var(--line2);border-radius:999px;padding:0 6px;line-height:16px}
+.adnb{display:grid;gap:12px;margin-top:6px;padding:10px 12px;background:var(--s1);border-radius:10px}
+.adday{display:grid;gap:8px}.adday + .adday{border-top:1px solid var(--line2);padding-top:12px}.addate{font-size:12px;font-weight:500;color:var(--tx2)}
+.adth{display:grid;gap:4px;min-width:0}.adth + .adth{border-top:1px dashed var(--line2);padding-top:8px}
+.admeta{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--tx3)}
+.adtx{margin:0;font-size:13px;line-height:1.55;color:var(--tx);white-space:pre-line;overflow-wrap:anywhere}
+.adtx.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
+.admore{justify-self:start;font-size:12px;color:var(--tx3);padding:0}
+.adre{display:grid;gap:8px;margin:4px 0 0 4px;padding-left:12px;border-left:2px solid var(--line2)}.adr{display:grid;gap:2px;min-width:0}.adr .adtx{color:var(--tx2)}
+.adat{display:inline-block;font-size:12px;line-height:18px;padding:0 7px;border-radius:999px;background:var(--s2);color:var(--tx2);margin:0 1px}
+.adnone{margin:0;font-size:13px;color:var(--tx3)}.adnw .adnone{padding:5px 120px 5px 0}
+.adset{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.adsub{font-size:13px;font-weight:500;color:var(--tx2);display:flex;gap:8px;align-items:baseline}
+.adhint{margin:0;font-size:12px;font-weight:400;color:var(--tx3)}
+.adbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.adbs button{border:1px solid var(--line2);border-radius:10px;padding:7px 4px;font-size:13px;color:var(--tx2);transition:background .2s,color .2s,border-color .2s}
+.adbs button[aria-pressed="true"]{background:var(--tx);border-color:var(--tx);color:var(--bg)}
+.adbub{--i:0;position:relative;margin-top:8px;padding:9px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--s1);font-size:13px;line-height:1.5;color:var(--tx)}
+.adtail{position:absolute;top:-6px;width:10px;height:10px;margin-left:-5px;background:inherit;border:inherit;border-right:0;border-bottom:0;border-radius:2px 0 0 0;transform:rotate(45deg);
+  left:calc((100% - 12px) / 3 * (var(--i) + .5) + 6px * var(--i))}
+.adbub.rep .adtail{left:22px}
+.adbub.rep{border-color:var(--warn);background:var(--warn-soft)}.adbub.rep .adtail{background:var(--paper);box-shadow:inset 20px 20px 0 var(--warn-soft)}
+.adbub.rep.bad{color:var(--warn)}
+.adyet{margin:2px 0 0;font-size:12px;color:var(--tx3)}
 .adol{margin:0;padding-left:22px;display:grid;gap:4px;font-size:15px}
-.adnotes{font-size:13px;color:var(--tx2);margin-top:4px}.adnotes summary{cursor:pointer;padding:2px 0}.adnotes p{margin:6px 0 0;line-height:1.5;overflow-wrap:anywhere}
 .warnline{color:var(--warn)}
 .mdate{white-space:nowrap}.mdate b{font-weight:500}
 .gchip{display:inline-block;font-size:11px;padding:0 7px;border-radius:999px;font-weight:500;vertical-align:1px}
@@ -483,7 +517,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1116-8';
+const APP_VERSION = 'v. 26-1116-9';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일은 언제나 '주일' (HB 11/16) — 자료(days 글자 · 교통 시각)는 '일' 그대로 둔다
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1427,11 +1461,20 @@ function nameSpans(text, name) {
 }
 
 /* ---- 부산 주일 광고 (R12 C) — Monday 에서 서버(gcal-functions 의 monday)가 읽어 준 것 ----
-   o = { sun, busan: { found, group, spoken: [{ n, title }], video: [제목], check: [제목] }, video: [{ title, url, notes: [{ at, text }], rep }] }
+   o = { sun, busan: { found, group, spoken: [{ n, title }], video: [제목], check: [제목] }, video: [{ title, url, link, notes: [묶음], rep }] }
+   묶음(C4a) = { id, at, tm, text, link, replies: [{ at, tm, text }] } — Monday 업데이트 하나와 그 답글. 묶음 중 하나라도 '부산' 이면 서버가 묶음째 준다.
+   link = Monday 에서 그 아이템 · 업데이트를 여는 주소('Monday에서 보기 ↗'). 옛 서버의 { at, text } 한 줄도 답글 없는 묶음으로 읽는다.
    rep = 그 영상에 리포터가 배정됐나(true/false, 서버가 모르면 null) — 이름은 오지 않는다.
    카톡용 글은 HB 양식(11/16):  날짜 · 1부/2부 내려간 교역자 · 0: (영상) 제목 + 분당/부산 상영 · 구두 광고 번호(1부터 다시) · 리포터에 따라 영상내 포함/비포함.
-   ⚠️ '부산 이야기'(업데이트 · 댓글) · '확인 필요' · 유튜브 주소는 화면에만 — 카톡 글에 넣지 않는다. */
+   ⚠️ '부산 관련 Monday 글'(업데이트 · 답글) · '확인 필요' · 유튜브 주소는 화면에만 — 카톡 글에 넣지 않는다. */
 const ADS_BS = { same: '분당 있음 / 부산 있음 (1부 중계, 2부 파일)', diff: '분당 있음 / 부산 버전 따로 있음 (1부 파일, 2부 파일)', none: '분당 있음 / 부산 없음' };
+const MON_LINK = /^https:\/\/[a-z0-9-]+\.monday\.com\/[^\s"'<>]*$/i;
+const monLink = (v) => (typeof v === 'string' && MON_LINK.test(v) ? v.slice(0, 300) : '');
+function normNote(x) {
+  const tm = (v) => (typeof v === 'string' && /^\d\d:\d\d$/.test(v) ? v : '');
+  const re = (Array.isArray(x.replies) ? x.replies : []).filter(r => r && str(r.text, 1600)).slice(0, 10).map(r => ({ at: str(r.at, 10), tm: tm(r.tm), text: str(r.text, 1600) }));
+  return { id: /^\d{1,20}$/.test(String(x.id || '')) ? String(x.id) : '', at: str(x.at, 10), tm: tm(x.tm), text: str(x.text, 1600), link: monLink(x.link), replies: re };
+}
 function normAds(o) {
   o = o && typeof o === 'object' ? o : {}; const b = o.busan && typeof o.busan === 'object' ? o.busan : {};
   const strs = (a, n) => (Array.isArray(a) ? a : []).map(x => str(x, 200)).filter(Boolean).slice(0, n);
@@ -1442,27 +1485,60 @@ function normAds(o) {
       video: strs(b.video, 20), check: strs(b.check, 20) },
     video: (Array.isArray(o.video) ? o.video : []).filter(v => v && str(v.title, 200)).slice(0, 5).map(v => ({ title: str(v.title, 200),
       url: /^https?:\/\//.test(String(v.url || '')) ? str(v.url, 300) : '',
-      notes: (Array.isArray(v.notes) ? v.notes : []).filter(x => x && x.text).slice(0, 6).map(x => ({ at: str(x.at, 10), text: str(x.text, 500) })),
+      link: monLink(v.link),
+      notes: (Array.isArray(v.notes) ? v.notes : []).filter(x => x && typeof x === 'object').map(normNote).filter(x => x.text || x.replies.length).slice(0, 6),
       rep: typeof v.rep === 'boolean' ? v.rep : null })),
   };
 }
 // 리포터 → 구두 광고가 영상 안에 드나: true(하나라도 배정) · false(영상이 없거나 모두 비었음) · null(서버가 모름 — 옛 서버)
 function adsRep(a) { if (!a.video.length) return false; if (a.video.some(v => v.rep === true)) return true; return a.video.every(v => v.rep === false) ? false : null; }
-// opt = { who: '1부 · 2부에 적을 이름(내려간 교역자)', bs: 'same' | 'diff' | 'none' (부산 상영, 기본 same) }
+// opt = { who: '1부 · 2부에 적을 이름(내려간 교역자)', bs: 'same' | 'diff' | 'none' (부산 상영 — 고르기 전이면 '부산 상영 미정', C4a ②-2) }
+const ADS_NOGROUP = '(부산 주보에 아직 이 주일 그룹이 없습니다. 부산 주보 담당 교역자와 확인해주세요)';
 function adsText(o, opt) {
   const a = normAds(o); if (!a.sun) return ''; opt = opt || {};
-  const who = str(opt.who, 120) || '미정', bs = ADS_BS[opt.bs] ? opt.bs : 'same';
+  const who = str(opt.who, 120) || '미정', bs = ADS_BS[opt.bs] ? opt.bs : '';
   const L = [mdOf(a.sun) + '(주일) 부산 주일예배 광고', '', '1부: ' + who, '2부: ' + who, ''];
-  if (a.video.length) { a.video.forEach(v => L.push('0: (영상) ' + v.title)); L.push(ADS_BS[bs]); }
+  if (a.video.length) { a.video.forEach(v => L.push('0: (영상) ' + v.title)); L.push(bs ? ADS_BS[bs] : '부산 상영 미정'); }
   else L.push('0: (영상) 없음', '분당 없음 / 부산 없음');
   L.push('');
-  if (!a.busan.found) L.push('(부산 주보에 아직 이 주일 그룹이 없습니다)');
-  else a.busan.spoken.forEach((x, i) => L.push((i + 1) + '. ' + x.title));
+  // 부산 주보 그룹이 없으면 리포터 줄도 뺀다 — 구두 광고가 무엇인지 모르니 '해야 함' 도 말할 수 없다 (C4a ⑤)
+  if (!a.busan.found) { L.push(ADS_NOGROUP); return L.join('\n'); }
+  a.busan.spoken.forEach((x, i) => L.push((i + 1) + '. ' + x.title));
   const rep = adsRep(a);
   if (rep === true) L.push('> 모두 영상내 포함', '>> 구두광고 슬라이드 필요없음');
   else if (rep === false) L.push('> 모두 영상내 비포함', '>> 구두광고 및 슬라이드 필요 @');
   else L.push('> 리포터 배정을 읽지 못했습니다 (서버를 다시 올려 주세요)');
   return L.join('\n');
+}
+// Monday 글 → 조각들 (화면에서 글 · 링크 · 멘션을 따로 그리게)  [{ k: 't', v } | { k: 'a', v: 주소, label } | { k: '@', v }]
+//   링크 규칙(C4a ③): 파란 글 + ↗ · 긴 주소(30자 넘음)는 사이트 이름만 · http(s) 만 링크로. 멘션은 앞이 빈칸 · 줄 처음인 '@이름'.
+function adsLinkLabel(url) {
+  const bare = String(url).replace(/^https?:\/\//i, '').replace(/\/$/, '');
+  if (bare.length <= 30) return bare;
+  return bare.split(/[/?#]/)[0].replace(/^(www|m)\./i, '');
+}
+function adsRich(text) {   // ⚠️ 뒤돌아보기 정규식((?<=…))은 옛 아이폰에서 깨진다 — 앞 글자를 함께 잡아 글로 돌린다
+  const out = [], s = String(text || ''), re = /(https?:\/\/[^\s<>"]+)|(^|\s)(@[^\s@,.!?:;()\[\]<>"']{1,30})/g;
+  const put = (x) => { const l = out[out.length - 1]; if (x.k === 't' && l && l.k === 't') l.v += x.v; else if (x.v) out.push(x); };
+  let i = 0, m;
+  while ((m = re.exec(s))) {
+    put({ k: 't', v: s.slice(i, m.index) });
+    if (m[1]) {
+      const t = /[.,!?;:)\]'"]+$/.exec(m[1]), v = t ? m[1].slice(0, -t[0].length) : m[1];
+      put({ k: 'a', v, label: adsLinkLabel(v) }); if (t) put({ k: 't', v: t[0] });
+    } else { put({ k: 't', v: m[2] }); put({ k: '@', v: m[3] }); }
+    i = m.index + m[0].length;
+  }
+  put({ k: 't', v: s.slice(i) });
+  return out;
+}
+// 묶음을 날짜(묶음 머리 날짜)별로 — 최근 날부터, 같은 날은 늦은 것부터
+function adsByDay(notes) {
+  const days = [];
+  (notes || []).slice().sort((a, b) => ((b.at + b.tm) > (a.at + a.tm) ? 1 : (b.at + b.tm) < (a.at + a.tm) ? -1 : 0)).forEach(n => {
+    const d = days.find(x => x.at === n.at); if (d) d.notes.push(n); else days.push({ at: n.at, notes: [n] });
+  });
+  return days;
 }
 </script>
 
@@ -2278,6 +2354,7 @@ function renderPane() {
   if (an) { const n = [...el.querySelectorAll('button')].find(b => b.dataset && JSON.stringify(Object.assign({}, b.dataset)) === an.key); if (n) el.scrollTop += n.getBoundingClientRect().top - an.y; }
   el.querySelectorAll('img[data-img]').forEach(im => loadImg(im.dataset.img));
   paintMe(el);
+  if (S.pane.kind === 'ads') adsFit(el);
 }
 
 /* 고르기 판 — 한 자리에 사람(여럿 가능)과 글(담임목사님 · 초청 강사) */
@@ -2792,9 +2869,18 @@ async function mfn(path, body) {
   const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.error || ('서버 ' + r.status)); e.status = r.status; e.code = j.code || ''; throw e; } return j;
 }
 function adsSet(p) { if (S.pane && S.pane.kind === 'ads') { Object.assign(S.pane, p); renderPane(); } }
-function demoAds(sun) {   // 미리보기: 지어낸 제목만
-  return normAds({ sun, busan: { found: true, group: sun.slice(2, 4) + '-' + sun.slice(5, 7) + sun.slice(8, 10), spoken: [{ n: 1, title: '가을 음악회 안내' }, { n: 2, title: '새벽 기도회' }], video: [], check: ['꽃꽂이 봉사 모집'] },
-    video: [{ title: '가을 음악회 안내', url: 'https://youtu.be/demo', rep: false, notes: [{ at: addDays(sun, -2), text: '부산은 짧은 버전으로 올려 두었습니다 (미리보기 글)' }] }] });
+function demoAds(sun) {   // 미리보기: 지어낸 이름 · 제목만 — 실제 보드처럼 길게(묶음 · 답글 · 멘션 · 긴 주소 · 같은 날 두 묶음)
+  const at = (n, tm) => ({ at: addDays(sun, n), tm }), base = 'https://example-church.monday.com/boards/1369332975/pulses/1000001';
+  const nt = (n, tm, id, text, replies) => Object.assign(at(n, tm), { id, link: base + '/posts/' + id, text, replies: replies.map(r => Object.assign(at(r[0], r[1]), { text: r[2] })) });
+  return normAds({ sun, busan: { found: true, group: sun.slice(2, 4) + '-' + sun.slice(5, 7) + sun.slice(8, 10),
+      spoken: [{ n: 1, title: '추수감사 주일 헌금 안내' }, { n: 2, title: '새가족 환영회 (예배 후 2층 카페)' }, { n: 3, title: '겨울 수련회 접수 — 12/7(주일)까지' }, { n: 4, title: '성탄 찬양대 연습 시작' }, { n: 5, title: '주차 봉사자 모집' }],
+      video: ['가을 음악회 안내'], check: ['꽃꽂이 봉사 모집'] },
+    video: [{ title: '가을 음악회 · 추수감사 소식', url: 'https://www.youtube.com/watch?v=AbCdEfGhIjk&list=PLdemo0123456789&index=3', link: base, rep: false, notes: [
+      nt(-2, '21:40', '5003', '부산 교회는 음악회 날짜가 달라서 끝의 30초를 빼고 부산 버전을 따로 만들었습니다.\n부산 버전 파일은 이 폴더에 올려 두었어요 https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789\n1부는 중계로 보시고, 2부는 파일로 틀어 주세요. 자막이 어색한 곳이 있으면 금요일 밤까지 알려 주시면 고치겠습니다. 자막 글꼴은 분당과 같게 맞췄고 소리 크기도 맞춰 두었습니다.',
+        [[-2, '22:05', '@김예린 확인했습니다. 2부 파일은 토요일에 미리 받아 두겠습니다'], [-1, '09:12', '@박도윤 자막 두 군데 고쳐서 같은 폴더에 다시 올렸습니다']]),
+      nt(-2, '14:20', '5002', '분당 최종본 올렸습니다 (3분 12초)', [[-2, '15:01', '부산도 같은 영상 쓰나요? @이하준'], [-2, '15:30', '@이하준 부산은 따로 만들 예정입니다']]),
+      nt(-4, '11:30', '5001', '첫 편집본입니다. 부산 소식 한 줄을 넣을지 의견 주세요 https://youtu.be/demo1234', []),
+    ] }] });
 }
 function adsOpen(sun, back) {
   if (!sun) return;
@@ -2841,15 +2927,34 @@ function adsWho(sun) {
   live(S.book.visits).filter(v => visitSun(v.date) === sun).forEach(v => v.who.forEach(id => { if (!ids.includes(id)) ids.push(id); }));
   return whoText(S.book, ids, '', pm);
 }
-function adsOpt(sun) { const m = lsGet(ADSBS_KEY, {}) || {}; return { who: adsWho(sun), bs: ADS_BS[m[sun]] ? m[sun] : 'same' }; }
+function adsOpt(sun) { const m = lsGet(ADSBS_KEY, {}) || {}; return { who: adsWho(sun), bs: ADS_BS[m[sun]] ? m[sun] : '' }; }   // 처음엔 아무것도 안 골라짐 (C4a ②-2)
 function adsBs(v) {
   const P = S.pane; if (!P || P.kind !== 'ads' || !ADS_BS[v]) return;
-  const m = lsGet(ADSBS_KEY, {}) || {}; m[P.sun] = v; Object.keys(m).sort().reverse().slice(12).forEach(k => delete m[k]); lsSet(ADSBS_KEY, m); renderPane();
+  const m = lsGet(ADSBS_KEY, {}) || {}; P.tailFrom = ADS_BSK.indexOf(m[P.sun]);   // 말풍선 꼬리가 앞 단추에서 미끄러져 온다
+  m[P.sun] = v; Object.keys(m).sort().reverse().slice(12).forEach(k => delete m[k]); lsSet(ADSBS_KEY, m); renderPane();
 }
 function adsCopy() {   // ⚠️ 아이폰: 누른 그 자리에서 바로 복사를 시작한다 (무엇을 기다린 뒤면 막힌다)
   const P = S.pane, tx = P && P.data ? adsText(P.data, adsOpt(P.sun)) : ''; if (!tx) return;
   const fall = () => { adsSet({ showText: true }); const el = $('#ads-text'); if (el) { el.focus(); el.select(); } toast('자동 복사가 막혔습니다\n선택된 글을 길게 눌러 복사해 주세요'); };
   try { navigator.clipboard.writeText(tx).then(() => toast('복사했습니다\n카톡에 붙여 넣으세요'), fall); } catch (_) { fall(); }
+}
+/* 광고 판 (C4a, HB 고른 안 11/16) — A 카드형: 영상 광고 · 구두 광고가 카드 하나씩.
+   부산 관련 Monday 글은 날짜로 묶고 답글은 그 아래 들여쓰기 · 긴 글은 3줄 + '더 보기'(S.pane.more 에 기억 — 다시 그려도 그대로).
+   결과 두 줄(부산 상영 결과 · 리포터 판단)은 말풍선 안 글 — 상영 말풍선의 꼬리는 고른 단추 가운데를 가리킨다. 리포터 말풍선은 노란 테두리. */
+const ADS_BSK = ['same', 'diff', 'none'];
+const adsLinkA = (href, label, cls) => `<a class="adlink${cls ? ' ' + cls : ''}" href="${esc(href)}" target="_blank" rel="noopener">${esc(label)}<span class="adarr" aria-hidden="true">↗</span></a>`;
+function adsRichHtml(t) { return adsRich(t).map(x => x.k === 'a' ? adsLinkA(x.v, x.label) : x.k === '@' ? `<span class="adat">${esc(x.v)}</span>` : esc(x.v)).join(''); }
+function adsTx(k, text) {   // 글 + 더 보기 (넘치지 않으면 adsFit 이 단추를 숨긴 채 둔다)
+  const open = !!(S.pane.more || {})[k];
+  return `<p class="adtx${open ? '' : ' clamp'}">${adsRichHtml(text)}</p><button class="admore" data-act="admore" data-k="${esc(k)}"${open ? '' : ' hidden'}>${open ? '접기' : '더 보기'}</button>`;
+}
+function adsNotes(v, vi) {
+  const key = (n, i) => 'n' + vi + ':' + (n.id || i);
+  return adsByDay(v.notes).map(d => `<div class="adday"><div class="addate">${esc(d.at ? mdd(d.at) : '날짜 모름')}</div>${d.notes.map((n, i) => `<div class="adth">
+      <div class="admeta"><span>${esc(n.tm)}</span>${n.link ? adsLinkA(n.link, '보기', 'tiny') : ''}</div>
+      ${n.text ? adsTx(key(n, i), n.text) : '<p class="adtx muted">(본문 없음)</p>'}
+      ${n.replies.length ? `<div class="adre">${n.replies.map((r, j) => `<div class="adr"><div class="admeta"><span>${esc((r.at && r.at !== n.at ? mdOf(r.at) + ' ' : '') + r.tm)}</span></div>${adsTx(key(n, i) + 'r' + j, r.text)}</div>`).join('')}</div>` : ''}
+    </div>`).join('')}</div>`).join('');
 }
 function paneAds() {
   const P = S.pane, a = P.data, back = P.back ? `<button class="iconbtn" data-act="adsback" aria-label="방문으로"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>` : '<span></span>';
@@ -2858,27 +2963,43 @@ function paneAds() {
   if (P.state === 'need') return head + `<div class="pbody"><p class="note" style="margin:0">${P.bad ? '<b>열쇠가 맞지 않습니다.</b> 새 열쇠를 넣어 주세요.<br>' : '처음 한 번 Monday 열쇠를 넣습니다.<br>'}· Monday 오른쪽 위 내 사진 → <b>개발자</b> → 왼쪽 <b>API 토큰</b> → '개인 토큰' <b>복사</b><br>· 열쇠는 <b>서버에만</b> 맡깁니다 — 이 폰 · 교역자에게 가지 않습니다.<br>· 광고를 <b>읽기만</b> 합니다.</p>
       <div class="addrow"><input class="inp" id="mon-key" type="password" placeholder="Monday 열쇠 붙여 넣기" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="adskey">넣기</button></div></div>`;
   if (P.state === 'err' || !a) return head + `<div class="pbody"><p class="note" style="margin:0;white-space:pre-line">${esc(P.msg || '광고를 읽지 못했습니다')}</p><button class="btn ghost" data-act="adsload" style="justify-self:start">다시 읽기</button></div>`;
-  const b = a.busan, li = (t) => `<li>${esc(t)}</li>`, opt = adsOpt(P.sun), rep = adsRep(a);
-  const vids = a.video.length ? a.video.map(v => `<div class="adv"><b>${esc(v.title)}</b>${v.url ? `<a class="tiny" href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.url)}</a>` : '<span class="tiny muted">유튜브 주소가 아직 없습니다</span>'}
-      ${v.notes.length ? `<details class="adnotes" data-ni="${esc(v.title)}"${(P.open || {})[v.title] ? ' open' : ''}><summary>부산 이야기 ${v.notes.length} <span class="muted">— 업데이트 · 댓글 중 '부산'</span></summary>${v.notes.map(n => `<p><span class="muted">${esc(mdOf(n.at || P.sun))}</span> ${esc(n.text)}</p>`).join('')}</details>` : ''}</div>`).join('')
-      + `<div class="field"><span class="flabel">부산 상영 <span class="muted">— 부산 이야기를 보고 골라 주세요 (이 기기에 기억)</span></span><div class="seg3">${[['same', '같은 영상'], ['diff', '다른 버전'], ['none', '부산 없음']].map(([k, l]) => `<button data-adsbs="${k}" aria-pressed="${opt.bs === k}">${l}</button>`).join('')}</div><span class="tiny muted">${esc(ADS_BS[opt.bs])}</span></div>`
-    : '<p class="muted small" style="margin:0">이 주일에는 영상 광고가 없습니다 (방영일이 비어 있음)</p>';
+  const b = a.busan, li = (t) => `<li>${esc(t)}</li>`, opt = adsOpt(P.sun), rep = adsRep(a), bi = ADS_BSK.indexOf(opt.bs);
+  const vids = a.video.map((v, vi) => `<div class="adv"><div class="advt">${esc(v.title)}</div>
+      ${v.url ? adsLinkA(v.url, adsLinkLabel(v.url), 'small') : '<span class="tiny muted">유튜브 주소가 아직 없습니다</span>'}
+      <div class="adnw">${v.notes.length
+        ? `<details class="adnotes" data-ni="${esc(v.title)}"${(P.open || {})[v.title] ? ' open' : ''}><summary><span class="adchev" aria-hidden="true"></span>부산 관련 Monday 글 <span class="adcnt">${v.notes.length}</span></summary><div class="adnb">${adsNotes(v, vi)}</div></details>`
+        : `<p class="adnone">부산 관련 Monday 글 없음</p>`}
+        ${v.link ? adsLinkA(v.link, 'Monday에서 보기', 'admon') : ''}</div></div>`).join('');
+  const bsBox = `<div class="adset"><div class="adsub">부산 상영</div><p class="adhint">위 Monday 내용을 참고하여 부산 상영 여부를 선택해주세요</p>
+      <div class="adbs">${[['same', '같은 영상'], ['diff', '다른 버전'], ['none', '부산 없음']].map(([k, l]) => `<button data-adsbs="${k}" aria-pressed="${opt.bs === k}">${l}</button>`).join('')}</div>
+      ${bi >= 0 ? `<div class="adbub" id="ads-bub" style="--i:${bi}"><i class="adtail" aria-hidden="true"></i>${esc(ADS_BS[opt.bs])}</div>` : '<p class="adyet">아직 고르지 않았습니다</p>'}</div>`;
+  const video = a.video.length ? vids + bsBox : '<p class="adnone">이 주일에는 영상 광고가 없습니다 (방영일이 비어 있음)</p>';
   const repLine = rep === true ? '리포터 있음 — 모두 영상 안에 · 구두광고 슬라이드 필요없음' : rep === false ? '리포터 없음 — 모두 영상 밖 · 구두광고 및 슬라이드 필요' : '리포터 배정을 읽지 못했습니다 (서버를 다시 올려 주세요)';
-  const spoken = (!b.found ? `<p class="muted small" style="margin:0">부산 주보에 아직 '${esc(b.group)}' 그룹이 없습니다</p>`
-    : (b.spoken.length ? `<ol class="adol">${b.spoken.map(x => li(x.title)).join('')}</ol>` : '<p class="muted small" style="margin:0">구두 광고가 없습니다</p>')
-      + (b.video.length ? `<p class="flabel" style="margin:6px 0 0">영상으로 <span class="muted">(카톡 글에는 넣지 않음)</span></p><ul class="adol">${b.video.map(li).join('')}</ul>` : '')
-      + (b.check.length ? `<p class="flabel" style="margin:6px 0 0">확인 필요 <span class="muted">(카톡 글에는 넣지 않음)</span></p><ul class="adol">${b.check.map(li).join('')}</ul>` : ''))
-    + `<p class="small${rep === null ? ' warnline' : ' muted'}" style="margin:2px 0 0">${esc(repLine)}</p>`;
+  const spoken = !b.found ? `<p class="adnone">${esc(ADS_NOGROUP)}</p>`   // 그룹이 없으면 리포터 말풍선도 뺀다 (C4a ⑤)
+    : (b.spoken.length ? `<ol class="adol">${b.spoken.map(x => li(x.title)).join('')}</ol>` : '<p class="adnone">구두 광고가 없습니다</p>')
+      + (b.video.length ? `<div class="adsub">영상으로 <span class="adhint">카톡 글에는 넣지 않음</span></div><ul class="adol">${b.video.map(li).join('')}</ul>` : '')
+      + (b.check.length ? `<div class="adsub">확인 필요 <span class="adhint">카톡 글에는 넣지 않음</span></div><ul class="adol">${b.check.map(li).join('')}</ul>` : '')
+      + `<div class="adbub rep${rep === null ? ' bad' : ''}"><i class="adtail" aria-hidden="true"></i>${esc(repLine)}</div>`;
   const when = P.stale ? '새로 읽는 중…' : P.at ? '읽은 때 ' + new Date(P.at).toTimeString().slice(0, 5) : '';
   return head + `<div class="pbody" style="gap:12px">
     ${P.warn ? `<p class="note warnline" style="margin:0;white-space:pre-line">${esc(P.warn)}\n아래는 지난번에 읽은 것입니다</p>` : ''}
-    <p class="small" style="margin:0"><span class="muted">1부 · 2부</span> ${esc(opt.who || '교역자 미정')}</p>
-    <section class="adsec"><h4>영상 광고</h4>${vids}</section>
-    <section class="adsec"><h4>구두 광고</h4>${spoken}</section>
+    <p class="adwho"><span>1부 · 2부</span>${esc(opt.who || '교역자 미정')}</p>
+    <section class="adcard"><h4>영상 광고</h4>${video}</section>
+    <section class="adcard"><h4>구두 광고</h4>${spoken}</section>
     ${P.showText ? `<textarea class="inp" id="ads-text" readonly style="min-height:200px;font-size:13px">${esc(adsText(a, opt))}</textarea>` : ''}
     <div class="btnrow"><button class="btn" data-act="adscopy">카톡용 복사</button><button class="btn ghost" data-act="adsload">다시 읽기</button><span class="spacer"></span><span class="tiny muted">${esc(when)}</span></div>
     ${isStaff() ? '' : '<button class="txtbtn" data-act="adsoff" style="justify-self:start">Monday 연결 끊기</button>'}
   </div>`;
+}
+// 그린 뒤: 3줄을 넘는 글에만 '더 보기' · 상영 말풍선 꼬리를 앞 단추에서 옮겨 온다 (접힌 묶음 안은 펼칠 때 다시)
+function adsFit(root) {
+  root.querySelectorAll('.adtx.clamp').forEach(p => { const bt = p.nextElementSibling; if (!bt || !bt.classList.contains('admore') || !p.getClientRects().length) return; bt.hidden = p.scrollHeight <= p.clientHeight + 2; });
+  const P = S.pane, bub = root.querySelector('#ads-bub'); if (!P || P.tailFrom === undefined) return; const from = P.tailFrom; delete P.tailFrom;
+  if (!bub || quiet() || !bub.animate) return;
+  if (from < 0) return bub.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' });
+  const tail = bub.querySelector('.adtail'), to = +getComputedStyle(bub).getPropertyValue('--i'); if (!tail || from === to) return;
+  const x = (bub.getBoundingClientRect().width + 6) / 3 * (from - to);
+  tail.animate([{ transform: `translateX(${x}px) rotate(45deg)` }, { transform: 'rotate(45deg)' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 // 구글 동의 화면에서 돌아왔을 때 (?gcal=ok|cancel|err|expired) — 주소를 지우고, 됐으면 로그인을 기다려 바로 찾는다
 function mailBack() {
@@ -2990,7 +3111,7 @@ function renderMenu() {
 
 /* 부산 이야기 펼침은 판을 다시 그려도(새로 읽기 · 계정 맞추기) 그대로 둔다 — 예전엔 다시 그릴 때 접혀 '열렸다 바로 닫힘' 으로 보였다 */
 document.addEventListener('toggle', (e) => { const el = e.target; if (!el.matches || !el.matches('details.adnotes') || !S.pane || S.pane.kind !== 'ads') return;
-  S.pane.open = Object.assign({}, S.pane.open, { [el.dataset.ni]: el.open }); }, true);
+  S.pane.open = Object.assign({}, S.pane.open, { [el.dataset.ni]: el.open }); if (el.open) adsFit(el); }, true);
 /* ---------- 누르기 ---------- */
 document.addEventListener('click', (e) => {
   const t = e.target.closest('button,[data-act]'); if (!t) return;
@@ -3014,6 +3135,7 @@ document.addEventListener('click', (e) => {
   if (d.act === 'adsoff') return adsOff();
   if (d.act === 'adscopy') return adsCopy();
   if (d.adsbs) return adsBs(d.adsbs);
+  if (d.act === 'admore' && S.pane && S.pane.kind === 'ads') { S.pane.more = Object.assign({}, S.pane.more, { [d.k]: !(S.pane.more || {})[d.k] }); return renderPane(); }
   if (d.act === 'adsback') { const bk = S.pane && S.pane.back; if (bk) { S.pane = bk; return renderPane(); } return closePane(); }
   if (d.act === 'mailscan') return mailScan();
   if (d.act === 'mailconnect') return mailConnect();
@@ -3128,7 +3250,7 @@ function staffOk(t, d) {
   }
   if (t.closest('#pane') && S.pane && (S.pane.kind === 'myavail' || S.pane.kind === 'namefmt' || S.pane.kind === 'home')) return true;
   if (t.closest('#pane') && S.pane && S.pane.kind === 'slotv') return d.act === 'closepane' || d.act === 'myavail';
-  if (t.closest('#pane') && S.pane && S.pane.kind === 'ads') return ['closepane', 'adsload', 'adscopy', 'adsback'].includes(d.act) || !!d.adsbs;   // 보기 · 복사 · 부산 상영 고르기(이 기기에만)만 — 열쇠 넣기 · 끊기는 HB
+  if (t.closest('#pane') && S.pane && S.pane.kind === 'ads') return ['closepane', 'adsload', 'adscopy', 'adsback', 'admore'].includes(d.act) || !!d.adsbs;   // 보기 · 더 보기 · 복사 · 부산 상영 고르기(이 기기에만)만 — 열쇠 넣기 · 끊기는 HB
   if (d.tab || d.week !== undefined || d.month !== undefined || d.mview || d.theme !== undefined || d.calf || d.ext || d.me || d.mwk || d.calday || d.gowk || d.img || d.visit || d.pick) return true;
   return !!d.act && STAFF_ACTS.has(d.act);
 }
