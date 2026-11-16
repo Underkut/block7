@@ -43,7 +43,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, wkeysOf, worshipOn, worshipClash, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange };`, ctx);
+  stayPeriod, dayS, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, wkeysOf, worshipOn, worshipClash, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -147,6 +147,7 @@ sc.eq('⑨ 주일 + 금토일월', A.stayDates(V('2026-11-15', '금토일월')),
 sc.eq('⑨ 주일 + 목금토일 (성탄 주간)', A.stayDates(V('2025-12-28', '목금토일')), ['2025-12-25', '2025-12-26', '2025-12-27', '2025-12-28']);
 sc.eq('⑨ 수요일 + 수목 (송구영신)', A.stayDates(V('2025-12-31', '수목')), ['2025-12-31', '2026-01-01']);
 sc.eq('⑨ 목요일 + 비어 있음 → 그 날 하루', A.stayDates(V('2025-12-25', '')), ['2025-12-25']);
+sc.eq('⑨ 요일 글 (1116-2 A): 하루만 주일 · 묶을 땐 일', [A.dayS('일'), A.dayS('토일'), A.dayS('금토일'), A.dayS('금')], ['주일', '토일', '금토일', '금']);
 sc.eq('⑨ 머무는 기간 글 (R10): 금토주일 · 달 넘김 · 하루 · 비어 있음(토~주일)', [A.stayPeriod(V('2026-11-15', '금토일')), A.stayPeriod(V('2026-11-01', '토일')), A.stayPeriod(V('2025-12-31', '')), A.stayPeriod(V('2026-11-15', ''))],
   ['11/13(금)~15(주일)', '10/31(토)~11/1(주일)', '12/31(수)', '11/14(토)~15(주일)']);
 sc.eq('⑨ 머무는 날이 이어지는가: 금토일 예 · 수토일 아니오', [A.stayWhole(V('2026-11-15', '금토일')), A.stayWhole(V('2026-11-15', '수토일'))], [true, false]);
@@ -892,12 +893,12 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   const bs = A.exportRows(b, 'busan', '2026-11', {});
   sc.eq('㉜ 부산 요약: 머리 · 금요 · 주일 · LL 인도 칸 · 숙소 · 금액(숫자) · 취소 기한 · 동행',
     [bs[0], bs[1], bs[2].slice(4, 8)], [['날짜', '요일', '교역자', '머무는 날', '금요예배', '금요 인도', '주일 인도', 'LL 인도', '숙소', '금액', '취소 기한', '동행'],
-      ['11/8', '주일', '가가', '금토주일', 'AWAKE', '교역자', '라라', '중계', '호텔 가', 90000, '11/5(목)', '스텝'], ['ENCOUNTER', '', '교역자', '']]);
+      ['11/8', '주일', '가가', '금토일', 'AWAKE', '교역자', '라라', '중계', '호텔 가', 90000, '11/5(목)', '스텝'], ['ENCOUNTER', '', '교역자', '']]);
   const mine = A.exportRows(b, 'mine', '2026-11', { today: '2026-11-01', pid: 'a' });
   sc.eq('㉜ 내 일정(목록): 이름 머리 · 날짜순 · 부산 줄에 인도 한 줄', [mine[0][0], mine[1], mine.slice(2).map(r => [r[0], r[2], r[3], r[4]])],
-    ['가가 님의 일정 · 11/1 ~ 12/26', ['날짜', '요일', '갈래', '맡은 일', '부산 인도'], [['11/6~11/8', '부산', '금토주일 · 호텔 가', 'AWAKE 인도, 주일예배 · 라라, LL 중계'], ['11/8', '주일', '1부 설교', '']]]);
+    ['가가 님의 일정 · 11/1 ~ 12/26', ['날짜', '요일', '갈래', '맡은 일', '부산 인도'], [['11/6~11/8', '부산', '금토일 · 호텔 가', 'AWAKE 인도, 주일예배 · 라라, LL 중계'], ['11/8', '주일', '1부 설교', '']]]);
   const mg = A.exportRows(b, 'mine', '2026-11', { today: '2026-11-01', pid: 'a', grid: true });
-  sc.eq('㉜ 내 일정(8주 표): 한 줄이 한 주 · 부산 칸 · 부산 인도 칸', [mg[1], mg.length, mg[2].slice(4)], [['주', '주일', '수', '금', '부산', '부산 인도'], 10, ['11/6~11/8 금토주일', 'AWAKE 인도, 주일예배 · 라라, LL 중계']]);
+  sc.eq('㉜ 내 일정(8주 표): 한 줄이 한 주 · 부산 칸 · 부산 인도 칸', [mg[1], mg.length, mg[2].slice(4)], [['주', '주일', '수', '금', '부산', '부산 인도'], 10, ['11/6~11/8 금토일', 'AWAKE 인도, 주일예배 · 라라, LL 중계']]);
   sc.eq('㉜ 성도 인도자의 내 일정: 부산 방문에 들지 않아도 그 예배 날에 부산 "주일예배 인도" 한 줄(내 이름은 빼고 · 인도 갈래로 셈)',
     [A.myItems(b, 'l', '2026-11-01', '2026-11-30').map(r => [r.kind, r.date, A.itemLabel(r)]), A.myAhead(b, 'l', '2026-11-01', 8).tally.lead, A.myWeeks(b, 'l', '2026-11-08', 1)[0].bl.length,
       A.exportRows(b, 'mine', '2026-11', { today: '2026-11-01', pid: 'l' })[2].slice(2, 4)], [[['blead', '2026-11-08', '주일예배 인도']], 1, 1, ['부산', '주일예배 인도']]);
