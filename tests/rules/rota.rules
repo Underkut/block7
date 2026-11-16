@@ -22,6 +22,9 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt', 'ui']);
         allow delete: if isOwner() || (signedIn() && request.auth.uid == sid);
       }
+      match /ext/{id} {
+        allow read: if isOwner() || isMember();
+      }
     }
     // ── 교역자 로테이션 — 여기까지 ──
   }

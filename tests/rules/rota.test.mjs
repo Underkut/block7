@@ -42,6 +42,12 @@ await t('교역자는 HB 사진을 못 지운다', ga.doc('rota/hb/img/x1').dele
 await t('교역자는 자기 사진을 지운다', ga.doc('rota/hb/img/g1').delete(), true);
 await t('팀 밖 사람은 사진을 못 읽는다', out.doc('rota/hb/img/x1').get(), false);
 await t('HB 는 사진을 쓰고 지운다(예전과 같음)', hb.doc('rota/hb/img/x2').set({ d: 'z' }).then(() => hb.doc('rota/hb/img/x2').delete()), true);
+await env.withSecurityRulesDisabled(async (c) => { await c.firestore().doc('rota/hb/ext/worship').set({ services: [] }); });
+await t('HB 는 받은 예배팀 일정을 읽는다 (R13)', hb.doc('rota/hb/ext/worship').get(), true);
+await t('팀 교역자도 읽는다', ga.doc('rota/hb/ext/worship').get(), true);
+await t('팀 밖 사람은 못 읽는다', out.doc('rota/hb/ext/worship').get(), false);
+await t('HB 도 예배팀 일정에 못 쓴다(서버만)', hb.doc('rota/hb/ext/worship').set({ services: [1] }), false);
+await t('교역자는 예배팀 일정에 못 쓴다', ga.doc('rota/hb/ext/worship').set({ services: [1] }), false);
 await t('팀에서 빠지면(HB 가 이메일 지움) 더는 못 읽는다', hb.doc('rota/hb').set({ team: ['ra@example.com'] }, { merge: true }).then(() => ga.doc('rota/hb').get()), false);
 await t('… 자기 칸에도 못 쓴다', ga.doc('rota/hb/staff/uga').set({ email: 'ga@example.com', at: 9 }), false);
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
