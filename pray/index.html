@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1116-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1116-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1116-1';
+const APP_VERSION = 'v. 26-1116-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2407,18 +2407,21 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .wk-r{display:flex;align-items:center;gap:2px;min-height:44px}
 .wk-r:not(.wk-h):nth-child(even){background:color-mix(in srgb,var(--tx) 4%,transparent);border-radius:10px}
 .wk-c+.wk-c{box-shadow:inset 1px 0 color-mix(in srgb,var(--tx) 9%,transparent)}
-.wk-h{min-height:34px;color:var(--tx2);font-size:13px}
+.wk-h{min-height:40px;color:var(--tx2);font-size:13px}
 .wk-g{flex:0 0 38%;max-width:200px;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;height:34px;padding:0 10px;margin-right:6px;border:0;border-radius:9px;background:var(--gc,transparent);color:#fff;font:inherit;font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
 .wk-h .wk-g{background:transparent}
 .wk-g span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wk-g small{opacity:.6;font-weight:400;font-size:11.5px}
 .wk-c{flex:1;min-width:0;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:0}
-.wk-h .wk-c{height:34px;cursor:default}
+.wk-h .wk-c{height:40px;cursor:default}
 .wk-c.sun{color:var(--danger,#e05555)}
 .wk-h .wk-c.now{color:var(--ac);font-weight:700}
-.wk-dot{width:20px;height:20px;border-radius:50%;background:var(--ac);display:block;animation:wkPop .22s cubic-bezier(.22,.8,.24,1)}
-@keyframes wkPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-@media (prefers-reduced-motion:reduce){.wk-dot{animation:none}}
+.wk-dot{width:20px;height:20px;border-radius:50%;background:var(--ac);display:block;opacity:0;transition:opacity .28s ease}
+.wk-c.on .wk-dot{opacity:1}
+.wk-c[data-wk]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.wk-h .wk-c{flex-direction:column;line-height:1.15}
+.wk-n{font-size:10.5px;font-weight:400;opacity:.5;color:var(--tx2)}
+@media (prefers-reduced-motion:reduce){.wk-dot{transition:none}}
 [data-lp]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* 길게 누르기 단추 · 줄 — 글자 선택 · 미리보기가 뜨지 않게 (P2-3) */
 .tag{height:30px;padding:0 12px;border-radius:15px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;background:var(--s1);color:var(--tx2);border:1px solid var(--bd)}
 .tag.g{background:var(--gc);color:#fff;border-color:transparent}
@@ -4250,13 +4253,15 @@ function lineView(l) {
 // 요일별 기도 표 (HB 2026-11-16) — 세로 = 그룹(대분류, 지도 차례) · 가로 = 주일 ~ 토. 칸을 눌러 그 그룹의 기도 요일(g.days)을 켜고 끈다
 LAYERS.week = () => {
   const tops = mapTopsAll(), wd = parseYmd(TODAY).getDay();
-  const head = '<div class="wk-r wk-h"><span class="wk-g"></span>' + WEEK.map((w, d) => '<span class="wk-c' + (d === 0 ? ' sun' : '') + (d === wd ? ' now' : '') + '">' + (d === 0 ? '주일' : w) + '</span>').join('') + '</div>';
+  const head = '<div class="wk-r wk-h"><span class="wk-g"></span>' + WEEK.map((w, d) => '<span class="wk-c' + (d === 0 ? ' sun' : '') + (d === wd ? ' now' : '') + '">' + (d === 0 ? '주일' : w) + '<small class="wk-n" data-wkn="' + d + '">' + wkCount(d) + '</small></span>').join('') + '</div>';
+  // 칸은 data-a 없이 — 누르기 · 끌어 칠하기를 아래 WK 손짓이 함께 받는다. 동그라미는 늘 두고 켜짐(on)만 바꿔 디졸브로 보인다
   const rows = tops.map(g => '<div class="wk-r"><button class="wk-g" style="--gc:' + esc(g.color) + '" data-a="open-group" data-id="' + g.id + '"><span>' + esc(g.name) + '</span><small>' + groupHeadcount(DB, g) + '</small></button>' +
-    WEEK.map((w, d) => { const on = g.days.indexOf(d) >= 0; return '<button class="wk-c' + (d === wd ? ' now' : '') + '" data-a="week-day" data-id="' + g.id + '" data-v="' + d + '" aria-pressed="' + on + '" aria-label="' + esc(g.name) + ' ' + w + '요일">' + (on ? '<i class="wk-dot"></i>' : '') + '</button>'; }).join('') + '</div>').join('');
-  const b = '<div class="hint">칸을 눌러 그룹마다 기도할 요일을 정합니다 · 요일을 하나도 안 고른 그룹은 매일 나옵니다</div><div class="wk">' + head + rows + '</div>' +
-    '<div class="hint" style="padding-top:14px">지도의 요일 단추를 켜 두면 오늘 요일 그룹만 지도 · 한 장 기도 · There 차례에 나옵니다.</div>';
+    WEEK.map((w, d) => { const on = g.days.indexOf(d) >= 0; return '<button class="wk-c' + (on ? ' on' : '') + (d === wd ? ' now' : '') + '" data-wk="' + g.id + '" data-v="' + d + '" aria-pressed="' + on + '" aria-label="' + esc(g.name) + ' ' + w + '요일"><i class="wk-dot"></i></button>'; }).join('') + '</div>').join('');
+  const b = '<div class="hint">칸을 누르거나 끌어 지나가며 그룹마다 기도할 요일을 정합니다 · 요일을 하나도 안 고른 그룹은 매일 나옵니다</div><div class="wk">' + head + rows + '</div>' +
+    '<div class="hint" style="padding-top:14px">요일 아래 숫자 = 그날 지도에 나오는 그룹 수(매일 그룹 포함) · 지도의 요일 단추를 켜 두면 오늘 요일 그룹만 지도 · 한 장 기도 · There 차례에 나옵니다.</div>';
   return { title: '요일별 기도', body: b };
 };
+function wkCount(d) { return mapTopsAll().filter(g => groupOnDay(g, d)).length; }
 LAYERS.groups = () => {
   const tops = topGroups(DB);
   const b = '<div class="hint">길게 눌러 지도의 순서를 바꿉니다 · 밀면 지우기 (서브 그룹도 함께)</div><div class="rows" data-sort="groups">' + tops.map(g =>
@@ -5318,12 +5323,31 @@ ACT['map-day'] = () => {
   mapFlip(() => { DB.set.dayOn = on; save(); renderView(); });
   toast(on ? '오늘(' + wd + ') 기도할 그룹만\n보여 드립니다' : '모든 그룹을\n다시 보여 드립니다');
 };
-ACT['week-day'] = el => {
-  const g = findG(DB, el.dataset.id); if (!g) return;
-  const d = +el.dataset.v, k = g.days.indexOf(d);
-  if (k >= 0) g.days.splice(k, 1); else { g.days.push(d); g.days.sort(); }
-  save(); refresh();
-};
+// 요일별 기도 표 — 누르면 그 칸, 누른 채 지나가면(가로 · 세로 · 꺾어도) 지나간 칸을 처음 칸의 반대 상태로 칠한다. 화면만 바로 바꾸고 저장은 손 뗄 때 한 번
+const WK = { st: null };
+function wkPaint(c) {
+  const st = WK.st, k = c.dataset.wk + ':' + c.dataset.v; if (!st || st.seen.has(k)) return;
+  st.seen.add(k);
+  const g = findG(DB, c.dataset.wk); if (!g) return;
+  const d = +c.dataset.v, has = g.days.indexOf(d) >= 0;
+  if (st.val && !has) { g.days.push(d); g.days.sort(); } else if (!st.val && has) g.days.splice(g.days.indexOf(d), 1); else return;
+  c.classList.toggle('on', st.val); c.setAttribute('aria-pressed', st.val);
+  const lay = c.closest('.layer'), n = lay && lay.querySelector('[data-wkn="' + d + '"]'); if (n) n.textContent = wkCount(d);
+}
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest && e.target.closest('.wk-c[data-wk]'); if (!c || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  WK.st = { id: e.pointerId, val: !c.classList.contains('on'), seen: new Set() };
+  try { c.releasePointerCapture(e.pointerId); } catch (er) {}
+  wkPaint(c);
+});
+document.addEventListener('pointermove', e => {
+  if (!WK.st || e.pointerId !== WK.st.id) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest && el.closest('.wk-c[data-wk]');
+  if (c) wkPaint(c);
+});
+function wkEnd(e) { if (!WK.st || (e && e.pointerId !== WK.st.id)) return; WK.st = null; save(); renderView(); }
+document.addEventListener('pointerup', wkEnd); document.addEventListener('pointercancel', wkEnd);
 ACT['map-pick-mode'] = () => {
   UI.pickMode = ((UI.pickMode || 0) + 1) % 3;   // 0 꺼짐(모두 보임) → 1 고르는 중 → 2 고른 것만
   const b = mapBtnEl('pick');
@@ -6395,11 +6419,19 @@ document.addEventListener('pointerdown', e => {
     st.rects = st.items.map(x => x.getBoundingClientRect()); st.i0 = st.items.indexOf(b); st.to = st.i0;
     b.classList.add('bdrag'); try { b.setPointerCapture(st.id); } catch (er) {}
     if (navigator.vibrate) navigator.vibrate(8);
+    // 요일 단추는 그대로 더 누르고 있으면(떼지 않아도) 요일별 기도 표 — 그 사이 옆으로 끌면 예전처럼 순서 바꾸기
+    if (b.dataset.bk === 'day') BD.t = setTimeout(() => {
+      if (BD.st !== st || st.to !== st.i0 || Math.abs((st.lx || st.x0) - st.x0) >= 12) return;
+      BD.st = null; BD.swallow = Date.now(); b.classList.remove('bdrag'); b.style.transform = '';
+      try { b.releasePointerCapture(st.id); } catch (er) {}
+      pushLayer({ type: 'week' });
+    }, 320);
   }, 380);
 });
 document.addEventListener('pointermove', e => {
   const st = BD.st; if (!st || e.pointerId !== st.id) return;
   if (!st.on) { if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) > 8) { clearTimeout(BD.t); BD.st = null; } return; }
+  st.lx = e.clientX;
   const dx = e.clientX - st.x0; st.b.style.transform = 'translateX(' + dx + 'px) scale(1.18)';
   const cx = st.rects[st.i0].left + st.rects[st.i0].width / 2 + dx;
   let to = st.i0;
@@ -6417,9 +6449,6 @@ function bdEnd(e) {
   if (st.to !== st.i0 && e && e.type === 'pointerup') {
     const keys = st.items.map(x => x.dataset.bk), k = keys.splice(st.i0, 1)[0]; keys.splice(st.to, 0, k);
     setDevPref('mapBtns', keys.concat(mapBtnOrder().filter(x => keys.indexOf(x) < 0)));   // 지금 안 보이는 단추 자리는 뒤에
-  } else if (st.b.dataset.bk === 'day' && e && e.type === 'pointerup' && Math.abs(e.clientX - st.x0) < 12) {
-    // 요일 단추는 길게 눌렀다 그 자리에서 떼면 요일별 기도 표 (옆으로 끌면 예전처럼 순서 바꾸기)
-    mapKeepScroll(renderView); pushLayer({ type: 'week' }); return;
   }
   mapKeepScroll(renderView);
 }
