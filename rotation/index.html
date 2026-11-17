@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1117-2 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 -->
+<!-- 교역자 로테이션 v. 26-1117-3 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -547,7 +547,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1117-2';
+const APP_VERSION = 'v. 26-1117-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1254,6 +1254,10 @@ function conflictText(book, c, pm) {
    members 는 서버가 이미 우리 명단(wkeys) 분만 남겼다. 겹침: 그 날 부산에 머무는데 분당 예배팀에 듦 → 빨강(미정이면 노랑).
    wkeys = 서버가 이름을 맞출 때 쓰는 명단(사람 id → 이름 · 다른 이름) — HB 앱이 문서 맨 위에 적는다(책 밖). */
 function wkeysOf(book) { const o = {}; for (const p of live(normBook(book).people).slice(0, 200)) { const n = [p.name].concat(p.alias || []).filter(Boolean); if (n.length) o[p.id] = n; } return o; }
+// 계정에서 온 명단과 같은가 — 칸 차례는 보지 않는다 (1117-3). 파이어베이스는 칸을 이름순으로 돌려주는데 wkeysOf 는 사람 목록 차례라,
+//   차례로 견주면 언제나 '다르다' → 저장 → 받음 → 또 저장이 끝없이 돌아 1초에 수십 번 다시 그렸다(터치가 먹히지 않고 화면이 깜박인 까닭, R13 부터)
+function sameWkeys(a, b) { const x = a || {}, y = b && typeof b === 'object' ? b : {}, kx = Object.keys(x).sort(), ky = Object.keys(y).sort();
+  return kx.length === ky.length && kx.every((k, i) => k === ky[i] && JSON.stringify(x[k]) === JSON.stringify(y[k])); }
 function worshipOn(ext, pid, date) {
   const out = [];
   for (const s of (ext && Array.isArray(ext.services) ? ext.services : [])) if (s && s.date === date) {
@@ -1959,7 +1963,7 @@ function startOwner(u) {
     const r = pickDoc(S.book, d.exists ? d.data() : null);
     S.book = r.book; lsSet(BOOK_KEY, S.book); FB.synced = true; FB.err = '';
     if (d.exists && uiFromCloud(d.data().ui)) refreshTabs();
-    const ab = staffAbsorb(), team = JSON.stringify(teamOf(S.book)) !== JSON.stringify((d.exists && d.data().team) || []) || (d.exists && (JSON.stringify(wkeysOf(S.book)) !== JSON.stringify(d.data().wkeys || {}) || !d.data().wpull));   // 문서가 없으면 만들지 않는다(빈 기기 · 팀 밖)
+    const ab = staffAbsorb(), team = JSON.stringify(teamOf(S.book)) !== JSON.stringify((d.exists && d.data().team) || []) || (d.exists && (!sameWkeys(wkeysOf(S.book), d.data().wkeys) || !d.data().wpull));   // 문서가 없으면 만들지 않는다(빈 기기 · 팀 밖)
     if (r.push || ab || team) cloudSave();
     bsMigrate();
     if (!editing()) rerender();

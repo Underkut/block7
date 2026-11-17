@@ -297,6 +297,16 @@ console.log('⑪ (1116-2 C) 숙소 판: 숙소 쓰는 사람 · 호텔 / 성도�
   await hb.evaluate(() => closePane()); await ga.evaluate(() => closePane()); await sleep(300);
 }
 
+console.log('⑫ 가만히 있는 HB 앱 — 계정에 다시 쓰고 다시 그리기를 되풀이하지 않는다 (1117-3, 터치가 먹히지 않던 까닭)');
+{ // id 가 앞서는 분(p0)을 뒤에 더하면 이름 명단(wkeys)의 칸 차례가 계정(파이어베이스는 칸을 이름순으로 돌려준다)과 달라진다
+  await hb.evaluate(() => { put(S.book, 'people', { id: 'p0', name: '사아자', roles: ['offer'], alias: ['사아'] }, byNow(), Date.now()); saveBook(); });
+  await until(async () => { const d = await getDoc('rota/' + HB); return d.wkeys && d.wkeys.p0; }); await sleep(1500);
+  const cnt = () => hb.evaluate(() => { window.__n = { save: 0, draw: 0 }; const s = cloudSave, r = render; window.cloudSave = () => { __n.save++; return s(); }; window.render = () => { __n.draw++; return r(); }; });
+  await cnt(); const at0 = (await getDoc('rota/' + HB)).at; await sleep(4000);
+  const nn = await hb.evaluate(() => __n), at1 = (await getDoc('rota/' + HB)).at;
+  ok('⑫ 4초 동안 계정에 쓰지 않았고(at 그대로) 다시 그리지도 않았다', [nn.save, nn.draw, at1 === at0], [0, 0, true]);
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });

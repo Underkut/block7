@@ -45,7 +45,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
-  stayPeriod, dayS, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, wkeysOf, worshipOn, worshipClash, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange,
+  stayPeriod, dayS, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, wkeysOf, sameWkeys, worshipOn, worshipClash, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange,
   normVisit, normMeet, MEET_K, MEET_G, meetText, mateText, mateLink, linkMates, colTarget, STAFF_COLS, OLD_FIELDS, WRITE_FIELD,
   STAY_ST, stayStOf, stayStName, STAY_FOR, stayForAsk, stayHotel, optReorder };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
@@ -1103,6 +1103,16 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㉟ 알약: 꾹(0.45초) = 들림 → 떼면 고치기 · 끌면 순서(놓을 때 optReorder 한 번) · 마우스는 바로 끌기 · 오른쪽 단추 = 고치기 · 교역자는 고르기만',
     [/setTimeout\(lift, 450\)/.test(g), /optReorder\(S\.book, 'stay'/.test(HTML.slice(HTML.indexOf('function spDrop('), HTML.indexOf('function spDrop(') + 600)), /'contextmenu'/.test(g), /isStaff\(\)/.test(g), /passive: false/.test(g), /spInit\(\);/.test(HTML)],
     [true, true, true, true, true, true]);
+}
+
+// ㊱ (1117-3) 계정에서 온 이름 명단(wkeys)을 칸 차례 없이 견준다 — 파이어베이스는 칸을 이름순으로 돌려준다.
+//   차례로 견주면 언제나 '다르다' → 저장 → 받음 → 또 저장이 끝없이 돌아 화면이 쉬지 않고 다시 그려졌다(터치가 먹히지 않고 깜박임)
+{
+  const mine = { pb: ['나'], p0: ['가', '가가'] }, cloud = { p0: ['가', '가가'], pb: ['나'] };
+  sc.eq('㊱ 칸 차례만 다르면 같다 · 이름 · 다른 이름 · 사람 수가 다르면 다르다 · 계정에 없으면 다르다',
+    [A.sameWkeys(mine, cloud), A.sameWkeys(mine, { p0: ['가'], pb: ['나'] }), A.sameWkeys(mine, { p0: ['가', '가가'] }), A.sameWkeys(mine, undefined), A.sameWkeys({}, undefined)],
+    [true, false, false, false, true]);
+  sc.eq('㊱ 계정에서 받을 때 wkeys 는 sameWkeys 로 견준다(JSON 차례 비교 금지)', /!sameWkeys\(wkeysOf\(S\.book\), d\.data\(\)\.wkeys\)/.test(HTML) && !/JSON\.stringify\(wkeysOf/.test(HTML), true);
 }
 
 sc.done();
