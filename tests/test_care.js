@@ -1381,4 +1381,11 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('미정 — 캘린더 일정을 만들지도 · 옮기지도 않는다', J([pl.create, pl.planCells, pl.patch, pl.del]), [[], [], [], []]);
 }
 
+// ── 미정 계획 → BLOCK7 (이름 심방 한 줄 + 물어볼 것이 하위 항목, 장소 · 방식 · 시트 내용은 안 감) ──
+{
+  const pl = { name: '가나다', place: '카페', method: '전화', why: '1. 근황\n2. 직장 이야기' };
+  const n = A.b7Note(A.qnB7Text(pl), '2026-11-18', 1, 'B1', A.qnParse(pl.why));
+  sc.eq('미정 → BLOCK7 — 이름 심방 + 물어볼 것만, 장소 · 방식은 안 감', J([n.text, n.subs, Object.keys(n).sort()]), ['가나다 심방', ['근황', '직장 이야기'], ['at', 'date', 'from', 'id', 'sec', 'subs', 'text']]);
+}
+
 sc.done();
