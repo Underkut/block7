@@ -1,7 +1,7 @@
-/* 요금 알림 (2026-10-27) — 매일 오후 3시, 개발자(HB) 한 사람에게만. 규칙은 b7bill-core.js (tests/test_b7bill.js)
+/* 요금 알림 (2026-10-27) — 6시간마다(3 · 9 · 15 · 21시), 개발자(HB) 한 사람에게만. 규칙은 b7bill-core.js (tests/test_b7bill.js)
  *
  * b7Bill()  1분 틱(b7Due → studyTick)이 함께 부른다 — 예약 작업을 늘리지 않는다
- *   15:00 넘었고 오늘 아직이면: 먼저 '오늘 했음' 을 적고(실패해도 하루 한 번만) → BigQuery 로 이번 달을 센다 → 푸시
+ *   이번 칸(6시간)에 아직이면: 먼저 '이번 칸 했음' 을 적고(실패 알림은 칸마다 한 번만) → BigQuery 로 이번 달을 센다 → 푸시
  * 필요한 설정(HB, 한 번): BigQuery 데이터 세트 `billing` + 결제 → BigQuery 내보내기(표준 사용량 비용) — docs/push/billing.md
  * 기록: b7meta/bill = { day, at, ok, cost, credits }  (보안 규칙에 없다 — 서버만)
  */
@@ -37,8 +37,8 @@ exports.b7Bill = async function b7Bill(now) {
     const s = await tx.get(ref);
     const m = s.exists ? s.data() : null;
     if (!B.shouldRun(now, m)) return false;
-    tx.set(ref, { day: B.dayKey(now), at: now }, { merge: true });
-    return { retry: !!(m && m.day === B.dayKey(now)) };   // 오늘 이미 실패 알림을 보냈으면 또 보내지 않는다
+    tx.set(ref, { day: B.slotKey(now), at: now }, { merge: true });
+    return { retry: !!(m && m.day === B.slotKey(now)) };   // 오늘 이미 실패 알림을 보냈으면 또 보내지 않는다
   });
   if (!claimed) return;
   let msg, row = null, err = "";

@@ -11,13 +11,14 @@ const B = require(path.join(__dirname, '..', 'wallet-functions', 'src', 'b7bill-
 const sc = makeScorer();
 const at = (s) => Date.parse(s + ':00+09:00');
 
-console.log('\n① 언제 보내나');
-sc.eq('14:59 — 아직', B.shouldRun(at('2026-10-27T14:59'), null), false);
-sc.eq('15:00 — 보냄', B.shouldRun(at('2026-10-27T15:00'), null), true);
-sc.eq('15:00 — 오늘 이미 했으면 안 보냄', B.shouldRun(at('2026-10-27T15:00'), { day: '2026-10-27' }), false);
-sc.eq('어제 했으면 오늘 3시에 다시', B.shouldRun(at('2026-10-27T15:01'), { day: '2026-10-26' }), true);
-sc.eq('밤 11시에 서버를 올려도 그날 한 번', B.shouldRun(at('2026-10-27T23:10'), { day: '2026-10-26' }), true);
-sc.eq('자정 넘어 새벽 — 아직 3시 전', B.shouldRun(at('2026-10-28T00:30'), { day: '2026-10-27' }), false);
+console.log('\n① 언제 보내나 — 6시간마다(3 · 9 · 15 · 21시, HB 11/17)');
+sc.eq('처음(기록 없음)이면 바로', B.shouldRun(at('2026-10-27T14:59'), null), true);
+sc.eq('15:00 칸 — 이미 했으면 안 보냄', B.shouldRun(at('2026-10-27T20:59'), { day: B.slotKey(at('2026-10-27T15:00')) }), false);
+sc.eq('21:00 — 다음 칸이라 보냄', B.shouldRun(at('2026-10-27T21:00'), { day: B.slotKey(at('2026-10-27T15:00')) }), true);
+sc.eq('새벽 2시는 전날 21시 칸', B.slotKey(at('2026-10-28T02:00')), '2026-10-27#21');
+sc.eq('새벽 3시 새 칸', B.slotKey(at('2026-10-28T03:00')), '2026-10-28#03');
+sc.eq('오전 9시 · 오후 3시 칸', [B.slotKey(at('2026-10-28T09:10')), B.slotKey(at('2026-10-28T15:00'))], ['2026-10-28#09', '2026-10-28#15']);
+sc.eq('예전 하루 기록(날짜만)이 남아 있으면 한 번 보냄', B.shouldRun(at('2026-10-27T16:00'), { day: '2026-10-27' }), true);
 sc.eq('날짜는 한국 날짜 (UTC 로는 전날 15시)', B.dayKey(at('2026-10-28T00:30')), '2026-10-28');
 sc.eq('이번 달 키', B.monthKey(at('2026-11-01T00:10')), '202611');
 
@@ -27,6 +28,7 @@ console.log('\n② 세 숫자');
   sc.eq('제목', m.title, '10월 요금 · 27일 오후 3시');
   sc.eq('본문 — 원래 − 절감 = 결과', m.body, '원래 2,650원 − 절감 1,649원\n= 1,002원');
   const usd = B.message({ cost: 1.5, credits: 0, currency: 'USD', first: '2026-10-01T00:00:00Z', n: 3 }, at('2026-10-27T15:00'));
+  sc.eq('밤 9시 칸 제목', B.message({ cost: 1, credits: 0, n: 1 }, at('2026-10-27T21:05')).title, '10월 요금 · 27일 밤 9시');
   sc.eq('원화가 아니면 단위를 밝힌다', usd.body.split('\n')[1], '= 2원 (USD)');
   const none = B.message({ cost: null, credits: null, n: 0 }, at('2026-10-27T15:00'));
   sc.eq('기록이 아직 없으면 그렇게 말한다', none.body.startsWith('아직 결제 기록이 안 들어왔어요'), true);
@@ -49,8 +51,8 @@ console.log('\n④ 질의');
   sc.eq('저장할 곳이 없을 때', B.failMessage(at('2026-10-27T15:00'), 'Not found: Dataset block7-8f24e:billing was not found in location asia-northeast3').body.startsWith('저장할 곳(billing)을 찾지 못했어요'), true);
   sc.eq('표가 아직 없을 때 = 기록이 아직', B.failMessage(at('2026-10-27T15:00'), 'Error: Table block7-8f24e:billing.gcp_billing_export_v1_*: Wildcard table matches no table').body.startsWith('아직 결제 기록이 안 들어왔어요'), true);
   sc.eq('다른 오류는 까닭을 한 줄 싣는다', B.failMessage(at('2026-10-27T15:00'), 'Access Denied: bigquery.jobs.create').body.includes('까닭: Access Denied'), true);
-  sc.eq('오늘 실패 → 한 시간 뒤 다시', [B.shouldRun(at('2026-10-27T15:30'), { day: '2026-10-27', ok: false, at: at('2026-10-27T15:00') }), B.shouldRun(at('2026-10-27T16:00'), { day: '2026-10-27', ok: false, at: at('2026-10-27T15:00') })], [false, true]);
-  sc.eq('오늘 성공했으면 다시 안 함', B.shouldRun(at('2026-10-27T18:00'), { day: '2026-10-27', ok: true, at: at('2026-10-27T15:00') }), false);
+  sc.eq('이번 칸 실패 → 한 시간 뒤 다시', [B.shouldRun(at('2026-10-27T15:30'), { day: '2026-10-27#15', ok: false, at: at('2026-10-27T15:00') }), B.shouldRun(at('2026-10-27T16:00'), { day: '2026-10-27#15', ok: false, at: at('2026-10-27T15:00') })], [false, true]);
+  sc.eq('이번 칸 성공했으면 다시 안 함', B.shouldRun(at('2026-10-27T18:00'), { day: '2026-10-27#15', ok: true, at: at('2026-10-27T15:00') }), false);
 }
 
 console.log('\n⑤ 받는 사람은 개발자 한 사람');

@@ -1,6 +1,6 @@
 /* 요금 알림 — 서버 몫의 규칙 (firebase 없이 돈다 → tests/test_b7bill.js)
  *
- * 매일 오후 3시(한국)에 개발자(HB) 한 사람에게 "이번 달 지금까지 원래 비용 · 절감액 · 결과" 를 보낸다.
+ * 6시간마다(한국 새벽 3시 · 오전 9시 · 오후 3시 · 밤 9시, HB 2026-11-17) 개발자(HB) 한 사람에게 "이번 달 지금까지 원래 비용 · 절감액 · 결과" 를 보낸다.
  * 숫자는 결제 화면과 같은 기록 — 결제를 BigQuery 로 내보낸 표(standard usage cost)에서 센다.
  *   cost    = 원래 비용 (화면의 '비용')
  *   credits = 무료 양 등으로 깎인 것 (음수로 적혀 있다 → 화면의 '절감액')
@@ -8,18 +8,23 @@
  * ⚠️ 받는 사람은 개발자 계정 하나뿐이다 — 다른 사용자에게는 가지 않는다 (b7bill.js 의 DEV_EMAIL).
  */
 const OFF = 9 * 3600e3;
-const SEND_HM = 15 * 60;            // 오후 3시
+const SEND_HM = 15 * 60;            // 기준 시각 오후 3시 — 여기서 6시간마다
+const EVERY_H = 6;                  // HB 2026-11-17: 하루 한 번 → 6시간마다
+const SLOT_LABEL = { 3: "새벽 3시", 9: "오전 9시", 15: "오후 3시", 21: "밤 9시" };
 const kst = (ms) => { const d = new Date(ms + OFF); return { y: d.getUTCFullYear(), mo: d.getUTCMonth() + 1, d: d.getUTCDate(), hm: d.getUTCHours() * 60 + d.getUTCMinutes() }; };
 const z = (n) => String(n).padStart(2, "0");
 const dayKey = (ms) => { const w = kst(ms); return `${w.y}-${z(w.mo)}-${z(w.d)}`; };
 const monthKey = (ms) => { const w = kst(ms); return `${w.y}${z(w.mo)}`; };   // invoice.month 모양 'YYYYMM'
 
-// 1분 틱마다 묻는다 — 15:00 넘었고 오늘 아직 안 했으면 (늦은 틱 · 서버를 3시 넘어 올린 날도 그날 한 번)
-// 오늘 읽기에 실패했으면 한 시간마다 다시 (기록이 막 들어오기 시작한 날 · 잠깐의 오류)
+// 칸(slot) = 3 · 9 · 15 · 21시에 시작하는 여섯 시간. 새벽 0~3시는 전날 21시 칸.
+const SHIFT = (SEND_HM / 60) % EVERY_H;   // 3
+const slotHour = (ms) => { const h = Math.floor(kst(ms).hm / 60); return (Math.floor(((h - SHIFT + 24) % 24) / EVERY_H) * EVERY_H + SHIFT) % 24; };
+const slotKey = (ms) => `${dayKey(ms - SHIFT * 3600e3)}#${z(slotHour(ms))}`;
+// 1분 틱마다 묻는다 — 이번 칸에 아직 안 했으면 (늦은 틱 · 서버를 칸 중간에 올려도 그 칸 한 번)
+// 이번 칸 읽기에 실패했으면 한 시간마다 다시
 const RETRY_MS = 3600e3;
 function shouldRun(now, meta) {
-  if (kst(now).hm < SEND_HM) return false;
-  if (!meta || meta.day !== dayKey(now)) return true;
+  if (!meta || meta.day !== slotKey(now)) return true;
   return meta.ok === false && now - (meta.at || 0) >= RETRY_MS;
 }
 // 표가 아직 없다 = 내보내기를 켰지만 첫 기록이 아직 (구글이 몇 시간 뒤에 표를 만든다)
@@ -41,7 +46,7 @@ const won = (n) => Math.round(Number(n) || 0).toLocaleString("ko-KR") + "원";
  * 돌려주는 것 { title, body } */
 function message(row, now) {
   const w = kst(now);
-  const title = `${w.mo}월 요금 · ${w.d}일 오후 3시`;
+  const title = `${w.mo}월 요금 · ${w.d}일 ${SLOT_LABEL[slotHour(now)]}`;
   if (!row || !Number(row.n)) {
     return { title, body: "아직 결제 기록이 안 들어왔어요.\n내보내기를 켠 뒤 하루쯤 걸려요." };
   }
@@ -68,4 +73,4 @@ function failMessage(now, err) {
   };
 }
 
-module.exports = { SEND_HM, RETRY_MS, notReady, kst, dayKey, monthKey, shouldRun, query, message, failMessage, won };
+module.exports = { SEND_HM, EVERY_H, slotKey, slotHour, RETRY_MS, notReady, kst, dayKey, monthKey, shouldRun, query, message, failMessage, won };
