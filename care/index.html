@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1117-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1117-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -1058,7 +1058,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1117-1';
+const APP_VERSION = 'v. 26-1117-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -3816,7 +3816,8 @@ async function sendB7(L) {
   if (!note) { toast(norm(L.form.text) ? '날짜를 골라 주세요' : '보낼 글을 적어 주세요'); return; }
   if (L.qn) {   // 1110-Q 다음 심방 질문 → '이름 심방' + 하위 항목 (시트에는 적지 않는다)
     if (!USER || !DB) { toast('로그인한 뒤에 보낼 수 있습니다'); return; }
-    await inboxPush(note); closeLayer(true); toast('BLOCK7 할일로 보냈습니다\n' + md(note.date) + ' · ' + note.text + (note.subs ? '\n하위 항목 ' + note.subs.length + '개' : '')); return;
+    await inboxPush(note); if (L.planId) { const m = Object.assign({}, saved().planB7 || {}); m[L.planId] = note.date; save({ planB7: m }); }
+    closeLayer(true); toast('BLOCK7 할일로 보냈습니다\n' + md(note.date) + ' · ' + note.text + (note.subs ? '\n하위 항목 ' + note.subs.length + '개' : '')); return;
   }
   if (L.pname) {   // 1108-A2 사람 화면에서 — 할 일 줄이 없으니 쪽지만 (시트에는 적지 않는다)
     if (!USER || !DB) { toast('로그인한 뒤에 보낼 수 있습니다'); return; }
@@ -4499,11 +4500,17 @@ function lB7Send(L) {
 function lB7SendQn(L) {
   const f = L.form, t = today(), dchip = (d, lb) => '<button class="opt" data-act="b7date" data-v="' + d + '" aria-pressed="' + (f.date === d) + '">' + lb + '</button>';
   let h = lhead('BLOCK7 할일로', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  const was = L.planId && (saved().planB7 || {})[L.planId];
+  if (was) h += '<p class="note" style="margin-top:14px">' + md(was) + ' 할일로 이미 보냈습니다 — 다시 보내면 BLOCK7 에 하나 더 생깁니다.</p>';
   h += '<div class="fsec">언제</div><div class="fld"><div class="opts">' + dchip(t, '오늘') + dchip(ymdAdd(t, 1), '내일') + dchip(ymdAdd(t, 2), '모레') + '</div><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜" style="margin-top:8px"></div>';
   h += '<div class="fsec">할 일</div><div class="fld"><input class="inp" data-f="text" value="' + esc(f.text) + '" maxlength="200" aria-label="보낼 글"></div>';
   h += '<div class="fsec">하위 항목<small style="margin-left:6px">' + L.subs.length + '개</small></div>' + (L.subs.length ? '<ol class="qnprev">' + L.subs.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '<p class="muted">아직 안 물어본 질문이 없습니다 — 할 일 한 줄만 갑니다.</p>');
   h += '<p class="hint">BLOCK7 이 열리면 그날 <b>첫 시간 구간</b>에 할 일 하나로 들어가고, 질문들은 그 아래 하위 항목이 됩니다.<br>체크한(물어본) 질문은 보내지 않습니다. 나눈 이야기는 보내지 않습니다.</p>';
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="b7send">BLOCK7 로 보내기</button></div>';
+}
+function openB7SendPlan(id) {   // 날짜 미정 계획 → '이름 심방' 한 줄 + 물어볼 것이 하위 항목 (시트에는 적지 않는다)
+  const p = (DATA.plans || []).find(x => x.id === id); if (!p) return;
+  openLayer('b7send', { qn: true, planId: id, vkey: null, subs: qnParse(p.why).map(x => norm(x).slice(0, 200)).filter(Boolean).slice(0, QN_MAX), form: { date: today(), text: qnB7Text(p) } });
 }
 function openB7SendQn(vkey) {
   const v = byKey(vkey); if (!v) return;
@@ -5123,7 +5130,7 @@ function planCard(p) {
     '<span class="pbody"><span class="c-top"><span class="nm">' + whoHtml(p.name) + '</span><span class="roles">' + esc(!p.date ? '날짜 미정' : p.time || '시간 미정') + '</span><span class="sp"></span>' + meth({ methodLabel: p.method }) + '</span>' +
     (p.place ? '<span class="muted">' + esc(p.place) + '</span>' : '') + (p.why ? '<span class="c-txt">' + esc(p.why) + '</span>' : '') +
     '<span class="muted pcal">' + (p.evId === PLAN_NOCAL ? '캘린더에 넣지 않음' : p.evId ? IC.cal + '\'심방\' 캘린더' : '캘린더에 넣는 중…') + (p.date ? ' · ' + relDay(p.date, t) : '') + '</span></span></button>' +
-    '<div class="pacts"><button class="btn' + (p.date && p.date <= t ? ' pri' : '') + '" data-act="plan2rec" data-v="' + esc(p.id) + '">기록 쓰기</button></div></div>';
+    '<div class="pacts"><button class="btn' + (p.date && p.date <= t ? ' pri' : '') + '" data-act="plan2rec" data-v="' + esc(p.id) + '">기록 쓰기</button>' + (p.date ? '' : '<button class="btn" data-act="planb7" data-v="' + esc(p.id) + '">BLOCK7으로 보내기</button>') + '</div></div>';
 }
 function vPlan() {
   const t = today(), pf = prefs(), all = M().visits.filter(v => !v.archived);
@@ -7055,6 +7062,7 @@ document.addEventListener('click', e => {
     if (a === 'qntick') it[i] = { t: it[i].t, done: !it[i].done }; else it.splice(i, 1);
     qnSet(vv, it); return;
   }
+  if (a === 'planb7') { openB7SendPlan(v); return; }
   if (a === 'qnb7') { openB7SendQn(v); return; }
   if (a === 'addnopen') { S.addn = v || null; render(); const t = $('addnText'); if (t) t.focus(); return; }
   if (a === 'addnsave') {
