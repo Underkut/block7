@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1115-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1117-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -1058,7 +1058,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1115-16';
+const APP_VERSION = 'v. 26-1117-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2511,7 +2511,7 @@ function recCalSync(visits, plans, events, o) {
 // 계획 → 새 기록 꼴 (기록 쓰기)
 function recordFromPlan(p, people) {
   const per = (people && people[whoKeys(p.name)[0]]) || {};
-  return Object.assign(blankRecord(p.date, { roles: per.roles || [] }), { name: p.name, method: p.method, place: p.place });
+  return Object.assign(blankRecord(p.date || today(), { roles: per.roles || [] }), { name: p.name, method: p.method, place: p.place });
 }
 // 계획 탭에 쓸 줄 (머리글 이름으로 자리 찾기)
 const PLAN_FIELDS = { '계획ID': 'id', '성도': 'name', '날짜': 'date', '시간': 'time', '방식': 'method', '장소': 'place', '물어볼 것': 'why', '상태': 'status', '캘린더 일정ID': 'evId', '기록ID': 'recId' };
@@ -3962,7 +3962,8 @@ async function ensurePlanTab(s) { if (!(await ensurePrepared())) return false; c
 async function savePlan(L) {
   whoFlush(L); const f = L.form;
   if (!whoKeys(f.name).length) { toast('성도 이름을 적어 주세요'); return; }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { toast('날짜를 골라 주세요'); return; }
+  if (f.tbd) { f.cal = false; f.date = ''; f.time = ''; }   // 미정 — 날짜 · 시간 칸을 비우고 캘린더에는 넣지 않는다(날짜가 정해지면 고치기에서)
+  else if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { toast('날짜를 골라 주세요'); return; }
   const s = saved().sheet; if (!(await ensurePlanTab(s))) return;
   const p = { name: norm(f.name), date: f.date, time: f.time || '', method: f.method || norm(f.methodEtc), place: norm(f.place), why: String(f.why || '').trim() };
   let calNote = '';
@@ -4170,7 +4171,7 @@ async function planSet(s, id, cells) {
   await batchValues(s.id, Object.keys(cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1(PLAN_TAB, h.indexOf(k), r), values: [[cells[k]]] })));
 }
 function calItems() {   // 달력 · 성도 흐름에 띄울 것 = 예정 계획 + 우리 것이 아닌 '심방' 일정
-  const ps = (DATA.plans || []).filter(p => p.status === PLAN_ST.todo).map(p => ({ planId: p.id, title: p.name, ymd: p.date, time: p.time }));
+  const ps = (DATA.plans || []).filter(p => p.status === PLAN_ST.todo && p.date).map(p => ({ planId: p.id, title: p.name, ymd: p.date, time: p.time }));
   return ps.concat(calOthers());
 }
 function calOthers() {   // 계획이 이미 가리키는 일정은 빼고 (표식 붙이기가 끊긴 경우 두 번 가져오지 않게)
@@ -5116,16 +5117,17 @@ async function saveAttPaste(L) {
 
 // ───────────────────────────── 계획 (C1: 제안 · '심방' 캘린더 읽기만) ─────────────────────────────
 function planCard(p) {
-  const t = today(), past = p.date < t, d = p.date;
-  return '<div class="card pcard' + (past ? ' late' : '') + '"><button class="pmain" data-act="planopen" data-v="' + esc(p.id) + '"><span class="pdate"><span class="muted">' + DOW[dowOf(d)] + '</span><b>' + (+d.slice(8)) + '</b><span class="muted">' + (+d.slice(5, 7)) + '월</span></span>' +
-    '<span class="pbody"><span class="c-top"><span class="nm">' + whoHtml(p.name) + '</span><span class="roles">' + esc(p.time || '시간 미정') + '</span><span class="sp"></span>' + meth({ methodLabel: p.method }) + '</span>' +
+  const t = today(), past = !!p.date && p.date < t, d = p.date;
+  const pd = d ? '<span class="muted">' + DOW[dowOf(d)] + '</span><b>' + (+d.slice(8)) + '</b><span class="muted">' + (+d.slice(5, 7)) + '월</span>' : '<b style="font-size:15px">미정</b>';
+  return '<div class="card pcard' + (past ? ' late' : '') + '"><button class="pmain" data-act="planopen" data-v="' + esc(p.id) + '"><span class="pdate">' + pd + '</span>' +
+    '<span class="pbody"><span class="c-top"><span class="nm">' + whoHtml(p.name) + '</span><span class="roles">' + esc(!p.date ? '날짜 미정' : p.time || '시간 미정') + '</span><span class="sp"></span>' + meth({ methodLabel: p.method }) + '</span>' +
     (p.place ? '<span class="muted">' + esc(p.place) + '</span>' : '') + (p.why ? '<span class="c-txt">' + esc(p.why) + '</span>' : '') +
-    '<span class="muted pcal">' + (p.evId === PLAN_NOCAL ? '캘린더에 넣지 않음' : p.evId ? IC.cal + '\'심방\' 캘린더' : '캘린더에 넣는 중…') + ' · ' + relDay(p.date, t) + '</span></span></button>' +
-    '<div class="pacts"><button class="btn' + (p.date <= t ? ' pri' : '') + '" data-act="plan2rec" data-v="' + esc(p.id) + '">기록 쓰기</button></div></div>';
+    '<span class="muted pcal">' + (p.evId === PLAN_NOCAL ? '캘린더에 넣지 않음' : p.evId ? IC.cal + '\'심방\' 캘린더' : '캘린더에 넣는 중…') + (p.date ? ' · ' + relDay(p.date, t) : '') + '</span></span></button>' +
+    '<div class="pacts"><button class="btn' + (p.date && p.date <= t ? ' pri' : '') + '" data-act="plan2rec" data-v="' + esc(p.id) + '">기록 쓰기</button></div></div>';
 }
 function vPlan() {
   const t = today(), pf = prefs(), all = M().visits.filter(v => !v.archived);
-  const plans = DATA.plans || [], todo = plans.filter(p => p.status === PLAN_ST.todo).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const plans = DATA.plans || [], todo = plans.filter(p => p.status === PLAN_ST.todo).sort((a, b) => (a.date ? 0 : 1) - (b.date ? 0 : 1) || (a.date + a.time).localeCompare(b.date + b.time));   // 미정은 맨 뒤
   const planned = new Set([].concat(...todo.map(p => whoKeys(p.name))));
   const P = peopleList(M(), all, t, pf.stale).filter(p => p.stale && !planned.has(p.name)).sort((a, b) => (a.last || '').localeCompare(b.last || ''));
   let h = head('심방 계획', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">';
@@ -5154,19 +5156,19 @@ function lPlanEdit(L) {
   const f = L.form, sv = saved(), methods = VISO().method;
   let h = lhead(L.planId ? '계획 고치기' : '새 계획', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<div class="fsec">누구를</div>' + whoFieldHtml(L);
-  h += '<div class="fsec">언제 · 어떻게</div><div class="fld" style="display:flex;gap:8px"><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜"><input class="inp" type="time" data-f="time" value="' + esc(f.time) + '" aria-label="시간 (비우면 하루 종일)"></div><p class="hint">시간을 비우면 하루 종일 일정이 됩니다.</p>';
+  h += '<div class="fsec">언제 · 어떻게<label class="solo" style="font-weight:400;letter-spacing:0"><input type="checkbox" data-act="plantbd"' + (f.tbd ? ' checked' : '') + '>미정</label></div><div class="fld" style="display:flex;gap:8px' + (f.tbd ? ';opacity:.45' : '') + '"><input class="inp" type="date" data-f="date" value="' + esc(f.tbd ? '' : f.date) + '"' + (f.tbd ? ' disabled' : '') + ' aria-label="날짜"><input class="inp" type="time" data-f="time" value="' + esc(f.time) + '" aria-label="시간 (비우면 하루 종일)"></div><p class="hint">시간을 비우면 하루 종일 일정이 됩니다.</p>';
   h += '<div class="fld"><div class="opts" id="methodChips">' + methods.map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div></div>';
   h += '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 (예: 수요예배 후 카페)" aria-label="장소"></div>';
   h += '<div class="fsec">물어볼 것</div><div class="fld"><textarea class="inp" data-f="why" rows="4" placeholder="지난 이야기 · 남은 할 일 · 이번에 여쭤볼 것" aria-label="물어볼 것">' + esc(f.why) + '</textarea></div>';
-  h += '<div class="fsec">캘린더</div><div class="set"><div class="srow"><span class="t">\'심방\' 캘린더에 넣기</span><button class="tgl' + (f.cal ? ' on' : '') + '" data-act="plancal" aria-label="캘린더에 넣기"></button>' +
+  h += '<div class="fsec">캘린더</div><div class="set"' + (f.tbd ? ' style="opacity:.45"' : '') + '><div class="srow"><span class="t">\'심방\' 캘린더에 넣기' + (f.tbd ? ' (날짜가 정해지면)' : '') + '</span><button class="tgl' + (f.cal && !f.tbd ? ' on' : '') + '" data-act="plancal" aria-label="캘린더에 넣기"></button>' +
     '<div class="preview">일정 제목<span class="evp">' + esc(calTitle(f.name || '성도 이름', sv.calPre, sv.calSuf)) + '</span></div><div class="d">장소 · 물어볼 것은 일정에 넣지 않습니다. 제목 앞뒤 글자는 설정에서 바꿉니다.</div></div></div>';
   if (L.planId) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn" data-act="plan2rec" data-v="' + esc(L.planId) + '">기록 쓰기</button><button class="btn danger" data-act="plancancel" data-v="' + esc(L.planId) + '">계획 취소</button></div>';
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saveplan">' + (L.planId ? '고친 것 저장' : '계획 저장') + '</button></div>';
 }
 function openPlanEdit(id, preset) {
-  if (id) { const p = (DATA.plans || []).find(x => x.id === id); if (!p) return; openLayer('planedit', { planId: id, form: { name: p.name, date: p.date, time: p.time, method: p.method, methodEtc: '', place: p.place, why: p.why, cal: p.evId !== PLAN_NOCAL } }); return; }
+  if (id) { const p = (DATA.plans || []).find(x => x.id === id); if (!p) return; openLayer('planedit', { planId: id, form: { name: p.name, date: p.date, time: p.time, method: p.method, methodEtc: '', place: p.place, why: p.why, cal: p.evId !== PLAN_NOCAL, tbd: !p.date } }); return; }
   const name = (preset && preset.name) || '', per = name ? peopleList(M(), M().visits.filter(v => !v.archived), today(), prefs().stale).find(x => x.name === name) : null;
-  openLayer('planedit', { planId: null, form: { name, date: ymdAdd(today(), 1), time: '', method: '', methodEtc: '', place: '', why: per ? planWhyFor(per) : '', cal: true } });
+  openLayer('planedit', { planId: null, form: { name, date: ymdAdd(today(), 1), time: '', method: '', methodEtc: '', place: '', why: per ? planWhyFor(per) : '', cal: true, tbd: false } });
 }
 
 // ───────────────────────────── 달력 ─────────────────────────────
@@ -6988,6 +6990,7 @@ document.addEventListener('click', e => {
   }
   if (a === 'addplan') { openPlanEdit(null, { name: v || '' }); return; }
   if (a === 'planopen') { openPlanEdit(v); return; }
+  if (a === 'plantbd') { const L = topLayer(); if (L && L.type === 'planedit') { L.form.tbd = !L.form.tbd; if (!L.form.tbd && !L.form.date) L.form.date = ymdAdd(today(), 1); L.dirty = true; render(); } return; }
   if (a === 'plancal') { const L = topLayer(); if (L && L.type === 'planedit') { L.form.cal = !L.form.cal; L.dirty = true; render(); } return; }
   if (a === 'saveplan') { const L = topLayer(); if (L && L.type === 'planedit') busy(async () => { try { await savePlan(L); } catch (e) { toast('계획을 저장하지 못했습니다\n' + e.message); } }); return; }
   if (a === 'plancancel') {
