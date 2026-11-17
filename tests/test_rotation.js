@@ -31,6 +31,7 @@
 //  ㉛ 부산 상영 계정 저장(R12 C4b): 주일 줄 shows · b10 · 낡은 앱(b9)과 합치기 · 교역자는 자기 방문 줄에(absorb) · 경고(금 · 토 · 주일 · 읽은 광고 기준) · 경고 자리
 //  ㉜ 인도 싣기 · 내보내기 새 판(R12 B): 칸 글(교역자 / 성도 이름 / 중계) · 시트 내보내기 · 부산 요약 · 내 일정(성도 인도자 줄) · 보기마다 글 배열 · CSV · 화면 자리
 //  ㉞ 부산 요약 칸 누르기 · 동행 / 모임 나눔(1116-2 B): 칸 → 고칠 판 · 동행 = 성도 인도자 잇기 · 모임 셋 · 옛 글 옮겨 읽기 · b11 · 교역자도 모임(absorb)
+//  ㉟ 숙소 판(1116-2 C): 호텔 / 성도님 댁 상태 · 옛 값 옮겨 읽기 · b12 · 숙소 쓰는 사람(동행 있을 때만) · 댁은 취소 기한 없음 · 알약 끌어 순서(optReorder)
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -45,7 +46,8 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
   normBook, mergeBook, sameBook, pickBook, isEmptyBook, put, drop, live, weekPlan, groupRole, whoText, stayState, slotLabel,
   stayPeriod, dayS, stayWhole, visitLeads, normLead, leadOf, leadIs, leadOpen, leadDate, LEAD_SVC, myAhead, myWeeks, tripChecks, normUi, homeTo, nameSpans, HOMES, dayGap, stayDates, busyOn, conflicts, conflictText, levelMap, wkeysOf, worshipOn, worshipClash, pickNote, countRole, setSlot, weekVisits, defaultDays, canDo, pickDoc, importBook, personIdFor, svcShown, sortDays, dayChoices, weekLabel, propose, applyProposal, weekTags, myItems, dayItems, visitSun, weekFriName, weekStays, nearCls, busanOn, optList, optAdd, optMove, optEdit, optMerge, optId, ensureOpts, strayStays, autoNights, teamOf, normStaff, absorb, staffPatch, staffMerge, personByEmail, staffEdits, canOn, awayOn, pinOn, chores, copyVisit, sheetTSV, personStats, friName, isLastFri, preachFold, textToPerson, countTextFor, dayLines, weekdayRows, bookingPrompt, normBooking, parseBookings, bookingNights, bookingVisit, bookingSeen, bookingToDraft, bookingLine, normStay, MAIL_Q, htmlText, mailClean, mailPrompt, mailBookings, mailRows, mailSlot, normAds, adsText, adsRep, adsRich, adsLinkLabel, adsByDay, ADS_NOGROUP, showId, normShow, showOf, bsWarnSun, leadCell, leadsAt, leadLine, tsvOf, csvOf, sheetRows, exportRows, itemLabel, mineRange,
-  normVisit, normMeet, MEET_K, MEET_G, meetText, mateText, mateLink, linkMates, colTarget, STAFF_COLS, OLD_FIELDS, WRITE_FIELD };`, ctx);
+  normVisit, normMeet, MEET_K, MEET_G, meetText, mateText, mateLink, linkMates, colTarget, STAFF_COLS, OLD_FIELDS, WRITE_FIELD,
+  STAY_ST, stayStOf, stayStName, STAY_FOR, stayForAsk, stayHotel, optReorder };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -218,8 +220,8 @@ const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripp
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
 const d1 = A.pickDoc(full, { b11: J(full), b10: stripped, b9: stripped, b8: stripped, b7: stripped, b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
 sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b10)을 떨군 채 써도 b11 과 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b11: J(full) });
-sc.eq('⑬ b11 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
+const d1b = A.pickDoc(full, { b12: J(full) });
+sc.eq('⑬ b12 만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
 sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b10 으로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
 const d2b = A.pickDoc(null, { b2: J(full) });
@@ -228,7 +230,7 @@ const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [],
 const d3 = A.pickDoc(full, { b9: old2, b10: J(full) });
 sc.eq('⑬ 낡은 앱(b9)에서 새로 적은 줄도 받아 b10 으로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b11'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b9', 'b10'\]/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b12'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b10', 'b11'\]/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -830,7 +832,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   const ol = J(b1); delete ol.shows; ol.visits[1].note = '낡은 앱이 고침'; ol.visits[1].at = 300;
   const pk = A.pickDoc(null, { b10: J(b1), b9: ol });
   sc.eq('㉛ 낡은 앱(b9)과 합쳐도 상영은 그대로 · 낡은 앱이 고친 방문도 받음 · 옛 칸을 치우려 한 번 씀', [A.showOf(pk.book, '2026-11-22'), pk.book.visits[1].note, pk.push], ['same', '낡은 앱이 고침', true]);
-  sc.eq('㉛ 빈 기기 + 계정(b10) = 계정 그대로 · (1116-2 B 부터 쓰는 칸이 b11 이라) 한 번 옮겨 씀 · b11 이면 다시 안 씀', [(r => [A.showOf(r.book, '2026-11-22'), r.push])(A.pickDoc(null, { b10: J(b1) })), A.pickDoc(null, { b11: J(b1) }).push], [['same', true], false]);
+  sc.eq('㉛ 빈 기기 + 계정(b10) = 계정 그대로 · (1116-2 B 부터 쓰는 칸이 바뀌어) 한 번 옮겨 씀 · 지금 칸(b12, 1116-2 C)이면 다시 안 씀', [(r => [A.showOf(r.book, '2026-11-22'), r.push])(A.pickDoc(null, { b10: J(b1) })), A.pickDoc(null, { b12: J(b1) }).push], [['same', true], false]);
   // 교역자: 자기 칸의 그 방문 줄에 bs · bsAt → absorb 가 그 방문의 주일 줄로
   sc.eq('㉛ 교역자 조각 = 그 방문 줄 안(보안 규칙이 이미 허락하는 visits 칸) · 모르는 값은 안 씀',
     [J(A.staffPatch('ga@example.com', 'bs', 'v|2026-11-22', 'diff', 50)), A.staffPatch('ga@example.com', 'bs', 'v|2026-11-22', 'x', 50)],
@@ -908,7 +910,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
     [A.exportRows(b, 'matrix', '2026-11', {}).find(r => r[0] === '가가').slice(1, 3), A.exportRows(b, 'cal', '2026-11', { calf: 'busan' })[3][0], A.exportRows(b, 'cal', '2026-11', { calf: 'busan' })[2][0], A.exportRows(b, 'x', '2026-11', {}), A.exportRows(b, 'mine', '2026-11', { pid: 'zz' })],
     [['', '설 부'], '8일 가가 · 주일예배 · 라라 · LL 중계', '1일', [], [['사람을 골라 주세요']]]);
   sc.eq('㉜ CSV: 쉼표 · 따옴표는 감싸고 줄바꿈 · 탭은 빈칸 · TSV 는 탭', [A.csvOf([['a,b', 'c"d', 'e\nf'], [1]]), A.tsvOf([['a\tb', 2]])], ['"a,b","c""d",e f\r\n1', 'a b\t2']);
-  sc.eq('㉜ 자료 모양은 그대로 — 쓰는 칸 b10 (1116-2 B 에서 b11 로: 동행 · 모임 — ㉞)', /OLD_FIELDS = \[[^\]]*'b10'\], WRITE_FIELD = 'b11'/.test(HTML), true);
+  sc.eq('㉜ 자료 모양은 그대로 — 쓰는 칸 b10 (1116-2 B 에서 b11 · C 에서 b12 로 — ㉞ ㉟)', /OLD_FIELDS = \[[^\]]*'b10', 'b11'\], WRITE_FIELD = 'b12'/.test(HTML), true);
   // 화면 자리
   sc.eq('㉜ 내보내기 판: 보기 고르기(지금 보던 보기) · 이번달 전체(누르면 고르기가 흐려짐) · 복사 · CSV 오른쪽 · exportRows 한 곳에서',
     [/openPane\(\{ kind: 'exp', v: VIEWS\[PREF\.mview\] \? PREF\.mview : 'sheet', all: false \}\)/.test(HTML), /<select class="inp expsel\$\{all \? ' dim' : ''\}" id="exp-view"/.test(HTML) && /if \(t\.id === 'exp-view'\) \{ S\.pane\.v = t\.value; S\.pane\.all = false;/.test(HTML), /data-act="expall" aria-pressed="\$\{all\}"/.test(HTML) && /if \(a === 'expall'\) \{ S\.pane\.all = !S\.pane\.all;/.test(HTML),
@@ -978,7 +980,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [J(A.copyVisit(src, NV({}))).mates, J(A.copyVisit(src, NV({}))).meet, J(A.copyVisit(src, NV({ mates: [{ n: '그대로' }], meet: { k: 'bapt', n: 1 } }))).meet.k, 'meet' in A.copyVisit(src2, NV({}))],
     [[{ n: '오세움', p: 'pl' }], { k: 'dept', g: '청년셀' }, 'bapt', false]);
   // 쓰는 칸 — 동행 · 모임은 새 칸이라 낡은 앱(b10)이 떨군다 → b11
-  sc.eq('㉞ 쓰는 칸 b11 · b10 은 옛 칸', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-2)], ['b11', ['b9', 'b10']]);
+  sc.eq('㉞ 쓰는 칸 b11 · b10 은 옛 칸 (1116-2 C 에서 b12 — ㉟)', [A.OLD_FIELDS.includes('b10'), A.OLD_FIELDS.includes('b11')], [true, true]);
   const nb = A.normBook({ people: J(bk.people), visits: [{ id: 'v|2026-11-22', who: ['pa'], days: '토일', mates: [{ n: '오세움', p: 'pl' }], meet: { k: 'bapt', n: 2 }, at: 50 }, { id: 'v|2026-11-29', who: ['pa'], days: '토일', at: 50 }] });
   const ol = J(nb); for (const v of ol.visits) { delete v.mates; delete v.meet; } ol.visits[1].note = '낡은 앱 메모'; ol.visits[1].at = 60;   // 낡은 앱은 모르는 칸을 떨군 채 b10 에
   const pk = A.pickDoc(null, { b11: J(nb), b10: ol });
@@ -1035,6 +1037,72 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㉞ 교역자 방문 판: 모임 판도 열고 · 그 판에서 저장', /if \(!ed\) return d\.vsec === 'stay' \|\| d\.vsec === 'travel' \|\| d\.vsec === 'meet';/.test(HTML) && /\(ed\.sec === 'stay' \|\| ed\.sec === 'travel' \|\| ed\.sec === 'meet'\)/.test(HTML), true);
   sc.eq('㉞ 금액 · 취소 기한: 빨간 테두리 + 커서(focus)', [/class="inp cost\$\{ed\.focus === 'cost' \? ' redf' : ''\}"/.test(HTML), /data-df="cancelBy"[^>]*\$\{ed\.focus === 'cancel' \? ' redf' : ''\}|\$\{ed\.focus === 'cancel' \? ' redf' : ''\}"[^>]*data-df="cancelBy"/.test(HTML), /\.redf\{/.test(HTML)], [true, true, true]);
   sc.eq('㉞ 보안 규칙은 그대로(교역자 칸 visits 안)', /hasOnly\(\['email', 'at', 'v', 'visits', 'away', 'awayAt', 'can', 'canAt', 'ui'\]\)/.test(fs.readFileSync(path.join(__dirname, 'rules', 'rota.rules'), 'utf8')), true);
+}
+
+
+// ㉟ 숙소 판 (1116-2 C, HB 11/16) — 지어낸 이름 · 이메일
+{
+  const ST = (o) => A.normStay(o);
+  sc.eq('㉟ 상태 목록: 호텔 = 미정 · 예약 전 · 예약 완료 · 취소 / 성도님 댁 = 미정 · 대화 전 · 대화 중 · 대화 완료 · 취소',
+    [A.STAY_ST.hotel.map(x => x[1]), A.STAY_ST.home.map(x => x[1])],
+    [['미정', '예약 전', '예약 완료', '취소'], ['미정', '대화 전', '대화 중', '대화 완료', '취소']]);
+  sc.eq('㉟ 옛 값 옮겨 읽기: 호텔의 ask(옛 글자 \'대화 중\') → 예약 전(pre) · 댁의 ask 는 그대로 · 옛 \'\' · done · cancel 그대로 · 모르는 값 = 미정',
+    [ST({ kind: 'hotel', status: 'ask' }).status, ST({ status: 'ask' }).status, ST({ kind: 'home', status: 'ask' }).status, ST({ kind: 'hotel', status: '' }).status, ST({ kind: 'home', status: 'done' }).status, ST({ kind: 'hotel', status: 'cancel' }).status, ST({ kind: 'home', status: 'pre' }).status, ST({ kind: 'hotel', status: 'pre' }).status, ST({ kind: 'home', status: 'zz' }).status, ST({ kind: 'hotel', status: 3 }).status],
+    ['pre', 'pre', 'ask', '', 'done', 'cancel', 'pre', 'pre', '', '']);
+  sc.eq('㉟ 이름: 호텔 예약 전 · 예약 완료 / 댁 대화 전 · 대화 중 · 대화 완료 · 미정 · 취소',
+    [{ kind: 'hotel', status: 'pre' }, { kind: 'hotel', status: 'done' }, { kind: 'home', status: 'pre' }, { kind: 'home', status: 'ask' }, { kind: 'home', status: 'done' }, { kind: 'home', status: '' }, { kind: 'hotel', status: 'cancel' }, { kind: 'hotel', status: 'ask' }].map(A.stayStName),
+    ['예약 전', '예약 완료', '대화 전', '대화 중', '대화 완료', '미정', '취소', '예약 전']);
+  const NV = (stay, o) => A.normVisit(Object.assign({ id: 'v|2026-11-22', at: 1, stay }, o || {}));
+  sc.eq('㉟ 숙소 미정 판단: 미정 · 예약 전 · 대화 전 · 대화 중 = 아직, 모두 완료면 완료 (취소한 곳은 셈 안 함)',
+    [NV([{ status: 'pre' }]), NV([{ kind: 'home', status: 'ask' }]), NV([{ kind: 'home', status: 'pre' }, { status: 'done' }]), NV([{ kind: 'home', status: 'done' }, { status: 'cancel' }])].map(A.stayState),
+    ['open', 'open', 'open', 'done']);
+  sc.eq('㉟ 숙소 쓰는 사람: 함께 · 남 숙소 · 여 숙소 (값은 예전 그대로 \'\' · 남 · 여)', A.STAY_FOR, [['', '함께'], ['남', '남 숙소'], ['여', '여 숙소']]);
+  sc.eq('㉟ 묻는 때: 동행 스텝이 있을 때 · 이미 적혀 있을 때(지울 수 있게) · 다른 숙소가 있을 때(남 · 여 따로) — 혼자 한 숙소면 안 물음',
+    [A.stayForAsk(NV([{ name: '가' }]), 0, { for: '' }), A.stayForAsk(NV([{ name: '가' }], { mates: [{ n: '스텝' }] }), 0, { for: '' }), A.stayForAsk(NV([]), -1, { for: '여' }),
+      A.stayForAsk(NV([{ name: '가' }]), -1, { for: '' }), A.stayForAsk(NV([{ name: '가', status: 'cancel' }]), -1, { for: '' })],
+    [false, true, true, true, false]);
+  // 성도님 댁은 취소 기한 · 예약 화면이 없다 — 옛 기록에 기한이 남아 있어도 알림 · 표 · 판 이동은 호텔만
+  const b = A.normBook({ people: [{ id: 'a', name: '가가', roles: ['busan'] }], visits: [{ id: 'v|2026-11-22', who: ['a'], days: '토일', stay: [{ kind: 'home', name: '어느 댁', status: 'done', cancelBy: '2026-11-18' }, { kind: 'hotel', name: '바다', status: 'done', cancelBy: '2026-11-19' }] }] });
+  sc.eq('㉟ 댁의 옛 취소 기한은 알림에 안 뜸(호텔 것만) · 부산 준비의 기한도 호텔 것 · 표의 취소 기한 칸 → 호텔', [A.chores(b, '2026-11-17').filter(c => c.kind === 'cancel').map(c => c.name), A.tripChecks(b, b.visits[0], 'a').items[0].cancelBy, J(A.colTarget(b.visits[0], 'cancel'))],
+    [['바다'], '2026-11-19', { sec: 'stay', i: 1, focus: 'cancel' }]);
+  sc.eq('㉟ 댁만 있으면 취소 기한 칸 → 그 댁(새 숙소 판이 아니라) · stayHotel', [J(A.colTarget(NV([{ kind: 'home', name: '댁' }]), 'cancel')), A.stayHotel({ kind: 'home' }), A.stayHotel({ kind: 'hotel' })], [{ sec: 'stay', i: 0, focus: 'cancel' }, false, true]);
+  // 알약 끌어 순서 — 보이는 쪽(호텔 · 댁)만 다시 놓고 다른 쪽 자리는 그대로
+  const ob = A.normBook({ opts: [
+    { id: A.optId('stay', '호텔 가', 'hotel'), type: 'stay', name: '호텔 가', kind: 'hotel', ord: 0, at: 1 },
+    { id: A.optId('stay', '가정 하나', 'home'), type: 'stay', name: '가정 하나', kind: 'home', ord: 1, at: 1 },
+    { id: A.optId('stay', '호텔 나', 'hotel'), type: 'stay', name: '호텔 나', kind: 'hotel', ord: 2, at: 1 },
+    { id: A.optId('stay', '호텔 다', 'hotel'), type: 'stay', name: '호텔 다', kind: 'hotel', ord: 3, at: 1 }] });
+  const hid = (n) => A.optId('stay', n, 'hotel');
+  const r1 = J(ob), ch = A.optReorder(r1, 'stay', [hid('호텔 다'), hid('호텔 가'), hid('호텔 나')], 'u', 50);
+  sc.eq('㉟ 끌어 순서: 호텔 셋을 다 · 가 · 나 로 → 댁 자리는 그대로 · 0,1,2… 다시 매김 · 바뀌었다', [ch, A.optList(r1, 'stay').map(o => o.name), A.optList(r1, 'stay').map(o => o.ord)],
+    [true, ['호텔 다', '가정 하나', '호텔 가', '호텔 나'], [0, 1, 2, 3]]);
+  const r2 = J(ob), same = A.optReorder(r2, 'stay', [hid('호텔 가'), hid('호텔 나'), hid('호텔 다'), 'o|stay|모름', hid('호텔 가')], 'u', 60);
+  sc.eq('㉟ 차례가 그대로면 아무것도 안 씀 · 모르는 id · 겹친 id 는 버림', [same, JSON.stringify(r2) === JSON.stringify(ob)], [false, true]);
+  const r3 = A.normBook({ visits: [{ id: 'v|2026-11-01', stay: [{ kind: 'hotel', name: '가호텔', status: 'done' }, { kind: 'hotel', name: '나호텔', status: 'done' }, { kind: 'hotel', name: '나호텔', status: 'done' }] }] });
+  sc.eq('㉟ 목록을 저장한 적 없으면(기본값) 먼저 적어 두고 다시 놓음', [A.optReorder(r3, 'stay', [hid('가호텔'), hid('나호텔')], 'u', 70), A.optList(r3, 'stay').map(o => o.name), r3.opts.length], [true, ['가호텔', '나호텔'], 2]);
+  const dev2 = J(ob); A.optEdit(dev2, hid('호텔 나'), { name: '호텔 나', cost: 70000 }, 'u2', 40);
+  sc.eq('㉟ 다른 기기가 앞서 금액만 고쳤어도 순서는 나중 것(줄마다 나중 것이 이김)', A.optList(A.mergeBook(r1, dev2), 'stay').map(o => o.name), ['호텔 다', '가정 하나', '호텔 가', '호텔 나']);
+  // 새 값(pre)을 낡은 앱(b11)이 '미정' 으로 떨군다 → 쓰는 칸 b12
+  sc.eq('㉟ 쓰는 칸 b12 · b11 은 옛 칸', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-2)], ['b12', ['b10', 'b11']]);
+  const nb = A.normBook({ visits: [{ id: 'v|2026-11-22', days: '토일', stay: [{ kind: 'hotel', name: '바다', status: 'pre' }], at: 50 }, { id: 'v|2026-11-29', days: '토일', at: 50 }] });
+  const ol = J(nb); ol.visits[0].stay[0].status = ''; ol.visits[1].note = '낡은 앱 메모'; ol.visits[1].at = 60;
+  const pk = A.pickDoc(null, { b12: J(nb), b11: ol });
+  sc.eq('㉟ 낡은 앱(b11)과 합쳐도 예약 전은 그대로 · 낡은 앱이 고친 메모도 받음 · 옛 칸을 치우려 한 번 씀', [pk.book.visits[0].stay[0].status, pk.book.visits[1].note, pk.push], ['pre', '낡은 앱 메모', true]);
+  sc.eq('㉟ b11 에만 있는 옛 호텔 \'대화 중\' → 예약 전으로 읽고 b12 로 씀', (r => [r.book.visits[0].stay[0].status, r.push])(A.pickDoc(null, { b11: { visits: [{ id: 'v|2026-11-22', stay: [{ kind: 'hotel', name: '바다', status: 'ask' }], at: 3 }] } })), ['pre', true]);
+  // 교역자 칸 — 숙소는 예전처럼 그 방문 줄 안(보안 규칙 그대로), 새 상태도 지나간다
+  const sp = A.normStaff({ email: 'ga@example.com', visits: { 'v|2026-11-22': { stay: [{ kind: 'home', name: '댁', status: 'pre' }, { kind: 'hotel', name: '호', status: 'ask' }], stayAt: 9 } } });
+  sc.eq('㉟ 교역자 칸 숙소: 대화 전 그대로 · 옛 호텔 대화 중은 예약 전', sp.visits['v|2026-11-22'].stay.map(x => x.status), ['pre', 'pre']);
+  // 화면
+  const f = HTML.slice(HTML.indexOf("} else if (ed.sec === 'stay') {"), HTML.indexOf("} else if (ed.sec === 'travel') {"));
+  sc.eq('㉟ 숙소 판 순서: 숙소 쓰는 사람(묻는 때만) → 호텔 · 성도님 댁 → 알약 → 상태(종류마다)',
+    [f.indexOf('stayForAsk(v, ed.i, d)') > 0 && f.indexOf('stayForAsk(v, ed.i, d)') < f.indexOf("seg3('kind'"), f.indexOf("seg3('kind'") < f.indexOf('class="tg spill'), f.indexOf('class="tg spill') < f.indexOf("seg3('status', STAY_ST[d.kind]"), /seg3\('for', STAY_FOR, d\.for\)/.test(f)], [true, true, true, true]);
+  sc.eq('㉟ 성도님 댁: 금액 · 취소 기한 · 예약 화면을 감춤(호텔일 때만 그림)', (() => { const k = f.indexOf('${hotel ? `'), e = f.indexOf("` : ''}\n", k); const h = f.slice(k, e); return [k > 0, /취소 기한/.test(h), /예약 화면 캡쳐 이미지 첨부/.test(h), /data-dcost/.test(h)]; })(), [true, true, true, true]);
+  sc.eq('㉟ 저장: 댁은 금액 · 취소 기한 · 환불 불가를 비움 · 상태는 종류에 맞춤 · 종류를 바꾸면 상태도 맞춤',
+    [/if \(s\.kind !== 'hotel'\) \{ s\.cost = 0; delete s\.cancelBy; delete s\.cancelAt; delete s\.nofree; \}/.test(HTML), /s\.status = stayStOf\(s\.kind, s\.status\);/.test(HTML), /dd\.status = stayStOf\(dd\.kind, dd\.status\);/.test(HTML)], [true, true, true]);
+  const g = HTML.slice(HTML.indexOf('function spInit('), HTML.indexOf('function spInit(') + 4000);
+  sc.eq('㉟ 알약: 꾹(0.45초) = 들림 → 떼면 고치기 · 끌면 순서(놓을 때 optReorder 한 번) · 마우스는 바로 끌기 · 오른쪽 단추 = 고치기 · 교역자는 고르기만',
+    [/setTimeout\(lift, 450\)/.test(g), /optReorder\(S\.book, 'stay'/.test(HTML.slice(HTML.indexOf('function spDrop('), HTML.indexOf('function spDrop(') + 600)), /'contextmenu'/.test(g), /isStaff\(\)/.test(g), /passive: false/.test(g), /spInit\(\);/.test(HTML)],
+    [true, true, true, true, true, true]);
 }
 
 sc.done();

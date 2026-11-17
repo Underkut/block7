@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1117-1 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) -->
+<!-- 교역자 로테이션 v. 26-1117-2 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -320,6 +320,11 @@ table.bt td .cb:hover{background:var(--s2);border-radius:6px}
 .pfoot{position:sticky;bottom:0;background:var(--paper);padding:10px 0 2px;margin-top:6px;z-index:3}
 .pfoot .btn{display:block;width:100%;padding:11px;font-size:15px}
 .tg.frib[aria-pressed="true"]{background:var(--fri);border-color:var(--fri);color:var(--on)}
+.spill{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative}
+.spill.lift{z-index:3;box-shadow:0 6px 18px rgba(0,0,0,.22);transition:box-shadow .15s}
+.spill.lift:not([aria-pressed="true"]){background:var(--bg)}
+.spnew{border-style:dashed}
+.tg .lk{opacity:.7;font-size:11px}
 .tg.has::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--bs);margin-left:5px;vertical-align:2px}
 .mgrow{display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:center;border-bottom:1px solid var(--line)}
 .mgmv{display:flex} .mgmv button{width:28px;height:36px;color:var(--tx3);display:grid;place-items:center} .mgmv button:disabled{opacity:.25}
@@ -542,7 +547,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1117-1';
+const APP_VERSION = 'v. 26-1117-2';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -570,7 +575,19 @@ const PROLES = { preach: '설교', offer: '헌금', lead: '예배인도', busan:
 const ROLE_SVCS = { preach: ['sun1', 'sun2', 'sun3', 'll', 'fri', 'wed'], offer: ['sun1', 'sun2', 'sun3', 'll', 'fri', 'wed'], lead: ['sun2', 'll'] };
 const DAYS = ['토일', '토일월', '금토일', '금토일월', '목금토일', '수목', '목'];
 const MARK_TAGS = ['성찬주', '극동방송', '종려주일', '부활주일', '성탄', '송구영신'];
-const STAY_STATUS = { '': '미정', ask: '대화 중', done: '예약 완료', cancel: '취소' };
+/* 숙소 상태 (1116-2 C, HB 11/16) — 호텔과 성도님 댁이 다르다. 값은 둘이 같은 말: '' 미정 · pre 예약 전 / 대화 전 · ask 대화 중(댁만) · done 예약 완료 / 대화 완료 · cancel 취소.
+   옛 값('' · ask · done · cancel)은 그대로 읽힌다 — 다만 호텔의 ask(예전 글자 '대화 중')는 '예약 전'(pre)으로 옮겨 읽는다(normStay). */
+const STAY_ST = {
+  hotel: [['', '미정'], ['pre', '예약 전'], ['done', '예약 완료'], ['cancel', '취소']],
+  home: [['', '미정'], ['pre', '대화 전'], ['ask', '대화 중'], ['done', '대화 완료'], ['cancel', '취소']],
+};
+function stayStOf(kind, status) { const l = STAY_ST[kind === 'home' ? 'home' : 'hotel']; if (l.some(x => x[0] === status)) return status; return status === 'ask' ? 'pre' : ''; }
+function stayStName(s) { const k = s && s.kind === 'home' ? 'home' : 'hotel', st = stayStOf(k, s && s.status); return STAY_ST[k].find(x => x[0] === st)[1]; }
+// 숙소 쓰는 사람 (1116-2 C) — 동행 스텝이 있을 때만 묻는다. 값은 예전 그대로('' · 남 · 여)
+const STAY_FOR = [['', '함께'], ['남', '남 숙소'], ['여', '여 숙소']];
+function stayForAsk(v, i, d) { return !!(((v && v.mates) || []).length || (d && d.for) || ((v && v.stay) || []).some((s, k) => k !== i && s.status !== 'cancel')); }
+// 성도님 댁은 취소 기한 · 예약 화면이 없다 — 화면에서 감추고, 알림 · 표에서도 호텔 것만 본다
+function stayHotel(s) { return !!s && s.kind !== 'home'; }
 
 // 칸 이름 — 주일은 '1부 헌금인도', 주중은 짧게 '수요 헌금'(줄바꿈 안 되게, HB 11/14), 마지막 금요일 광고는 'WN 광고'
 function slotLabel(svc, role) {
@@ -685,7 +702,8 @@ function leadIs(v, svc, m) { const l = leadOf(v, svc); return !!l && l.m === m; 
 // 숙소 한 줄 — cancelBy(취소 기한 날짜) · cancelAt(시각, 고를 때만) · nofree(환불 불가) · ref(예약번호) · imgs(예약 화면 사진 id, 사진은 rota/{uid}/img/{id} 에)
 function normStay(o) {
   if (!o || typeof o !== 'object') return null;
-  const b = { kind: o.kind === 'home' ? 'home' : 'hotel', name: str(o.name, 60), status: ['', 'ask', 'done', 'cancel'].includes(o.status) ? o.status : '', cost: num(o.cost), nights: num(o.nights), for: str(o.for, 20) };
+  const kind = o.kind === 'home' ? 'home' : 'hotel';
+  const b = { kind, name: str(o.name, 60), status: stayStOf(kind, typeof o.status === 'string' ? o.status : ''), cost: num(o.cost), nights: num(o.nights), for: str(o.for, 20) };
   if (isYmd(o.cancelBy)) b.cancelBy = o.cancelBy;
   if (b.cancelBy && typeof o.cancelAt === 'string' && /^\d\d:\d\d$/.test(o.cancelAt)) b.cancelAt = o.cancelAt;
   if (o.nofree) b.nofree = true;
@@ -764,8 +782,8 @@ function colTarget(v, col, i) {
   if (col === 'mate' || col === 'meet') return { sec: col, i: -1, focus: col };
   if (col === 'stay') return { sec: 'stay', i: v.stay && v.stay[+i] ? +i : -1, focus: 'stay' };
   if (col === 'cost') { let k = first(o => o.x.kind === 'hotel' && o.x.cost); if (k < 0) k = first(o => o.x.kind === 'hotel'); if (k < 0) k = first(() => true); return { sec: 'stay', i: k, focus: 'cost' }; }
-  if (col === 'cancel') { const cb = st.filter(o => o.x.cancelBy).sort((a, b) => (a.x.cancelBy < b.x.cancelBy ? -1 : a.x.cancelBy > b.x.cancelBy ? 1 : 0))[0];
-    let k = cb ? cb.k : first(o => o.x.nofree); if (k < 0) k = first(() => true); return { sec: 'stay', i: k, focus: 'cancel' }; }
+  if (col === 'cancel') { const cb = st.filter(o => stayHotel(o.x) && o.x.cancelBy).sort((a, b) => (a.x.cancelBy < b.x.cancelBy ? -1 : a.x.cancelBy > b.x.cancelBy ? 1 : 0))[0];
+    let k = cb ? cb.k : first(o => stayHotel(o.x) && o.x.nofree); if (k < 0) k = first(o => stayHotel(o.x)); if (k < 0) k = first(() => true); return { sec: 'stay', i: k, focus: 'cancel' }; }
   return null;
 }
 /* ---- 고르는 목록(opts): 숙소 · 교통편 · 특이사항 갈래 ---- */
@@ -813,6 +831,16 @@ function optMove(book, type, id, dir, by, now) {
   const list = optList(book, type), i = list.findIndex(o => o.id === id), j = i + dir; if (i < 0 || j < 0 || j >= list.length) return false;
   [list[i], list[j]] = [list[j], list[i]];
   list.forEach((o, k) => { if (o.ord !== k) put(book, 'opts', Object.assign({}, o, { ord: k }), by, now); });
+  return true;
+}
+// 끌어서 순서 바꾸기 (1116-2 C): ids = 화면에 보인 차례(숙소는 호텔 · 댁 한쪽만). 그 줄들이 있던 자리에 새 차례로 넣고 0,1,2… 를 다시 매긴다
+function optReorder(book, type, ids, by, now) {
+  ensureOpts(book, type, by, now);
+  const list = optList(book, type), want = (ids || []).filter((id, k, a) => a.indexOf(id) === k && list.some(o => o.id === id));
+  const set = new Set(want), slots = list.map((o, k) => (set.has(o.id) ? k : -1)).filter(k => k >= 0), next = list.slice();
+  slots.forEach((k, j) => { next[k] = list.find(o => o.id === want[j]); });
+  if (!next.some((o, k) => o !== list[k])) return false;   // 차례가 그대로면 아무것도 안 쓴다
+  next.forEach((o, k) => { if (o.ord !== k) put(book, 'opts', Object.assign({}, o, { ord: k }), by, now); });
   return true;
 }
 // 이름(· 평소 금액 · 종류) 고치기 — 숙소는 지난 방문 기록의 이름도 같이, 특이사항 갈래는 적힌 특이사항의 갈래도 같이
@@ -906,7 +934,7 @@ function pickBook(local, cloud) {
    book = R1(v. 26-1114-1) · b2 = R2 ~ v. 26-1114-4 · b3 = v. 26-1114-5 부터(성도 인도자 · 숙소 취소 기한 · 사진 · 요일 하나씩).
    읽을 때는 모두 합친다(맞추기는 지우지 않으니 옛 칸에만 있는 것도 살아난다). 쓸 때는 WRITE_FIELD 하나 + 옛 칸은 지운다(OLD_FIELDS) —
    문서 한 장 1MB 에 같은 책이 여러 벌 쌓이지 않게. 낡은 앱이 다시 옛 칸에 써도 다음에 또 합치고 지운다. */
-const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10'], WRITE_FIELD = 'b11';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6) · b8 = v. 26-1116-3 부터(부산 주일예배 · LL 인도 — R11) · b9 = v. 26-1116-4 부터(인도 세 갈래 lead — R12 A) · b10 = v. 26-1116-11 부터(부산 상영 shows — R12 C4b) · b11 = v. 26-1117-1 부터(동행 mates · 모임 meet — 1116-2 B)
+const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11'], WRITE_FIELD = 'b12';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6) · b8 = v. 26-1116-3 부터(부산 주일예배 · LL 인도 — R11) · b9 = v. 26-1116-4 부터(인도 세 갈래 lead — R12 A) · b10 = v. 26-1116-11 부터(부산 상영 shows — R12 C4b) · b11 = v. 26-1117-1 부터(동행 mates · 모임 meet — 1116-2 B) · b12 = v. 26-1117-2 부터(숙소 상태 '예약 전 / 대화 전' pre — 1116-2 C, 낡은 앱은 pre 를 '미정' 으로 떨군다)
 function pickDoc(local, doc) {
   const cur = doc && doc[WRITE_FIELD] ? doc[WRITE_FIELD] : null;
   const olds = OLD_FIELDS.map(k => doc && doc[k]).filter(Boolean);
@@ -1109,12 +1137,12 @@ function groupRole(book, plan, role, svcs, pm) {
 // 부산 방문 한 줄 요약 (취소한 숙소는 빼고)
 function stayText(v) {
   const st = v ? v.stay.filter(s => s.status !== 'cancel') : [];
-  return st.map(s => (s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도 댁' : '호텔'))).join(' · ');
+  return st.map(s => (s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도님 댁' : '호텔'))).join(' · ');
 }
 function stayState(v) {
   const st = v ? v.stay.filter(s => s.status !== 'cancel') : [];
   if (!st.length) return 'none';
-  if (st.some(s => s.status === '' || s.status === 'ask')) return 'open';
+  if (st.some(s => s.status !== 'done')) return 'open';   // 미정 · 예약 전 · 대화 전 · 대화 중
   return 'done';
 }
 
@@ -1347,7 +1375,7 @@ function chores(book, today) {
   const out = [];
   for (const v of live(book.visits)) {
     if (v.date >= today && v.date <= addDays(today, 21) && stayState(v) !== 'done') out.push({ kind: 'stay', date: v.date, visit: v.id });
-    for (const st of v.stay) if (st.status === 'done' && st.cancelBy && st.cancelBy >= today && st.cancelBy <= addDays(today, 3)) out.push({ kind: 'cancel', date: st.cancelBy, at: st.cancelAt || '', visit: v.id, name: st.name || '숙소' });
+    for (const st of v.stay) if (st.status === 'done' && stayHotel(st) && st.cancelBy && st.cancelBy >= today && st.cancelBy <= addDays(today, 3)) out.push({ kind: 'cancel', date: st.cancelBy, at: st.cancelAt || '', visit: v.id, name: st.name || '숙소' });
   }
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
@@ -1458,7 +1486,7 @@ function exportRows(book, view, ym, o) {
     for (const v of live(book.visits).filter(v => v.date >= from && v.date <= to).sort((a, b) => (a.date < b.date ? -1 : 1))) {
       const st = v.stay.filter(x => x.status !== 'cancel'), cost = st.reduce((a, x) => a + (x.cost || 0), 0), cb = st.map(x => x.cancelBy).filter(Boolean).sort()[0];
       rows.push([mdOf(v.date), dw(v.date), whoText(book, v.who, '', pm), dayS(sortDays(v.date, v.days || defaultDays(v.date))), busanFri(visitSun(v.date)) ? friName(visitSun(v.date)) : '',
-        ...LEAD_SVC.map(svc => leadCell(book, v, svc)), st.map(x => (x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도 댁' : '호텔')) + (x.status === 'done' ? '' : ' (미정)')).join(' · '),
+        ...LEAD_SVC.map(svc => leadCell(book, v, svc)), st.map(x => (x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도님 댁' : '호텔')) + (x.status === 'done' ? '' : ' (' + stayStName(x) + ')')).join(' · '),
         cost || '', cb ? mdd2(cb) : st.some(x => x.nofree) ? '환불 불가' : '', mateText(book, v), meetText(v.meet)]);
     }
     return rows;
@@ -1651,7 +1679,7 @@ function myWeeks(book, pid, sun0, n) {
 // 부산 준비 — 그 방문에서 그 사람이 챙길 것. state: done(됨) · todo(아직) · bad(겹침) · info(알림만, 셈에 안 넣음)
 function tripChecks(book, v, pid) {
   const ds = stayDates(v), items = [], ss = stayState(v), st = v.stay.filter(s => s.status !== 'cancel');
-  const by = st.map(s => s.cancelBy).filter(Boolean).sort()[0] || '';
+  const by = st.filter(stayHotel).map(s => s.cancelBy).filter(Boolean).sort()[0] || '';
   items.push({ key: 'stay', state: ss === 'done' ? 'done' : 'todo', text: stayText(v), open: ss === 'open', cancelBy: by });
   for (const dir of ['down', 'up']) { const t = v.travel.filter(x => x.dir === dir && (x.mode || x.time));
     items.push({ key: dir, state: t.length ? 'done' : 'todo', text: t.map(x => [x.mode, timeS(x.time)].filter(Boolean).join(' ')).join(' · ') }); }
@@ -2410,12 +2438,12 @@ function bodyBusan(lv) {
   const vs = live(S.book.visits).filter(v => v.date >= from && v.date <= to).sort((a, b) => (a.date < b.date ? -1 : 1)), bw = bsWarn();
   const cb_ = (v, col, inner, extra) => `<button class="cb" data-visit="${esc(v.id)}" data-vcol="${col}"${extra || ''}>${inner}</button>`;
   const rows = vs.map(v => { const st = v.stay.filter(x => x.status !== 'cancel'), cost = st.reduce((a, x) => a + (x.cost || 0), 0);
-    const cb = st.map(x => x.cancelBy).filter(Boolean).sort()[0], nof = st.some(x => x.nofree), ss = stayState(v);
+    const sh = st.filter(stayHotel), cb = sh.map(x => x.cancelBy).filter(Boolean).sort()[0], nof = sh.some(x => x.nofree), ss = stayState(v);
     return `<tr class="${lv[v.id] === 'bad' ? 'badrow' : ''}"><td><button data-visit="${esc(v.id)}"><b>${md(v.date)}</b> <span class="${dowOf(v.date) === 0 ? 'muted' : 'dx'}">${dowOf(v.date) === 0 ? '주일' : DOW[dowOf(v.date)]}</span></button></td>
       <td>${cb_(v, 'who', esc(whoText(S.book, v.who, '', pm)) || '<span class="muted">—</span>')}${bsPill(v, bw) ? ' ' + BS_PILL : ''}</td>
       <td>${cb_(v, 'days', daysHtml(sortDays(v.date, v.days || defaultDays(v.date))))}</td>
       <td style="text-align:left">${cb_(v, 'lead', leadChips(v))}</td>
-      <td style="text-align:left">${st.length ? st.map(x => `<button data-visit="${esc(v.id)}" data-vcol="stay" data-i="${v.stay.indexOf(x)}"><span class="pill${x.status === 'done' ? ' ok' : ''}">${esc((x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도 댁' : '호텔')))}</span></button>`).join(' ') : cb_(v, 'stay', `<span class="pill${ss === 'none' ? '' : ' warn'}">없음</span>`, ' data-i="-1"')}</td>
+      <td style="text-align:left">${st.length ? st.map(x => `<button data-visit="${esc(v.id)}" data-vcol="stay" data-i="${v.stay.indexOf(x)}"><span class="pill${x.status === 'done' ? ' ok' : ''}">${esc((x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도님 댁' : '호텔')))}</span></button>`).join(' ') : cb_(v, 'stay', `<span class="pill${ss === 'none' ? '' : ' warn'}">없음</span>`, ' data-i="-1"')}</td>
       <td>${cb_(v, 'cost', cost ? won(cost) : '')}</td><td class="tiny">${cb_(v, 'cancel', cb ? mdd(cb) : nof ? '환불 불가' : '')}</td>
       <td class="tiny" style="text-align:left">${cb_(v, 'mate', esc(mateText(S.book, v)))}</td><td class="tiny" style="text-align:left">${cb_(v, 'meet', esc(meetText(v.meet)))}</td></tr>`; }).join('');
   return vs.length ? `<div class="tblwrap"><table class="tsheet bt"><tr><th class="h-bs">날짜</th><th class="h-bs">교역자</th><th class="h-bs">요일</th><th class="h-bs">예배 인도</th><th class="h-bs">숙소</th><th class="h-bs">금액</th><th class="h-bs">취소 기한</th><th class="h-bs">동행</th><th class="h-bs">모임</th></tr>${rows}</table></div>` : '<p class="empty">이 달 부산 방문이 없습니다.</p>';
@@ -2718,9 +2746,10 @@ function newVisit(date) {
   }
   openPane({ kind: 'visit', id });
 }
-const stPillOf = (st) => ({ '': '<span class="pill">미정</span>', ask: '<span class="pill">대화 중</span>', done: '<span class="pill ok">예약 완료</span>', cancel: '<span class="pill">취소</span>' })[st.status];
-function stayLineOf(v, s) { return [(s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도 댁' : '호텔')), (s.nights || autoNights(v)) + '박', s.kind === 'hotel' && s.cost ? won(s.cost) : ''].filter(Boolean).join(' · '); }
-function staySub(s) { return [s.ref ? '예약 ' + s.ref : '', s.cancelBy ? '취소 ' + mdd(s.cancelBy) + (s.cancelAt ? ' ' + s.cancelAt : '') + '까지' : s.nofree ? '환불 불가' : '', (s.imgs || []).length ? '예약 화면 ' + s.imgs.length + '장' : ''].filter(Boolean).join(' · '); }
+const stPillOf = (st) => `<span class="pill${st.status === 'done' ? ' ok' : ''}">${stayStName(st)}</span>`;   // 호텔: 예약 전 · 예약 완료 / 댁: 대화 전 · 대화 중 · 대화 완료 (1116-2 C)
+function stayLineOf(v, s) { return [(s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도님 댁' : '호텔')), (s.nights || autoNights(v)) + '박', s.kind === 'hotel' && s.cost ? won(s.cost) : ''].filter(Boolean).join(' · '); }
+function staySub(s) { if (!stayHotel(s)) return '';   // 성도님 댁은 예약 · 취소 기한이 없다
+  return [s.ref ? '예약 ' + s.ref : '', s.cancelBy ? '취소 ' + mdd(s.cancelBy) + (s.cancelAt ? ' ' + s.cancelAt : '') + '까지' : s.nofree ? '환불 불가' : '', (s.imgs || []).length ? '예약 화면 ' + s.imgs.length + '장' : ''].filter(Boolean).join(' · '); }
 // 교역자가 직접 적은 칸이면 '○○ 님이 적음' (R6 — HB 가 고치면 사라진다)
 function byNote(pid, pm) { const p = pid && (pm || peopleMap(S.book))[pid]; return p && !p.del ? p.name + ' 님이 적음' : ''; }
 function travelLineOf(t) { return (t.dir === 'down' ? '내려감 ' : '올라옴 ') + [t.mode, timeS(t.time)].filter(Boolean).join(' ') + (t.who ? ' (' + t.who + ')' : ''); }
@@ -2828,22 +2857,23 @@ function paneVEdit(v) {
         <div class="toggles">${dayChoices(v.date).map(c => `<button class="tg ${c === '토' || c === '일' ? '' : 'bsr'}" data-dday="${c}" aria-pressed="${d.days.includes(c)}">${dayS(c)}</button>`).join('')}</div></div>
       ${leadField(d, v)}`;
   } else if (ed.sec === 'stay') {
-    const list = optList(S.book, 'stay').filter(o => o.kind === d.kind), inList = list.some(o => o.name === d.name);
-    body = `<div class="frow">${seg3('kind', [['hotel', '호텔'], ['home', '성도 댁']], d.kind)}<span class="spacer"></span>${isStaff() ? '' : `<button class="txtbtn" data-vmanage="stay">목록 관리</button>`}</div>
-      <div>${list.map(o => `<button class="prow2" data-dopt="${esc(o.id)}" aria-pressed="${!d._new && o.name === d.name}"><span class="ck"></span><span>${esc(o.name)}</span><span class="why">${o.cost ? '평소 ' + won(o.cost) + ' / 박' : ''}</span></button>`).join('')}
-        ${d.name && !inList && !d._new ? `<button class="prow2" aria-pressed="true"><span class="ck"></span><span>${esc(d.name)}</span><span class="why">목록에 없는 이름</span></button>` : ''}
-        <button class="prow2" data-act="dnew" aria-pressed="${!!d._new}"><span class="ck"></span><span>새 ${d.kind === 'home' ? '성도 댁' : '호텔'}</span><span class="why">저장하면 목록에도 들어갑니다</span></button>
-        ${d._new ? `<input class="inp" data-df="name" value="${esc(d.name)}" placeholder="${d.kind === 'home' ? '어느 성도님 댁' : '호텔 이름'}" maxlength="60" style="margin-top:8px">` : ''}</div>
-      <div class="frow"><span class="flabel">누가</span>${seg3('for', [['', '함께'], ['남', '남'], ['여', '여']], d.for)}</div>
-      <div class="frow"><span class="flabel">상태</span>${seg3('status', Object.entries(STAY_STATUS), d.status)}</div>
+    // 1116-2 C: 숙소 쓰는 사람(동행 스텝이 있을 때만) → 호텔 · 성도님 댁 → 숙소 알약(가로 · 꾹 눌러 고침 · 꾹 눌러 끌어 순서 — HB 만, spInit) → 상태(호텔 · 댁이 다름)
+    const list = optList(S.book, 'stay').filter(o => o.kind === d.kind), inList = list.some(o => o.name === d.name), own = !isStaff(), hotel = d.kind === 'hotel';
+    const kn = hotel ? '호텔' : '성도님 댁';
+    body = `${stayForAsk(v, ed.i, d) ? `<div class="frow"><span class="flabel">숙소 쓰는 사람</span>${seg3('for', STAY_FOR, d.for)}</div>` : ''}
+      <div class="frow">${seg3('kind', [['hotel', '호텔'], ['home', '성도님 댁']], d.kind)}<span class="spacer"></span>${own ? `<button class="txtbtn" data-vmanage="stay">목록 관리</button>` : ''}</div>
+      <div class="field" data-focus="stay"><div class="toggles" id="spills">${list.map(o => `<button class="tg spill${own ? ' own' : ''}" data-dopt="${esc(o.id)}" data-sopt="${esc(o.id)}" aria-pressed="${!d._new && o.name === d.name}"${o.cost ? ` title="평소 ${won(o.cost)} / 박"` : ''}>${esc(o.name)}</button>`).join('')}${d.name && !inList && !d._new ? `<button class="tg" aria-pressed="true">${esc(d.name)} <span class="lk">· 목록에 없음</span></button>` : ''}<button class="tg spnew" data-act="dnew" aria-pressed="${!!d._new}">+ 새 ${kn}</button></div>
+        ${own && list.length ? `<span class="tiny muted">${list.length > 1 ? '꾹 누르면 고치고, 꾹 누른 채 끌면 차례를 바꿉니다' : '꾹 누르면 고칩니다'}</span>` : ''}
+        ${d._new ? `<input class="inp" data-df="name" value="${esc(d.name)}" placeholder="${hotel ? '호텔 이름' : '어느 성도님 댁'}" maxlength="60">${own ? '<span class="tiny muted">저장하면 목록에도 들어갑니다</span>' : ''}` : ''}</div>
+      <div class="frow"><span class="flabel">상태</span>${seg3('status', STAY_ST[d.kind], stayStOf(d.kind, d.status))}</div>
       <div class="frow"><span class="flabel">박</span><span class="stepper"><button data-dstep="nights" data-d="-1" aria-label="하루 줄이기">−</button><b>${d.nights}박</b><button data-dstep="nights" data-d="1" aria-label="하루 늘리기">+</button></span></div>
-      ${d.kind === 'hotel' ? `<div class="frow"><span class="flabel">금액</span><span class="stepper"><button data-dstep="cost" data-d="-5000" aria-label="5천원 줄이기">−</button><input class="inp cost${ed.focus === 'cost' ? ' redf' : ''}" data-focus="cost" data-dcost="1" inputmode="numeric" autocomplete="off" value="${d.cost ? d.cost.toLocaleString('ko-KR') : ''}" placeholder="0" aria-label="금액(원)"><span class="won">원</span><button data-dstep="cost" data-d="5000" aria-label="5천원 늘리기">+</button></span></div>` : ''}
+      ${hotel ? `<div class="frow"><span class="flabel">금액</span><span class="stepper"><button data-dstep="cost" data-d="-5000" aria-label="5천원 줄이기">−</button><input class="inp cost${ed.focus === 'cost' ? ' redf' : ''}" data-focus="cost" data-dcost="1" inputmode="numeric" autocomplete="off" value="${d.cost ? d.cost.toLocaleString('ko-KR') : ''}" placeholder="0" aria-label="금액(원)"><span class="won">원</span><button data-dstep="cost" data-d="5000" aria-label="5천원 늘리기">+</button></span></div>
       <div class="field"><div class="frow"><span class="flabel">취소 기한${d.nofree ? '' : d.cancelBy ? ' — ' + mdd(d.cancelBy) + (d.cancelAt ? ' ' + d.cancelAt : '') + '까지' : ''}</span>
           <label class="chk${d.nofree && ed.focus === 'cancel' ? ' redf' : ''}"${d.nofree ? ' data-focus="cancel"' : ''}><input type="checkbox" data-act="dnofree"${d.nofree ? ' checked' : ''}>환불 불가</label><span class="spacer"></span>${d.cancelBy ? `<button class="txtbtn" data-act="dnocancel">기한 지우기</button>` : ''}</div>
         ${d.nofree ? '' : `<div class="frow dtpair"><input class="inp${ed.focus === 'cancel' ? ' redf' : ''}" type="date" required placeholder="날짜" data-focus="cancel" data-df="cancelBy" value="${d.cancelBy || ''}" aria-label="취소 기한 날짜"><input class="inp" type="time" required placeholder="시각" data-df="cancelAt" value="${d.cancelAt || ''}" aria-label="취소 기한 시각"${d.cancelBy ? '' : ' disabled'}></div>`}</div>
       <div class="field"><span class="flabel">예약 화면 캡쳐 이미지 첨부${d.ref ? ' — 예약번호 ' + esc(d.ref) : ''}</span><div class="thumbs">${(d.imgs || []).map(id => `<img data-img="${esc(id)}" alt="예약 화면" src="${IMG.cache[id] || 'data:image/gif;base64,R0lGODlhAQABAAAAACw='}">`).join('')}
         ${(d.imgs || []).length < 4 ? `<button class="addimg" data-act="dimg">+ 사진</button>` : ''}</div>
-        ${aiCan() && (d.imgs || []).length ? `<button class="txtbtn" data-act="dread" style="justify-self:start"${AIR.busy ? ' disabled' : ''}>${AIR.busy ? '사진을 읽는 중…' : '사진 읽어 채우기'}</button>` : ''}</div>
+        ${aiCan() && (d.imgs || []).length ? `<button class="txtbtn" data-act="dread" style="justify-self:start"${AIR.busy ? ' disabled' : ''}>${AIR.busy ? '사진을 읽는 중…' : '사진 읽어 채우기'}</button>` : ''}</div>` : ''}
       ${ed.i >= 0 ? `<button class="btn danger" data-act="drmstay" style="justify-self:start">이 숙소 빼기</button>` : ''}`;
   } else if (ed.sec === 'travel') {
     const modes = optList(S.book, 'mode').map(o => o.name);
@@ -2896,7 +2926,8 @@ function saveVEdit() {
   else if (ed.sec === 'stay') {
     const s = clone(d); s.name = String(s.name || '').trim(); const isNew = !!s._new; delete s._new;
     if (!s.name) return toast('숙소를 고르거나 이름을 적어 주세요');
-    if (!s.cancelBy) delete s.cancelAt; if (s.kind !== 'hotel') s.cost = 0;
+    if (!s.cancelBy) delete s.cancelAt; if (s.kind !== 'hotel') { s.cost = 0; delete s.cancelBy; delete s.cancelAt; delete s.nofree; }   // 성도님 댁은 취소 기한이 없다 (1116-2 C)
+    s.status = stayStOf(s.kind, s.status);
     if (isNew && !isStaff()) optAdd(S.book, 'stay', s.name, { kind: s.kind }, byNow(), Date.now());   // 목록은 HB 몫 — 교역자가 적은 새 이름은 HB 숙소 관리의 '목록에 없는 이름' 에 뜬다
     visitApply(x => { if (ed.i >= 0 && x.stay[ed.i]) x.stay[ed.i] = s; else x.stay.push(s); });
   } else if (ed.sec === 'travel') visitApply(x => { x.travel = d.rows.filter(r => r.mode || /\d\d:\d\d/.test(r.time || '')); });
@@ -2923,13 +2954,78 @@ function paneManage() {
   const stray = type === 'stay' ? strayStays(S.book).filter(x => x.kind === m.kind) : [];
   return `<div class="phead"><button class="iconbtn" data-act="vmback" aria-label="뒤로">‹</button><b>${MG_NAME[type]}<span class="sub">누르면 고칩니다 · 화살표로 순서</span></b>${xBtn}</div>
   <div class="pbody">
-    ${type === 'stay' ? `<div class="seg3"><button data-mkind="hotel" aria-pressed="${m.kind === 'hotel'}">호텔</button><button data-mkind="home" aria-pressed="${m.kind === 'home'}">성도 댁</button></div>` : ''}
+    ${type === 'stay' ? `<div class="seg3"><button data-mkind="hotel" aria-pressed="${m.kind === 'hotel'}">호텔</button><button data-mkind="home" aria-pressed="${m.kind === 'home'}">성도님 댁</button></div>` : ''}
     <div>${rows || '<p class="muted small">아직 없습니다. 아래에서 더해 주세요.</p>'}</div>
     <div class="minirow"><input class="inp" id="mg-new" placeholder="새로 더하기" maxlength="60" autocomplete="off"><button class="btn ghost" data-act="mgadd">더하기</button></div>
     ${stray.length ? `<div class="field"><span class="flabel">목록에는 없고 지난 기록에만 있는 이름 — 누르면 목록에 넣습니다(넣은 뒤 고치거나 합칠 수 있습니다)</span><div class="toggles">${stray.map((x, i) => `<button class="tg sm" data-mstray="${i}" aria-pressed="false">${esc(x.name)} <span class="muted">${x.c}</span></button>`).join('')}</div></div>` : ''}
     <p class="note tiny" style="margin:0">이름을 고치면 지난 방문 기록도 같이 바뀝니다. 지워도 지난 기록의 글은 남습니다.</p>
   </div>`;
 }
+/* ---- 숙소 알약: 꾹 눌러 고침 · 꾹 누른 채 끌어 차례 바꾸기 (1116-2 C, HB 11/16) ----
+   손가락: 0.45초 누르고 있으면 알약이 들린다 → 그대로 떼면 고치기(목록 관리의 그 숙소), 들린 채 끌면 차례. 빨리 미는 손가락은 화면 굴리기 그대로.
+   마우스: 누른 채 끌면 바로 차례, 오른쪽 단추 = 고치기. 차례는 놓을 때 한 번만 적는다(optReorder). 목록은 HB 몫이라 교역자는 고르기만.
+   끄는 동안 알약은 손가락을 따라가고, 자리를 내주는 이웃은 스르륵 옮긴다(FLIP). 움직임 줄이기 설정이면 옮김 없이. */
+const SP = { el: null, eat: 0 };
+function spOpenEdit(id) {
+  const ed = S.pane && S.pane.edit; if (!ed || ed.sec !== 'stay' || ed.manage) return;
+  const o = optList(S.book, 'stay').find(x => x.id === id); if (!o) return;
+  ed.manage = { type: 'stay', kind: o.kind, open: id, cost: o.cost || 0 }; renderPane(); const el = $('#pane'); if (el) el.scrollTop = 0;
+}
+function spEnd() {
+  clearTimeout(SP.t); if (SP.el) { SP.el.classList.remove('lift'); SP.el.style.transform = ''; }
+  SP.el = null; SP.lift = SP.drag = false;
+}
+function spFollow(x, y) {
+  const el = SP.el; el.style.transform = ''; const r = el.getBoundingClientRect();
+  el.style.transform = `translate(${x - (r.left + r.width / 2) + SP.gx}px,${y - (r.top + r.height / 2) + SP.gy}px) scale(1.06)`;
+}
+function spMove(x, y) {
+  const el = SP.el, box = el.parentNode, sib = [...box.querySelectorAll('.spill')].filter(b => b !== el);
+  const hit = sib.find(b => { const r = b.getBoundingClientRect(); return x >= r.left - 3 && x <= r.right + 3 && y >= r.top - 4 && y <= r.bottom + 4; });
+  if (hit) { const r = hit.getBoundingClientRect(), before = x < r.left + r.width / 2;
+    if (!(before && el.nextElementSibling === hit) && !(!before && hit.nextElementSibling === el)) {
+      const all = [...box.querySelectorAll('.spill')].filter(b => b !== el), was = all.map(b => b.getBoundingClientRect());
+      box.insertBefore(el, before ? hit : hit.nextSibling);
+      if (!quiet()) all.forEach((b, k) => { const n = b.getBoundingClientRect(), dx = was[k].left - n.left, dy = was[k].top - n.top; if (!dx && !dy) return;
+        b.style.transition = 'none'; b.style.transform = `translate(${dx}px,${dy}px)`; void b.offsetWidth; b.style.transition = 'transform .22s cubic-bezier(.22,.8,.24,1)'; b.style.transform = ''; });
+    } }
+  spFollow(x, y);
+}
+function spDrop() {
+  const box = $('#spills'); if (!box) return renderPane();
+  const ids = [...box.querySelectorAll('.spill')].map(b => b.dataset.sopt);
+  if (optReorder(S.book, 'stay', ids, byNow(), Date.now())) { saveBook(); toast('숙소 차례를 바꿨습니다'); }
+  renderPane();
+}
+function spInit() {
+  const lift = () => { if (!SP.el) return; SP.lift = true; SP.el.classList.add('lift'); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} };
+  document.addEventListener('pointerdown', e => {
+    SP.eat = 0;   // 새로 누른 것은 먹지 않는다 (끌어 놓자마자 '저장' 을 눌러도 들어가게)
+    const el = e.target.closest && e.target.closest('#spills .spill'); if (!el || isStaff() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    spEnd(); const r = el.getBoundingClientRect();
+    Object.assign(SP, { el, id: el.dataset.sopt, x0: e.clientX, y0: e.clientY, gx: r.left + r.width / 2 - e.clientX, gy: r.top + r.height / 2 - e.clientY, mouse: e.pointerType === 'mouse', pid: e.pointerId });
+    if (!SP.mouse) SP.t = setTimeout(lift, 450);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!SP.el || e.pointerId !== SP.pid) return;
+    if (!SP.drag) { if (Math.hypot(e.clientX - SP.x0, e.clientY - SP.y0) < 8) return;
+      if (!SP.mouse && !SP.lift) return spEnd();   // 들리기 전에 움직인 손가락 = 화면 굴리기
+      SP.drag = true; SP.el.classList.add('lift'); try { SP.el.setPointerCapture(e.pointerId); } catch (_) {} }
+    e.preventDefault(); spMove(e.clientX, e.clientY);
+  });
+  document.addEventListener('touchmove', e => { if (SP.el && (SP.lift || SP.drag)) e.preventDefault(); }, { passive: false });   // 들린 알약을 끄는 동안 화면이 굴러가지 않게
+  document.addEventListener('pointerup', e => {
+    if (!SP.el || e.pointerId !== SP.pid) return; const { drag, lift, id } = SP; spEnd();
+    if (drag) { SP.eat = Date.now(); spDrop(); } else if (lift) { SP.eat = Date.now(); spOpenEdit(id); }
+  });
+  document.addEventListener('pointercancel', () => { if (!SP.el) return; const d = SP.drag; spEnd(); if (d) renderPane(); });
+  document.addEventListener('contextmenu', e => { const el = e.target.closest && e.target.closest('#spills .spill'); if (!el || isStaff()) return;
+    e.preventDefault(); if (SP.el && !SP.mouse) return;   // 손가락 꾹 누르기는 위에서(들림) — 안드로이드가 함께 보내는 것은 버림
+    spEnd(); SP.eat = Date.now(); spOpenEdit(el.dataset.sopt); });
+  // 들렸다 떼거나 끌어 놓은 그 손짓에 딸려 오는 누름(새로 누르기 전)은 '고르기' 가 아니다 — 다시 그린 판의 같은 자리 단추가 눌리지 않게
+  document.addEventListener('click', e => { if (SP.eat && Date.now() - SP.eat < 700) { SP.eat = 0; e.stopPropagation(); e.preventDefault(); } }, true);
+}
+spInit();
 // 방문 판 안에서 누른 것 — 처리했으면 true
 function visitClick(t, d) {
   const a = d.act, ed = S.pane.edit, now = Date.now(), by = byNow();
@@ -2960,7 +3056,7 @@ function visitClick(t, d) {
   if (d.vmanage) { ed.manage = { type: d.vmanage, kind: dd.kind || 'hotel', open: null, cost: 0 }; renderPane(); const el = $('#pane'); if (el) el.scrollTop = 0; return true; }
   if (a === 'vsave') { saveVEdit(); return true; }
   if (d.dset) { const cur = getPath(dd, d.dset); setPath(dd, d.dset, d.tog && String(cur) === d.v ? '' : d.v);
-    if (d.dset === 'kind') { dd.name = ''; dd._new = false; if (d.v !== 'hotel') dd.cost = 0; } return re(); }
+    if (d.dset === 'kind') { dd.name = ''; dd._new = false; if (d.v !== 'hotel') dd.cost = 0; dd.status = stayStOf(dd.kind, dd.status); } return re(); }
   if (d.dstep) { const max = d.dstep === 'nights' ? 14 : 3000000, min = d.dstep === 'nights' ? 1 : 0; dd[d.dstep] = Math.max(min, Math.min(max, (dd[d.dstep] || 0) + +d.d)); return re(); }
   if (d.dwho) { dd.who = dd.who.includes(d.dwho) ? dd.who.filter(x => x !== d.dwho) : dd.who.concat(d.dwho); return re(); }
   if (d.dday) { const v = curVisit(); dd.days = sortDays(v.date, dd.days.includes(d.dday) ? dd.days.replace(d.dday, '') : dd.days + d.dday); for (const k of LEAD_SVC) if (leadIs(dd, k, 'staff') && !dd.days.includes(LEAD_DAY[k])) delete dd.lead[k]; return re(); }
