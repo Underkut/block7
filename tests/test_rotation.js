@@ -34,6 +34,7 @@
 //  ㉟ 숙소 판(1116-2 C): 호텔 / 성도님 댁 상태 · 옛 값 옮겨 읽기 · b12 · 숙소 쓰는 사람(동행 있을 때만) · 댁은 취소 기한 없음 · 알약 끌어 순서(optReorder)
 //  ㊲ 특별예배(1116-2 D): 부산 일정 이름 · 더한 예배(날짜 · 때 · 이름 · 인도) · 범위 밖 버림 · 날짜순 · 인도 알약 · 성도 인도자 겹침 · 두 주 연속 빼기 ·
 //     주일 광고 · 상영은 주일에 머무는 일정만 · 교역자 인도 날 저절로 머무는 날 · 내 일정 · 내보내기 · b13 · 교역자는 못 씀 · 화면 용어
+//  ㊴ 이번 주 표(C) 분당 판 축 바꿈(1117-G): 줄 = 설교 · 헌금 · 인도, 칸 = 예배(부산 띠와 같은 결)
 //  ㊳ 분당 특별예배(1116-2 E): specs 한 줄 · 자리 '날짜|xk|역할' · 그 날 정해진 예배 쉼 · 부산 겹침 · 내 일정 · 시트 내보내기 · 지우면 자리도 · b14 · 화면
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -1248,6 +1249,13 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     ['data-spf="date"', 'data-spt=', 'data-spf="tm"', 'data-spf="n"', 'data-spn=', 'data-spr=', 'data-act="sprest"', 'data-act="spdel"', 'data-act="spsave"'].every(k => ps.includes(k)), true);
   sc.eq('㊳ 고르기 판 · 보기 판 · 겹침 글은 특별예배 이름으로(slotLabelB) · SVC 를 바로 찾지 않음(svcI)', [/slotLabelB\(S\.book, date, svc, role\)/.test(HTML.slice(HTML.indexOf('function panePick('), HTML.indexOf('function pickApply('))), /canAll = svcI\(svc\)\.off === 0/.test(HTML), /slotLabelB\(S\.book, date, svc, role\)/.test(HTML.slice(HTML.indexOf('function paneSlotView('), HTML.indexOf('function paneMyAvail(')))], [true, true, true]);
   sc.eq('㊳ 교역자는 특별예배 판을 못 연다(그리는 단추도 HB 만 · staffOk 에 없음)', [!/'specnew'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 1500)), /if \(d\.tab \|\| d\.week[^\n]*d\.spec/.test(HTML)], [true, false]);
+}
+
+// ㊴ 분당 판 축 바꿈 (1117-G, HB 11/17 — 시안 A): 줄 = 자리, 칸 = 예배. 부산 띠처럼 날짜가 가로로 흐른다.
+{
+  const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('function viewWeek(') + 16000);
+  sc.eq('㊴ 머리 줄 = 예배(rows 의 th) · 몸 줄 = 설교 · 헌금 · 인도 · 빈 자리는 –',
+    [/<thead><tr><th><\/th>\$\{rows\.map\(r => r\.h\.th\)/.test(vw), /\['설교', '헌금', '인도'\]\.map\(\(lab, i\)/.test(vw), /<span class="muted">–<\/span>/.test(vw), !/<th>설교<\/th><th>헌금<\/th><th>인도<\/th>/.test(vw)], [true, true, true, true]);
 }
 
 sc.done();
