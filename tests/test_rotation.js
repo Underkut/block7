@@ -37,6 +37,8 @@
 //  ㊴ 이번 주 표(C) 분당 판 축 바꿈(1117-G): 줄 = 설교 · 헌금 · 인도, 칸 = 예배(부산 띠와 같은 결)
 //  ㊳ 분당 특별예배(1116-2 E): specs 한 줄 · 자리 '날짜|xk|역할' · 그 날 정해진 예배 쉼 · 부산 겹침 · 내 일정 · 시트 내보내기 · 지우면 자리도 · b14 · 화면
 //  ㊵ 숙소 금액 · 취소 기한은 HB 전용(1117-Z 1): 교역자 화면 책에서 걷어 냄 · 교역자 칸의 값은 안 받음(이미 든 값은 그대로) · 교역자는 못 고침 · HB 화면은 그대로
+//  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
+//     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -55,7 +57,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   STAY_ST, stayStOf, stayStName, STAY_FOR, stayForAsk, stayHotel, optReorder,
   normEvs, evFixDays, evDates, vSun, titleGuess, evNameChips, evLine, TITLE_CHIPS,
   normSpec, specOf, specsIn, restOn, slotLabelB, dropSpec, nextSpecK, specId, isSpec,
-  STAY_PRIV, stayPub, stayKeep, hidePriv };`, ctx);
+  STAY_PRIV, stayPub, stayKeep, hidePriv,
+  alertsOf, alertEnd, cancelSoon, dDay, ddText, ALERT_CATS, CANCEL_DAYS, colTarget: colTarget };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1315,9 +1318,79 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     /if \(ed\.sec === 'stay' && \(d\.dstep === 'cost' \|\| \['dnofree', 'dnocancel', 'dimg', 'dread'\]\.includes\(d\.act\) \|\| d\.delimg\)\) return false;/.test(so), true);
   sc.eq('㊵ 금액 칸 · 취소 기한 날짜 · 시각을 쳐도 교역자는 초안에 안 담긴다', [/if \(t\.dataset\.dcost && !isStaff\(\)\)/.test(HTML), /if \(isStaff\(\) && \(t\.dataset\.df === 'cancelBy' \|\| t\.dataset\.df === 'cancelAt'\)\) return;/.test(HTML)], [true, true]);
   const bb = HTML.slice(HTML.indexOf('function bodyBusan('), HTML.indexOf('function bodyBusan(') + 4000);
-  sc.eq('㊵ 부산 요약 표: 금액 · 취소 기한 열(머리 · 칸)은 HB 만(pv)', [/const pv = !isStaff\(\);/.test(bb), /\$\{pv \? `<td>\$\{cb_\(v, 'cost'/.test(bb), /\$\{pv \? '<th class="h-bs">금액<\/th><th class="h-bs">취소 기한<\/th>' : ''\}/.test(bb)], [true, true, true]);
+  sc.eq('㊵ 부산 요약 표: 금액 · 취소 기한 열(머리 · 칸)은 HB 만(pv)', [/const pv = !isStaff\(\)[,;]/.test(bb), /\$\{pv \? `<td>\$\{cb_\(v, 'cost'/.test(bb), /\$\{pv \? '<th class="h-bs">금액<\/th><th class="h-bs">취소 기한<\/th>' : ''\}/.test(bb)], [true, true, true]);
   sc.eq('㊵ 교역자 내보내기: noPriv = isStaff()', /noPriv: isStaff\(\) \};/.test(HTML), true);
   sc.eq('㊵ 숙소 목록 관리 · AI 사진 읽기 · 메일은 교역자에게 원래 없다', [/own = !isStaff\(\)/.test(ped), /function aiCan\(\) \{ return DEMO \|\| \(!!FB\.user && !isStaff\(\)\); \}/.test(HTML)], [true, true]);
+}
+
+// ㊶ 알림 판 (1117-Z 2, HB 11/17 — 좁을 때 B · 넓을 때 B + 옆 기둥) — 지어낸 이름. 오늘 = 2026-11-18(수)
+{
+  const TD = '2026-11-18';
+  sc.eq('㊶ 두 달 경계: 같은 날짜(그 달에 없으면 마지막 날 · 윤년)', [A.alertEnd(TD), A.alertEnd('2026-12-31'), A.alertEnd('2027-12-31'), A.alertEnd('2026-01-31')], ['2027-01-18', '2027-02-28', '2028-02-29', '2026-03-31']);
+  const H = (cancelBy, o) => Object.assign({ kind: 'hotel', name: '호텔', status: 'done', cancelBy }, o || {});
+  sc.eq('㊶ 취소 기한 7일(오늘 포함): 오늘 · D-6 은 빨강, D-7 · 어제는 아님', [TD, '2026-11-24', '2026-11-25', '2026-11-17'].map(d => A.cancelSoon(H(d), TD)), [true, true, false, false]);
+  sc.eq('㊶ 취소 기한 빨강은 예약 완료 호텔만 — 성도님 댁 · 취소한 숙소 · 예약 전 · 기한 없음은 아님',
+    [A.cancelSoon(H(TD, { kind: 'home' }), TD), A.cancelSoon(H(TD, { status: 'cancel' }), TD), A.cancelSoon(H(TD, { status: 'pre' }), TD), A.cancelSoon(H(undefined), TD)], [false, false, false, false]);
+  sc.eq('㊶ D-day 글', [0, 3, -1].map(A.ddText), ['오늘', 'D-3', 'D+1']);
+  const bk = A.normBook({ people: [{ id: 'pa', name: '가가', roles: ['busan', 'preach', 'offer'] }, { id: 'pb', name: '나나', roles: ['offer'] }],
+    slots: [{ id: '2026-11-22|sun1|preach', who: ['pa'] }, { id: '2026-11-22|sun2|preach', txt: '담임목사님' }, { id: '2026-11-22|sun3|preach', txt: '담임목사님' }, { id: '2026-11-22|ll|preach', txt: '담임목사님' },
+      { id: '2026-11-22|sun1|offer', who: ['pb'] }, { id: '2026-11-22|sun2|offer', who: [] }, { id: '2026-11-25|wed|preach', who: ['pb'] }],
+    specs: [{ id: 'x|2026-12-25|1', n: '성탄 예배', t: '오전', roles: ['preach'], rest: true }],
+    visits: [
+      { id: 'v|2026-11-15', who: [], days: '토일' },   // 지난 것
+      { id: 'v|2026-11-22', who: ['pa'], days: '토일', lead: { fri: { m: 'relay' }, sun: { m: 'staff' }, ll: { m: 'relay' } },
+        travel: [{ dir: 'down', mode: 'KTX' }, { dir: 'up', time: '일 19:10' }],
+        stay: [H('2026-11-24', { name: '바다 호텔', cancelAt: '18:00' }), H('2026-11-25', { name: '언덕 호텔' }), { kind: 'home', name: '성도 가정', status: 'done' },
+          H('2026-11-19', { name: '취소 호텔', status: 'cancel' }), H(TD, { name: '오늘 호텔' })] },
+      { id: 'v|2026-11-29', who: [], days: '토일' },
+      { id: 'v|2026-12-24', who: ['pa'], days: '목', title: '성탄', evs: [{ d: '2026-12-24', n: '성탄 전야 예배' }], travel: [{ dir: 'down', mode: 'KTX' }] },
+      { id: 'v|2027-01-17', who: ['pa'], days: '토일', stay: [{ kind: 'hotel', name: '끝 호텔', status: 'done' }], travel: [{ dir: 'down', mode: 'KTX' }, { dir: 'up', mode: 'KTX' }], lead: { fri: { m: 'lay' }, sun: { m: 'staff' }, ll: { m: 'staff' } } },
+      { id: 'v|2027-01-24', who: [], days: '토일' }] });   // 두 달 밖
+  const ext = { services: [{ date: '2026-11-21', service: '토요 기도', status: 'tentative', leaders: [], members: [{ pid: 'pa', part: '건반' }] }] };
+  const R = A.alertsOf(bk, TD, { ext, bs: '2026-11-22' }), of = (c) => R.items.filter(x => x.cat === c);
+  sc.eq('㊶ 범위 = 오늘 ~ 두 달 · 갈래 넷 · 개수', [R.from, R.to, A.ALERT_CATS.map(c => c[0]), Object.keys(R.n), R.n.urgent + R.n.busan + R.n.bd + R.n.chk === R.items.length], [TD, '2027-01-18', ['urgent', 'busan', 'bd', 'chk'], ['urgent', 'busan', 'bd', 'chk'], true]);
+  sc.eq('㊶ 급함: 7일 안 취소 기한(예약 완료 호텔만, 숙소마다) + 겹침 — 날짜순 · 갈 곳',
+    J(of('urgent').map(x => [x.kind, x.date, x.main, x.dd, x.to])),
+    [['cancel', TD, '오늘 호텔 취소 기한', 0, { visit: 'v|2026-11-22', col: 'cancel', i: 4 }],
+     ['overlap', '2026-11-22', '가가 — 11/22(주일) 부산에 있는데 분당 1부 설교', 4, { pick: '2026-11-22|sun1|preach' }],
+     ['cancel', '2026-11-24', '바다 호텔 취소 기한 18:00', 6, { visit: 'v|2026-11-22', col: 'cancel', i: 0 }]]);
+  sc.eq('㊶ 급함 줄의 덧글: 그 부산 일정 · 교역자 / 겹침', [of('urgent')[0].sub, of('urgent')[1].sub, of('urgent')[1].go, of('urgent')[0].go], ['11/22 부산 · 가가', '겹침', '고르기 판', '숙소 판']);
+  sc.eq('㊶ 확인: 노랑(맡지 않는 일 · 예배팀 미정) — 숙소 미정(옛 2주 노랑)은 여기 없다',
+    J(of('chk').map(x => [x.kind, x.date, x.sub])), [['worship', '2026-11-21', '예배팀 미정'], ['role', '2026-11-25', '맡지 않는 일']]);
+  const bz = of('busan');
+  sc.eq('㊶ 부산: 상영(받은 주일) · 교역자 · 숙소(두 달 기준 하나 · 하루 일정은 안 물음) · 교통(빠진 쪽) · 예배 인도 · 일정 없는 주일 — 지난 것 · 두 달 밖은 없음',
+    J(bz.map(x => [x.date, x.kind, x.main])),
+    [['2026-11-22', 'show', '부산 상영 미정'], ['2026-11-29', 'who', '교역자 미정'], ['2026-11-29', 'stay', '숙소 미정'], ['2026-11-29', 'travel', '교통 미정'], ['2026-11-29', 'lead', '예배 인도 미정'],
+     ['2026-12-06', 'novisit', '부산 일정이 아직 없습니다'], ['2026-12-13', 'novisit', '부산 일정이 아직 없습니다'], ['2026-12-20', 'novisit', '부산 일정이 아직 없습니다'],
+     ['2026-12-24', 'travel', '교통 미정 · 올라옴'], ['2026-12-24', 'lead', '예배 인도 미정'],
+     ['2026-12-27', 'novisit', '부산 일정이 아직 없습니다'], ['2027-01-03', 'novisit', '부산 일정이 아직 없습니다'], ['2027-01-10', 'novisit', '부산 일정이 아직 없습니다']]);
+  sc.eq('㊶ 부산 줄의 갈 곳: 상영 = 광고 · 숙소 = 숙소 판 · 교통 = 교통 판 · 인도 = 예배 판 · 일정 없음 = 그 날짜로 더하기',
+    J([bz[0].to, bz[2].to, bz[3].to, bz[4].to, bz[5].to, bz[1].to]),
+    [{ ads: '2026-11-22', vid: 'v|2026-11-22' }, { visit: 'v|2026-11-29', col: 'stay', i: -1 }, { visit: 'v|2026-11-29', col: 'travel' }, { visit: 'v|2026-11-29', col: 'lead' }, { newvisit: '2026-12-06' }, { visit: 'v|2026-11-29', col: 'who' }]);
+  sc.eq('㊶ 예배 인도 미정: 정해진 예배(주일 · LL — 금요예배가 없는 넷째 주) · 더한 예배 이름', [bz[4].sub, bz[9].sub], ['주일예배 · LL', '성탄 전야 예배 — 가가 · 성탄']);
+  sc.eq('㊶ 금1~3 주(11/20 ENCOUNTER)의 금요 인도를 비우면 미정', A.alertsOf(A.normBook({ visits: [{ id: 'v|2026-11-22', who: [], days: '토일', lead: { sun: { m: 'staff' }, ll: { m: 'staff' } } }] }), TD).items.find(x => x.kind === 'lead').sub, 'ENCOUNTER');
+  sc.eq('㊶ 11/22 은 인도(ENCOUNTER · 주일 · LL) · 숙소 · 교통을 다 정함(교통 시각만 적어도 정함) — 상영만 남음', bz.filter(x => x.date === '2026-11-22').map(x => x.kind), ['show']);
+  const bd = of('bd'), bd1 = bd.filter(x => x.date <= '2026-11-29');
+  sc.eq('㊶ 분당: 오늘(수) 자리부터 · 주일 설교 · 헌금은 묶고 빈 예배만 · 2부 / LL 인도 · 마지막 금요일 WN 광고',
+    J(bd1.map(x => [x.date, x.main, x.sub])),
+    [['2026-11-18', '수요예배 설교', ''], ['2026-11-18', '수요예배 헌금인도', ''], ['2026-11-20', '금요예배 설교', ''], ['2026-11-20', '금요예배 헌금인도', ''],
+     ['2026-11-22', '주일 헌금인도', '2부 · 3부 · LL'], ['2026-11-22', '2부 예배인도', ''], ['2026-11-22', 'LL 예배인도', ''],
+     ['2026-11-25', '수요예배 헌금인도', ''], ['2026-11-27', '금요예배 설교', ''], ['2026-11-27', '금요예배 헌금인도', ''], ['2026-11-27', 'WN 광고', ''],
+     ['2026-11-29', '주일 설교', '1~3부 · LL'], ['2026-11-29', '주일 헌금인도', '1~3부 · LL'], ['2026-11-29', '2부 예배인도', ''], ['2026-11-29', 'LL 예배인도', '']]);
+  sc.eq('㊶ 분당 갈 곳: 고르기 판(빈 첫 예배 · 넷 다 비면 모두 같게)', J([bd1[4].to, bd1[11].to, bd1[0].to]), [{ pick: '2026-11-22|sun2|offer', all: false }, { pick: '2026-11-29|sun1|preach', all: true }, { pick: '2026-11-18|wed|preach' }]);
+  sc.eq('㊶ 특별예배 자리도 · 그 날 쉬는 금요예배는 빼고', [bd.filter(x => x.date === '2026-12-25').map(x => [x.main, x.sub, x.to.pick])], [[['성탄 예배 설교', '오전', '2026-12-25|x1|preach']]]);
+  sc.eq('㊶ 두 달 끝날(1/17 주일)까지 · 그 뒤는 없음', [R.items.some(x => x.date === '2027-01-17'), R.items.some(x => x.date > '2027-01-18')], [true, false]);
+  sc.eq('㊶ 상영 미정은 받은 주일(bs)이 없으면 없다(짐작 안 함)', A.alertsOf(bk, TD, { ext }).items.some(x => x.kind === 'show'), false);
+  sc.eq('㊶ 교역자 화면 책(hidePriv)에는 취소 기한 줄이 없다', A.alertsOf(A.hidePriv(bk), TD).items.some(x => x.kind === 'cancel'), false);
+  sc.eq('㊶ colTarget: 알림의 취소 기한 줄은 그 숙소 · 교통 줄은 교통 판', J([A.colTarget(bk.visits.find(v => v.id === 'v|2026-11-22'), 'cancel', 4), A.colTarget(bk.visits[0], 'travel')]),
+    [{ sec: 'stay', i: 4, focus: 'cancel' }, { sec: 'travel', i: -1, focus: '' }]);
+  sc.eq('㊶ colTarget: 숫자 없는 취소 기한(부산 요약 표)은 예전처럼 가장 이른 기한', A.colTarget(bk.visits.find(v => v.id === 'v|2026-11-22'), 'cancel').i, 4);
+  // 화면 코드 — 판은 HB 만 · 네 탭 같은 판 · 옛 알림 자리 걷음 · 접기는 이 기기에만 · 표 · 숙소 판 기한도 같은 기준
+  sc.eq('㊶ 판은 교역자에게 없다(alertData 가 isStaff 로 거름)', /function alertData\(\) \{ if \(isStaff\(\)\) return null;/.test(HTML), true);
+  sc.eq('㊶ 네 탭이 같은 판(topBanner) — 탭마다 그리던 alertList · choreList · 취소 기한 줄 · 그다음 줄은 없다',
+    [(HTML.match(/\$\{topBanner\(\)\}/g) || []).length, /function alertList\(|function choreList\(|class="wafter"|\$\{alertList\(/.test(HTML)], [4, false]);
+  sc.eq('㊶ 접기는 이 기기(PREF — localStorage)에만, 책 · 계정에 넣지 않음', [/PREF\.afold = !PREF\.afold; savePref\(\);/.test(HTML), /afold/.test(HTML.slice(HTML.indexOf('function cloudSave('), HTML.indexOf('function cloudSave(') + 1500))], [true, false]);
+  sc.eq('㊶ 부산 요약 표 · 숙소 판의 취소 기한도 같은 기준(cancelSoon)', (HTML.match(/cancelSoon\(/g) || []).length >= 5, true);
 }
 
 sc.done();
