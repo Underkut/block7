@@ -484,6 +484,40 @@ console.log('⑰ (1117-Z 2c) 주보 담당 — 사람 탭에서 순번 · 그 �
   await sleep(500);
 }
 
+console.log('⑱ (1117-Z 2b) 알림 판 기간 — 필터 아이콘 → 부산 · 분당 따로 · 계정(ui.al)에 · 책은 그대로 · 교역자는 자기 칸 ui 에');
+{
+  const before = JSON.stringify((await getDoc('rota/' + HB)).b15);
+  const ns = (o) => (o == null ? o : JSON.parse(JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v))));   // 계정에서 온 칸은 이름순
+  await hb.evaluate(() => { closePane(); PREF.tab = 'week'; PREF.afold = false; render(); }); await sleep(300);
+  ok('⑱ 처음 값: 부산 8주 · 분당 달 규칙(머리줄에 둘)', await hb.evaluate(() => { const td = todayYmd(), A = alertData(); return [A.toB === addDays(sunOf(td), 55), A.toD === monthEndOf(td, 21), /부산 ~/.test(document.querySelector('#panel .arng').innerText)]; }), [true, true, true]);
+  await hb.click('#panel [data-act="alset"]'); await sleep(400);
+  ok('⑱ 아이콘 → 설정 판(폰은 아래 판) · 부산 · 분당 탭 · 달력', await hb.evaluate(() => [S.pane && S.pane.kind, document.querySelectorAll('#pane [data-altab]').length, document.querySelectorAll('#pane .acd').length > 28]), ['alset', 2, true]);
+  await hb.click('#pane [data-altab="bd"]'); await sleep(200); await hb.click('#pane [data-alwset="4"]'); await sleep(200);
+  const u1 = await until(async () => { const d = await getDoc('rota/' + HB); return d.ui && d.ui.al && d.ui.al.bd ? d.ui.al : null; });
+  ok('⑱ 분당 4주 → 계정 맨 위 ui.al(부산은 그대로 처음 값 — 칸 없음)', ns(u1), ns({ bd: { m: 'weeks', w: 4 } }));
+  const day = await hb.evaluate(() => addDays(todayYmd(), 10)); await hb.click(`#pane [data-alday="${day}"]`); await sleep(200);
+  await hb.click('#pane [data-act="alpsave"]').catch(() => { }); await hb.click('#pane [data-altab="busan"]'); await sleep(200);
+  await hb.click('#pane [data-alwset="13"]'); await sleep(300);
+  const noSave = await hb.evaluate(() => !document.querySelector('#pane [data-act="alpsave"]'));   // 13주 = 기본 프리셋과 같음 → 더하기 단추 없음
+  const u2 = await until(async () => { const d = await getDoc('rota/' + HB); return d.ui && d.ui.al && d.ui.al.busan ? d.ui.al : null; });
+  ok('⑱ 날짜를 누르면 그 날까지(분당) · 부산 13주 · 날짜는 프리셋이 안 되고 기본 셋과 같은 것도 안 더함', ns(u2 && [u2.bd, u2.busan, u2.pre || [], noSave]), ns([{ m: 'date', d: day }, { m: 'weeks', w: 13 }, [], true]));
+  await hb.click('#pane [data-alwset="4"]'); await sleep(200); await hb.click('#pane [data-act="alpsave"]'); await sleep(300);
+  const u3 = await until(async () => { const d = await getDoc('rota/' + HB); return d.ui && d.ui.al && (d.ui.al.pre || []).length ? d.ui.al : null; });
+  ok('⑱ 내 프리셋 더하기(4주)', ns(u3 && u3.pre), ns([{ m: 'weeks', w: 4 }]));
+  ok('⑱ 판 머리 기간이 바뀜 · 책(b15)은 한 글자도 그대로', [await hb.evaluate((day) => { closePane(); render(); return alertData().toD === day; }, day), JSON.stringify((await getDoc('rota/' + HB)).b15) === before], [true, true]);
+  // 넓은 화면: 설정은 기둥 안에서
+  await hb.setViewportSize({ width: 1280, height: 860 }); await sleep(300); await hb.evaluate(() => render());
+  await hb.click('#side [data-act="alset"]'); await sleep(400);
+  ok('⑱ 넓은 화면: 설정이 오른쪽 기둥 안(아래 판 없음) · × 로 목록', await hb.evaluate(() => { const a = [!!document.querySelector('#side .aset'), !S.pane]; document.querySelector('#side [data-act="alclose"]').click(); return a.concat(!!document.querySelector('#side .apanel:not(.aset)')); }), [true, true, true]);
+  await hb.setViewportSize({ width: 390, height: 844 }); await sleep(300); await hb.evaluate(() => { saveUi({ al: {} }); render(); });
+  // 교역자 — 자기 칸 ui 에
+  await ga.evaluate(() => { closePane(); PREF.tab = 'week'; render(); }); await sleep(300);
+  await ga.click('[data-act="alset"]'); await sleep(400); await ga.click('#pane [data-alwset="4"]'); await sleep(300);
+  const g18 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); return x && x.ui && x.ui.al ? x.ui.al : null; });
+  ok('⑱ 교역자: 기간은 자기 칸 ui.al 에(규칙 그대로) · HB 가 처음 값으로 되돌린 ui 는 al 칸이 통째로 빠짐(합치기로 옛 값이 남지 않음)', ns([g18, ((await getDoc('rota/' + HB)).ui || {}).al || null]), ns([{ busan: { m: 'weeks', w: 4 } }, null]));
+  await ga.evaluate(() => closePane()); await sleep(400);
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });
