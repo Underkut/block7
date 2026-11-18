@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1117-6 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 -->
+<!-- 교역자 로테이션 v. 26-1118-1 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -559,7 +559,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1117-6';
+const APP_VERSION = 'v. 26-1118-1';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -879,7 +879,7 @@ function mateName(book, m) { const p = m.p && live(book.people).find(x => x.id =
 function mateText(book, v) { return ((v && v.mates) || []).map(m => mateName(book, m)).join(' · '); }
 /* 부산 요약 표의 칸 → 고칠 판 (1116-2 B). sec = 방문 판의 항목 · i = 숙소 번호(-1 = 새 숙소) · focus = 판에서 먼저 보일 자리.
    금액 → 금액 있는 호텔(없으면 호텔 · 숙소 아무거나) · 취소 기한 → 표에 보이는 가장 이른 기한의 숙소(없으면 환불 불가 · 첫 숙소). 취소한 숙소는 표에 안 보이므로 빼고. */
-const STAFF_COLS = ['stay', 'cost', 'cancel', 'meet'];   // 교역자가 자기 방문에서 바로 고칠 수 있는 칸 — 나머지는 요약(보기)으로
+const STAFF_COLS = ['stay', 'meet'];   // 교역자가 자기 방문에서 바로 고칠 수 있는 칸 — 나머지는 요약(보기)으로. 금액 · 취소 기한은 HB 전용(1117-Z 1)이라 교역자 표에 열이 없다
 function colTarget(v, col, i) {
   const st = (v.stay || []).map((x, k) => ({ x, k })).filter(o => o.x.status !== 'cancel'), first = (f) => { const o = st.find(f); return o ? o.k : -1; };
   if (col === 'who' || col === 'days') return { sec: 'who', i: -1, focus: col };
@@ -1094,7 +1094,7 @@ function absorb(book, staffs) {
     for (const vid of Object.keys(s.visits)) {
       const v = book.visits.find(x => x.id === vid); if (!v || v.del || !v.who.includes(p.id)) continue;   // 자기가 든 방문만
       const e = s.visits[vid];
-      for (const f of Object.keys(STAFF_VISIT)) if (e[f + 'At']) offer('visits', v, f, e[f], e[f + 'At'], p.id);
+      for (const f of Object.keys(STAFF_VISIT)) if (e[f + 'At']) offer('visits', v, f, f === 'stay' ? stayKeep(v.stay, e.stay) : e[f], e[f + 'At'], p.id);   // 숙소의 금액 · 기한은 HB 책 것 그대로 (1117-Z 1)
       if (e.bsAt && vSun(v)) { const id = showId(vSun(v)), cur = book.shows.find(x => x.id === id), b = shows[id];
         if (e.bsAt > ((cur && cur.at) || 0) && (!b || e.bsAt > b.at || (e.bsAt === b.at && p.id < b.by))) shows[id] = { bs: e.bs, at: e.bsAt, by: p.id }; }
     }
@@ -1115,9 +1115,33 @@ function absorb(book, staffs) {
     book.shows = book.shows.filter(x => x.id !== id).concat(n).sort((a, c) => (a.id < c.id ? -1 : 1)); book.at = Math.max(book.at || 0, n.at); changed.push(id); }
   return { book, changed };
 }
+/* ---- 숙소 금액 · 취소 기한은 HB 전용 (1117-Z 1, HB 11/17) ----
+   금액(cost) · 취소 기한(cancelBy · cancelAt) · 환불 불가(nofree) · 예약 화면 사진(imgs) · 숙소 목록의 평소 금액.
+   교역자 앱은 받은 책에서 이것을 걷어 내고 그린다(hidePriv — staffView 한 곳). 교역자 칸에서 온 값은 받지 않는다 —
+   absorb 가 숙소를 받을 때 이 칸들은 HB 책의 같은 숙소(종류 + 이름) 것을 그대로 둔다(stayKeep). 이미 책에 든 값은 지우지 않는다.
+   ⚠️ 보안 규칙상 교역자는 HB 책 전체를 읽을 수 있다 — 이것은 '화면 감춤' 이다. 자료까지 막으려면 책 밖(HB 만 읽는 칸)으로 옮겨야 한다. */
+const STAY_PRIV = ['cost', 'cancelBy', 'cancelAt', 'nofree', 'imgs'];
+function stayPub(s) { const o = Object.assign({}, s); for (const f of STAY_PRIV) delete o[f]; o.cost = 0; return o; }
+// 교역자가 보낸 숙소 목록(next)에 HB 책(cur)의 금액 · 기한을 되입힌다 — 같은 종류 + 같은 이름(이름이 비면 같은 자리)의 숙소만. 맞는 것이 없으면 비운다.
+function stayKeep(cur, next) {
+  cur = cur || []; const used = new Set();
+  return (next || []).map((s0, i) => { const s = stayPub(s0);
+    let k = s.name ? cur.findIndex((c, j) => !used.has(j) && c.kind === s.kind && c.name === s.name) : (cur[i] && !cur[i].name && cur[i].kind === s.kind && !used.has(i) ? i : -1);
+    if (k < 0) return s; used.add(k);
+    for (const f of STAY_PRIV) if (cur[k][f] !== undefined) s[f] = Array.isArray(cur[k][f]) ? cur[k][f].slice() : cur[k][f];
+    return s; });
+}
+// 교역자 화면용 책 — 숙소의 금액 · 기한 · 사진, 목록의 평소 금액을 걷어 낸다. 넣은 책은 고치지 않는다.
+function hidePriv(book) {
+  const b = Object.assign({}, book);
+  b.visits = (book.visits || []).map(v => (v.del || !Array.isArray(v.stay) ? v : Object.assign({}, v, { stay: v.stay.map(stayPub) })));
+  b.opts = (book.opts || []).map(o => (o.type === 'stay' && o.cost ? Object.assign({}, o, { cost: 0 }) : o));
+  return b;
+}
 // 교역자 앱이 자기 칸에 쓸 조각 — set(…, { merge: true }) 로 그 방문 · 그 칸만 바뀐다
 function staffPatch(email, kind, key, val, now) {
-  if (kind === 'stay' || kind === 'travel') return { email, at: now, visits: { [key]: { [kind]: val, [kind + 'At']: now } } };
+  if (kind === 'stay') return { email, at: now, visits: { [key]: { stay: (val || []).map(stayPub), stayAt: now } } };   // 금액 · 기한은 싣지 않는다(HB 전용, 1117-Z 1)
+  if (kind === 'travel') return { email, at: now, visits: { [key]: { [kind]: val, [kind + 'At']: now } } };
   // 모임 — 칸을 모두 적는다: Firestore 합치기(merge)는 객체 안으로 들어가 합치므로, 빠진 칸이 있으면 옛 값(메모 등)이 남는다
   if (kind === 'meet') { const m = normMeet(val); return { email, at: now, visits: { [key]: { meet: m ? { k: m.k, g: m.g || '', who: m.who || '', n: m.n || 0, memo: m.memo || '' } : null, meetAt: now } } }; }
   if (kind === 'bs') return ADS_BS[val] ? { email, at: now, visits: { [key]: { bs: val, bsAt: now } } } : null;   // 부산 상영 — 그 방문 줄 안(규칙이 허락하는 visits 칸)
@@ -1608,12 +1632,13 @@ function exportRows(book, view, ym, o) {
   }
   if (view === 'busan') {
     const { from, to } = { from: ym + '-01', to: addDays(addMonths(ym, 1) + '-01', -1) };
-    const rows = [['날짜', '요일', '교역자', '머무는 날', '금요예배', '금요 인도', '주일 인도', 'LL 인도', '숙소', '금액', '취소 기한', '동행', '모임', '이름', '예배']];
+    const pv = !(o && o.noPriv);   // 교역자 내보내기에는 금액 · 취소 기한 열이 없다 (1117-Z 1)
+    const rows = [['날짜', '요일', '교역자', '머무는 날', '금요예배', '금요 인도', '주일 인도', 'LL 인도', '숙소', ...(pv ? ['금액', '취소 기한'] : []), '동행', '모임', '이름', '예배']];
     for (const v of live(book.visits).filter(v => v.date >= from && v.date <= to).sort((a, b) => (a.date < b.date ? -1 : 1))) {
       const st = v.stay.filter(x => x.status !== 'cancel'), cost = st.reduce((a, x) => a + (x.cost || 0), 0), cb = st.map(x => x.cancelBy).filter(Boolean).sort()[0];
       rows.push([mdOf(v.date), dw(v.date), whoText(book, v.who, '', pm), dayS(sortDays(v.date, v.days || defaultDays(v.date))), busanFri(visitSun(v.date)) ? friName(visitSun(v.date)) : '',
         ...LEAD_SVC.map(svc => leadCell(book, v, svc)), st.map(x => (x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도님 댁' : '호텔')) + (x.status === 'done' ? '' : ' (' + stayStName(x) + ')')).join(' · '),
-        cost || '', cb ? mdd2(cb) : st.some(x => x.nofree) ? '환불 불가' : '', mateText(book, v), meetText(v.meet), v.title || '', evLine(book, v)]);
+        ...(pv ? [cost || '', cb ? mdd2(cb) : st.some(x => x.nofree) ? '환불 불가' : ''] : []), mateText(book, v), meetText(v.meet), v.title || '', evLine(book, v)]);
     }
     return rows;
   }
@@ -2123,7 +2148,7 @@ function startStaff(u, team) {
   rerender();
 }
 // 교역자 화면 = HB 책 + 모든 교역자 칸(내 칸은 이 기기의 최신)을 받아들인 모양 — 보기만 하므로 저장하지 않는다
-function staffView() { const list = S.staff.concat(FB.my && FB.my.email ? [FB.my] : []); S.book = absorb(FB.base || normBook(null), list).book; }
+function staffView() { const list = S.staff.concat(FB.my && FB.my.email ? [FB.my] : []); S.book = hidePriv(absorb(FB.base || normBook(null), list).book); }   // 숙소 금액 · 취소 기한은 HB 전용 — 교역자 화면에서 걷어 냄 (1117-Z 1)
 function leaveTeam() { if (FB.role === 'staff') S.book = normBook(lsGet(BOOK_KEY, null)); FB.role = ''; FB.team = ''; FB.base = null; FB.my = {}; refreshTabs(); }
 function myPid() { const p = personByEmail(S.book, FB.user && FB.user.email); return p ? p.id : ''; }
 // '나' — 로그인 이메일의 사람. 미리보기는 지어낸 첫 사람
@@ -2395,7 +2420,7 @@ const VIEWS = {
   mine: { name: '내 일정', desc: '한 사람이 맡은 것만 날짜순' },
   matrix: { name: '사람 × 주', desc: '누가 몇 번 맡았는지 한눈에 — 고르게 나누기' },
   cal: { name: '월 달력', desc: '보통 달력 모양 — 설교 · 헌금 · 예배인도 · 부산 골라 보기' },
-  busan: { name: '부산 요약', desc: '부산 로테이션 시트처럼 — 금요예배 · 숙소 · 금액 · 취소 기한 · 동행 · 모임 (칸을 누르면 바로 고침)' },
+  busan: { name: '부산 요약', get desc() { return '부산 로테이션 시트처럼 — 금요예배 · 숙소 · ' + (isStaff() ? '' : '금액 · 취소 기한 · ') + '동행 · 모임 (칸을 누르면 바로 고침)'; } },
 };
 const GCLS = { sun: 'sun', fri: 'fri', wed: 'wed', tue: 'tue', bs: 'bs', lead: 'lead', sp: 'sp' };
 const GNAME = { sun: '주일', fri: '금요', wed: '수요', tue: '화요', bs: '부산', lead: '예배인도', sp: '특별' };
@@ -2418,7 +2443,7 @@ document.addEventListener('click', (e) => { if ($('#vdrop') && !e.target.closest
 function expOpts() {
   const self = selfPid(), ps = live(S.book.people).slice().sort((a, b) => (b.id === self) - (a.id === self) || (a.kind === 'lay') - (b.kind === 'lay') || a.name.localeCompare(b.name, 'ko'));
   const me = ps.length ? mePerson(ps) : null;
-  return { today: todayYmd(), pid: me ? me.id : '', grid: !!PREF.mgrid, calf: CALF[PREF.calf] ? PREF.calf : 'preach', ext: S.ext || {} };
+  return { today: todayYmd(), pid: me ? me.id : '', grid: !!PREF.mgrid, calf: CALF[PREF.calf] ? PREF.calf : 'preach', ext: S.ext || {}, noPriv: isStaff() };
 }
 function expView() { return S.pane.all ? 'all' : VIEWS[S.pane.v] ? S.pane.v : 'sheet'; }
 function expRows() { return exportRows(S.book, expView(), S.ym, expOpts()); }
@@ -2583,6 +2608,7 @@ function bodyCal(lv) {
 function bodyBusan(lv) {
   const { from, to } = monthRange(S.ym), pm = peopleMap(S.book);
   const vs = live(S.book.visits).filter(v => v.date >= from && v.date <= to).sort((a, b) => (a.date < b.date ? -1 : 1)), bw = bsWarn();
+  const pv = !isStaff();   // 금액 · 취소 기한 열은 HB 만 (1117-Z 1)
   const cb_ = (v, col, inner, extra) => `<button class="cb" data-visit="${esc(v.id)}" data-vcol="${col}"${extra || ''}>${inner}</button>`;
   const rows = vs.map(v => { const st = v.stay.filter(x => x.status !== 'cancel'), cost = st.reduce((a, x) => a + (x.cost || 0), 0);
     const sh = st.filter(stayHotel), cb = sh.map(x => x.cancelBy).filter(Boolean).sort()[0], nof = sh.some(x => x.nofree), ss = stayState(v);
@@ -2591,9 +2617,9 @@ function bodyBusan(lv) {
       <td>${cb_(v, 'days', daysHtml(sortDays(v.date, v.days || defaultDays(v.date))))}</td>
       <td style="text-align:left">${cb_(v, 'lead', leadChips(v))}</td>
       <td style="text-align:left">${st.length ? st.map(x => `<button data-visit="${esc(v.id)}" data-vcol="stay" data-i="${v.stay.indexOf(x)}"><span class="pill${x.status === 'done' ? ' ok' : ''}">${esc((x.for ? x.for + ' ' : '') + (x.name || (x.kind === 'home' ? '성도님 댁' : '호텔')))}</span></button>`).join(' ') : cb_(v, 'stay', `<span class="pill${ss === 'none' ? '' : ' warn'}">없음</span>`, ' data-i="-1"')}</td>
-      <td>${cb_(v, 'cost', cost ? won(cost) : '')}</td><td class="tiny">${cb_(v, 'cancel', cb ? mdd(cb) : nof ? '환불 불가' : '')}</td>
+      ${pv ? `<td>${cb_(v, 'cost', cost ? won(cost) : '')}</td><td class="tiny">${cb_(v, 'cancel', cb ? mdd(cb) : nof ? '환불 불가' : '')}</td>` : ''}
       <td class="tiny" style="text-align:left">${cb_(v, 'mate', esc(mateText(S.book, v)))}</td><td class="tiny" style="text-align:left">${cb_(v, 'meet', esc(meetText(v.meet)))}</td></tr>`; }).join('');
-  return vs.length ? `<div class="tblwrap"><table class="tsheet bt"><tr><th class="h-bs">날짜</th><th class="h-bs">교역자</th><th class="h-bs">요일</th><th class="h-bs">예배 인도</th><th class="h-bs">숙소</th><th class="h-bs">금액</th><th class="h-bs">취소 기한</th><th class="h-bs">동행</th><th class="h-bs">모임</th></tr>${rows}</table></div>` : '<p class="empty">이 달 부산 일정이 없습니다.</p>';
+  return vs.length ? `<div class="tblwrap"><table class="tsheet bt"><tr><th class="h-bs">날짜</th><th class="h-bs">교역자</th><th class="h-bs">요일</th><th class="h-bs">예배 인도</th><th class="h-bs">숙소</th>${pv ? '<th class="h-bs">금액</th><th class="h-bs">취소 기한</th>' : ''}<th class="h-bs">동행</th><th class="h-bs">모임</th></tr>${rows}</table></div>` : '<p class="empty">이 달 부산 일정이 없습니다.</p>';
 }
 
 /* ---------- 화면: 달력표 ----------
@@ -3014,7 +3040,7 @@ function openVEdit(key, i, focus) {
   if (focus) focusCol(focus);
 }
 /* 부산 요약 표의 칸을 누르면 (1116-2 B): 그 주의 방문 판을 열고 바로 그 칸을 고치는 판으로 — 누른 자리가 먼저 보이게.
-   '저장' · × 를 누르면 표로 돌아온다(direct). ‹ 는 요약 판으로. 교역자는 자기 방문의 숙소 · 금액 · 취소 기한 · 모임만, 나머지는 요약(보기). */
+   '저장' · × 를 누르면 표로 돌아온다(direct). ‹ 는 요약 판으로. 교역자는 자기 방문의 숙소 · 모임만(금액 · 취소 기한은 HB 전용 — 1117-Z 1), 나머지는 요약(보기). */
 function openVisitCol(id, col, i) {
   const v = S.book.visits.find(x => x.id === id && !x.del);
   openPane({ kind: 'visit', id }); if (!v || !col) return;
@@ -3102,7 +3128,7 @@ function paneVEdit(v) {
         ${d._new ? `<input class="inp" data-df="name" value="${esc(d.name)}" placeholder="${hotel ? '호텔 이름' : '어느 성도님 댁'}" maxlength="60">${own ? '<span class="tiny muted">저장하면 목록에도 들어갑니다</span>' : ''}` : ''}</div>
       <div class="frow"><span class="flabel">상태</span>${seg3('status', STAY_ST[d.kind], stayStOf(d.kind, d.status))}</div>
       <div class="frow"><span class="flabel">박</span><span class="stepper"><button data-dstep="nights" data-d="-1" aria-label="하루 줄이기">−</button><b>${d.nights}박</b><button data-dstep="nights" data-d="1" aria-label="하루 늘리기">+</button></span></div>
-      ${hotel ? `<div class="frow"><span class="flabel">금액</span><span class="stepper"><button data-dstep="cost" data-d="-5000" aria-label="5천원 줄이기">−</button><input class="inp cost${ed.focus === 'cost' ? ' redf' : ''}" data-focus="cost" data-dcost="1" inputmode="numeric" autocomplete="off" value="${d.cost ? d.cost.toLocaleString('ko-KR') : ''}" placeholder="0" aria-label="금액(원)"><span class="won">원</span><button data-dstep="cost" data-d="5000" aria-label="5천원 늘리기">+</button></span></div>
+      ${hotel && own ? `<div class="frow"><span class="flabel">금액</span><span class="stepper"><button data-dstep="cost" data-d="-5000" aria-label="5천원 줄이기">−</button><input class="inp cost${ed.focus === 'cost' ? ' redf' : ''}" data-focus="cost" data-dcost="1" inputmode="numeric" autocomplete="off" value="${d.cost ? d.cost.toLocaleString('ko-KR') : ''}" placeholder="0" aria-label="금액(원)"><span class="won">원</span><button data-dstep="cost" data-d="5000" aria-label="5천원 늘리기">+</button></span></div>
       <div class="field"><div class="frow"><span class="flabel">취소 기한${d.nofree ? '' : d.cancelBy ? ' — ' + mdd(d.cancelBy) + (d.cancelAt ? ' ' + d.cancelAt : '') + '까지' : ''}</span>
           <label class="chk${d.nofree && ed.focus === 'cancel' ? ' redf' : ''}"${d.nofree ? ' data-focus="cancel"' : ''}><input type="checkbox" data-act="dnofree"${d.nofree ? ' checked' : ''}>환불 불가</label><span class="spacer"></span>${d.cancelBy ? `<button class="txtbtn" data-act="dnocancel">기한 지우기</button>` : ''}</div>
         ${d.nofree ? '' : `<div class="frow dtpair"><input class="inp${ed.focus === 'cancel' ? ' redf' : ''}" type="date" required placeholder="날짜" data-focus="cancel" data-df="cancelBy" value="${d.cancelBy || ''}" aria-label="취소 기한 날짜"><input class="inp" type="time" required placeholder="시각" data-df="cancelAt" value="${d.cancelAt || ''}" aria-label="취소 기한 시각"${d.cancelBy ? '' : ' disabled'}></div>`}</div>
@@ -3350,13 +3376,14 @@ document.addEventListener('input', (e) => {
   const t = e.target, ed = S.pane && S.pane.kind === 'visit' && S.pane.edit; if (!ed || !t.closest || !t.closest('#pane')) return;
   if (t.dataset.df) setPath(ed.d, t.dataset.df, t.value);
   if (t.dataset.dissue && ed.d.cat) ed.d.map[ed.d.cat] = t.value;
-  if (t.dataset.dcost) ed.d.cost = Math.min(3000000, +String(t.value).replace(/\D/g, '') || 0);   // 금액 칸 — 숫자만 (다시 그리지 않는다)
+  if (t.dataset.dcost && !isStaff()) ed.d.cost = Math.min(3000000, +String(t.value).replace(/\D/g, '') || 0);   // 금액 칸 — 숫자만 (다시 그리지 않는다)
   if (t.dataset.dmq) { ed.d.q = t.value; const el = $('#dm-lays'); if (el) el.innerHTML = mateLays(ed.d); }   // 동행: 치는 대로 맞는 성도 인도자만
 });
 document.addEventListener('change', (e) => {
   const t = e.target, ed = S.pane && S.pane.kind === 'visit' && S.pane.edit; if (!ed || !t.closest || !t.closest('#pane')) return;
   if (t.dataset.devtm !== undefined) { const e = ed.d.evs && ed.d.evs[+t.dataset.devtm]; if (e) e.t = t.value || ''; return renderPane(); }   // 예배 시각 (1116-2 D)
   if (t.dataset.dttime !== undefined) { const r = ed.d.rows[+t.dataset.dttime]; if (r) { const m = /^([일월화수목금토])/.exec(r.time || ''); r.time = ((m ? m[1] + ' ' : '') + t.value).trim(); } return renderPane(); }
+  if (isStaff() && (t.dataset.df === 'cancelBy' || t.dataset.df === 'cancelAt')) return;   // 취소 기한은 HB 전용 (1117-Z 1)
   if (t.dataset.df === 'cancelBy') { ed.d.cancelBy = t.value; if (t.value) delete ed.d.nofree; else { delete ed.d.cancelBy; delete ed.d.cancelAt; } return renderPane(); }
   if (t.dataset.df === 'cancelAt') { if (t.value) ed.d.cancelAt = t.value; else delete ed.d.cancelAt; return renderPane(); }
 });
@@ -3993,6 +4020,7 @@ function staffOk(t, d) {
     if (d.act === 'closepane' || d.act === 'vback' || d.img || d.act === 'closelb' || (d.act === 'ads' && !S.pane.edit)) return true;   // 주일 광고는 누구 방문이든 볼 수 있다 (R12 C)
     const ed = S.pane.edit; if (!myVisit(curVisit())) return false;
     if (!ed) return d.vsec === 'stay' || d.vsec === 'travel' || d.vsec === 'meet';   // 모임도 그 방문 교역자가 고친다 (1116-2 B, HB 11/16)
+    if (ed.sec === 'stay' && (d.dstep === 'cost' || ['dnofree', 'dnocancel', 'dimg', 'dread'].includes(d.act) || d.delimg)) return false;   // 금액 · 취소 기한 · 환불 불가 · 예약 화면은 HB 전용 (1117-Z 1)
     return !ed.manage && (ed.sec === 'stay' || ed.sec === 'travel' || ed.sec === 'meet') && d.vmanage === undefined;
   }
   if (t.closest('#pane') && S.pane && (S.pane.kind === 'myavail' || S.pane.kind === 'namefmt' || S.pane.kind === 'home')) return true;
