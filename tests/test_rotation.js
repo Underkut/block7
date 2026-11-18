@@ -886,7 +886,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉛ 예전 이 기기 선택(rota_adsbs_v1)은 한 번 계정으로 옮기고 지운다 · 다시 읽지 않는다', /localStorage\.removeItem\(ADSBS_KEY\)/.test(HTML) && (HTML.match(/lsGet\(ADSBS_KEY/g) || []).length === 1, true);
   sc.eq('㉛ 경고는 고를 수 있는 사람에게만 · 읽은 광고(ADS_KEY) 기준', /function bsWarn\(\) \{ const s = bsWarnSun\(S\.book, todayYmd\(\), lsGet\(ADS_KEY, \{\}\) \|\| \{\}\); return s && bsCan\(s\) \? s : ''; \}/.test(HTML), true);
   sc.eq('㉛ 경고 자리: 모든 탭 맨 위 줄 · 이번 주(카드 · 주일 카드 부산 줄 · 표 보기) · 부산 탭 · 방문 판 주일 광고 · 내 일정(목록 · 부산 준비) · 달력표 부산 요약 · 광고 판',
-    [/function syncBanner\(\) \{ return syncLine\(\) \+ bsBar\(\); \}/.test(HTML), (HTML.match(/\$\{bsP\(v\)\}/g) || []).length, /\$\{bsPill\(v, bw\) \? ' ' \+ BS_PILL : ''\}<\/span>\n      <span class="vst">\$\{st === 'done'/.test(HTML),
+    [/function syncBanner\(\) \{ return syncLine\(\) \+ bsBar\(\); \}/.test(HTML), (HTML.match(/\$\{bsP\(v\)\}/g) || []).length, /busanRow\(v, cls, pm, lv\[v\.id\] === 'bad', bsPill\(v, bw\)\)/.test(HTML) && /\$\{bsp \|\| ''\}<\/span>/.test(HTML),
       /주일 광고\$\{bsPill\(v, bsWarn\(\)\) \? ' ' \+ BS_PILL : ''\}<i>/.test(HTML), /<span>\$\{bsPill\(v, bw\)\}\$\{stPill\(v\)\}<\/span>/.test(HTML), /\$\{!vSun\(v\) \? '' : bsPill\(v, bw\) \? `<button class="mck todo" data-act="ads"/.test(HTML),
       /'<span class="muted">—<\/span>'\)\}\$\{bsPill\(v, bw\) \? ' ' \+ BS_PILL : ''\}<\/td>/.test(HTML), /const can = bsCan\(P\.sun\), warn = bi < 0 && bsWarn\(\) === P\.sun;/.test(HTML)],
     [true, 3, true, true, true, true, true, true]);
@@ -1583,7 +1583,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊽ 끄는 중엔 판을 다시 그리지 않음(계정 맞추기가 들린 줄을 지우지 않게) · 토스트는 누름을 아래로 보냄(바로 다시 끌게) · 달력표 단추 줄 .mbar 와 메뉴 밑줄 이름 안 겹침', [/if \(MG\.el\) \{ MG\.again = true; return; \}/.test(HTML), /#toast\{[^}]*pointer-events:none/.test(HTML), /\n\.mbar\{position:absolute/.test(HTML), /\.mtabs \.mbar\{position:absolute/.test(HTML)], [true, true, false, true]);
   sc.eq('㊽ (Q) 부산 요약 표에도 위 · 아래 꺾쇠(앞 · 뒤 주)', [/edgeHtml\('busan', 'top'/.test(bb), /edgeHtml\('busan', 'bot'/.test(bb)], [true, true]);
   const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
-  sc.eq('㊽ 부산 목록 줄: (S) 이름 알약은 날짜 아래 · (U) 인도 알약 · (T) 인도 안 하는 금요 회색 · (V) 특이사항 · 메모 빨강 · (W) 숙소는 오른쪽', [/<\/span>\$\{v\.title \? `<span class="ttlw"><span class="pill ttl">/.test(vb) && !/<span class="vmain">\$\{v\.title/.test(vb), /leadChips\(v\)/.test(vb), /friGray/.test(vb), /class="vred"/.test(vb), /class="vst"/.test(vb)], [true, true, true, true, true]);
+  sc.eq('㊽ 부산 목록 줄(1117-Z 7 에서 시안 B 로 바뀜): 이름 = 초록 글씨(vttl) · 인도 안 하는 금요 회색 · 특이사항 · 중요 빨강 · 숙소는 오른쪽 · 다른 화면의 인도 알약(leadChips)은 안 씀', [/class="vttl"/.test(vb), /friGray/.test(vb), /class="vred"/.test(vb), /class="vst"/.test(vb), /leadChips\(v\)/.test(vb)], [true, true, true, true, false]);
 }
 
 // ㊾ 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 꺾쇠 삼등분 (1117-Z 5b, HB 11/18 R · N' · V') — 지어낸 이름
@@ -1595,7 +1595,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊾ 쓰는 칸 b18 · b17 옛 칸(낡은 앱은 hot 을 떨군다) · 옛 칸 사본과 합쳐도 hot 그대로', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-1)[0], A.pickDoc(null, { b18: J(bk), b17: (o => { o.visits.forEach(v => delete v.hot); return o; })(J(bk)) }).book.visits.find(v => v.id === V).hot], ['b18', 'b17', '중요 메모']);
   // 화면
   const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
-  sc.eq('㊾ (V\') 부산 목록 빨간 글자 = 특이사항 + 중요만(일반 메모는 목록에 없음)', [/concat\(v\.hot \? \[v\.hot\] : \[\]\)/.test(vb), /v\.note/.test(vb)], [true, false]);
+  sc.eq('㊾ (V\') 부산 목록 빨간 글자 = 특이사항 + 중요만 · 일반 메모는 흐린 줄로(1117-Z 7, HB 11/18 에 바꿈)', [/concat\(v\.hot \? \[v\.hot\] : \[\]\)/.test(vb), /v\.note \|\| ''\]/.test(vb)], [true, true]);
   const pe = HTML.slice(HTML.indexOf("} else body = `<div class=\"field\"><label for=\"df-hot\">"), HTML.indexOf("} else body = `<div class=\"field\"><label for=\"df-hot\">") + 900);
   sc.eq('㊾ (V\') 메모 판 = \'중요\'(빨강) · \'일반\' 두 칸', [/data-df="hot"/.test(pe), /data-df="note"/.test(pe), /중요/.test(pe), /일반/.test(pe)], [true, true, true, true]);
   sc.eq('㊾ (V\') 이번 주 카드 · 목록도 중요만(일반 메모는 판 안에서)', [/v\.note \? row\('메모', v\.note\)/.test(HTML), /issuesT\(v\), v\.note\]/.test(HTML)], [false, false]);
@@ -1604,6 +1604,19 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const vm = HTML.slice(HTML.indexOf('function viewMonth('), HTML.indexOf('function specTable('));
   sc.eq('㊾ (N\') 분당 주일 표에도 위 · 아래 꺾쇠(앞 · 뒤 주)', [/edgeHtml\('sun', 'top'\)/.test(vm), /edgeHtml\('sun', 'bot'\)/.test(vm)], [true, true]);
   sc.eq('㊾ 꺾쇠는 날짜 칸 가로 삼등분 자리(^ 1/3 · v 2/3) — 붙어 있어 잘못 눌리던 것', [/\.edge \.eu\{left:33\.3%\}/.test(HTML), /\.edge \.ed\{left:66\.7%\}/.test(HTML)], [true, true]);
+}
+
+// (51) 1117-Z 7 — 부산 목록 한 줄 시안 B '요일 칸' (HB 11/18 고름) · 폰도 숙소 세부는 오른쪽 위 · 보조 항목은 한 줄에 하나
+{
+  const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
+  const row = HTML.slice(HTML.indexOf('function busanRow('), HTML.indexOf('// 지난 부산 일정 — 달마다 묶음'));
+  sc.eq('(51) viewBusan 은 busanRow 한 곳으로 그린다', [/const line = \(v, cls\) => busanRow\(/.test(vb), row.length > 500], [true, true]);
+  sc.eq('(51) 요일 칸: 머무는 날 = on(초록 띠) · 띠 양 끝 first/last · 주말 밖 요일 = x · 맡은 일은 그 날짜 칸(x.date === d)', [/ds\.has\(d\)/.test(row), /'first'/.test(row) && /'last'/.test(row), /c === '토' \|\| c === '일' \? '' : 'x'/.test(row), /ls\.filter\(x => x\.date === d\)/.test(row)], [true, true, true, true]);
+  sc.eq('(51) 맡은 일: 색 = 어느 예배(h-fri · h-sun · h-ll · h-ev) · 모양 = 누가(staff · lay · relay · none)', [/h-\$\{hue\(x\)\}/.test(row), /x\.ev \? 'ev' : x\.svc/.test(row), /x\.m \|\| 'none'/.test(row)], [true, true, true]);
+  sc.eq('(51) 보조 줄은 한 항목 한 줄(가운데 점으로 잇지 않음) · 빨강(특이사항 · 중요)이 먼저 · 일반 메모는 흐림', [/red\.map\(t => `<span class="vred">/.test(row), /gray\.map\(t => `<span>/.test(row), /join\(' · '\)\}<\/span>`\)\.join/.test(row), /\.vrow \.vaux\{[^}]*flex-direction:column/.test(HTML)], [true, true, false, true]);
+  sc.eq('(51) 숙소: 상태 아래 세부, 폰도 오른쪽 위(옛 폰 규칙 display:contents 없음)', [/\.vrow \.vst\{grid-column:3;grid-row:1;[^}]*align-items:flex-end/.test(HTML), /\.vrow \.vst\{display:contents\}/.test(HTML), /\.vrow \.vwk\{grid-column:2\/4;grid-row:2/.test(HTML)], [true, false, true]);
+  sc.eq('(51) 색은 이 목록에서만(--bz-*) — 라이트 하나 · 다크 둘(시스템 · 고름) · 공용 --fri 는 그대로', [(HTML.match(/--bz-fri:/g) || []).length, /--fri:#7b4fc4/.test(HTML)], [3, true]);
+  sc.eq('(51) 보통은 목 ~ 주일 네 칸(줄마다 같은 자리) · 많아도 8칸', [/addDays\(sun, -3\)/.test(HTML.slice(HTML.indexOf('function busanCols('), HTML.indexOf('function busanRow('))), /cols\.length < 8/.test(HTML)], [true, true]);
 }
 
 sc.done();

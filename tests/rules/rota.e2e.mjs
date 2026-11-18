@@ -326,7 +326,7 @@ console.log('⑬ (1116-2 D) 특별예배 — 주일이 아닌 날 부산 일정 
   ok('⑬ 요약 판: \'예배\' 칸에 둘 · 주일 광고 줄 없음(주일에 안 머묾) · 제목에 이름', await hb.evaluate(() => [[...document.querySelectorAll('#pane [data-vsec="ev"] .lchip')].map(x => x.textContent), !!document.querySelector('#pane [data-act="ads"]'), /부산 일정 · 성탄/.test(document.querySelector('#pane .phead').textContent)]),
     [['목 저녁 성탄 전야 예배 · 성도 인도자', '금 10:30 성탄 예배 인도'], false, true]);
   await hb.evaluate(() => closePane()); await sleep(200);
-  ok('⑬ 부산 탭 줄에 이름 알약 · 글자는 \'부산 일정\'', await hb.evaluate(() => [!!document.querySelector('[data-visit="v|2026-12-24"] .pill.ttl'), /부산 일정 더하기/.test(document.body.textContent), /방문 더하기/.test(document.body.textContent)]), [true, true, false]);
+  ok('⑬ 부산 탭 줄에 이름(초록 글씨, 1117-Z 7) · 글자는 \'부산 일정\'', await hb.evaluate(() => [/성탄/.test((document.querySelector('.vrow[data-visit="v|2026-12-24"] .vttl') || {}).textContent || ''), /부산 일정 더하기/.test(document.body.textContent), /방문 더하기/.test(document.body.textContent)]), [true, true, false]);
   // 교역자(가나다)는 이 일정에 들지 않았다 — 보기만, 예배 판도 안 열림
   ok('⑬ 교역자 화면에도 오고 예배 판은 안 열림', await until(() => ga.evaluate(async () => { const v = S.book.visits.find(x => x.id === 'v|2026-12-24'); if (!v || !v.evs) return null;
     openPane({ kind: 'visit', id: v.id }); await new Promise(r => setTimeout(r, 300)); const b = document.querySelector('#pane [data-vsec="ev"]'); if (b) b.click(); await new Promise(r => setTimeout(r, 200));
@@ -650,8 +650,8 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   const d2 = await getDoc('rota/' + HB);
   ok('㉒ 낡은 앱(b16) 사본과 합쳐도 more 그대로(계정 · 앱)', [d2.b18.opts.filter(o => o.type === 'stay' && o.more).length, await hb.evaluate(() => optList(S.book, 'stay').filter(o => o.more).length)], [hidden.length, hidden.length]);
   // 부산 목록 줄
-  const rowv = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return { vst: !!b.querySelector('.vst .pill'), lchips: !!b.querySelector('.vmain .lchips'), red: (b.querySelector('.vred') || {}).textContent || '' }; }, V);
-  ok('㉒ 부산 목록 줄: 오른쪽 숙소 알약 · 인도 알약 · 일반 메모는 목록에 없음(5b — 빨강은 특이사항 · 중요만)', [rowv.vst, rowv.lchips, rowv.red.length > 0], [true, true, false]);
+  const rowv = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return { vst: !!b.querySelector('.vst .vss'), du: !!b.querySelector('.vwk .du'), red: (b.querySelector('.vred') || {}).textContent || '' }; }, V);
+  ok('㉒ 부산 목록 줄: 오른쪽 숙소 · 요일 칸 아래 맡은 일(1117-Z 7) · 빨강은 특이사항 · 중요만', [rowv.vst, rowv.du, rowv.red.length > 0], [true, true, false]);
   // 달력표 금요 표: 꺾쇠 알약 바탕 없음 · 아래 꺾쇠는 표 밖 상자 테두리 위 · 아래 여백 없음
   const ed = await hb.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'sheet'; render(); const box = document.querySelector('.extbox'), w = box.querySelector('.tblwrap'), b = box.querySelector(':scope > .edge.bot'), c = box.querySelector('td.edged');
     const br = b.getBoundingClientRect(), wr = w.getBoundingClientRect(), cr = c.getBoundingClientRect();
@@ -674,7 +674,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   ok('㉓ 계정 책(b18): hot = 중요 · note = 일반', d1 && (v => [v.hot, v.note])(d1.b18.visits.find(x => x.id === V)), ['중고등부 설교 필요', '일반 메모 글']);
   await hb.evaluate(() => closePane()); await sleep(450);
   const row = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return [(b.querySelector('.vred') || {}).textContent || '', b.textContent.includes('일반 메모 글')]; }, V);
-  ok('㉓ 부산 목록: 중요만 빨간 글자 · 일반 메모는 안 보임', [row[0].includes('중고등부 설교 필요'), row[1]], [true, false]);
+  ok('㉓ 부산 목록: 중요만 빨간 글자 · 일반 메모는 흐린 줄로 보임(1117-Z 7, HB 11/18)', [row[0].includes('중고등부 설교 필요'), row[1]], [true, true]);
   const wk = await hb.evaluate(() => { S.sun = '2026-11-15'; PREF.tab = 'week'; PREF.wlay = 'a'; render(); return [document.querySelector('#panel').textContent.includes('중고등부 설교 필요'), document.querySelector('#panel').textContent.includes('일반 메모 글')]; });
   ok('㉓ 이번 주(그 앞 주 — 내려갈 부산 일정 카드): 중요는 보이고 일반 메모는 안 보임', wk, [true, false]);
   const sm = await hb.evaluate((v) => { PREF.tab = 'month'; S.ym = '2026-11'; PREF.mview = 'busan'; render(); const h = [...document.querySelectorAll('table.bt th')].map(x => x.textContent); const tr = document.querySelector(`table.bt button[data-visit="${v}"][data-vcol="issue"]`); return [h[0], h[1], tr && (tr.querySelector('.vred') || {}).textContent]; }, V);
@@ -688,6 +688,22 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
     return [n1 - n0, box.querySelector('tr.outm') !== null, x(up), x(dn), !!box.querySelector(':scope > .edge.bot [data-ext="sun"]')]; });
   ok('㉓ 분당 주일 표 위 꺾쇠 → 앞 주 한 줄 더(흐리게) · ^ 는 1/3 · v 는 2/3 자리 · 아래 꺾쇠도', sn, [1, true, 1, 2, true]);
   await hb.evaluate(() => { S.ext = {}; render(); });
+}
+
+{
+  console.log('㉔ 부산 목록 한 줄 — 시안 B 요일 칸 (1117-Z 7, HB 11/18)');
+  const V = 'v|2026-11-22', vp0 = hb.viewportSize();
+  await hb.evaluate(async () => { closePane(); await new Promise(r => setTimeout(r, 450)); });
+  const look = async (w) => { await hb.setViewportSize({ width: w, height: 900 }); return hb.evaluate((v) => { PREF.tab = 'busan'; render();
+    const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`), r = (s) => b.querySelector(s).getBoundingClientRect(), br = b.getBoundingClientRect();
+    const aux = [...b.querySelectorAll('.vaux > span')].map(x => x.getBoundingClientRect().top);
+    return { stRight: Math.abs(r('.vst').right - br.right) <= 4, stTop: r('.vst').top < r('.vwk').top, sdUnder: !b.querySelector('.vsd') || r('.vsd').top > r('.vss').top,
+      days: [...b.querySelectorAll('.vc.on .vdl')].map(x => x.textContent).join(''), auxRows: aux.length >= 2 && aux.every((t, i) => !i || t > aux[i - 1]),
+      wkFull: r('.vwk').right > r('.vst').left, scroll: document.documentElement.scrollWidth <= innerWidth }; }, V); };
+  const ph = await look(390), wd = await look(1024);
+  ok('㉔ 폰(390): 숙소는 오른쪽 위 · 세부는 그 아래 · 요일 칸은 넓게(숙소 아래로) · 보조 항목은 한 줄에 하나 · 옆 스크롤 없음', [ph.stRight, ph.stTop, ph.sdUnder, ph.auxRows, ph.wkFull, ph.scroll], [true, true, true, true, true, true]);
+  ok('㉔ 넓은 화면(1024): 숙소는 오른쪽 기둥(요일 칸과 나란히) · 머무는 날 띠', [wd.stRight, wd.wkFull, wd.days.length >= 2], [true, false, true]);
+  await hb.setViewportSize(vp0); await hb.evaluate(() => render());
 }
 
 console.log('⑥ HB 가 이메일을 지우면');
