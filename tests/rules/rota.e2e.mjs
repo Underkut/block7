@@ -553,10 +553,15 @@ console.log('⑳ (1117-Z 3) 메뉴 세 탭 · 부산 탭 지난 일정 단추');
   const h = await tabsOf(hb), g = await tabsOf(ga);
   ok('⑳ HB: 보기(테마 · 첫 화면) · 계정(로그아웃) · 개발(예배팀 받기 · 시트 가져오기 — 버전은 개발자 계정만)', h, { names: ['보기', '계정', '개발'], has: { '보기': ['theme', 'home'], '계정': ['logout'], '개발': ['wpull', 'importpick'] } });
   ok('⑳ 교역자: 보기 · 계정 두 탭(개발 없음) · 계정에 내 부재', g, { names: ['보기', '계정'], has: { '보기': ['theme', 'home'], '계정': ['logout', 'myavail'] } });
-  const bz = await hb.evaluate(async () => { const pv = { id: 'v|2026-10-04', date: '2026-10-04', who: [], days: '토일', stay: [], travel: [] }; S.book.visits.push(pv); PREF.tab = 'busan'; render(); const t1 = document.querySelector('.vtop [data-act="pastfold"]'); const a = [!!t1 && t1.textContent, /다가오는 부산 일정/.test(document.body.textContent), !!document.querySelector('details.more')];
-    t1.click(); await new Promise(r => setTimeout(r, 500)); const n = document.querySelectorAll('.pastlist .vrow').length;
-    document.querySelector('[data-act="pastfold"]').click(); await new Promise(r => setTimeout(r, 500)); const gone = !!document.querySelector('.pastlist'); S.book.visits = S.book.visits.filter(v => v !== pv); PREF.tab = 'week'; render(); return a.concat(n > 0, gone); });
-  ok('⑳ 부산 탭: 맨 위 \'지난 부산 일정 보기\'(숫자 없음) · \'다가오는 … n번\' 없음 · 누르면 지난 일정 · 다시 누르면 접힘', bz, ['지난 부산 일정 보기', false, false, true, false]);
+  const bz = await hb.evaluate(async () => { const mk = (d) => ({ id: 'v|' + d, date: d, who: [], days: '토일', stay: [], travel: [] }); const pv = [mk('2025-12-28'), mk('2026-10-04'), mk('2026-10-18')];
+    S.book.visits.push(...pv); PREF.tab = 'busan'; S.pastN = 0; render(); const w = (ms) => new Promise(r => setTimeout(r, ms)); const cnt = () => document.querySelectorAll('.pastm .vrow').length;
+    const a = [document.querySelector('.vtop [data-act="pastmore"]').textContent, /다가오는 부산 일정/.test(document.body.textContent), !!document.querySelector('details.more')];
+    document.querySelector('[data-act="pastmore"]').click(); await w(450); const c1 = cnt(), top1 = document.querySelector('.pastm .vrow').dataset.visit;
+    document.querySelector('[data-act="pastmore"]').click(); await w(450); const c2 = cnt(), top2 = document.querySelector('.pastm .vrow').dataset.visit, band = [...document.querySelectorAll('.yband')].map(x => x.textContent);
+    document.querySelector('[data-act="pastless"]').click(); await w(450); const c3 = cnt();
+    document.querySelector('[data-act="pastless"]').click(); await w(450); const gone = !!document.querySelector('.pastm');
+    S.book.visits = S.book.visits.filter(v => !pv.includes(v)); PREF.tab = 'week'; render(); return a.concat(c1, top1, c2, top2, band.includes('2026년'), c3, gone); });
+  ok('⑳ 부산 탭: 맨 위 \'지난 부산 일정 보기\' · 한 달 더(10월 둘 → 12월이 위로) · 해가 바뀌면 2026년 띠 · 한 달씩 접힘', bz, ['지난 부산 일정 보기', false, false, 2, 'v|2026-10-04', 3, 'v|2025-12-28', true, 2, false]);
 }
 
 console.log('⑥ HB 가 이메일을 지우면');

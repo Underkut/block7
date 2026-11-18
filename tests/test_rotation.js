@@ -1487,9 +1487,19 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊺ 개발 = 예배팀 받기 · 시트 가져오기 · 버전', [/data-act="wpull"/.test(dev), /data-act="importpick"/.test(dev), /data-act="upd"/.test(dev), /data-theme|data-act="login"/.test(dev)], [true, true, true, false]);
   sc.eq('㊺ 로그인 전엔 계정 탭부터 · 고른 탭은 이 기기(PREF) — 계정 ui 에 넣지 않음', [/S\.mtab = !DEMO && !FB\.user \? 'acct'/.test(HTML), /PREF\.mtab = id; savePref\(\)/.test(HTML), /saveUi\(\{ mtab/.test(HTML)], [true, true, false]);
   sc.eq('㊺ 탭 넘김: 손가락을 따라가고 quiet() 이면 끔 · 닫기는 × 하나', [/function menuSwipe\(sh\)/.test(HTML), /if \(quiet\(\) \|\| !pg \|\| !pg\.animate\)/.test(HTML), /data-act="close" aria-label="닫기"/.test(HTML.slice(HTML.indexOf('function menuHead('), HTML.indexOf('function renderMenu(')))], [true, true, true]);
-  sc.eq('㊺ 교역자도 탭은 넘긴다(staffOk) · 지난 일정 단추도', [/if \(d\.tab \|\| d\.mtab \|\|/.test(HTML), /STAFF_ACTS = new Set\(\['menu', 'pastfold',/.test(HTML)], [true, true]);
-  const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastFold('));
-  sc.eq('㊺ 부산 탭: \'다가오는 … n번\' 글 없음 · 맨 위에 \'지난 부산 일정 보기\'(숫자 없음) · 맨 아래 펼침 없음', [/다가오는 부산 일정/.test(vb), /'지난 부산 일정 보기'/.test(vb), /past\.length\}번/.test(vb), /details class="more"/.test(vb)], [false, true, false, false]);
+  sc.eq('㊺ 교역자도 탭은 넘긴다(staffOk) · 지난 일정 단추도', [/if \(d\.tab \|\| d\.mtab \|\|/.test(HTML), /STAFF_ACTS = new Set\(\['menu', 'pastmore', 'pastless',/.test(HTML)], [true, true]);
+  const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
+  sc.eq('㊺ 부산 탭: \'다가오는 … n번\' 글 없음 · 맨 위에 \'지난 부산 일정 보기\'(숫자 없음) · 맨 아래 펼침 없음', [/다가오는 부산 일정/.test(vb), />지난 부산 일정 보기</.test(vb), /past\.length\}번/.test(vb), /details class="more"/.test(vb)], [false, true, false, false]);
+}
+
+// ㊻ 지난 부산 일정은 한 달씩 · 해가 바뀌면 가로띠 (1117-Z 3b, HB 11/18)
+{
+  const src = HTML.slice(HTML.indexOf('function pastMonths('), HTML.indexOf('\n', HTML.indexOf('function pastMonths(')));
+  const pastMonths = new Function(src + '; return pastMonths;')();
+  const P = ['2026-11-08', '2026-10-25', '2026-10-04', '2026-08-30', '2025-12-28'].map(date => ({ date }));
+  sc.eq('㊻ 달마다 묶음 · 지난 일정이 있는 달만 · 오래된 달이 앞(위로 더해짐)', pastMonths(P).map(([k, l]) => k + ':' + l.map(v => v.date.slice(8)).join(',')), ['2025-12:28', '2026-08:30', '2026-10:04,25', '2026-11:08']);
+  const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
+  sc.eq('㊻ 단추: 한 달 더 보기 · 한 달 접기 · 해가 바뀌면 가로띠', [/data-act="pastmore">한 달 더 보기/.test(vb), /data-act="pastless">한 달 접기/.test(vb), /class="yband">\$\{y\}년/.test(vb), /pm2\.slice\(pm2\.length - n\)/.test(vb)], [true, true, true, true]);
 }
 
 sc.done();
