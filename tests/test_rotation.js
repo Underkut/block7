@@ -40,6 +40,7 @@
 //  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
 //  ㊷ 교역자 판 · 주보 담당(1117-Z 2c): 교역자 판 = 겹침 · 확인 + 자기 부산 일정 교통편 · 상영만 · 주보 담당 한 달씩 ㄱㄴㄷ · 그 달만 직접 · 주보 담당의 상영 고르기 받음 · b15
+//  ㊸ 알림 판 기간(1117-Z 2b): 처음 값(부산 8주 · 분당 20일까지 이번 달 / 21일부터 다음 달) · 주 · 달 규칙 · 날짜(지나면 처음 값) · 갈래마다 끝날 · 겹침은 긴 쪽 · 내 프리셋 · ui 안 al(책 밖)
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -60,7 +61,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   normSpec, specOf, specsIn, restOn, slotLabelB, dropSpec, nextSpecK, specId, isSpec,
   STAY_PRIV, stayPub, stayKeep, hidePriv,
   alertsOf, alertEnd, cancelSoon, dDay, ddText, ALERT_CATS, CANCEL_DAYS, colTarget: colTarget,
-  normBul, bulId, bulOf, bulOrder, monthDiff };`, ctx);
+  normBul, bulId, bulOf, bulOrder, monthDiff,
+  AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -622,7 +624,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉕ ⚠️ 책에는 섞이지 않는다 — 받아들이기는 ui 를 읽지 않고(바뀐 줄 없음), 교역자 칸 다듬기에도 없다', [A.absorb(b, [pt]).changed, 'ui' in A.normStaff(pt), JSON.stringify(A.absorb(b, [pt]).book) === JSON.stringify(A.normBook(b))], [[], false, true]);
   sc.eq('㉕ 조각을 합쳐도 숙소 · 부재는 그대로', (d => [d.awayAt, d.ui.home])(A.staffMerge({ email: 'ga@example.com', away: [], awayAt: 5 }, pt)), [5, 'busan']);
   sc.eq('㉕ 내 이름 자리: 여러 번 · 앞뒤가 한글이면(다른 이름의 일부) 건너뜀 · 가운뎃점 · 빈칸 · 괄호 옆은 찾음', [A.nameSpans('가가 · 나나 / 가가', '가가'), A.nameSpans('가가다 · 다가가 · (가가)', '가가'), A.nameSpans('가가', ''), A.nameSpans('', '가가')], [[[0, 2], [10, 12]], [[13, 15]], [], []]);
-  sc.eq('㉕ HB 의 ui 는 책 밖 맨 위 칸에 · 교역자는 자기 칸에(거절돼도 이 기기엔 남음)', [/\.doc\(FB\.user\.uid\)\.set\(\{ ui: UI_OF\(\) \}, \{ merge: true \}\)/.test(HTML), /staffPatch\(FB\.user\.email, 'ui', '', UI_OF\(\), Date\.now\(\)\)/.test(HTML)], [true, true]);
+  sc.eq('㉕ HB 의 ui 는 책 밖 맨 위 칸에 · 교역자는 자기 칸에(거절돼도 이 기기엔 남음)', [/\.doc\(FB\.user\.uid\)\.set\(\{ ui: UI_OF\(\) \}, \{ mergeFields: \['ui'\] \}\)/.test(HTML), /staffPatch\(FB\.user\.email, 'ui', '', UI_OF\(\), Date\.now\(\)\)/.test(HTML)], [true, true]);
   sc.eq('㉕ 사람 알약: 열 때마다 내가 먼저(이 기기에 기억한 사람보다 앞)', /function mePerson\(ps\) \{ return ps\.find\(p => p\.id === S\.mine\) \|\| ps\.find\(p => p\.id === selfPid\(\)\) \|\| ps\.find\(p => p\.id === PREF\.me\) \|\| ps\[0\]; \}/.test(HTML), true);
 }
 
@@ -820,7 +822,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉚ 앱은 Monday 를 직접 부르지 않는다(열쇠가 폰에 오지 않게) — 서버 monday 함수만', [/api\.monday\.com/.test(HTML), /cloudfunctions\.net\/monday'/.test(HTML)], [false, true]);
   sc.eq('㉚ 열쇠는 붙여 넣은 칸에서 바로 비우고 이 기기에 저장하지 않는다', /if \(el\) el\.value = '';/.test(HTML) && !/lsSet\([^)]*token/.test(HTML), true);
   sc.eq('㉚ 교역자: 방문 판 · 내 일정에서 광고를 열 수 있고, 광고 판에서는 보기 · 복사 · 부산 상영 고르기만(열쇠 넣기 · 끊기 아님)',
-    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'(, 'afold')?\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback', 'admore', 'adsfold'\]\.includes\(d\.act\) \|\| \(!!d\.adsbs && bsCan\(S\.pane\.sun\)\);/.test(HTML)], [true, true, true]);
+    [/d\.act === 'ads' && !S\.pane\.edit/.test(HTML), /'home', 'ads'(, 'afold'[^\]]*)?\]\)/.test(HTML), /kind === 'ads'\) return \['closepane', 'adsload', 'adscopy', 'adsback', 'admore', 'adsfold'\]\.includes\(d\.act\) \|\| \(!!d\.adsbs && bsCan\(S\.pane\.sun\)\);/.test(HTML)], [true, true, true]);
   sc.eq('㉚ 교역자는 주인(HB)의 로테이션으로 묻는다', /mfn\('\/ads', \{ owner: FB\.team \|\| FB\.user\.uid, sun \}\)/.test(HTML), true);
   sc.eq('㉚ 복사는 누른 자리에서 바로(아이폰) — adsCopy 안에 await 가 없다', !/await/.test((HTML.match(/function adsCopy\(\) \{[\s\S]*?\n\}/) || [''])[0]), true);
   sc.eq('㉚ 광고는 책(b10)에 넣지 않는다 — 이 기기 사본만 (미리보기는 따로 — 지어낸 광고가 경고 판단에 섞이지 않게)', /ADS_KEY = DEMO \? 'rota_demo_ads_v1' : 'rota_ads_v1'/.test(HTML) && !/S\.book\.ads/.test(HTML), true);
@@ -1388,7 +1390,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [{ sec: 'stay', i: 4, focus: 'cancel' }, { sec: 'travel', i: -1, focus: '' }]);
   sc.eq('㊶ colTarget: 숫자 없는 취소 기한(부산 요약 표)은 예전처럼 가장 이른 기한', A.colTarget(bk.visits.find(v => v.id === 'v|2026-11-22'), 'cancel').i, 4);
   // 화면 코드 — 판은 HB 만 · 네 탭 같은 판 · 옛 알림 자리 걷음 · 접기는 이 기기에만 · 표 · 숙소 판 기한도 같은 기준
-  sc.eq('㊶ (1117-Z 2c 에서 바뀜) 교역자 판은 따로 거른 판 — ㊷', /function alertData\(\) \{ return alertsOf\(/.test(HTML), true);
+  sc.eq('㊶ (1117-Z 2c 에서 바뀜) 교역자 판은 따로 거른 판 — ㊷', /function alertData\(over\) \{[^\n]*\n\s*return alertsOf\(/.test(HTML), true);
   sc.eq('㊶ 네 탭이 같은 판(topBanner) — 탭마다 그리던 alertList · choreList · 취소 기한 줄 · 그다음 줄은 없다',
     [(HTML.match(/\$\{topBanner\(\)\}/g) || []).length, /function alertList\(|function choreList\(|class="wafter"|\$\{alertList\(/.test(HTML)], [4, false]);
   sc.eq('㊶ 접기는 이 기기(PREF — localStorage)에만, 책 · 계정에 넣지 않음', [/PREF\.afold = !PREF\.afold; savePref\(\);/.test(HTML), /afold/.test(HTML.slice(HTML.indexOf('function cloudSave('), HTML.indexOf('function cloudSave(') + 1500))], [true, false]);
@@ -1431,6 +1433,34 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   // 화면 코드
   sc.eq('㊷ 교역자 판은 alertData 한 곳에서 staff 를 넘긴다 · 분당 알약은 HB 만', [/staff: isStaff\(\) \? \(myPid\(\) \|\| '\?'\) : ''/.test(HTML), /ALERT_CATS\.filter\(c => !isStaff\(\) \|\| c\[0\] !== 'bd'\)/.test(HTML)], [true, true]);
   sc.eq('㊷ 상영 경고 글 · 주보 담당도 고름', [/부산 상영 여부를 아직 고르지 않았습니다/.test(HTML), /bulOf\(S\.book, sun\.slice\(0, 7\)\) === pid/.test(HTML)], [true, true]);
+}
+
+// ㊸ 알림 판 기간 (1117-Z 2b, HB 11/18) — 계정마다(ui.al)
+{
+  const TD = '2026-11-18';
+  sc.eq('㊸ 처음 값: 부산 8주(이번 주 포함, 토요일까지) · 분당 달 규칙 21일', [A.alEnd(A.alCfg(null, 'busan', TD), TD), A.alEnd(A.alCfg(null, 'bd', TD), TD)], ['2027-01-09', '2026-11-30']);
+  sc.eq('㊸ 달 규칙: 20일까지는 이번 달 말일 · 21일부터 다음 달 말일 · 해 넘김 · 2월', ['2026-11-20', '2026-11-21', '2026-11-30', '2026-12-25', '2027-01-21'].map(d => A.monthEndOf(d, 21)), ['2026-11-30', '2026-12-31', '2026-12-31', '2027-01-31', '2027-02-28']);
+  sc.eq('㊸ 고른 날짜: 오늘 · 앞날은 그대로, 지난 날이면 처음 값', [A.alCfg({ busan: { m: 'date', d: TD } }, 'busan', TD), A.alCfg({ busan: { m: 'date', d: '2026-11-17' } }, 'busan', TD)], [{ m: 'date', d: TD }, { m: 'weeks', w: 8 }]);
+  sc.eq('㊸ 다듬기: 주 1~26 · 넘어가는 날 2~28 · 모르는 값은 버림 · 프리셋은 날짜 · 기본 셋 · 같은 것 빼고 6개까지',
+    J(A.normAl({ busan: { m: 'weeks', w: 30 }, bd: { m: 'month', cut: 15 }, pre: [{ m: 'weeks', w: 8 }, { m: 'weeks', w: 4 }, { m: 'weeks', w: 4 }, { m: 'date', d: TD }, { m: 'month', cut: 25 }, { m: 'x' }] })),
+    { bd: { m: 'month', cut: 15 }, pre: [{ m: 'weeks', w: 4 }, { m: 'month', cut: 25 }] });
+  sc.eq('㊸ 아무것도 없으면 null(ui 에 al 칸을 만들지 않음)', [A.normAl({}), A.normAl({ busan: { m: 'weeks', w: 0 } })], [null, null]);
+  sc.eq('㊸ 이름: 8주 · 달 규칙 · 날짜', [A.alLabel({ m: 'weeks', w: 8 }), A.alLabel({ m: 'month', cut: 21 }), A.alLabel({ m: 'date', d: '2026-12-20' })], ['8주', '이번 달까지 · 21일부터 다음 달', '12/20까지']);
+  sc.eq('㊸ 내 화면 취향(ui)에 al 이 들고 · 없으면 칸도 없다(예전 모양 그대로)', [J(A.normUi({ al: { bd: { m: 'weeks', w: 3 } } }, false).al), 'al' in A.normUi({}, false)], [{ bd: { m: 'weeks', w: 3 } }, false]);
+  // 갈래마다 끝날
+  const bk = A.normBook({ people: [{ id: 'pa', name: '가가', roles: ['busan', 'preach'] }],
+    slots: [{ id: '2026-12-13|sun1|preach', who: ['pa'] }],
+    visits: [{ id: 'v|2026-11-22', who: ['pa'], days: '토일' }, { id: 'v|2026-12-13', who: ['pa'], days: '토일' }, { id: 'v|2027-01-03', who: [], days: '토일' }] });
+  const R = A.alertsOf(bk, TD, { endB: '2026-11-30', endD: '2026-12-20' });
+  sc.eq('㊸ 부산 갈래는 부산 끝날까지 · 분당은 분당 끝날까지 · 겹침은 긴 쪽(12/13 겹침은 부산 끝 뒤라도 나옴)',
+    [R.toB, R.toD, R.to, R.items.filter(x => x.cat === 'busan').every(x => x.date <= '2026-11-30'), R.items.filter(x => x.cat === 'bd').some(x => x.date > '2026-11-30' && x.date <= '2026-12-20'), R.items.some(x => x.cat === 'bd' && x.date > '2026-12-20'), R.items.some(x => x.kind === 'overlap' && x.date === '2026-12-13')],
+    ['2026-11-30', '2026-12-20', '2026-12-20', true, true, false, true]);
+  sc.eq('㊸ 끝날을 안 주면 예전처럼 두 달', A.alertsOf(bk, TD).to, '2027-01-18');
+  // 화면 코드
+  const HTMLx = HTML;
+  sc.eq('㊸ 기간은 계정의 ui 에(saveUi) — 책 · 이 기기 PREF 에 넣지 않는다', [/saveUi\(\{ al: /.test(HTMLx), /PREF\.al\b/.test(HTMLx), /book\.al\b|S\.book\.al\b/.test(HTMLx)], [true, false, false]);
+  sc.eq('㊸ ui 칸은 통째로 바꿔 쓴다(mergeFields) — merge 면 지운 기간 · 프리셋이 계정에 남는다(실제 화면 ⑱ 에서 잡힘)', [/\.set\(\{ ui: UI_OF\(\) \}, \{ mergeFields: \['ui'\] \}\)/.test(HTMLx), /mergeFields: \['v', 'email', 'at', 'ui'\]/.test(HTMLx)], [true, true]);
+  sc.eq('㊸ 판 머리의 필터 아이콘 · 설정 판', [/data-act="alset"/.test(HTMLx), /function alSetHtml\(/.test(HTMLx)], [true, true]);
 }
 
 sc.done();
