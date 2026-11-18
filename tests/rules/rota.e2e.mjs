@@ -48,8 +48,8 @@ await until(() => hb.evaluate(() => FB.role === 'owner' && FB.synced));
 ok('① HB 는 주인(owner) · 사람 탭 있음 · 자료 그대로', await state(hb), { role: 'owner', synced: true, tabs: ['week', 'month', 'busan', 'people'], people: 2, err: '' });
 const d1 = await until(async () => { const d = await getDoc('rota/' + HB); return d && d.team ? d : null; });
 ok('① HB 앱이 team(들어올 이메일)을 문서에 적었다', d1 && d1.team, ['ga@example.com']);
-ok('① 빈 기기 로그인으로 계정 자료가 줄지 않았다', [d1.b16.people.length, d1.b16.visits.length, d1.b16.slots.length], [2, 2, 1]);
-ok('① (R12 A) 옛 칸 b8 → b14 으로 옮기고 b8 은 지움 · 옛 인도 칸(sunLead · ll)은 lead 로', [!!d1.b8, (v => [v.lead, 'sunLead' in v, 'll' in v])(d1.b16.visits.find(x => x.id === 'v|2026-11-22'))], [false, [{ sun: { m: 'staff' }, ll: { m: 'staff' } }, false, false]]);
+ok('① 빈 기기 로그인으로 계정 자료가 줄지 않았다', [d1.b17.people.length, d1.b17.visits.length, d1.b17.slots.length], [2, 2, 1]);
+ok('① (R12 A) 옛 칸 b8 → b14 으로 옮기고 b8 은 지움 · 옛 인도 칸(sunLead · ll)은 lead 로', [!!d1.b8, (v => [v.lead, 'sunLead' in v, 'll' in v])(d1.b17.visits.find(x => x.id === 'v|2026-11-22'))], [false, [{ sun: { m: 'staff' }, ll: { m: 'staff' } }, false, false]]);
 
 console.log('② 교역자 — 빈 기기에서 구글 로그인');
 const ga = await device('교역자');
@@ -90,20 +90,20 @@ ok('② 부재 · 가능 일정이 교역자 칸에', st2 && [st2.away, st2.can,
 console.log('③ HB 앱이 받아들인다');
 const hbv = await until(() => hb.evaluate(() => { const v = S.book.visits.find(x => x.id === 'v|2026-11-22'), p = S.book.people.find(x => x.id === 'pa'); return v.stay.length && p.can ? [v.stay[0].name, v.stayBy, p.away, p.awayBy, p.can.length] : null; }));
 ok('③ HB 화면: 교역자 숙소 · 부재 · 가능 일정 + 누가', hbv, ['교역자 호텔', 'pa', [{ from: '2026-12-01', to: '2026-12-03', note: '수술' }], 'pa', 1]);
-const d3 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b16.visits.find(x => x.id === 'v|2026-11-22'); return v.stay && v.stay.length ? d : null; });
-ok('③ HB 계정 문서에도 들어갔다(HB 앱이 씀)', d3 && [d3.b16.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d3.b16.visits.find(x => x.id === 'v|2026-11-22').note, d3.b16.people.length], ['교역자 호텔', '처음 메모', 2]);
+const d3 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b17.visits.find(x => x.id === 'v|2026-11-22'); return v.stay && v.stay.length ? d : null; });
+ok('③ HB 계정 문서에도 들어갔다(HB 앱이 씀)', d3 && [d3.b17.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d3.b17.visits.find(x => x.id === 'v|2026-11-22').note, d3.b17.people.length], ['교역자 호텔', '처음 메모', 2]);
 ok('③ HB 고르기 판: 교역자가 적은 가능 일정이 \'가능 일정\'(초록)으로', await hb.evaluate(async () => { openPane({ kind: 'pick', id: '2026-12-20|sun1|offer' }); await new Promise(r => setTimeout(r, 300)); const b = document.querySelector('#pane [data-who="pa"] .why'); const out = b ? [b.textContent.includes('가능 일정'), b.classList.contains('ok')] : null; closePane(); await new Promise(r => setTimeout(r, 600)); return out; }), [true, true]);
 ok('③ 숙소 이름이 HB 숙소 목록에 저절로 들어가지 않는다(목록은 HB 몫)', await hb.evaluate(() => S.book.opts.filter(o => o.type === 'stay' && !o.del).map(o => o.name)), []);
 // HB 가 메모만 고친다 → 교역자 숙소는 그대로
 await hb.evaluate(() => openPane({ kind: 'visit', id: 'v|2026-11-22' })); await hb.waitForTimeout(400);
 await hb.click('#pane [data-vsec="note"]'); await hb.waitForTimeout(150); await hb.fill('#pane textarea', 'HB 메모'); await hb.click('#pane [data-act="vsave"]'); await hb.waitForTimeout(800);
-const d4 = await getDoc('rota/' + HB), v4 = d4.b16.visits.find(x => x.id === 'v|2026-11-22');
+const d4 = await getDoc('rota/' + HB), v4 = d4.b17.visits.find(x => x.id === 'v|2026-11-22');
 ok('③ HB 가 메모를 고쳐도 교역자 숙소 · 누가는 그대로', [v4.note, v4.stay[0].name, v4.stayBy], ['HB 메모', '교역자 호텔', 'pa']);
 ok('③ 교역자 화면에도 HB 메모가 온다', await until(() => ga.evaluate(() => S.book.visits.find(v => v.id === 'v|2026-11-22').note === 'HB 메모')), true);
 
 console.log('③-2 내 화면 취향 (R8b) — 첫 화면 · 내 이름 모양은 계정에, 책은 그대로');
 {
-  const before = JSON.stringify((await getDoc('rota/' + HB)).b16);
+  const before = JSON.stringify((await getDoc('rota/' + HB)).b17);
   await ga.evaluate(() => { document.querySelector('[data-act="namefmt"]').click(); });
   await until(() => ga.evaluate(() => !!document.querySelector('#pane [data-nf="c"]')));
   await ga.evaluate(() => { document.querySelector('#pane [data-nf="c"]').click(); document.querySelector('#pane [data-nfc="blue"]').click(); });
@@ -118,7 +118,7 @@ console.log('③-2 내 화면 취향 (R8b) — 첫 화면 · 내 이름 모양�
   const d = await until(async () => { const x = await getDoc('rota/' + HB); return x && x.ui ? x : null; });
   await sleep(1200);
   const d2 = await getDoc('rota/' + HB);
-  ok('③-2 HB 의 첫 화면은 문서 맨 위 ui 칸에 · 책(b14) · team 은 한 글자도 그대로 · HB 책에 교역자 ui 가 섞이지 않았다', [d && d.ui.home, JSON.stringify(d2.b16) === before, d2.team, /"ui"|"home"/.test(JSON.stringify(d2.b16))], ['month:mine', true, ['ga@example.com'], false]);
+  ok('③-2 HB 의 첫 화면은 문서 맨 위 ui 칸에 · 책(b14) · team 은 한 글자도 그대로 · HB 책에 교역자 ui 가 섞이지 않았다', [d && d.ui.home, JSON.stringify(d2.b17) === before, d2.team, /"ui"|"home"/.test(JSON.stringify(d2.b17))], ['month:mine', true, ['ga@example.com'], false]);
   await hb.evaluate(() => closePane()); await sleep(300);
   await ga.reload(); await until(() => ga.evaluate(() => typeof FB !== 'undefined' && FB.role === 'staff' && FB.synced));
   ok('③-2 교역자가 다시 열면 고른 첫 화면(부산)이 먼저 뜬다', await ga.evaluate(() => PREF.tab), 'busan');
@@ -139,7 +139,7 @@ await hb2.click('[data-act="menu"]'); await hb2.fill('#fb-em', 'hb@example.com')
 await until(() => hb2.evaluate(() => FB.role === 'owner' && FB.synced));
 await sleep(1200);
 const d5 = await getDoc('rota/' + HB);
-ok('⑤ 두 번째 기기 로그인 뒤에도 자료 그대로(숙소 · 메모 · 부재 · 자리)', [d5.b16.people.length, d5.b16.visits.length, d5.b16.slots.length, d5.b16.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d5.b16.visits.find(x => x.id === 'v|2026-11-22').note, (d5.b16.people.find(p => p.id === 'pa').away || []).length], [2, 2, 1, '교역자 호텔', 'HB 메모', 1]);
+ok('⑤ 두 번째 기기 로그인 뒤에도 자료 그대로(숙소 · 메모 · 부재 · 자리)', [d5.b17.people.length, d5.b17.visits.length, d5.b17.slots.length, d5.b17.visits.find(x => x.id === 'v|2026-11-22').stay[0].name, d5.b17.visits.find(x => x.id === 'v|2026-11-22').note, (d5.b17.people.find(p => p.id === 'pa').away || []).length], [2, 2, 1, '교역자 호텔', 'HB 메모', 1]);
 
 console.log('⑧ (R12 A) 부산 인도 세 갈래 — HB 가 방문 창에서 고르면 계정 · 교역자 화면까지');
 {
@@ -151,8 +151,8 @@ console.log('⑧ (R12 A) 부산 인도 세 갈래 — HB 가 방문 창에서 �
   await hb.click('#pane [data-dlead="ll"][data-v="lay"]'); await hb.waitForTimeout(100);
   ok('⑧ 성도를 골랐는데 성도 인도자가 없으면 \'사람\' 탭 안내', await hb.evaluate(() => /성도 인도자를 더하면/.test(document.querySelector('#pane').textContent)), true);
   await hb.click('#pane [data-act="vsave"]'); await hb.waitForTimeout(300); await hb.evaluate(() => closePane());
-  const d7 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b16.visits.find(x => x.id === 'v|2026-11-22'); return v.lead && v.lead.sun && v.lead.sun.m === 'relay' ? d : null; });
-  const v7 = d7 && d7.b16.visits.find(x => x.id === 'v|2026-11-22');
+  const d7 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b17.visits.find(x => x.id === 'v|2026-11-22'); return v.lead && v.lead.sun && v.lead.sun.m === 'relay' ? d : null; });
+  const v7 = d7 && d7.b17.visits.find(x => x.id === 'v|2026-11-22');
   ok('⑧ 계정 문서(b15): 주일 중계 · LL 성도 · 옛 칸 없음 · 숙소 · 메모 그대로', v7 && [v7.lead, 'sunLead' in v7, 'll' in v7, v7.stay[0].name, v7.note, !!d7.b8], [{ sun: { m: 'relay' }, ll: { m: 'lay' } }, false, false, '교역자 호텔', 'HB 메모', false]);
   ok('⑧ 교역자 화면에도 온다(알약)', await until(() => ga.evaluate(() => { const v = S.book.visits.find(x => x.id === 'v|2026-11-22'); const t = visitLeads(S.book, v).map(x => x.text); return t.length === 2 ? t : null; })), ['주일예배 중계', 'LL · 성도 인도자']);
   ok('⑧ 교역자는 인도를 못 고친다(예배 판이 열리지 않음)', await ga.evaluate(async () => { openPane({ kind: 'visit', id: 'v|2026-11-22' }); await new Promise(r => setTimeout(r, 300)); document.querySelector('#pane [data-vsec="ev"]') && document.querySelector('#pane [data-vsec="ev"]').click(); await new Promise(r => setTimeout(r, 200)); const e = !!(S.pane && S.pane.edit); closePane(); return e; }), false);
@@ -178,8 +178,8 @@ console.log('⑨ (R12 C4b) 부산 상영 — 계정에 저장 · 경고 · 교�
   const st9 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); return x && x.visits['v|2026-11-22'].bs ? x : null; });
   ok('⑨ 교역자 칸의 그 방문 줄에 상영 · 숙소는 그대로', st9 && [st9.visits['v|2026-11-22'].bs, st9.visits['v|2026-11-22'].bsAt > 0, st9.visits['v|2026-11-22'].stay[0].name], ['diff', true, '교역자 호텔']);
   ok('⑨ 교역자 화면: 바로 골라지고 경고가 걷힘', await ga.evaluate(() => [showOf(S.book, '2026-11-22'), !!document.querySelector('#panel .bsbar'), !!document.querySelector('#pane #ads-bub')]), ['diff', false, true]);
-  const d9 = await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b16.shows && d.b16.shows.find(x => x.id === 's|2026-11-22'); return r ? d : null; });
-  ok('⑨ HB 앱이 받아 계정 책(b14)의 주일 줄로 · 누가 = 교역자 · 옛 칸 b10 없음', d9 && [d9.b16.shows.find(x => x.id === 's|2026-11-22').bs, d9.b16.shows.find(x => x.id === 's|2026-11-22').by, 'b10' in d9], ['diff', 'staff:pa', false]);
+  const d9 = await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b17.shows && d.b17.shows.find(x => x.id === 's|2026-11-22'); return r ? d : null; });
+  ok('⑨ HB 앱이 받아 계정 책(b14)의 주일 줄로 · 누가 = 교역자 · 옛 칸 b10 없음', d9 && [d9.b17.shows.find(x => x.id === 's|2026-11-22').bs, d9.b17.shows.find(x => x.id === 's|2026-11-22').by, 'b10' in d9], ['diff', 'staff:pa', false]);
   ok('⑨ HB 화면의 경고도 걷힘', await until(() => hb.evaluate(() => { render(); return !document.querySelector('#panel .bsbar') && !document.querySelectorAll('#panel .bsp').length; })), true);
   // 남의 방문(11/29 라마바) — 교역자는 보기만
   await ga.evaluate(() => closePane()); await sleep(500);
@@ -191,8 +191,8 @@ console.log('⑨ (R12 C4b) 부산 상영 — 계정에 저장 · 경고 · 교�
   // HB 가 나중에 '같은 영상' 으로 → 계정 · 교역자 화면
   await hb.evaluate(() => adsOpen('2026-11-22')); await until(() => hb.evaluate(() => S.pane && S.pane.state === 'done'));
   await hb.click('#pane [data-adsbs="same"]');
-  const d9b = await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b16.shows.find(x => x.id === 's|2026-11-22'); return r.bs === 'same' ? d : null; });
-  ok('⑨ HB 가 나중에 고치면 HB 것(계정)', d9b && d9b.b16.shows.find(x => x.id === 's|2026-11-22').bs, 'same');
+  const d9b = await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b17.shows.find(x => x.id === 's|2026-11-22'); return r.bs === 'same' ? d : null; });
+  ok('⑨ HB 가 나중에 고치면 HB 것(계정)', d9b && d9b.b17.shows.find(x => x.id === 's|2026-11-22').bs, 'same');
   ok('⑨ 교역자 화면에도 온다', await until(() => ga.evaluate(() => showOf(S.book, '2026-11-22') === 'same')), true);
   await hb.evaluate(() => closePane()); await sleep(500);
   // 빈 기기 + 예전 이 기기 선택(rota_adsbs_v1) → 로그인하면 계정으로 한 번 옮기고 지움 · 계정 것은 줄지 않음
@@ -200,14 +200,14 @@ console.log('⑨ (R12 C4b) 부산 상영 — 계정에 저장 · 경고 · 교�
   await hb3.evaluate(() => localStorage.setItem('rota_adsbs_v1', JSON.stringify({ '2026-11-29': 'none', '2026-11-08': 'same', '2026-11-22': 'diff' })));
   await hb3.click('[data-act="menu"]'); await hb3.fill('#fb-em', 'hb@example.com'); await hb3.fill('#fb-pw', 'pw123456'); await hb3.click('[data-act="login"]');
   await until(() => hb3.evaluate(() => FB.role === 'owner' && FB.synced));
-  const d9c = await until(async () => { const d = await getDoc('rota/' + HB); return d.b16.shows.some(x => x.id === 's|2026-11-29') ? d : null; });
+  const d9c = await until(async () => { const d = await getDoc('rota/' + HB); return d.b17.shows.some(x => x.id === 's|2026-11-29') ? d : null; });
   ok('⑨ 빈 기기 로그인: 예전 이 기기 선택은 다가오는 주일 · 계정에 없는 것만(11/29) · 계정 것(11/22 같은 영상)은 그대로 · 지난 주일(11/8)은 버림 · 이 기기 기억은 지움',
-    d9c && [d9c.b16.shows.map(x => x.id + ':' + x.bs), d9c.b16.people.length, d9c.b16.visits.length, await hb3.evaluate(() => localStorage.getItem('rota_adsbs_v1'))], [['s|2026-11-22:same', 's|2026-11-29:none'], 2, 2, null]);
+    d9c && [d9c.b17.shows.map(x => x.id + ':' + x.bs), d9c.b17.people.length, d9c.b17.visits.length, await hb3.evaluate(() => localStorage.getItem('rota_adsbs_v1'))], [['s|2026-11-22:same', 's|2026-11-29:none'], 2, 2, null]);
   // 낡은 앱(b10 — 1116-2 B 앞, 동행 · 모임 새 칸을 모름)이 상영 없이 다시 써도 상영은 남는다
-  const old = JSON.parse(JSON.stringify(d9c.b16)); delete old.shows; old.visits = old.visits.map(v => v.id === 'v|2026-11-29' ? Object.assign(v, { note: '낡은 앱', at: Date.now() + 5000 }) : v);
+  const old = JSON.parse(JSON.stringify(d9c.b17)); delete old.shows; old.visits = old.visits.map(v => v.id === 'v|2026-11-29' ? Object.assign(v, { note: '낡은 앱', at: Date.now() + 5000 }) : v);
   await admin(db => db.doc('rota/' + HB).set({ b10: old }, { merge: true }));
-  const d9d = await until(async () => { const d = await getDoc('rota/' + HB); return !('b10' in d) && d.b16.visits.find(v => v.id === 'v|2026-11-29').note === '낡은 앱' ? d : null; });
-  ok('⑨ 낡은 앱(b10)이 상영 없이 써도 합쳐 상영은 그대로 · 낡은 앱 메모도 받음 · b10 은 치움', d9d && d9d.b16.shows.map(x => x.id + ':' + x.bs), ['s|2026-11-22:same', 's|2026-11-29:none']);
+  const d9d = await until(async () => { const d = await getDoc('rota/' + HB); return !('b10' in d) && d.b17.visits.find(v => v.id === 'v|2026-11-29').note === '낡은 앱' ? d : null; });
+  ok('⑨ 낡은 앱(b10)이 상영 없이 써도 합쳐 상영은 그대로 · 낡은 앱 메모도 받음 · b10 은 치움', d9d && d9d.b17.shows.map(x => x.id + ':' + x.bs), ['s|2026-11-22:same', 's|2026-11-29:none']);
   hb3.errs.forEach(e => hb.errs.push(e));
 }
 
@@ -224,16 +224,16 @@ console.log('⑩ (1116-2 B) 부산 요약 칸 → 고칠 판 · 동행 / 모임 
   ok('⑩ × · ESC 는 표로 돌아간다(요약 판을 거치지 않음)', await hb.evaluate(() => !!S.pane), false);
   await hb.click(cell('v|2026-11-22', 'mate')); await sleep(400);
   await hb.fill('#df-mate', '동행가'); await hb.keyboard.press('Enter'); await sleep(150); await hb.click('#pane [data-act="vsave"]'); await sleep(300);
-  const d10 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b16.visits.find(x => x.id === 'v|2026-11-22'); return v.mates ? d : null; });
-  ok('⑩ HB 동행 → 계정(b12) · 옛 글 칸 없음 · 숙소 · 메모 그대로', d10 && (v => [v.mates, 'staff' in v, v.stay[0].name, v.note])(d10.b16.visits.find(x => x.id === 'v|2026-11-22')), [[{ n: '동행가' }], false, '교역자 호텔', 'HB 메모']);
+  const d10 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b17.visits.find(x => x.id === 'v|2026-11-22'); return v.mates ? d : null; });
+  ok('⑩ HB 동행 → 계정(b12) · 옛 글 칸 없음 · 숙소 · 메모 그대로', d10 && (v => [v.mates, 'staff' in v, v.stay[0].name, v.note])(d10.b17.visits.find(x => x.id === 'v|2026-11-22')), [[{ n: '동행가' }], false, '교역자 호텔', 'HB 메모']);
   // 교역자: 자기 방문의 모임 칸 → 모임 판 → 침례교육 2차 → 저장
   await ga.click(cell('v|2026-11-22', 'meet')); await sleep(400);
   ok('⑩ 교역자: 자기 방문의 모임 칸 → 모임 판이 바로 열림', (await pane(ga)).sec, 'meet');
   await ga.click('#pane [data-dmk="bapt"]'); await sleep(100); await ga.click('#pane [data-dmn="2"]'); await sleep(100); await ga.click('#pane [data-act="vsave"]'); await sleep(300);
   const st10 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); return x && x.visits['v|2026-11-22'].meet ? x : null; });
   ok('⑩ 교역자 칸의 그 방문 줄에 모임(칸 모두) · 숙소 · 상영은 그대로', st10 && (e => [Object.fromEntries(Object.entries(e.meet).sort()), e.meetAt > 0, e.stay[0].name, e.bs])(st10.visits['v|2026-11-22']), [{ g: '', k: 'bapt', memo: '', n: 2, who: '' }, true, '교역자 호텔', 'diff']);
-  const d10b = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b16.visits.find(x => x.id === 'v|2026-11-22'); return v.meet ? d : null; });
-  ok('⑩ HB 앱이 받아 계정 책(b12)에 · 누가 = 교역자 · 동행 · 메모 그대로', d10b && (v => [v.meet, v.meetBy, v.mates, v.note])(d10b.b16.visits.find(x => x.id === 'v|2026-11-22')), [{ k: 'bapt', n: 2 }, 'pa', [{ n: '동행가' }], 'HB 메모']);
+  const d10b = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b17.visits.find(x => x.id === 'v|2026-11-22'); return v.meet ? d : null; });
+  ok('⑩ HB 앱이 받아 계정 책(b12)에 · 누가 = 교역자 · 동행 · 메모 그대로', d10b && (v => [v.meet, v.meetBy, v.mates, v.note])(d10b.b17.visits.find(x => x.id === 'v|2026-11-22')), [{ k: 'bapt', n: 2 }, 'pa', [{ n: '동행가' }], 'HB 메모']);
   // 교역자가 못 고치는 칸 · 남의 방문 → 요약(보기)만
   await ga.click(cell('v|2026-11-22', 'mate')); await sleep(400);
   const gm = await pane(ga); await ga.evaluate(() => closePane()); await sleep(400);
@@ -274,14 +274,14 @@ console.log('⑪ (1116-2 C) 숙소 판: 숙소 쓰는 사람 · 호텔 / 성도�
   await hb.mouse.up(); await sleep(400);
   ok('⑪ 끌어 놓으면 차례가 바뀌고 고르던 숙소 · 상태는 그대로', await hb.evaluate(() => [[...document.querySelectorAll('#spills .spill')].map(b => b.textContent), S.pane.edit.d.name, S.pane.edit.d.status]), [['가 호텔', '나 호텔', '교역자 호텔'], '교역자 호텔', 'pre']);
   await hb.click('#pane [data-act="vsave"]'); await sleep(300);
-  const d11 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b16 && d.b16.visits.find(x => x.id === 'v|2026-11-22'); return v && v.stay[0].status === 'pre' ? d : null; });
+  const d11 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b17 && d.b17.visits.find(x => x.id === 'v|2026-11-22'); return v && v.stay[0].status === 'pre' ? d : null; });
   ok('⑪ 계정(b15): 숙소 예약 전 · 목록 차례 · 옛 칸 b11 · b12 없음',
-    d11 && [d11.b16.opts.filter(o => o.type === 'stay' && !o.del).sort((x, y) => x.ord - y.ord).map(o => o.name), 'b11' in d11 || 'b12' in d11 || 'b13' in d11], [['가 호텔', '나 호텔', '교역자 호텔'], false]);
+    d11 && [d11.b17.opts.filter(o => o.type === 'stay' && !o.del).sort((x, y) => x.ord - y.ord).map(o => o.name), 'b11' in d11 || 'b12' in d11 || 'b13' in d11], [['가 호텔', '나 호텔', '교역자 호텔'], false]);
   // 낡은 앱(b11 — 예약 전을 모름)이 숙소를 '미정' 으로 떨군 채 다른 방문 메모를 써도
-  const old = JSON.parse(JSON.stringify(d11.b16)); old.visits = old.visits.map(v => { v = JSON.parse(JSON.stringify(v)); for (const s of v.stay || []) if (s.status === 'pre') s.status = ''; if (v.id === 'v|2026-11-29') { v.note = '낡은 앱 b11'; v.at = Date.now() + 5000; } return v; });
+  const old = JSON.parse(JSON.stringify(d11.b17)); old.visits = old.visits.map(v => { v = JSON.parse(JSON.stringify(v)); for (const s of v.stay || []) if (s.status === 'pre') s.status = ''; if (v.id === 'v|2026-11-29') { v.note = '낡은 앱 b11'; v.at = Date.now() + 5000; } return v; });
   await admin(db => db.doc('rota/' + HB).set({ b11: old }, { merge: true }));
-  const d11b = await until(async () => { const d = await getDoc('rota/' + HB); return !('b11' in d) && d.b16.visits.find(v => v.id === 'v|2026-11-29').note === '낡은 앱 b11' ? d : null; });
-  ok('⑪ 낡은 앱(b11)이 써도 합쳐 예약 전은 그대로 · 낡은 앱 메모도 받음 · b11 은 치움', d11b && d11b.b16.visits.find(v => v.id === 'v|2026-11-22').stay[0].status, 'pre');
+  const d11b = await until(async () => { const d = await getDoc('rota/' + HB); return !('b11' in d) && d.b17.visits.find(v => v.id === 'v|2026-11-29').note === '낡은 앱 b11' ? d : null; });
+  ok('⑪ 낡은 앱(b11)이 써도 합쳐 예약 전은 그대로 · 낡은 앱 메모도 받음 · b11 은 치움', d11b && d11b.b17.visits.find(v => v.id === 'v|2026-11-22').stay[0].status, 'pre');
   // 교역자: 자기 방문 숙소 칸 → 고르기만(끌기 · 꾹 누르기 없음) → 성도님 댁 · 대화 전 → 자기 칸 → HB 앱이 받음
   await sleep(600);
   await ga.click(cell('v|2026-11-22', 'stay', 0)); await sleep(400);
@@ -292,8 +292,8 @@ console.log('⑪ (1116-2 C) 숙소 판: 숙소 쓰는 사람 · 호텔 / 성도�
   await ga.fill('#pane [data-df="name"]', '어느 댁'); await ga.click('#pane [data-dset="status"][data-v="pre"]'); await sleep(100); await ga.click('#pane [data-act="vsave"]'); await sleep(300);
   const st11 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); const s = x && x.visits['v|2026-11-22'].stay; return s && s[0].kind === 'home' ? x : null; });
   ok('⑪ 교역자 칸: 성도님 댁 · 대화 전 · 취소 기한 없음', st11 && (s => [s.name, s.status, 'cancelBy' in s])(st11.visits['v|2026-11-22'].stay[0]), ['어느 댁', 'pre', false]);
-  const d11c = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b16.visits.find(x => x.id === 'v|2026-11-22').stay[0]; return s.kind === 'home' ? d : null; });
-  ok('⑪ HB 앱이 받아 계정(b15)에 · 화면 알약 = 대화 전', [d11c && d11c.b16.visits.find(x => x.id === 'v|2026-11-22').stay[0].status, await until(() => hb.evaluate(() => { const v = S.book.visits.find(x => x.id === 'v|2026-11-22'); return v.stay[0].kind === 'home' ? stayStName(v.stay[0]) : null; }))], ['pre', '대화 전']);
+  const d11c = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b17.visits.find(x => x.id === 'v|2026-11-22').stay[0]; return s.kind === 'home' ? d : null; });
+  ok('⑪ HB 앱이 받아 계정(b15)에 · 화면 알약 = 대화 전', [d11c && d11c.b17.visits.find(x => x.id === 'v|2026-11-22').stay[0].status, await until(() => hb.evaluate(() => { const v = S.book.visits.find(x => x.id === 'v|2026-11-22'); return v.stay[0].kind === 'home' ? stayStName(v.stay[0]) : null; }))], ['pre', '대화 전']);
   await hb.evaluate(() => closePane()); await ga.evaluate(() => closePane()); await sleep(300);
 }
 
@@ -320,8 +320,8 @@ console.log('⑬ (1116-2 D) 특별예배 — 주일이 아닌 날 부산 일정 
   await hb.click('#pane [data-devm="1"][data-v="staff"]'); await sleep(100);
   hb.toasts.length = 0; await hb.click('#pane [data-act="vsave"]'); await sleep(400);
   ok('⑬ 저장: 교역자가 인도하는 12/25 를 머무는 날에 더했다는 알림', hb.toasts.some(t => /머무는 날에 더했습니다/.test(t) && /12\/25/.test(t)), true);
-  const d13 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b16 && d.b16.visits.find(x => x.id === 'v|2026-12-24'); return v && v.evs ? d : null; });
-  const v13 = d13 && d13.b16.visits.find(x => x.id === 'v|2026-12-24');
+  const d13 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b17 && d.b17.visits.find(x => x.id === 'v|2026-12-24'); return v && v.evs ? d : null; });
+  const v13 = d13 && d13.b17.visits.find(x => x.id === 'v|2026-12-24');
   ok('⑬ 계정(b15): 이름 · 머무는 날 목금 · 예배 둘(날짜 · 때 · 이름 · 인도)', v13 && [v13.title, v13.days, v13.evs], ['성탄', '목금', [{ d: '2026-12-24', t: '저녁', n: '성탄 전야 예배', m: 'lay' }, { d: '2026-12-25', t: '10:30', n: '성탄 예배', m: 'staff' }]]);
   ok('⑬ 요약 판: \'예배\' 칸에 둘 · 주일 광고 줄 없음(주일에 안 머묾) · 제목에 이름', await hb.evaluate(() => [[...document.querySelectorAll('#pane [data-vsec="ev"] .lchip')].map(x => x.textContent), !!document.querySelector('#pane [data-act="ads"]'), /부산 일정 · 성탄/.test(document.querySelector('#pane .phead').textContent)]),
     [['목 저녁 성탄 전야 예배 · 성도 인도자', '금 10:30 성탄 예배 인도'], false, true]);
@@ -332,10 +332,10 @@ console.log('⑬ (1116-2 D) 특별예배 — 주일이 아닌 날 부산 일정 
     openPane({ kind: 'visit', id: v.id }); await new Promise(r => setTimeout(r, 300)); const b = document.querySelector('#pane [data-vsec="ev"]'); if (b) b.click(); await new Promise(r => setTimeout(r, 200));
     const e = !!(S.pane && S.pane.edit); closePane(); return [v.title, v.evs.length, e]; })), ['성탄', 2, false]);
   // 낡은 앱(b12 — title · evs 를 모름)이 같은 줄을 떨군 사본을 써도
-  const old = JSON.parse(JSON.stringify(d13.b16)); old.visits.forEach(v => { delete v.title; delete v.evs; });
+  const old = JSON.parse(JSON.stringify(d13.b17)); old.visits.forEach(v => { delete v.title; delete v.evs; });
   await admin(db => db.doc('rota/' + HB).set({ b12: old }, { merge: true }));
   await sleep(1500); const d13b = await getDoc('rota/' + HB);   // 바뀐 게 없으면 새 앱은 다시 쓰지 않는다(옛 칸은 다음 저장 때 지움 — 낡은 앱과 핑퐁 없음, 1117-Z 2 고침)
-  ok('⑬ 낡은 앱(b12) 사본과 합쳐도 이름 · 예배 그대로 · 바뀐 게 없으니 다시 안 씀', d13b && [(v => [v.title, v.evs.length])(d13b.b16.visits.find(x => x.id === 'v|2026-12-24')), await hb.evaluate(() => (v => [v.title, v.evs.length])(S.book.visits.find(x => x.id === 'v|2026-12-24')))], [['성탄', 2], ['성탄', 2]]);
+  ok('⑬ 낡은 앱(b12) 사본과 합쳐도 이름 · 예배 그대로 · 바뀐 게 없으니 다시 안 씀', d13b && [(v => [v.title, v.evs.length])(d13b.b17.visits.find(x => x.id === 'v|2026-12-24')), await hb.evaluate(() => (v => [v.title, v.evs.length])(S.book.visits.find(x => x.id === 'v|2026-12-24')))], [['성탄', 2], ['성탄', 2]]);
 }
 
 console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 고르면 계정 b15 · 교역자는 보기만 · 낡은 앱(b13)');
@@ -345,13 +345,13 @@ console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 �
   ok('⑭ \'+ 분당 특별예배 더하기\' → 판 · 날짜는 그 주 목요일(12/24)', await hb.evaluate(() => S.pane && [S.pane.kind, S.pane.d.date]), ['spec', '2026-12-24']);
   await hb.fill('#sp-n', '성탄 전야 예배'); await hb.click('#pane [data-spt="저녁"]'); await hb.click('#pane [data-spr="lead"]'); await sleep(100);
   await hb.click('#pane [data-act="spsave"]'); await sleep(400);
-  const d14 = await until(async () => { const d = await getDoc('rota/' + HB); return d.b16 && d.b16.specs && d.b16.specs.length ? d : null; });
-  ok('⑭ 계정(b15): 특별예배 한 줄(이름 · 때 · 자리 셋)', d14 && (x => [x.id, x.n, x.t, x.roles])(d14.b16.specs[0]), ['x|2026-12-24|1', '성탄 전야 예배', '저녁', ['preach', 'offer', 'lead']]);
+  const d14 = await until(async () => { const d = await getDoc('rota/' + HB); return d.b17 && d.b17.specs && d.b17.specs.length ? d : null; });
+  ok('⑭ 계정(b15): 특별예배 한 줄(이름 · 때 · 자리 셋)', d14 && (x => [x.id, x.n, x.t, x.roles])(d14.b17.specs[0]), ['x|2026-12-24|1', '성탄 전야 예배', '저녁', ['preach', 'offer', 'lead']]);
   ok('⑭ 이번 주 카드에 자리 셋', await hb.evaluate(() => [...document.querySelectorAll('[data-pick^="2026-12-24|x1|"]')].map(b => b.dataset.pick.split('|')[2])), ['preach', 'offer', 'lead']);
   await hb.click('[data-pick="2026-12-24|x1|preach"]'); await sleep(300);
   ok('⑭ 고르기 판 제목 = 예배 이름', await hb.evaluate(() => document.querySelector('#pane .phead b').firstChild.textContent), '성탄 전야 예배 설교');
   await hb.click('#pane [data-who="pa"]'); await sleep(400); await hb.evaluate(() => closePane());
-  const d14b = await until(async () => { const d = await getDoc('rota/' + HB); const x = d.b16.slots.find(y => y.id === '2026-12-24|x1|preach'); return x && x.who.includes('pa') ? d : null; });
+  const d14b = await until(async () => { const d = await getDoc('rota/' + HB); const x = d.b17.slots.find(y => y.id === '2026-12-24|x1|preach'); return x && x.who.includes('pa') ? d : null; });
   ok('⑭ 계정(b15): 자리 \'2026-12-24|x1|preach\' = 가나다', !!d14b, true);
   // 교역자(가나다): 보이고 · 내 일정에 · 특별예배 판은 없음 · 자리는 보기만
   ok('⑭ 교역자: 특별예배와 내 자리가 보임 · 고치기 단추 없음 · 자리를 누르면 보기만', await until(() => ga.evaluate(async () => {
@@ -361,10 +361,10 @@ console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 �
     const k = S.pane && S.pane.kind; closePane();
     return [hasEdit, k, myItems(S.book, 'pa', '2026-12-20', '2026-12-31').filter(r => r.kind === 'slot').map(r => itemLabel(r))]; })), [false, 'slotv', ['성탄 전야 예배 설교']]);
   // 낡은 앱(b13 — specs · 특별예배 자리를 모름)이 떨군 사본을 써도
-  const old = JSON.parse(JSON.stringify(d14b.b16)); delete old.specs; old.slots = old.slots.filter(x => !/\|x\d\|/.test(x.id));
+  const old = JSON.parse(JSON.stringify(d14b.b17)); delete old.specs; old.slots = old.slots.filter(x => !/\|x\d\|/.test(x.id));
   await admin(db => db.doc('rota/' + HB).set({ b13: old }, { merge: true }));
   await sleep(1500); const d14c = await getDoc('rota/' + HB);
-  ok('⑭ 낡은 앱(b13)과 합쳐도 특별예배 · 자리 그대로(계정 · 앱) · 바뀐 게 없으니 다시 안 씀', d14c && [d14c.b16.specs.length, d14c.b16.slots.some(x => x.id === '2026-12-24|x1|preach'), await hb.evaluate(() => live(S.book.specs).length)], [1, true, 1]);
+  ok('⑭ 낡은 앱(b13)과 합쳐도 특별예배 · 자리 그대로(계정 · 앱) · 바뀐 게 없으니 다시 안 씀', d14c && [d14c.b17.specs.length, d14c.b17.slots.some(x => x.id === '2026-12-24|x1|preach'), await hb.evaluate(() => live(S.book.specs).length)], [1, true, 1]);
 }
 
 console.log('⑮ (1117-Z 1) 숙소 금액 · 취소 기한은 HB 전용 — 교역자 화면에서 감추고 고치지 못한다');
@@ -398,11 +398,11 @@ console.log('⑮ (1117-Z 1) 숙소 금액 · 취소 기한은 HB 전용 — 교�
   await ga.click('#pane [data-dset="status"][data-v="pre"]'); await sleep(100); await ga.click('#pane [data-act="vsave"]'); await sleep(300);
   const s15 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); const s = x && x.visits[V].stay; return s && s[0].name === '비밀 호텔' && s[0].status === 'pre' ? s : null; });
   ok('⑮ 교역자 칸: 상태만 바뀌고 금액 · 기한은 싣지 않는다', s15 && s15.map(x => [x.name, x.status, x.cost || 0, 'cancelBy' in x, 'nofree' in x]), [['비밀 호텔', 'pre', 0, false, false], ['둘째 호텔', 'pre', 0, false, false]]);
-  const d15 = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b16.visits.find(x => x.id === V).stay; return s[0].status === 'pre' ? s : null; });
+  const d15 = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b17.visits.find(x => x.id === V).stay; return s[0].status === 'pre' ? s : null; });
   ok('⑮ HB 앱이 받아 계정(b15): 상태는 교역자 것 · 금액 · 기한 · 환불 불가는 HB 것 그대로', d15 && d15.map(x => [x.status, x.cost, x.cancelBy || '', x.cancelAt || '', !!x.nofree]), [['pre', 150000, '2026-11-20', '18:00', false], ['pre', 70000, '', '', true]]);
   // 낡은 교역자 앱이 자기 칸에 금액을 바꿔 써도 HB 책은 그대로
   await admin(db => db.doc('rota/' + HB + '/staff/' + GA).set({ visits: { [V]: { stay: [{ kind: 'hotel', name: '비밀 호텔', status: 'pre', cost: 1, cancelBy: '2026-12-31' }, { kind: 'hotel', name: '둘째 호텔', status: 'done', cost: 2 }], stayAt: Date.now() + 1000 } } }, { merge: true }));
-  const d15b = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b16.visits.find(x => x.id === V).stay; return s[1].status === 'done' ? s : null; });
+  const d15b = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b17.visits.find(x => x.id === V).stay; return s[1].status === 'done' ? s : null; });
   ok('⑮ 낡은 교역자 앱이 금액 · 기한을 바꿔 보내도 받지 않는다(상태만 받음)', d15b && d15b.map(x => [x.status, x.cost, x.cancelBy || '']), [['pre', 150000, '2026-11-20'], ['done', 70000, '']]);
   await ga.evaluate(() => closePane()); await sleep(300);
 }
@@ -471,14 +471,14 @@ console.log('⑰ (1117-Z 2c) 주보 담당 — 사람 탭에서 순번 · 그 �
   ok('⑰ 사람 탭 맨 위 주보 담당 줄(여섯 달)', await hb.evaluate(() => document.querySelectorAll('#panel .bulm').length), 6);
   await hb.evaluate(() => openPane({ kind: 'bul', ym: '2026-11' })); await sleep(300);
   await hb.click('#pane [data-bulset="pa"]'); await sleep(300);
-  const d17 = await until(async () => { const d = await getDoc('rota/' + HB); return d.b16 && (d.b16.buls || []).some(x => x.id === 'u|2026-11' && x.p === 'pa') ? d : null; });
-  ok('⑰ 계정(b15): 11월 담당 = 가나다 · 순번 표시 둘', d17 && [d17.b16.people.filter(p => p.bul).map(p => p.id).sort(), 'b14' in d17], [['pa', 'pb'], false]);
+  const d17 = await until(async () => { const d = await getDoc('rota/' + HB); return d.b17 && (d.b17.buls || []).some(x => x.id === 'u|2026-11' && x.p === 'pa') ? d : null; });
+  ok('⑰ 계정(b15): 11월 담당 = 가나다 · 순번 표시 둘', d17 && [d17.b17.people.filter(p => p.bul).map(p => p.id).sort(), 'b14' in d17], [['pa', 'pb'], false]);
   ok('⑰ 다음 달은 ㄱㄴㄷ 순으로 라마바', await hb.evaluate(() => [bulOf(S.book, '2026-11'), bulOf(S.book, '2026-12'), bulOf(S.book, '2027-01')]), ['pa', 'pb', 'pa']);
   // 교역자 가나다 = 11월 주보 담당 → 남(라마바)의 11/29 부산 일정 상영을 고를 수 있다
   const can = await until(() => ga.evaluate(() => bulOf(S.book, '2026-11') === 'pa' && bsCan('2026-11-29') && bsVisit('2026-11-29').id === 'v|2026-11-29'));
   ok('⑰ 교역자 앱: 11월 주보 담당이라 11/29(남의 일정) 상영을 고를 수 있다', !!can, true);
   await ga.evaluate(() => bsSet('2026-11-29', 'diff'));
-  const d17b = await until(async () => { const d = await getDoc('rota/' + HB); const x = d.b16.shows.find(y => y.id === 's|2026-11-29'); return x && x.bs === 'diff' ? x : null; });
+  const d17b = await until(async () => { const d = await getDoc('rota/' + HB); const x = d.b17.shows.find(y => y.id === 's|2026-11-29'); return x && x.bs === 'diff' ? x : null; });
   ok('⑰ HB 앱이 받아 계정 책 주일 줄로(누가 = 교역자)', d17b && [d17b.bs, d17b.by.startsWith('staff:')], ['diff', true]);
   ok('⑰ 숙소 같은 다른 칸은 주보 담당이어도 남의 일정에 못 씀(그 판이 안 열림)', await ga.evaluate(() => { openVisitCol('v|2026-11-29', 'stay', 0); const e = !!(S.pane && S.pane.edit); closePane(); return e; }), false);
   await sleep(500);
@@ -486,7 +486,7 @@ console.log('⑰ (1117-Z 2c) 주보 담당 — 사람 탭에서 순번 · 그 �
 
 console.log('⑱ (1117-Z 2b) 알림 판 기간 — 필터 아이콘 → 부산 · 분당 따로 · 계정(ui.al)에 · 책은 그대로 · 교역자는 자기 칸 ui 에');
 {
-  const before = JSON.stringify((await getDoc('rota/' + HB)).b16);
+  const before = JSON.stringify((await getDoc('rota/' + HB)).b17);
   const ns = (o) => (o == null ? o : JSON.parse(JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v))));   // 계정에서 온 칸은 이름순
   await hb.evaluate(() => { closePane(); PREF.tab = 'week'; PREF.afold = false; render(); }); await sleep(300);
   ok('⑱ 처음 값: 부산 8주 · 분당 달 규칙(머리줄에 둘)', await hb.evaluate(() => { const td = todayYmd(), A = alertData(); return [A.toB === addDays(sunOf(td), 55), A.toD === monthEndOf(td, 21), /부산 ~/.test(document.querySelector('#panel .arng').innerText)]; }), [true, true, true]);
@@ -504,7 +504,7 @@ console.log('⑱ (1117-Z 2b) 알림 판 기간 — 필터 아이콘 → 부산 �
   await hb.click('#pane [data-alwset="4"]'); await sleep(200); await hb.click('#pane [data-act="alpsave"]'); await sleep(300);
   const u3 = await until(async () => { const d = await getDoc('rota/' + HB); return d.ui && d.ui.al && (d.ui.al.pre || []).length ? d.ui.al : null; });
   ok('⑱ 내 프리셋 더하기(4주)', ns(u3 && u3.pre), ns([{ m: 'weeks', w: 4 }]));
-  ok('⑱ 판 머리 기간이 바뀜 · 책(b15)은 한 글자도 그대로', [await hb.evaluate((day) => { closePane(); render(); return alertData().toD === day; }, day), JSON.stringify((await getDoc('rota/' + HB)).b16) === before], [true, true]);
+  ok('⑱ 판 머리 기간이 바뀜 · 책(b15)은 한 글자도 그대로', [await hb.evaluate((day) => { closePane(); render(); return alertData().toD === day; }, day), JSON.stringify((await getDoc('rota/' + HB)).b17) === before], [true, true]);
   // 넓은 화면: 설정은 기둥 안에서
   await hb.setViewportSize({ width: 1280, height: 860 }); await sleep(300); await hb.evaluate(() => render());
   await hb.click('#side [data-act="alset"]'); await sleep(400);
@@ -521,7 +521,7 @@ console.log('⑱ (1117-Z 2b) 알림 판 기간 — 필터 아이콘 → 부산 �
 console.log('⑲ (1117-Z 2 고침) 낡은 앱과 핑퐁 없음 · 다시 그려도 판 스크롤 그대로 · 넓은 화면 기둥 자리 같음');
 {
   // 낡은 앱(b14 만 앎)이 같은 책을 옛 칸에 써도 새 앱은 다시 쓰지 않는다 — 예전엔 지우며 쓰고, 낡은 앱이 또 쓰고 … 끝없이 돌았다
-  const cur = (await getDoc("rota/" + HB)).b16, at0 = (await getDoc('rota/' + HB)).at;
+  const cur = (await getDoc("rota/" + HB)).b17, at0 = (await getDoc('rota/' + HB)).at;
   await hb.evaluate(() => { window.__r = 0; const o = window.render; window.__ro = o; window.render = function () { window.__r++; return o.apply(this, arguments); }; });
   await admin(db => db.doc('rota/' + HB).set({ b14: cur }, { merge: true }));
   await sleep(2500);
@@ -580,8 +580,8 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   await hb.fill('#ads-tx', '11/22 부산 광고\n고친 전달 글'); await hb.click('#pane [data-act="adtxedit"]'); await sleep(200);
   const h1 = await paneOf(hb);
   ok('㉑ ✓ → 고친 글이 말풍선에 · ↻ 켜짐 · \'고친 글입니다\' 안내', [h1.ta, h1.pre, h1.icons[0], h1.note], [false, '11/22 부산 광고\n고친 전달 글', 'adtxreset', true]);
-  const d1 = await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b16 && (d.b16.adtx || []).find(x => x.id === 't|' + SUN); return r && r.tx ? d : null; });
-  ok('㉑ 계정 책(b16) adtx 주일 줄에 · 상영 줄은 그대로', d1 && [d1.b16.adtx.find(x => x.id === 't|' + SUN).tx, d1.b16.shows.find(x => x.id === 's|' + SUN).bs], ['11/22 부산 광고\n고친 전달 글', 'same']);
+  const d1 = await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b17 && (d.b17.adtx || []).find(x => x.id === 't|' + SUN); return r && r.tx ? d : null; });
+  ok('㉑ 계정 책(b16) adtx 주일 줄에 · 상영 줄은 그대로', d1 && [d1.b17.adtx.find(x => x.id === 't|' + SUN).tx, d1.b17.shows.find(x => x.id === 's|' + SUN).bs], ['11/22 부산 광고\n고친 전달 글', 'same']);
   ok('㉑ 교역자 화면(그 주일 부산 교역자)에도 같은 고친 글', await until(() => ga.evaluate((s) => adtxOf(S.book, s) || null, SUN)), '11/22 부산 광고\n고친 전달 글');
   await ga.evaluate(async (s) => { closePane(); await new Promise(r => setTimeout(r, 450)); adsOpen(s); }, SUN); await until(() => ga.evaluate(() => S.pane && S.pane.state === 'done' && !S.pane.stale));
   const g1 = await paneOf(ga);
@@ -595,7 +595,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   ok('㉑ 교역자 ↻ → 바로 만든 글 · ↻ 꺼짐', [g2.pre.split('\n')[0], g2.icons[0]], ['11/22(주일) 부산 주일예배 광고', 'adtxreset:off']);
   const st = await until(async () => { const s = await getDoc('rota/' + HB + '/staff/' + GA); const v = s && s.visits && s.visits['v|' + SUN]; return v && v.txAt ? v : null; });
   ok('㉑ 교역자는 자기 칸 그 방문 줄에(tx = \'\')', st && st.tx, '');
-  ok('㉑ HB 앱이 받아 계정 책 줄이 지우기 표지로 → HB 판도 만든 글', await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b16.adtx.find(x => x.id === 't|' + SUN); return r && r.del ? (await paneOf(hb)).pre.split('\n')[0] : null; }), '11/22(주일) 부산 주일예배 광고');
+  ok('㉑ HB 앱이 받아 계정 책 줄이 지우기 표지로 → HB 판도 만든 글', await until(async () => { const d = await getDoc('rota/' + HB); const r = d.b17.adtx.find(x => x.id === 't|' + SUN); return r && r.del ? (await paneOf(hb)).pre.split('\n')[0] : null; }), '11/22(주일) 부산 주일예배 광고');
   // 남의 주일 — 복사만 (11월은 가나다가 주보 담당이라(⑰) 12월 주일로)
   await ga.evaluate(async () => { closePane(); await new Promise(r => setTimeout(r, 450)); adsOpen('2026-12-06'); }); await until(() => ga.evaluate(() => S.pane && S.pane.state === 'done'));
   ok('㉑ 교역자: 내 일정이 아닌 주일은 복사만(고치기 · 되돌리기 없음)', (await paneOf(ga)).icons, ['adscopy']);
@@ -605,6 +605,60 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   // E — 빈 날짜 칸 글자는 한 줄
   ok('㉑ (E) 빈 날짜 칸 \'날짜\' 는 한 줄 · 줄지 않음', await hb.evaluate(async () => { const i = document.createElement('input'); i.type = 'date'; i.required = true; i.placeholder = '날짜'; i.className = 'inp'; const w = document.createElement('div'); w.className = 'dtpair'; w.style.width = '120px'; w.appendChild(i); document.body.appendChild(w);
     const c = getComputedStyle(i, '::before'), r = [c.whiteSpace, c.flexShrink]; w.remove(); return r; }), ['nowrap', '0']);
+}
+
+{
+  console.log('㉒ 숙소 목록 손잡이 · \'더 보기\' 줄 · 부산 목록 줄 (1117-Z 5)');
+  const V = 'v|2026-11-22';
+  await hb.evaluate(async () => { closePane(); await new Promise(r => setTimeout(r, 450)); PREF.tab = 'busan'; render(); }); await sleep(200);
+  await hb.evaluate((v) => openPane({ kind: 'visit', id: v }), V); await sleep(400);
+  await hb.click('#pane [data-vsec="stay"]'); await sleep(250);
+  await hb.click('#pane [data-vmanage="stay"]'); await sleep(250);
+  const rows = () => hb.$$eval('#mglist > .mgitem', els => els.map(e => e.dataset.mid === '-more-' ? '──' : e.querySelector('.mgname span').textContent));
+  const r0 = await rows();
+  ok('㉒ 목록 관리: 꺾쇠 없음 · 줄마다 손잡이 · 맨 아래 \'더 보기\' 줄', [await hb.$$eval('#pane [data-mmove]', e => e.length), await hb.$$eval('#mglist .mghd', e => e.length), r0[r0.length - 1], r0.length >= 3], [0, r0.length, '──', true]);
+  // 맨 아래 줄을 손잡이로 맨 위로
+  const drag = async (from, to) => { await hb.evaluate(() => { const p = $('#pane'); if (p) p.scrollTop = 0; }); await hb.locator(`#mglist > .mgitem >> nth=${from}`).scrollIntoViewIfNeeded(); await sleep(100); const h = await hb.locator(`#mglist > .mgitem >> nth=${from}`).locator('.mghd').boundingBox(), t = await hb.locator(`#mglist > .mgitem >> nth=${to}`).boundingBox();
+    await hb.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await hb.mouse.down();
+    for (let i = 1; i <= 12; i++) { await hb.mouse.move(h.x + h.width / 2, h.y + h.height / 2 + (t.y + 4 - (h.y + h.height / 2)) * i / 12); await sleep(16); }
+    await hb.mouse.up(); await sleep(350); };
+  await drag(r0.length - 2, 0);
+  const r1 = await rows();
+  ok('㉒ 손잡이로 끌어 맨 위로 — 차례가 바뀜', r1, [r0[r0.length - 2]].concat(r0.slice(0, r0.length - 2), ['──']));
+  await drag(r1.length - 1, 1);
+  const r2 = await rows();
+  ok('㉒ \'더 보기\' 줄을 둘째 자리로 → 그 아래는 접힘(토스트)', [r2.indexOf('──'), hb.toasts.slice(-1)[0]], [1, '차례를 바꿨습니다\n\'더 보기\' 아래는 숙소 판에서 접힙니다']);
+  const hidden = r2.slice(2), d1 = await until(async () => { const d = await getDoc('rota/' + HB); const m = (d.b17.opts || []).filter(o => o.type === 'stay' && o.kind === 'hotel' && !o.del && o.more).map(o => o.name).sort(); return m.length === hidden.length ? d : null; });
+  ok('㉒ 계정 책(b17) 숙소 줄에 more · 차례도', d1 && [d1.b17.opts.filter(o => o.type === 'stay' && o.kind === 'hotel' && !o.del && o.more).map(o => o.name).sort(), d1.b17.opts.filter(o => o.type === 'stay' && o.kind === 'hotel' && !o.del).sort((a, b) => a.ord - b.ord).map(o => o.name)], [hidden.slice().sort(), r2.filter(x => x !== '──')]);
+  await hb.click('#pane [data-act="vmback"]'); await sleep(250);
+  const pills = () => hb.$$eval('#spills .tg', e => e.map(x => x.textContent.trim()).filter(t => !/목록에 없음/.test(t)));   // 지금 숙소가 목록 밖이면 그 알약은 따로
+  const cur = await hb.evaluate(() => S.pane.edit.d.name);
+  ok('㉒ 숙소 판: 위 숙소만 + \'더 보기 n\' (고른 숙소가 아래면 펴 둠)', await pills(), hidden.includes(cur) ? [r2[0]].concat(hidden, ['접기', '+ 새 호텔']) : [r2[0], '더 보기 ' + hidden.length, '+ 새 호텔']);
+  // 교역자 화면도 같은 책
+  await ga.evaluate(async (v) => { closePane(); await new Promise(r => setTimeout(r, 450)); openPane({ kind: 'visit', id: v }); }, V); await sleep(400);
+  await ga.click('#pane [data-vsec="stay"]'); await sleep(250);
+  const gp = await ga.$$eval('#spills .tg', e => e.map(x => x.textContent.trim()));
+  ok('㉒ 교역자 숙소 판도 접힘(같은 책) · 목록 관리 없음', [gp.some(x => /^더 보기 \d|^접기$/.test(x)), !!(await ga.$('#pane [data-vmanage]'))], [true, false]);
+  if (gp.some(x => /^더 보기/.test(x))) { await ga.click('#pane [data-act="spmore"]'); await sleep(350); ok('㉒ 교역자도 \'더 보기\' 로 펼 수 있다', (await ga.$$eval('#spills .spill', e => e.length)) === r2.length - 1, true); }
+  await ga.evaluate(() => closePane()); await hb.evaluate(() => closePane()); await sleep(450);
+  // 낡은 앱(b16 — more 를 모름)이 같은 책을 써도 more 그대로
+  const old = JSON.parse(JSON.stringify(d1.b17)); old.opts.forEach(o => delete o.more);
+  await admin(db => db.doc('rota/' + HB).set({ b16: old }, { merge: true }));
+  await sleep(1500);
+  const d2 = await getDoc('rota/' + HB);
+  ok('㉒ 낡은 앱(b16) 사본과 합쳐도 more 그대로(계정 · 앱)', [d2.b17.opts.filter(o => o.type === 'stay' && o.more).length, await hb.evaluate(() => optList(S.book, 'stay').filter(o => o.more).length)], [hidden.length, hidden.length]);
+  // 부산 목록 줄
+  const rowv = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return { vst: !!b.querySelector('.vst .pill'), lchips: !!b.querySelector('.vmain .lchips'), red: (b.querySelector('.vred') || {}).textContent || '' }; }, V);
+  ok('㉒ 부산 목록 줄: 오른쪽 숙소 알약 · 인도 알약 · 메모는 빨간 글자', [rowv.vst, rowv.lchips, rowv.red.length > 0], [true, true, true]);
+  // 달력표 금요 표: 꺾쇠 알약 바탕 없음 · 아래 꺾쇠는 표 밖 상자 테두리 위 · 아래 여백 없음
+  const ed = await hb.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'sheet'; render(); const box = document.querySelector('.extbox'), w = box.querySelector('.tblwrap'), b = box.querySelector(':scope > .edge.bot'), c = box.querySelector('td.edged');
+    const br = b.getBoundingClientRect(), wr = w.getBoundingClientRect(), cr = c.getBoundingClientRect();
+    return { bg: getComputedStyle(box.querySelector('.edge.top')).backgroundColor, pad: getComputedStyle(w).paddingBottom, onLine: Math.abs((br.top + br.height / 2) - wr.bottom) <= 2, mid: Math.abs((br.left + br.width / 2) - (cr.left + cr.width / 2)) <= 2 }; });
+  ok('㉒ 꺾쇠: 알약 바탕 없음 · 표 아래 여백 0 · 아래 꺾쇠는 테두리 위 · 날짜 칸 가운데', [ed.bg, ed.pad, ed.onLine, ed.mid], ['rgba(0, 0, 0, 0)', '0px', true, true]);
+  const ex = await hb.evaluate(() => { PREF.mview = 'busan'; render(); const n0 = document.querySelectorAll('table.bt tr').length; document.querySelector('.extbox [data-ext="busan"][data-dir="b"]').click(); const n1 = document.querySelectorAll('table.bt tr').length;
+    document.querySelector('.extbox [data-ext="busan"][data-dir="b"][data-c="1"]').click(); return [n1 >= n0, document.querySelectorAll('table.bt tr').length === n0, !!document.querySelector('.extbox > .edge.bot [data-ext="busan"]')]; });
+  ok('㉒ 부산 요약 표 위 · 아래 꺾쇠: 앞 주 펴고 접기', ex, [true, true, true]);
+  ok('㉒ 달력표 단추 줄(예배별 …)은 표 위 제자리(메뉴 밑줄과 이름이 겹쳐 아래로 떨어지던 것)', await hb.evaluate(() => getComputedStyle(document.querySelector('#panel .mbar')).position), 'static');
 }
 
 console.log('⑥ HB 가 이메일을 지우면');
