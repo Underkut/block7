@@ -367,6 +367,46 @@ console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 �
   ok('⑭ 낡은 앱(b13)과 합쳐도 특별예배 · 자리 그대로 · b13 은 치움', d14c && [d14c.b14.specs.length, d14c.b14.slots.some(x => x.id === '2026-12-24|x1|preach')], [1, true]);
 }
 
+console.log('⑮ (1117-Z 1) 숙소 금액 · 취소 기한은 HB 전용 — 교역자 화면에서 감추고 고치지 못한다');
+{
+  const V = 'v|2026-11-22';
+  // HB 가 내 방문(교역자 가나다)에 예약 완료 호텔 + 금액 · 취소 기한 · 환불 불가 숙소를 적는다
+  await hb.evaluate((V) => { const v = S.book.visits.find(x => x.id === V);
+    put(S.book, 'visits', Object.assign({}, JSON.parse(JSON.stringify(v)), { stay: [{ kind: 'hotel', name: '비밀 호텔', status: 'done', cost: 150000, nights: 1, cancelBy: '2026-11-20', cancelAt: '18:00' }, { kind: 'hotel', name: '둘째 호텔', status: 'pre', cost: 70000, nights: 1, nofree: true }] }), byNow(), Date.now()); saveBook(); render(); }, V);
+  const hbHas = await hb.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'busan'; S.ym = '2026-11'; render(); return [[...document.querySelectorAll('#panel .tsheet.bt th')].map(t => t.textContent).filter(x => /금액|취소 기한/.test(x)), /22만원/.test(document.querySelector('#panel').innerText)]; });
+  ok('⑮ HB 부산 요약: 금액 · 취소 기한 열과 값이 그대로', hbHas, [['금액', '취소 기한'], true]);
+  const gsee = await until(() => ga.evaluate((V) => { const s = S.book.visits.find(x => x.id === V).stay; return s.length === 2 && s[0].name === '비밀 호텔' ? s.map(x => [x.cost, x.cancelBy || '', !!x.nofree]) : null; }, V));
+  ok('⑮ 교역자 앱의 책: 숙소 이름은 오고 금액 · 기한 · 환불 불가는 없다', gsee, [[0, '', false], [0, '', false]]);
+  const PRIV = /22만원|15만원|7만원|150,000|11\/20|18:00|취소 기한|환불 불가|취소는/;
+  const g = await ga.evaluate(() => { const out = {};
+    PREF.tab = 'month'; PREF.mview = 'busan'; S.ym = '2026-11'; render(); const p = document.querySelector('#panel');
+    out.th = [...p.querySelectorAll('.tsheet.bt th')].map(t => t.textContent); out.busan = p.innerText; out.cells = p.querySelectorAll('[data-vcol="cost"], [data-vcol="cancel"]').length;
+    PREF.tab = 'week'; S.sun = '2026-11-22'; render(); out.week = document.querySelector('#panel').innerText;
+    PREF.tab = 'month'; PREF.mview = 'mine'; render(); out.mine = document.querySelector('#panel').innerText; return out; });
+  ok('⑮ 교역자 부산 요약: 금액 · 취소 기한 열 · 칸이 없다', [g.th.includes('금액') || g.th.includes('취소 기한'), g.cells, g.th.includes('숙소')], [false, 0, true]);
+  ok('⑮ 교역자 화면 글(부산 요약 · 이번 주 · 내 일정)에 금액 · 기한이 없다', [PRIV.test(g.busan), PRIV.test(g.week), PRIV.test(g.mine), /비밀 호텔/.test(g.busan)], [false, false, false, true]);
+  // 교역자 숙소 판
+  await ga.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'busan'; render(); }); await sleep(200);
+  await ga.click(`#panel [data-visit="${V}"][data-vcol="stay"][data-i="0"]`); await sleep(400);
+  const gp = await ga.evaluate(() => { const p = document.querySelector('#pane'); return { cost: !!p.querySelector('[data-dcost], [data-dstep="cost"]'), cancel: !!p.querySelector('[data-df="cancelBy"], [data-df="cancelAt"]'), nofree: !!p.querySelector('[data-act="dnofree"]'), img: !!p.querySelector('[data-act="dimg"]') || /예약 화면 캡쳐/.test(p.textContent), st: [...p.querySelectorAll('[data-dset="status"]')].map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')), all: p.innerText }; });
+  ok('⑮ 교역자 숙소 판: 금액 · 취소 기한 · 환불 불가 · 예약 화면 칸이 없고 상태는 그대로 고를 수 있다', [gp.cost, gp.cancel, gp.nofree, gp.img, gp.st, PRIV.test(gp.all)], [false, false, false, false, ['미정', '예약 전', '예약 완료*', '취소'], false]);
+  // 숨은 단추를 억지로 눌러도(낡은 화면 흉내) 초안이 안 바뀐다
+  const forced = await ga.evaluate(() => { for (const h of ['<button data-dstep="cost" data-d="5000">x</button>', '<button data-act="dnofree">x</button>']) { const w = document.createElement('div'); w.innerHTML = h; document.querySelector('#pane').appendChild(w); w.firstChild.click(); w.remove(); }
+    return [S.pane.edit.d.cost || 0, !!S.pane.edit.d.nofree]; });
+  ok('⑮ 교역자가 금액 −/+ · 환불 불가를 억지로 눌러도 막힌다(staffOk)', forced, [0, false]);
+  // 상태를 예약 전으로 바꿔 저장 → 자기 칸에 금액 · 기한 없음 → HB 책은 금액 · 기한 그대로 + 상태만 바뀜
+  await ga.click('#pane [data-dset="status"][data-v="pre"]'); await sleep(100); await ga.click('#pane [data-act="vsave"]'); await sleep(300);
+  const s15 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); const s = x && x.visits[V].stay; return s && s[0].name === '비밀 호텔' && s[0].status === 'pre' ? s : null; });
+  ok('⑮ 교역자 칸: 상태만 바뀌고 금액 · 기한은 싣지 않는다', s15 && s15.map(x => [x.name, x.status, x.cost || 0, 'cancelBy' in x, 'nofree' in x]), [['비밀 호텔', 'pre', 0, false, false], ['둘째 호텔', 'pre', 0, false, false]]);
+  const d15 = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b14.visits.find(x => x.id === V).stay; return s[0].status === 'pre' ? s : null; });
+  ok('⑮ HB 앱이 받아 계정(b14): 상태는 교역자 것 · 금액 · 기한 · 환불 불가는 HB 것 그대로', d15 && d15.map(x => [x.status, x.cost, x.cancelBy || '', x.cancelAt || '', !!x.nofree]), [['pre', 150000, '2026-11-20', '18:00', false], ['pre', 70000, '', '', true]]);
+  // 낡은 교역자 앱이 자기 칸에 금액을 바꿔 써도 HB 책은 그대로
+  await admin(db => db.doc('rota/' + HB + '/staff/' + GA).set({ visits: { [V]: { stay: [{ kind: 'hotel', name: '비밀 호텔', status: 'pre', cost: 1, cancelBy: '2026-12-31' }, { kind: 'hotel', name: '둘째 호텔', status: 'done', cost: 2 }], stayAt: Date.now() + 1000 } } }, { merge: true }));
+  const d15b = await until(async () => { const d = await getDoc('rota/' + HB); const s = d.b14.visits.find(x => x.id === V).stay; return s[1].status === 'done' ? s : null; });
+  ok('⑮ 낡은 교역자 앱이 금액 · 기한을 바꿔 보내도 받지 않는다(상태만 받음)', d15b && d15b.map(x => [x.status, x.cost, x.cancelBy || '']), [['pre', 150000, '2026-11-20'], ['done', 70000, '']]);
+  await ga.evaluate(() => closePane()); await sleep(300);
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });

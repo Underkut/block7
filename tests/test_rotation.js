@@ -36,6 +36,7 @@
 //     주일 광고 · 상영은 주일에 머무는 일정만 · 교역자 인도 날 저절로 머무는 날 · 내 일정 · 내보내기 · b13 · 교역자는 못 씀 · 화면 용어
 //  ㊴ 이번 주 표(C) 분당 판 축 바꿈(1117-G): 줄 = 설교 · 헌금 · 인도, 칸 = 예배(부산 띠와 같은 결)
 //  ㊳ 분당 특별예배(1116-2 E): specs 한 줄 · 자리 '날짜|xk|역할' · 그 날 정해진 예배 쉼 · 부산 겹침 · 내 일정 · 시트 내보내기 · 지우면 자리도 · b14 · 화면
+//  ㊵ 숙소 금액 · 취소 기한은 HB 전용(1117-Z 1): 교역자 화면 책에서 걷어 냄 · 교역자 칸의 값은 안 받음(이미 든 값은 그대로) · 교역자는 못 고침 · HB 화면은 그대로
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -53,7 +54,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   normVisit, normMeet, MEET_K, MEET_G, meetText, mateText, mateLink, linkMates, colTarget, STAFF_COLS, OLD_FIELDS, WRITE_FIELD,
   STAY_ST, stayStOf, stayStName, STAY_FOR, stayForAsk, stayHotel, optReorder,
   normEvs, evFixDays, evDates, vSun, titleGuess, evNameChips, evLine, TITLE_CHIPS,
-  normSpec, specOf, specsIn, restOn, slotLabelB, dropSpec, nextSpecK, specId, isSpec };`, ctx);
+  normSpec, specOf, specsIn, restOn, slotLabelB, dropSpec, nextSpecK, specId, isSpec,
+  STAY_PRIV, stayPub, stayKeep, hidePriv };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -508,7 +510,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉓ 고친 때 · 누가 · 가능 일정은 다듬기를 지나도 남는다', [rt.visits.find(v => v.id === 'v|2026-11-22').stayAt, A.normBook({ people: [{ id: 'q', name: '하하', can: [{ from: '2026-12-20' }], canAt: 7, canBy: 'q' }] }).people[0].can], [2000, [{ from: '2026-12-20', to: '2026-12-20' }]]);
   // 교역자 앱이 쓰는 조각
   const pt = A.staffPatch('ga@example.com', 'stay', 'v|2026-11-22', hotel('조각'), 5000);
-  sc.eq('㉓ 쓰는 조각 — 그 방문 · 그 칸만', pt, { email: 'ga@example.com', at: 5000, visits: { 'v|2026-11-22': { stay: hotel('조각'), stayAt: 5000 } } });
+  sc.eq('㉓ 쓰는 조각 — 그 방문 · 그 칸만 (금액은 싣지 않음 — 1117-Z 1)', pt, { email: 'ga@example.com', at: 5000, visits: { 'v|2026-11-22': { stay: [{ kind: 'hotel', name: '조각', status: 'done', cost: 0 }], stayAt: 5000 } } });
   const doc0 = { email: 'ga@example.com', visits: { 'v|2026-11-22': { travel: [{ dir: 'down', mode: 'KTX' }], travelAt: 10 }, 'v|2026-12-06': { stay: [], stayAt: 9 } }, away: [], awayAt: 3 };
   const doc1 = A.staffMerge(doc0, pt);
   sc.eq('㉓ 조각을 합쳐도 다른 방문 · 다른 칸은 그대로', [doc1.visits['v|2026-11-22'].travelAt, doc1.visits['v|2026-11-22'].stayAt, doc1.visits['v|2026-12-06'].stayAt, doc1.awayAt], [10, 5000, 9, 3]);
@@ -1033,7 +1035,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [{ sec: 'stay', i: 2, focus: 'cost' }, { sec: 'stay', i: 3, focus: 'cancel' }]);
   sc.eq('㉞ 숙소가 없으면 새 숙소 판 · 기한이 없으면 첫 숙소(환불 불가 먼저)', [J(A.colTarget(NV({}), 'cost')), J(A.colTarget(NV({ stay: [{ name: '가' }, { name: '나', nofree: true }] }), 'cancel')), J(A.colTarget(NV({ stay: [{ kind: 'home', name: '댁' }] }), 'cost')), A.colTarget(sv, 'xx')],
     [{ sec: 'stay', i: -1, focus: 'cost' }, { sec: 'stay', i: 1, focus: 'cancel' }, { sec: 'stay', i: 0, focus: 'cost' }, null]);
-  sc.eq('㉞ 교역자가 자기 방문에서 바로 고칠 수 있는 칸 = 숙소 · 금액 · 취소 기한 · 모임', A.STAFF_COLS, ['stay', 'cost', 'cancel', 'meet']);
+  sc.eq('㉞ 교역자가 자기 방문에서 바로 고칠 수 있는 칸 = 숙소 · 모임 (금액 · 취소 기한은 HB 전용 — 1117-Z 1)', A.STAFF_COLS, ['stay', 'meet']);
   // 내보내기 · 화면
   const eb = A.normBook({ people: [{ id: 'pa', name: '가교역', roles: ['busan'] }, { id: 'pl', name: '오세움', kind: 'lay' }], visits: [{ id: 'v|2026-11-22', who: ['pa'], days: '토일', mates: [{ n: '옛이름', p: 'pl' }, { n: '가족' }], meet: { k: 'new', who: '라새가', n: 2 }, at: 1 }] });
   const ex = A.exportRows(eb, 'busan', '2026-11', {});
@@ -1103,7 +1105,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const f = HTML.slice(HTML.indexOf("} else if (ed.sec === 'stay') {"), HTML.indexOf("} else if (ed.sec === 'travel') {"));
   sc.eq('㉟ 숙소 판 순서: 숙소 쓰는 사람(묻는 때만) → 호텔 · 성도님 댁 → 알약 → 상태(종류마다)',
     [f.indexOf('stayForAsk(v, ed.i, d)') > 0 && f.indexOf('stayForAsk(v, ed.i, d)') < f.indexOf("seg3('kind'"), f.indexOf("seg3('kind'") < f.indexOf('class="tg spill'), f.indexOf('class="tg spill') < f.indexOf("seg3('status', STAY_ST[d.kind]"), /seg3\('for', STAY_FOR, d\.for\)/.test(f)], [true, true, true, true]);
-  sc.eq('㉟ 성도님 댁: 금액 · 취소 기한 · 예약 화면을 감춤(호텔일 때만 그림)', (() => { const k = f.indexOf('${hotel ? `'), e = f.indexOf("` : ''}\n", k); const h = f.slice(k, e); return [k > 0, /취소 기한/.test(h), /예약 화면 캡쳐 이미지 첨부/.test(h), /data-dcost/.test(h)]; })(), [true, true, true, true]);
+  sc.eq('㉟ 성도님 댁: 금액 · 취소 기한 · 예약 화면을 감춤(호텔일 때만 그림)', (() => { const k = f.indexOf('${hotel && own ? `'), e = f.indexOf("` : ''}\n", k); const h = f.slice(k, e); return [k > 0, /취소 기한/.test(h), /예약 화면 캡쳐 이미지 첨부/.test(h), /data-dcost/.test(h)]; })(), [true, true, true, true]);
   sc.eq('㉟ 저장: 댁은 금액 · 취소 기한 · 환불 불가를 비움 · 상태는 종류에 맞춤 · 종류를 바꾸면 상태도 맞춤',
     [/if \(s\.kind !== 'hotel'\) \{ s\.cost = 0; delete s\.cancelBy; delete s\.cancelAt; delete s\.nofree; \}/.test(HTML), /s\.status = stayStOf\(s\.kind, s\.status\);/.test(HTML), /dd\.status = stayStOf\(dd\.kind, dd\.status\);/.test(HTML)], [true, true, true]);
   const g = HTML.slice(HTML.indexOf('function spInit('), HTML.indexOf('function spInit(') + 4000);
@@ -1256,6 +1258,66 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('function viewWeek(') + 16000);
   sc.eq('㊴ 머리 줄 = 예배(rows 의 th) · 몸 줄 = 설교 · 헌금 · 인도 · 빈 자리는 –',
     [/<thead><tr><th><\/th>\$\{rows\.map\(r => r\.h\.th\)/.test(vw), /\['설교', '헌금', '인도'\]\.map\(\(lab, i\)/.test(vw), /<span class="muted">–<\/span>/.test(vw), !/<th>설교<\/th><th>헌금<\/th><th>인도<\/th>/.test(vw)], [true, true, true, true]);
+}
+
+// ㊵ 숙소 금액 · 취소 기한은 HB 전용 (1117-Z 1, HB 11/17) — 지어낸 이름 · 이메일
+{
+  const T0 = 1000, V = 'v|2026-11-22';
+  const hbStay = [{ kind: 'hotel', name: '바다 호텔', status: 'done', cost: 120000, cancelBy: '2026-11-19', cancelAt: '23:59', ref: 'R1', imgs: ['abcdef12'] },
+    { kind: 'hotel', name: '언덕 호텔', status: 'pre', nofree: true, cost: 80000 }, { kind: 'home', name: '성도 가정', status: 'ask', for: '여' }];
+  const bk = A.normBook({ people: [{ id: 'pa', name: '가나다', roles: ['busan'], email: 'ga@example.com', at: T0 }],
+    visits: [{ id: V, who: ['pa'], days: '토일', stay: hbStay, stayAt: T0, at: T0 }],
+    opts: [{ id: A.optId('stay', '바다 호텔', 'hotel'), type: 'stay', kind: 'hotel', name: '바다 호텔', cost: 60000, ord: 0, at: T0 }] });
+  // 교역자 화면 책
+  const hv = A.hidePriv(bk), hs = hv.visits[0].stay;
+  sc.eq('㊵ 교역자 화면 책: 숙소 금액 · 취소 기한 · 시각 · 환불 불가 · 예약 화면이 없다(이름 · 상태 · 남녀 · 예약번호는 남음)',
+    [hs.map(s => [s.name, s.status, s.cost, s.cancelBy, s.cancelAt, s.nofree, s.imgs]), hs[2].for, hs[0].ref],
+    [[['바다 호텔', 'done', 0, undefined, undefined, undefined, undefined], ['언덕 호텔', 'pre', 0, undefined, undefined, undefined, undefined], ['성도 가정', 'ask', 0, undefined, undefined, undefined, undefined]], '여', 'R1']);
+  sc.eq('㊵ 교역자 화면 책: 숙소 목록의 평소 금액도 없다', hv.opts.find(o => o.type === 'stay').cost, 0);
+  sc.eq('㊵ hidePriv 는 넣은 책을 고치지 않는다(HB 책 그대로)', [bk.visits[0].stay[0].cost, bk.visits[0].stay[0].cancelBy, bk.opts.find(o => o.type === 'stay').cost], [120000, '2026-11-19', 60000]);
+  const txt = JSON.stringify(hv);
+  sc.eq('㊵ 교역자 화면 책 글 어디에도 금액 · 기한 날짜가 없다', [/120000|80000|60000/.test(txt), /2026-11-19|23:59|nofree|abcdef12/.test(txt)], [false, false]);
+  // 교역자 화면에 쓰이는 글 — 챙길 것 · 부산 준비 · 내보내기
+  sc.eq('㊵ 교역자 화면: 챙길 것에 취소 기한 줄이 없다 (HB 화면에는 있다)', [A.chores(hv, '2026-11-17').filter(c => c.kind === 'cancel').length, A.chores(bk, '2026-11-17').filter(c => c.kind === 'cancel').length], [0, 1]);
+  const vh = hv.visits[0], vb = bk.visits[0];
+  sc.eq('㊵ 교역자 화면: 부산 준비의 숙소 줄에 취소 기한이 없다 (HB 는 11/19)', [A.tripChecks(hv, vh, 'pa').items[0].cancelBy, A.tripChecks(bk, vb, 'pa').items[0].cancelBy], ['', '2026-11-19']);
+  const exS = A.exportRows(hv, 'busan', '2026-11', { noPriv: true }), exH = A.exportRows(bk, 'busan', '2026-11', {});
+  sc.eq('㊵ 교역자 내보내기: 금액 · 취소 기한 열이 없다 · HB 는 그대로(열 차례 · 값)',
+    [exS[0].includes('금액') || exS[0].includes('취소 기한'), exS[0].length, exS[1].length, exH[0].slice(8, 11), exH[1].slice(9, 11)],
+    [false, 13, 13, ['숙소', '금액', '취소 기한'], [200000, '11/19(목)']]);
+  // 교역자가 쓰는 조각 · 받아들이기
+  const pt = A.staffPatch('ga@example.com', 'stay', V, [{ kind: 'hotel', name: '바다 호텔', status: 'done', cost: 1, cancelBy: '2026-12-31', nofree: true, imgs: ['zzzzzz99'] }], 5000);
+  sc.eq('㊵ 교역자가 쓰는 조각에 금액 · 기한 · 사진을 싣지 않는다', pt.visits[V].stay, [{ kind: 'hotel', name: '바다 호텔', status: 'done', cost: 0 }]);
+  // 낡은 교역자 앱이 금액 · 기한을 바꿔 보냈다 — 이름 · 상태 · 차례는 받고, 금액 · 기한은 HB 책 것 그대로
+  const old = { email: 'ga@example.com', visits: { [V]: { stayAt: 3000, stay: [
+    { kind: 'hotel', name: '언덕 호텔', status: 'done', cost: 1, nofree: false, cancelBy: '2026-12-31' },
+    { kind: 'hotel', name: '바다 호텔', status: 'cancel', cost: 999, cancelBy: '2026-12-30', imgs: ['zzzzzz99'] },
+    { kind: 'hotel', name: '새 호텔', status: 'pre', cost: 50000, cancelBy: '2026-12-01' }] } } };
+  const ab = A.absorb(bk, [old]).book.visits[0].stay;
+  sc.eq('㊵ absorb: 교역자의 이름 · 상태 · 차례는 받는다',
+    ab.map(s => [s.name, s.status]), [['언덕 호텔', 'done'], ['바다 호텔', 'cancel'], ['새 호텔', 'pre']]);
+  sc.eq('㊵ absorb: 금액 · 기한 · 환불 불가 · 사진은 HB 책의 같은 숙소 것 그대로 · 새 숙소는 비움',
+    ab.map(s => [s.cost, s.cancelBy, s.cancelAt, s.nofree, s.imgs]),
+    [[80000, undefined, undefined, true, undefined], [120000, '2026-11-19', '23:59', undefined, ['abcdef12']], [0, undefined, undefined, undefined, undefined]]);
+  sc.eq('㊵ absorb: 예약번호(ref)는 교역자 것 그대로(감추는 칸 아님)', A.absorb(bk, [{ email: 'ga@example.com', visits: { [V]: { stayAt: 3000, stay: [{ kind: 'hotel', name: '바다 호텔', status: 'done', ref: 'NEW' }] } } }]).book.visits[0].stay[0].ref, 'NEW');
+  sc.eq('㊵ absorb: 이름이 빈 숙소는 같은 자리 · 같은 종류일 때만 되입힘',
+    A.stayKeep([{ kind: 'hotel', name: '', cost: 7 }, { kind: 'hotel', name: '', cost: 8 }], [{ kind: 'hotel', name: '' }, { kind: 'home', name: '' }]).map(s => s.cost), [7, 0]);
+  // 교역자 앱의 화면(staffView) = hidePriv(absorb(…)) — 자기가 고친 숙소도 금액 없이 보인다
+  const sv = A.hidePriv(A.absorb(bk, [old]).book).visits[0].stay;
+  sc.eq('㊵ 교역자 앱이 받아들인 뒤 그린 책에도 금액 · 기한이 없다', sv.every(s => s.cost === 0 && !s.cancelBy && !s.nofree && !s.imgs), true);
+  // 화면 코드 — 교역자에게 감추고 막는 자리
+  sc.eq('㊵ 교역자 앱의 책은 staffView 한 곳에서 hidePriv 를 거친다', /function staffView\(\) \{[^\n]*S\.book = hidePriv\(absorb\(/.test(HTML), true);
+  const ped = HTML.slice(HTML.indexOf("} else if (ed.sec === 'stay') {"), HTML.indexOf("} else if (ed.sec === 'travel') {"));
+  sc.eq('㊵ 숙소 판: 금액 · 취소 기한 · 환불 불가 · 예약 화면 칸은 HB 만(hotel && own)', [/\$\{hotel && own \? `<div class="frow"><span class="flabel">금액<\/span>/.test(ped),
+    ped.indexOf('hotel && own') < ped.indexOf('data-df="cancelBy"') && ped.indexOf('hotel && own') < ped.indexOf('data-act="dimg"') && ped.indexOf('hotel && own') < ped.indexOf('data-act="dnofree"')], [true, true]);
+  const so = HTML.slice(HTML.indexOf('function staffOk('), HTML.indexOf('function staffNoMsg('));
+  sc.eq('㊵ staffOk: 숙소 판에서 금액 −/+ · 환불 불가 · 기한 지우기 · 사진 더하기 · 읽기 · 빼기를 막는다',
+    /if \(ed\.sec === 'stay' && \(d\.dstep === 'cost' \|\| \['dnofree', 'dnocancel', 'dimg', 'dread'\]\.includes\(d\.act\) \|\| d\.delimg\)\) return false;/.test(so), true);
+  sc.eq('㊵ 금액 칸 · 취소 기한 날짜 · 시각을 쳐도 교역자는 초안에 안 담긴다', [/if \(t\.dataset\.dcost && !isStaff\(\)\)/.test(HTML), /if \(isStaff\(\) && \(t\.dataset\.df === 'cancelBy' \|\| t\.dataset\.df === 'cancelAt'\)\) return;/.test(HTML)], [true, true]);
+  const bb = HTML.slice(HTML.indexOf('function bodyBusan('), HTML.indexOf('function bodyBusan(') + 4000);
+  sc.eq('㊵ 부산 요약 표: 금액 · 취소 기한 열(머리 · 칸)은 HB 만(pv)', [/const pv = !isStaff\(\);/.test(bb), /\$\{pv \? `<td>\$\{cb_\(v, 'cost'/.test(bb), /\$\{pv \? '<th class="h-bs">금액<\/th><th class="h-bs">취소 기한<\/th>' : ''\}/.test(bb)], [true, true, true]);
+  sc.eq('㊵ 교역자 내보내기: noPriv = isStaff()', /noPriv: isStaff\(\) \};/.test(HTML), true);
+  sc.eq('㊵ 숙소 목록 관리 · AI 사진 읽기 · 메일은 교역자에게 원래 없다', [/own = !isStaff\(\)/.test(ped), /function aiCan\(\) \{ return DEMO \|\| \(!!FB\.user && !isStaff\(\)\); \}/.test(HTML)], [true, true]);
 }
 
 sc.done();
