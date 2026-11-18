@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-5 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) -->
+<!-- 교역자 로테이션 v. 26-1118-6 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -241,7 +241,8 @@ table.wtab th.g-sun b{color:var(--sun)} table.wtab th.g-wed b{color:var(--wed)} 
 @media (min-width:1000px){
   .wrap.sided{max-width:1060px}
   .wrap.sided .main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:start}
-  .wrap.sided #side{display:flex;flex-direction:column;position:sticky;top:calc(var(--hdr,100px) + 10px);width:360px;max-height:calc(100vh - var(--hdr,100px) - 24px);overflow:hidden;
+  /* ⚠️ 붙는 높이 = 원래 자리(머리줄 바로 아래). +10px 로 두면 짧은 목록은 10px 내려가 붙고 긴 목록(틀을 꽉 채움)은 못 내려가 갈래마다 판이 튀었다(11/18) — 틈은 판의 margin-top 으로 */
+  .wrap.sided #side{display:flex;flex-direction:column;position:sticky;top:var(--hdr,100px);width:360px;max-height:calc(100vh - var(--hdr,100px) - 14px);overflow:hidden;
     transition:width .3s cubic-bezier(.22,.8,.24,1)}
   .wrap.sided #side.fold{width:64px}
   #side .apanel{width:360px;flex:0 1 auto;min-height:0;margin:10px 0 0}
@@ -644,7 +645,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-5';
+const APP_VERSION = 'v. 26-1118-6';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1158,7 +1159,10 @@ function pickDoc(local, doc) {
   const olds = OLD_FIELDS.map(k => doc && doc[k]).filter(Boolean);
   if (!cur && !olds.length) return pickBook(local, null);
   let m = normBook(local); for (const o of olds) m = mergeBook(m, o); if (cur) m = mergeBook(m, cur);
-  return { book: m, push: !cur || olds.length > 0 || !sameBook(m, cur) };
+  // ⚠️ 옛 칸이 있다는 것만으로는 다시 쓰지 않는다 (1117-Z 2 고침, 11/18): 낡은 앱이 다른 기기 · 숨은 탭에 열려 있으면
+  //   낡은 앱이 옛 칸에 씀 → 새 앱이 지우며 씀 → 낡은 앱이 또 씀 … 이 끝없이 돌아 1초에 수십 번 다시 그렸다(목록 스크롤이 맨 위로).
+  //   합친 책이 지금 칸과 같으면 그대로 둔다 — 옛 칸은 다음에 실제로 고칠 때(cloudSave) 함께 지운다.
+  return { book: m, push: !cur || !sameBook(m, cur) };
 }
 
 
@@ -2430,10 +2434,18 @@ function askSure(t, d, msg) {   // true = 아직 묻는 중(멈춘다) · false 
   Object.assign(SURE, { key: k, msg, until: now + 6000 }); d.sure = '1'; t.textContent = msg; return true; }
 function paintSure(root) { if (!root || !SURE.key || Date.now() >= SURE.until) return;
   root.querySelectorAll('button').forEach(b => { if (sureKey(b.dataset) === SURE.key) { b.dataset.sure = '1'; b.textContent = SURE.msg; } }); }
+// 다시 그려도 '챙길 것' 목록 · 기간 판의 스크롤 자리를 지킨다 — 같은 갈래 · 같은 탭일 때만(갈래를 바꾸면 맨 위부터). 계정 갱신으로 다시 그릴 때 맨 위로 튀던 것(11/18)
+function keepScroll() {
+  const out = []; for (const q of ['#panel .alist', '#side .alist', '#side .aset']) { const el = $(q); if (el && el.scrollTop) out.push([q, el.scrollTop]); }
+  const key = S.alCat + '|' + (S.alset ? S.alset.tab : '');
+  return () => { if (key !== S.alCat + '|' + (S.alset ? S.alset.tab : '')) return; for (const [q, y] of out) { const el = $(q); if (el) el.scrollTop = y; } };
+}
 function render() {
+  const ks = keepScroll();
   const p = $('#panel');
   p.innerHTML = ({ week: viewWeek, month: viewMonth, busan: viewBusan, people: viewPeople }[PREF.tab] || viewWeek)();
   renderSide();   // 넓은 화면의 오른쪽 알림 기둥 (1117-Z 2)
+  ks();
   if ($('#menu')) renderMenu();
   renderVer(); paintMe(p); paintSure(p);
 }
@@ -2522,7 +2534,7 @@ function alertPanel(wide) {
   const head = `<div class="ahead"><button class="afb" data-act="afold" aria-expanded="${!fold && !empty}"><b>챙길 것</b></button><button class="aico" data-act="alset" aria-label="챙길 것 기간 정하기 — 부산 ${esc(alLabel(cB))} · 분당 ${esc(alLabel(cD))}">${AL_ICON}</button>${fold ? cnt : empty ? '<span class="muted tiny">이 기간에는 없습니다</span>' : rng}${empty ? '' : `<button class="afl" data-act="afold">${fold ? '펴기 ▾' : wide ? '접기 ›' : '접기 ▴'}</button>`}</div>`;
   if (fold || empty) return `<div class="apanel fold">${head}</div>`;
   const CATS = ALERT_CATS.filter(c => !isStaff() || c[0] !== 'bd'), HINT = isStaff() ? AL_HINT_ST : AL_HINT;   // 분당 빈 자리는 HB 몫 (1117-Z 2c)
-  const cat = CATS.some(c => c[0] === S.acat) ? S.acat : n.urgent ? 'urgent' : (CATS.find(c => n[c[0]]) || CATS[0])[0];
+  const cat = CATS.some(c => c[0] === S.acat) ? S.acat : n.urgent ? 'urgent' : (CATS.find(c => n[c[0]]) || CATS[0])[0]; S.alCat = cat;
   const chips = CATS.map(([k, l]) => `<button class="achip c-${k}${n[k] ? '' : ' zero'}" role="tab" aria-selected="${k === cat}" data-acat="${k}">${l}<i>${n[k]}</i></button>`).join('');
   const rows = A.items.filter(x => x.cat === cat).map(x => { const k = S.al.push(x) - 1, tone = cat === 'urgent' ? ' red' : cat === 'chk' ? ' warn' : '';
     return `<button class="arow${tone}" data-al="${k}" aria-label="${esc(mdOf(x.date) + ' ' + x.main + ', ' + x.go + '(으)로')}"><span class="ad"><b>${mdOf(x.date)}</b><small>${DOWS[dowOf(x.date)]}</small></span>
@@ -4409,7 +4421,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { if ($('#lightbox')) return $('#lightbox').remove(); if ($('#menu')) return closeMenu(); if (S.pane) return closePane(); if (S.alset) { S.alset = null; return render(); } if (S.open) { S.open = null; render(); } }
 });
 // 글자 칸을 벗어나면 미뤄 둔 다시 그리기를 한다 (그 사이 계정에서 온 것을 보이게)
-document.addEventListener('focusout', () => setTimeout(() => { if (!editing()) { render(); } }, 0));
+// 글자 칸을 벗어날 때만 다시 그린다(치는 동안 미뤄 둔 계정 갱신). 단추는 아니다 — 다시 그리며 누른 단추가 사라질 때도 focusout 이 와서 한 번 더 그렸다(1117-Z 2 고침)
+document.addEventListener('focusout', (e) => { if (!e.target || !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; setTimeout(() => { if (!editing()) { render(); } }, 0); });
 addEventListener('resize', () => markTab());
 
 /* ---------- 새 버전 (사역 한눈에와 같은 방법) ---------- */

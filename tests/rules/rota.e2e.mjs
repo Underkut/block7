@@ -334,8 +334,8 @@ console.log('⑬ (1116-2 D) 특별예배 — 주일이 아닌 날 부산 일정 
   // 낡은 앱(b12 — title · evs 를 모름)이 같은 줄을 떨군 사본을 써도
   const old = JSON.parse(JSON.stringify(d13.b15)); old.visits.forEach(v => { delete v.title; delete v.evs; });
   await admin(db => db.doc('rota/' + HB).set({ b12: old }, { merge: true }));
-  const d13b = await until(async () => { const d = await getDoc('rota/' + HB); return !('b12' in d) ? d : null; });
-  ok('⑬ 낡은 앱(b12) 사본과 합쳐도 이름 · 예배 그대로 · b12 는 치움', d13b && (v => [v.title, v.evs.length])(d13b.b15.visits.find(x => x.id === 'v|2026-12-24')), ['성탄', 2]);
+  await sleep(1500); const d13b = await getDoc('rota/' + HB);   // 바뀐 게 없으면 새 앱은 다시 쓰지 않는다(옛 칸은 다음 저장 때 지움 — 낡은 앱과 핑퐁 없음, 1117-Z 2 고침)
+  ok('⑬ 낡은 앱(b12) 사본과 합쳐도 이름 · 예배 그대로 · 바뀐 게 없으니 다시 안 씀', d13b && [(v => [v.title, v.evs.length])(d13b.b15.visits.find(x => x.id === 'v|2026-12-24')), await hb.evaluate(() => (v => [v.title, v.evs.length])(S.book.visits.find(x => x.id === 'v|2026-12-24')))], [['성탄', 2], ['성탄', 2]]);
 }
 
 console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 고르면 계정 b15 · 교역자는 보기만 · 낡은 앱(b13)');
@@ -363,8 +363,8 @@ console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 �
   // 낡은 앱(b13 — specs · 특별예배 자리를 모름)이 떨군 사본을 써도
   const old = JSON.parse(JSON.stringify(d14b.b15)); delete old.specs; old.slots = old.slots.filter(x => !/\|x\d\|/.test(x.id));
   await admin(db => db.doc('rota/' + HB).set({ b13: old }, { merge: true }));
-  const d14c = await until(async () => { const d = await getDoc('rota/' + HB); return !('b13' in d) ? d : null; });
-  ok('⑭ 낡은 앱(b13)과 합쳐도 특별예배 · 자리 그대로 · b13 은 치움', d14c && [d14c.b15.specs.length, d14c.b15.slots.some(x => x.id === '2026-12-24|x1|preach')], [1, true]);
+  await sleep(1500); const d14c = await getDoc('rota/' + HB);
+  ok('⑭ 낡은 앱(b13)과 합쳐도 특별예배 · 자리 그대로(계정 · 앱) · 바뀐 게 없으니 다시 안 씀', d14c && [d14c.b15.specs.length, d14c.b15.slots.some(x => x.id === '2026-12-24|x1|preach'), await hb.evaluate(() => live(S.book.specs).length)], [1, true, 1]);
 }
 
 console.log('⑮ (1117-Z 1) 숙소 금액 · 취소 기한은 HB 전용 — 교역자 화면에서 감추고 고치지 못한다');
@@ -516,6 +516,31 @@ console.log('⑱ (1117-Z 2b) 알림 판 기간 — 필터 아이콘 → 부산 �
   const g18 = await until(async () => { const x = await getDoc('rota/' + HB + '/staff/' + GA); return x && x.ui && x.ui.al ? x.ui.al : null; });
   ok('⑱ 교역자: 기간은 자기 칸 ui.al 에(규칙 그대로) · HB 가 처음 값으로 되돌린 ui 는 al 칸이 통째로 빠짐(합치기로 옛 값이 남지 않음)', ns([g18, ((await getDoc('rota/' + HB)).ui || {}).al || null]), ns([{ busan: { m: 'weeks', w: 4 } }, null]));
   await ga.evaluate(() => closePane()); await sleep(400);
+}
+
+console.log('⑲ (1117-Z 2 고침) 낡은 앱과 핑퐁 없음 · 다시 그려도 판 스크롤 그대로 · 넓은 화면 기둥 자리 같음');
+{
+  // 낡은 앱(b14 만 앎)이 같은 책을 옛 칸에 써도 새 앱은 다시 쓰지 않는다 — 예전엔 지우며 쓰고, 낡은 앱이 또 쓰고 … 끝없이 돌았다
+  const cur = (await getDoc('rota/' + HB)).b15, at0 = (await getDoc('rota/' + HB)).at;
+  await hb.evaluate(() => { window.__r = 0; const o = window.render; window.__ro = o; window.render = function () { window.__r++; return o.apply(this, arguments); }; });
+  await admin(db => db.doc('rota/' + HB).set({ b14: cur }, { merge: true }));
+  await sleep(2500);
+  const d19 = await getDoc('rota/' + HB);
+  ok('⑲ 낡은 앱이 같은 책을 옛 칸(b14)에 써도 새 앱은 안 씀(옛 칸 그대로 · at 그대로) · 다시 그림은 한두 번', [!!d19.b14, d19.at === at0, await hb.evaluate(() => window.__r <= 2)], [true, true, true]);
+  await hb.evaluate(() => { window.render = window.__ro; });
+  // 다시 그려도(계정 갱신 흉내) 같은 갈래면 목록 스크롤이 그대로, 갈래를 바꾸면 맨 위
+  const sc19 = await hb.evaluate(async () => { closePane(); PREF.tab = 'week'; PREF.afold = false; S.acat = 'bd'; saveUi({ al: { bd: { m: 'weeks', w: 26 } } }); render();
+    const l = document.querySelector('#panel .alist'); l.scrollTop = 120; const a = l.scrollTop; render(); const b = document.querySelector('#panel .alist').scrollTop;
+    document.querySelector('#panel [data-acat="chk"]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('#panel [data-acat="bd"]').click(); await new Promise(r => setTimeout(r, 400));
+    const c = document.querySelector('#panel .alist').scrollTop; saveUi({ al: {} }); S.acat = ''; render(); return [a > 0, b === a, c]; });
+  ok('⑲ 다시 그려도 같은 갈래 목록은 그 자리 · 갈래를 바꾸고 오면 맨 위', sc19, [true, true, 0]);
+  // 넓은 화면: 갈래마다 기둥이 같은 높이(긴 목록 · 짧은 목록)
+  await hb.setViewportSize({ width: 1440, height: 900 }); await sleep(300);
+  const tops = await hb.evaluate(async () => { saveUi({ al: { bd: { m: 'weeks', w: 26 }, busan: { m: 'weeks', w: 26 } } }); render(); const out = [];
+    for (const c of ['urgent', 'bd', 'chk', 'busan']) { const b = document.querySelector(`#side [data-acat="${c}"]`); if (b) b.click(); await new Promise(r => setTimeout(r, 450)); out.push(Math.round(document.querySelector('#side').getBoundingClientRect().top)); }
+    saveUi({ al: {} }); S.acat = ''; render(); return out; });
+  ok('⑲ 넓은 화면: 갈래를 바꿔도 기둥이 툭 올라가지 않는다(모두 같은 높이)', new Set(tops).size, 1);
+  await hb.setViewportSize({ width: 390, height: 844 }); await sleep(300);
 }
 
 console.log('⑥ HB 가 이메일을 지우면');

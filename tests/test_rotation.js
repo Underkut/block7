@@ -41,6 +41,7 @@
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
 //  ㊷ 교역자 판 · 주보 담당(1117-Z 2c): 교역자 판 = 겹침 · 확인 + 자기 부산 일정 교통편 · 상영만 · 주보 담당 한 달씩 ㄱㄴㄷ · 그 달만 직접 · 주보 담당의 상영 고르기 받음 · b15
 //  ㊸ 알림 판 기간(1117-Z 2b): 처음 값(부산 8주 · 분당 20일까지 이번 달 / 21일부터 다음 달) · 주 · 달 규칙 · 날짜(지나면 처음 값) · 갈래마다 끝날 · 겹침은 긴 쪽 · 내 프리셋 · ui 안 al(책 밖)
+//  ㊹ 낡은 앱과 핑퐁 없음(같으면 안 씀) · 판 목록 스크롤 지킴 · 포커스 다시 그리기는 글자 칸만 · 넓은 화면 기둥 자리(1117-Z 2 고침)
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -1246,7 +1247,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊳ b14 · b13 은 옛 칸 (낡은 앱은 specs · 특별예배 자리를 떨군다 — 1117-Z 2c 에서 쓰는 칸 b15)', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-2)], ['b15', ['b13', 'b14']]);
   const old = J(XB); delete old.specs; old.slots = old.slots.filter(x => !A.isSpec(x.svc));
   const pk = A.pickDoc(null, { b15: J(XB), b13: old });
-  sc.eq('㊳ 낡은 앱(b13) 사본과 합쳐도 특별예배 · 자리 그대로 · 옛 칸을 치우려 한 번 씀', [pk.book.specs.length, pk.book.slots.filter(x => A.isSpec(x.svc)).length, pk.push], [3, 3, true]);
+  sc.eq('㊳ 낡은 앱(b13) 사본과 합쳐도 특별예배 · 자리 그대로 · 바뀐 게 없으면 다시 쓰지 않는다(낡은 앱과 핑퐁 없음 — 1117-Z 2 고침)', [pk.book.specs.length, pk.book.slots.filter(x => A.isSpec(x.svc)).length, pk.push], [3, 3, false]);
   sc.eq('㊳ 빈 기기 + 계정(b15) = 계정 그대로 · 다시 안 씀', (r => [r.book.specs.length, r.push])(A.pickDoc(null, { b15: J(XB) })), [3, false]);
   sc.eq('㊳ 교역자 칸에는 특별예배가 없다(받지 않음)', J(A.normStaff({ email: 'ga@example.com', specs: [{ id: 'x|2026-12-24|1', n: '바꿈' }], visits: {} })).specs, undefined);
   // 화면
@@ -1461,6 +1462,18 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊸ 기간은 계정의 ui 에(saveUi) — 책 · 이 기기 PREF 에 넣지 않는다', [/saveUi\(\{ al: /.test(HTMLx), /PREF\.al\b/.test(HTMLx), /book\.al\b|S\.book\.al\b/.test(HTMLx)], [true, false, false]);
   sc.eq('㊸ ui 칸은 통째로 바꿔 쓴다(mergeFields) — merge 면 지운 기간 · 프리셋이 계정에 남는다(실제 화면 ⑱ 에서 잡힘)', [/\.set\(\{ ui: UI_OF\(\) \}, \{ mergeFields: \['ui'\] \}\)/.test(HTMLx), /mergeFields: \['v', 'email', 'at', 'ui'\]/.test(HTMLx)], [true, true]);
   sc.eq('㊸ 판 머리의 필터 아이콘 · 설정 판', [/data-act="alset"/.test(HTMLx), /function alSetHtml\(/.test(HTMLx)], [true, true]);
+}
+
+// ㊹ 낡은 앱과 핑퐁 없음 · 판 스크롤 지킴 · 넓은 화면 기둥 자리 (1117-Z 2 고침, HB 11/18)
+{
+  const T = 5, bk = A.normBook({ people: [{ id: 'pa', name: '가가', roles: ['busan'], at: T }], visits: [{ id: 'v|2026-11-29', who: ['pa'], days: '토일', at: T }] });
+  sc.eq('㊹ 지금 칸(b15)과 같은 옛 칸(b14 — 낡은 앱이 씀)만 있으면 다시 쓰지 않는다(옛 칸을 지우려 쓰면 낡은 앱이 또 써서 끝없이 돈다)', A.pickDoc(bk, { b15: J(bk), b14: J(bk) }).push, false);
+  const ch = J(bk); ch.visits[0].note = '낡은 앱 메모'; ch.visits[0].at = 9;
+  sc.eq('㊹ 낡은 앱이 실제로 고친 것이 있으면 합쳐서 쓴다', (r => [r.push, r.book.visits[0].note])(A.pickDoc(bk, { b15: J(bk), b14: ch })), [true, '낡은 앱 메모']);
+  sc.eq('㊹ 지금 칸이 없으면(옛 칸만) 옮겨 쓴다', A.pickDoc(null, { b14: J(bk) }).push, true);
+  sc.eq('㊹ 다시 그려도 챙길 것 목록 스크롤 자리를 지킨다(같은 갈래일 때)', [/function keepScroll\(\)/.test(HTML), /const ks = keepScroll\(\);/.test(HTML)], [true, true]);
+  sc.eq('㊹ 포커스가 빠질 때 다시 그리기는 글자 칸에서만(누른 단추가 다시 그려져 사라질 때마다 또 그리지 않게)', /document\.addEventListener\('focusout', \(e\) => \{ if \(!e\.target \|\| !\/INPUT\|TEXTAREA\|SELECT\/\.test\(e\.target\.tagName\)\) return;/.test(HTML), true);
+  sc.eq('㊹ 넓은 화면 기둥: 붙는 높이 = 원래 자리(머리줄 바로 아래) — 짧은 목록 · 긴 목록에서 같은 자리', [/\.wrap\.sided #side\{[^}]*top:var\(--hdr,100px\);/.test(HTML), /top:calc\(var\(--hdr,100px\) \+ 10px\)/.test(HTML)], [true, false]);
 }
 
 sc.done();
