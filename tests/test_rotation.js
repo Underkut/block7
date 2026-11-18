@@ -1627,4 +1627,13 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(52) C 칸 폭은 요일로만 정함(맡은 일 유무로 안 바뀜) · 맡은 일은 다음 요일 앞까지 빈 칸을 씀 · 좁으면 끝까지(계단)', [/grid-template-columns:\$\{cols\.map\(d => wOf\(d\) \+ 'fr'\)/.test(row), /us\.length \? '1\.4fr'|full \? '1\.4fr'/.test(row), /return w >= 1\.1 \? nx \+ 1 : -1;/.test(row), /grid-auto-flow:row dense/.test(HTML)], [true, false, true, true]);
 }
 
+// (53) 1119 B · E — 광고 읽는 중 토스트 · 숙소 목록 줄 가운데로 끌기 (HB 11/18)
+{
+  const bt = HTML.slice(HTML.indexOf('function busyToast('), HTML.indexOf('function todayYmd('));
+  sc.eq('(53) B 읽는 중이면 가운데 토스트에 Monday 로고(빨강 · 노랑 막대 + 초록 점) · 판이 닫히거나 읽기가 끝나면 걷음', [/P\.kind === 'ads' && P\.state === 'busy'/.test(bt), /#FF3D57/.test(bt), /#FFCB00/.test(bt), /#00D647/.test(bt), /t\.hidden = true/.test(bt), /busyToast\(\);\s*const done/.test(HTML), /el\.scrollTop = top; busyToast\(\);/.test(HTML)], [true, true, true, true, true, true, true]);
+  sc.eq('(53) B 로고는 차례로 통통(키프레임) · reduced-motion 이면 멈춤 · 다른 토스트는 busy 표지를 지움', [/@keyframes mhop/.test(HTML), /prefers-reduced-motion:reduce\)\{#toast \.mlogo>\*\{animation:none/.test(HTML), /delete t\.dataset\.busy; t\.textContent = msg/.test(HTML)], [true, true, true]);
+  const mg = HTML.slice(HTML.indexOf('function mgInit('), HTML.indexOf('mgInit();'));
+  sc.eq('(53) E 줄 가운데(.mgname)도 끌기 — 손가락 0.45초 꾹 · 8px 먼저 움직이면 화면 스크롤 · 그냥 누르면 고치기', [/#mglist \.mghd, #mglist \.mgname/.test(mg), /setTimeout\(\(\) => \{[^]*?\}, 450\)/.test(mg), /< 8\) return/.test(mg), /clearTimeout\(MG\.t\); MG\.pend = null/.test(mg), /MG\.eat/.test(mg)], [true, true, true, true, true]);
+}
+
 sc.done();
