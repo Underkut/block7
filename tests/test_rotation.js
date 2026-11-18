@@ -44,6 +44,7 @@
 //  ㊹ 낡은 앱과 핑퐁 없음(같으면 안 씀) · 판 목록 스크롤 지킴 · 포커스 다시 그리기는 글자 칸만 · 넓은 화면 기둥 자리(1117-Z 2 고침)
 //  ㊼ 부산 광고 판(1117-Z 4): 전달용 텍스트 — 고친 글은 책 adtx(공통) · ↻ = 지우기 표지 · 교역자 칸 tx → absorb(상영 고르는 사람만) · b16 · 아래 줄 · 날짜 칸 한 줄
 //  ㊽ 숙소 목록 손잡이 · '더 보기' 줄(1117-Z 5): optReorder 가 OPT_MORE 를 받아 more 표시 · b17 · 달력표 꺾쇠 · 부산 목록 줄(날짜 아래 이름 · 인도 알약 · 빨간 특이사항 · 오른쪽 숙소)
+//  ㊾ 메모 중요 · 일반(1117-Z 5b): hot = 빨강(목록 · 표) · note = 판 안만 · b18 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 꺾쇠 삼등분 자리
 //  ⑧ 저장 자리: rota/{uid} 한 장 · users · cellbook 는 안 건드림 · block7.my 로 열리면 sweeter.my 로 넘김
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -239,7 +240,7 @@ const stripped = J(full); delete stripped.people[0].no; stripped.visits = stripp
 sc.eq('⑬ 같은 때(at)면 칸이 더 많은 사본이 이긴다 — 어느 순서로 합쳐도', [A.mergeBook(full, stripped).people[0].no, A.mergeBook(stripped, full).people[0].no], [['sun1|preach'], ['sun1|preach']]);
 const d1 = A.pickDoc(full, { b11: J(full), b10: stripped, b9: stripped, b8: stripped, b7: stripped, b6: stripped, b5: stripped, b4: stripped, b3: stripped, b2: stripped, book: stripped });
 sc.eq('⑬ 낡은 앱이 옛 칸(book ~ b10)을 떨군 채 써도 b11 과 합쳐 모두 남고, 옛 칸을 치우려 한 번 쓴다', [d1.book.visits.length, d1.book.people[0].no, d1.push], [2, ['sun1|preach'], true]);
-const d1b = A.pickDoc(full, { b17: J(full) });
+const d1b = A.pickDoc(full, { b18: J(full) });
 sc.eq('⑬ 지금 칸(b16 — 1117-Z 4)만 있고 같으면 다시 쓰지 않는다(핑퐁 없음)', d1b.push, false);
 const d2 = A.pickDoc(null, { book: J(full) });
 sc.eq('⑬ R1 때 자료(book 만) → 빈 기기에서도 그대로 읽고 b10 으로 옮겨 쓴다', [d2.book.visits.length, d2.push], [2, true]);
@@ -249,7 +250,7 @@ const old2 = J(stripped); old2.people.push({ id: 'y', name: '나나', roles: [],
 const d3 = A.pickDoc(full, { b9: old2, b10: J(full) });
 sc.eq('⑬ 낡은 앱(b9)에서 새로 적은 줄도 받아 b10 으로 올린다', [d3.book.people.map(p => p.id), d3.push], [['x', 'y'], true]);
 sc.eq('⑬ 빈 문서 · 빈 기기 → 아무것도 안 씀', A.pickDoc(null, {}).push, false);
-sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b17'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b15', 'b16'\]/.test(HTML), true);
+sc.eq('⑬ 쓰는 칸은 WRITE_FIELD 하나, 옛 칸은 지운다', /\[WRITE_FIELD\]: S\.book/.test(HTML) && /FieldValue\.delete\(\)/.test(HTML) && !/\.set\(\{ (book|b2|b3):/.test(HTML) && /WRITE_FIELD = 'b18'/.test(HTML) && /OLD_FIELDS = \[[^\]]*'b16', 'b17'\]/.test(HTML), true);
 
 // ⑭ 가져오기 (지어낸 이름)
 const hb = A.normBook(null);
@@ -851,7 +852,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   const ol = J(b1); delete ol.shows; ol.visits[1].note = '낡은 앱이 고침'; ol.visits[1].at = 300;
   const pk = A.pickDoc(null, { b10: J(b1), b9: ol });
   sc.eq('㉛ 낡은 앱(b9)과 합쳐도 상영은 그대로 · 낡은 앱이 고친 방문도 받음 · 옛 칸을 치우려 한 번 씀', [A.showOf(pk.book, '2026-11-22'), pk.book.visits[1].note, pk.push], ['same', '낡은 앱이 고침', true]);
-  sc.eq('㉛ 빈 기기 + 계정(b10) = 계정 그대로 · (1116-2 B 부터 쓰는 칸이 바뀌어) 한 번 옮겨 씀 · 지금 칸(b16, 1117-Z 4)이면 다시 안 씀', [(r => [A.showOf(r.book, '2026-11-22'), r.push])(A.pickDoc(null, { b10: J(b1) })), A.pickDoc(null, { b17: J(b1) }).push], [['same', true], false]);
+  sc.eq('㉛ 빈 기기 + 계정(b10) = 계정 그대로 · (1116-2 B 부터 쓰는 칸이 바뀌어) 한 번 옮겨 씀 · 지금 칸(b16, 1117-Z 4)이면 다시 안 씀', [(r => [A.showOf(r.book, '2026-11-22'), r.push])(A.pickDoc(null, { b10: J(b1) })), A.pickDoc(null, { b18: J(b1) }).push], [['same', true], false]);
   // 교역자: 자기 칸의 그 방문 줄에 bs · bsAt → absorb 가 그 방문의 주일 줄로
   sc.eq('㉛ 교역자 조각 = 그 방문 줄 안(보안 규칙이 이미 허락하는 visits 칸) · 모르는 값은 안 씀',
     [J(A.staffPatch('ga@example.com', 'bs', 'v|2026-11-22', 'diff', 50)), A.staffPatch('ga@example.com', 'bs', 'v|2026-11-22', 'x', 50)],
@@ -930,7 +931,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
     [A.exportRows(b, 'matrix', '2026-11', {}).find(r => r[0] === '가가').slice(1, 3), A.exportRows(b, 'cal', '2026-11', { calf: 'busan' })[3][0], A.exportRows(b, 'cal', '2026-11', { calf: 'busan' })[2][0], A.exportRows(b, 'x', '2026-11', {}), A.exportRows(b, 'mine', '2026-11', { pid: 'zz' })],
     [['', '설 부'], '8일 가가 · 주일예배 · 라라 · LL 중계', '1일', [], [['사람을 골라 주세요']]]);
   sc.eq('㉜ CSV: 쉼표 · 따옴표는 감싸고 줄바꿈 · 탭은 빈칸 · TSV 는 탭', [A.csvOf([['a,b', 'c"d', 'e\nf'], [1]]), A.tsvOf([['a\tb', 2]])], ['"a,b","c""d",e f\r\n1', 'a b\t2']);
-  sc.eq('㉜ 자료 모양은 그대로 — 쓰는 칸 b10 (1116-2 B 에서 b11 · C 에서 b12 로 — ㉞ ㉟)', /OLD_FIELDS = \[[^\]]*'b10', 'b11', 'b12', 'b13', 'b14', 'b15', 'b16'\], WRITE_FIELD = 'b17'/.test(HTML), true);
+  sc.eq('㉜ 자료 모양은 그대로 — 쓰는 칸 b10 (1116-2 B 에서 b11 · C 에서 b12 로 — ㉞ ㉟)', /OLD_FIELDS = \[[^\]]*'b10', 'b11', 'b12', 'b13', 'b14', 'b15', 'b16', 'b17'\], WRITE_FIELD = 'b18'/.test(HTML), true);
   // 화면 자리
   sc.eq('㉜ 내보내기 판: 보기 고르기(지금 보던 보기) · 이번달 전체(누르면 고르기가 흐려짐) · 복사 · CSV 오른쪽 · exportRows 한 곳에서',
     [/openPane\(\{ kind: 'exp', v: VIEWS\[PREF\.mview\] \? PREF\.mview : 'sheet', all: false \}\)/.test(HTML), /<select class="inp expsel\$\{all \? ' dim' : ''\}" id="exp-view"/.test(HTML) && /if \(t\.id === 'exp-view'\) \{ S\.pane\.v = t\.value; S\.pane\.all = false;/.test(HTML), /data-act="expall" aria-pressed="\$\{all\}"/.test(HTML) && /if \(a === 'expall'\) \{ S\.pane\.all = !S\.pane\.all;/.test(HTML),
@@ -1247,11 +1248,11 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const db = A.normBook(J(XB)); A.dropSpec(db, 'x|2026-12-24|1', 'u', 9);
   sc.eq('㊳ 지우면 예배와 그 자리들(지운 표지) · 다음 번호', [A.specOf(db, '2026-12-24', 'x1'), db.slots.find(x => x.id === '2026-12-24|x1|preach').del, A.nextSpecK(db, '2026-12-24'), A.nextSpecK(XB, '2026-12-26')], [null, true, 2, 1]);
   // 저장 칸 · 낡은 앱 · 빈 기기
-  sc.eq('㊳ b14 · b13 은 옛 칸 (낡은 앱은 specs · 특별예배 자리를 떨군다 — 1117-Z 4 에서 쓰는 칸 b16)', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-4, -2)], ['b17', ['b13', 'b14']]);
+  sc.eq('㊳ b14 · b13 은 옛 칸 (낡은 앱은 specs · 특별예배 자리를 떨군다 — 1117-Z 4 에서 쓰는 칸 b16)', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-5, -3)], ['b18', ['b13', 'b14']]);
   const old = J(XB); delete old.specs; old.slots = old.slots.filter(x => !A.isSpec(x.svc));
-  const pk = A.pickDoc(null, { b17: J(XB), b13: old });
+  const pk = A.pickDoc(null, { b18: J(XB), b13: old });
   sc.eq('㊳ 낡은 앱(b13) 사본과 합쳐도 특별예배 · 자리 그대로 · 바뀐 게 없으면 다시 쓰지 않는다(낡은 앱과 핑퐁 없음 — 1117-Z 2 고침)', [pk.book.specs.length, pk.book.slots.filter(x => A.isSpec(x.svc)).length, pk.push], [3, 3, false]);
-  sc.eq('㊳ 빈 기기 + 계정(b16) = 계정 그대로 · 다시 안 씀', (r => [r.book.specs.length, r.push])(A.pickDoc(null, { b17: J(XB) })), [3, false]);
+  sc.eq('㊳ 빈 기기 + 계정(b16) = 계정 그대로 · 다시 안 씀', (r => [r.book.specs.length, r.push])(A.pickDoc(null, { b18: J(XB) })), [3, false]);
   sc.eq('㊳ 교역자 칸에는 특별예배가 없다(받지 않음)', J(A.normStaff({ email: 'ga@example.com', specs: [{ id: 'x|2026-12-24|1', n: '바꿈' }], visits: {} })).specs, undefined);
   // 화면
   const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('function viewWeek(') + 16000);
@@ -1470,9 +1471,9 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
 // ㊹ 낡은 앱과 핑퐁 없음 · 판 스크롤 지킴 · 넓은 화면 기둥 자리 (1117-Z 2 고침, HB 11/18)
 {
   const T = 5, bk = A.normBook({ people: [{ id: 'pa', name: '가가', roles: ['busan'], at: T }], visits: [{ id: 'v|2026-11-29', who: ['pa'], days: '토일', at: T }] });
-  sc.eq('㊹ 지금 칸(b16)과 같은 옛 칸(b15 — 낡은 앱이 씀)만 있으면 다시 쓰지 않는다(옛 칸을 지우려 쓰면 낡은 앱이 또 써서 끝없이 돈다)', A.pickDoc(bk, { b17: J(bk), b16: J(bk) }).push, false);
+  sc.eq('㊹ 지금 칸(b16)과 같은 옛 칸(b15 — 낡은 앱이 씀)만 있으면 다시 쓰지 않는다(옛 칸을 지우려 쓰면 낡은 앱이 또 써서 끝없이 돈다)', A.pickDoc(bk, { b18: J(bk), b17: J(bk) }).push, false);
   const ch = J(bk); ch.visits[0].note = '낡은 앱 메모'; ch.visits[0].at = 9;
-  sc.eq('㊹ 낡은 앱이 실제로 고친 것이 있으면 합쳐서 쓴다', (r => [r.push, r.book.visits[0].note])(A.pickDoc(bk, { b17: J(bk), b15: ch })), [true, '낡은 앱 메모']);
+  sc.eq('㊹ 낡은 앱이 실제로 고친 것이 있으면 합쳐서 쓴다', (r => [r.push, r.book.visits[0].note])(A.pickDoc(bk, { b18: J(bk), b15: ch })), [true, '낡은 앱 메모']);
   sc.eq('㊹ 지금 칸이 없으면(옛 칸만) 옮겨 쓴다', A.pickDoc(null, { b14: J(bk) }).push, true);
   sc.eq('㊹ 다시 그려도 챙길 것 목록 스크롤 자리를 지킨다(같은 갈래일 때)', [/function keepScroll\(\)/.test(HTML), /const ks = keepScroll\(\);/.test(HTML)], [true, true]);
   sc.eq('㊹ 포커스가 빠질 때 다시 그리기는 글자 칸에서만(누른 단추가 다시 그려져 사라질 때마다 또 그리지 않게)', /document\.addEventListener\('focusout', \(e\) => \{ if \(!e\.target \|\| !\/INPUT\|TEXTAREA\|SELECT\/\.test\(e\.target\.tagName\)\) return;/.test(HTML), true);
@@ -1532,7 +1533,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊼ 교역자의 ↻ = 지우기 표지로 → 만든 글', [A.adtxOf(rr.book, SUN), rr.book.adtx[0].del, rr.changed], ['', true, ['t|' + SUN]]);
   sc.eq('㊼ 없는 글을 되돌리면 할 일 없음(바뀐 것 없음)', A.absorb(A.normBook({ people: P, visits: [{ id: V, who: ['pa'], at: 1 }] }), [A.staffPatch('ga@example.com', 'tx', V, '', 60)]).changed, []);
   sc.eq('㊼ 한 번 받은 뒤 다시 맞춰도 바뀐 것 없음(핑퐁 없음)', A.absorb(A.absorb(bk, [pt]).book, [pt]).changed, []);
-  sc.eq('㊼ adtx 는 b16 부터(1117-Z 5 에서 b17) · b15 는 옛 칸(낡은 앱은 adtx 를 떨군다)', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-2)[0], A.pickDoc(null, { b17: J(bk) }).push, A.adtxOf(A.pickDoc(null, { b17: J(bk), b15: Object.assign(J(bk), { adtx: [] }) }).book, SUN)], ['b17', 'b15', false, '고친 글\n둘째 줄']);
+  sc.eq('㊼ adtx 는 b16 부터(1117-Z 5 에서 b17) · b15 는 옛 칸(낡은 앱은 adtx 를 떨군다)', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-3)[0], A.pickDoc(null, { b18: J(bk) }).push, A.adtxOf(A.pickDoc(null, { b18: J(bk), b15: Object.assign(J(bk), { adtx: [] }) }).book, SUN)], ['b18', 'b15', false, '고친 글\n둘째 줄']);
   // 화면
   const pa = HTML.slice(HTML.indexOf('function paneAds('), HTML.indexOf('function adsFit('));
   sc.eq('㊼ 제목 밑 \'Monday 에서 읽기만 합니다\' 없음 → 맨 아래 오른쪽 줄(읽기만 · 읽은 때 · 다시 읽기 · 연결 끊기 HB 만)', [/<span class="sub">Monday 에서 읽기만/.test(pa), /class="adfoot"><span>Monday 에서 읽기만 합니다<\/span><span id="ads-when">[^\n]*data-act="adsload">다시 읽기<\/button>\$\{isStaff\(\) \? '' : '<button class="txtbtn" data-act="adsoff">Monday 연결 끊기/.test(pa), /\.adfoot\{display:grid;justify-items:end/.test(HTML)], [false, true, true]);
@@ -1563,18 +1564,38 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊽ 성도님 댁 줄은 그대로(한쪽만 넘김)', A.optList(b2, 'stay').find(o => o.kind === 'home').more, undefined);
   sc.eq('㊽ 두 기기: 나중에 고친 줄이 이김(more 도 함께)', order(A.mergeBook(b1, b2)), order(b2));
   sc.eq('㊽ 교통편 목록은 OPT_MORE 를 무시', (b => { A.optReorder(b, 'mode', ['-more-', A.optId('mode', '자차'), A.optId('mode', 'KTX')], 'hb', 5); return A.optList(b, 'mode').map(o => o.name + (o.more ? '*' : '')); })(A.normBook({})), ['자차', 'KTX']);
-  sc.eq('㊽ 쓰는 칸 b17 · b16 은 옛 칸(낡은 앱은 more 를 떨군다) · 옛 칸 사본과 합쳐도 more 그대로', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-1)[0], A.optList(A.pickDoc(null, { b17: J(b2), b16: (o => { o.opts.forEach(x => delete x.more); return o; })(J(b2)) }).book, 'stay').filter(o => o.more).length], ['b17', 'b16', 1]);
+  sc.eq('㊽ 쓰는 칸 b17 · b16 은 옛 칸(낡은 앱은 more 를 떨군다) · 옛 칸 사본과 합쳐도 more 그대로', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-2)[0], A.optList(A.pickDoc(null, { b18: J(b2), b16: (o => { o.opts.forEach(x => delete x.more); return o; })(J(b2)) }).book, 'stay').filter(o => o.more).length], ['b18', 'b16', 1]);
   // 화면
   const pm = HTML.slice(HTML.indexOf('function paneManage('), HTML.indexOf('/* ---- 숙소 알약'));
   sc.eq('㊽ (L) 목록 관리: 꺾쇠(data-mmove) 없음 → 손잡이(mghd) · (M) 숙소에만 \'더 보기\' 줄', [/data-mmove/.test(pm), /class="mghd"/.test(pm), /data-mid="\$\{OPT_MORE\}"/.test(pm), /type === 'stay' \?/.test(pm)], [false, true, true, true]);
   const ps = HTML.slice(HTML.indexOf("} else if (ed.sec === 'stay') {"), HTML.indexOf("} else if (ed.sec === 'travel') {"));
   sc.eq('㊽ (M) 숙소 판: more 줄은 \'더 보기\' 를 눌러야(고른 숙소가 그 안이면 펴 둠)', [/o\.more/.test(ps), /data-act="spmore"/.test(ps)], [true, true]);
-  sc.eq('㊽ (N) 꺾쇠 둘레 알약 바탕 없음 · 선만 끊김 · (P) 표 아래 여백 줄 없음', [/\.edge\{[^}]*border-radius:9px/.test(HTML), /\.edge::before\{/.test(HTML), /\.tblwrap\.ext\{padding-bottom:9px\}/.test(HTML)], [false, true, false]);
+  sc.eq('㊽ (N) 꺾쇠 둘레 알약 바탕 없음 · 선만 끊김 · (P) 표 아래 여백 줄 없음', [/\.edge\{[^}]*border-radius:9px/.test(HTML), /\.edge button::before\{/.test(HTML), /\.tblwrap\.ext\{padding-bottom:9px\}/.test(HTML)], [false, true, false]);
   const bb = HTML.slice(HTML.indexOf('function bodyBusan('), HTML.indexOf('function viewMonth('));
   sc.eq('㊽ 끄는 중엔 판을 다시 그리지 않음(계정 맞추기가 들린 줄을 지우지 않게) · 토스트는 누름을 아래로 보냄(바로 다시 끌게) · 달력표 단추 줄 .mbar 와 메뉴 밑줄 이름 안 겹침', [/if \(MG\.el\) \{ MG\.again = true; return; \}/.test(HTML), /#toast\{[^}]*pointer-events:none/.test(HTML), /\n\.mbar\{position:absolute/.test(HTML), /\.mtabs \.mbar\{position:absolute/.test(HTML)], [true, true, false, true]);
   sc.eq('㊽ (Q) 부산 요약 표에도 위 · 아래 꺾쇠(앞 · 뒤 주)', [/edgeHtml\('busan', 'top'/.test(bb), /edgeHtml\('busan', 'bot'/.test(bb)], [true, true]);
   const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
   sc.eq('㊽ 부산 목록 줄: (S) 이름 알약은 날짜 아래 · (U) 인도 알약 · (T) 인도 안 하는 금요 회색 · (V) 특이사항 · 메모 빨강 · (W) 숙소는 오른쪽', [/<\/span>\$\{v\.title \? `<span class="ttlw"><span class="pill ttl">/.test(vb) && !/<span class="vmain">\$\{v\.title/.test(vb), /leadChips\(v\)/.test(vb), /friGray/.test(vb), /class="vred"/.test(vb), /class="vst"/.test(vb)], [true, true, true, true, true]);
+}
+
+// ㊾ 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 꺾쇠 삼등분 (1117-Z 5b, HB 11/18 R · N' · V') — 지어낸 이름
+{
+  const V = 'v|2026-11-22';
+  const bk = A.normBook({ people: [{ id: 'pa', name: '가가', roles: ['busan'] }], visits: [{ id: V, who: ['pa'], note: '일반 메모', hot: '  중요 메모  ', issues: [{ cat: '중고등부', text: '설교 필요' }], at: 1 }, { id: 'v|2026-11-29', who: ['pa'], hot: '   ', at: 1 }] });
+  sc.eq('㊾ normVisit: hot(중요)는 다듬어 둠 · 비면 칸 없음 · note(일반)는 그대로', [bk.visits[0].hot, bk.visits[0].note, 'hot' in bk.visits[1]], ['중요 메모', '일반 메모', false]);
+  sc.eq('㊾ 두 기기 맞추기: 나중 줄이 이김(hot 함께)', A.mergeBook(bk, A.normBook({ visits: [{ id: V, who: ['pa'], hot: '나중', at: 5 }] })).visits.find(v => v.id === V).hot, '나중');
+  sc.eq('㊾ 쓰는 칸 b18 · b17 옛 칸(낡은 앱은 hot 을 떨군다) · 옛 칸 사본과 합쳐도 hot 그대로', [A.WRITE_FIELD, A.OLD_FIELDS.slice(-1)[0], A.pickDoc(null, { b18: J(bk), b17: (o => { o.visits.forEach(v => delete v.hot); return o; })(J(bk)) }).book.visits.find(v => v.id === V).hot], ['b18', 'b17', '중요 메모']);
+  // 화면
+  const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
+  sc.eq('㊾ (V\') 부산 목록 빨간 글자 = 특이사항 + 중요만(일반 메모는 목록에 없음)', [/concat\(v\.hot \? \[v\.hot\] : \[\]\)/.test(vb), /v\.note/.test(vb)], [true, false]);
+  const pe = HTML.slice(HTML.indexOf("} else body = `<div class=\"field\"><label for=\"df-hot\">"), HTML.indexOf("} else body = `<div class=\"field\"><label for=\"df-hot\">") + 900);
+  sc.eq('㊾ (V\') 메모 판 = \'중요\'(빨강) · \'일반\' 두 칸', [/data-df="hot"/.test(pe), /data-df="note"/.test(pe), /중요/.test(pe), /일반/.test(pe)], [true, true, true, true]);
+  sc.eq('㊾ (V\') 이번 주 카드 · 목록도 중요만(일반 메모는 판 안에서)', [/v\.note \? row\('메모', v\.note\)/.test(HTML), /issuesT\(v\), v\.note\]/.test(HTML)], [false, false]);
+  const bb = HTML.slice(HTML.indexOf('function bodyBusan('), HTML.indexOf('function viewMonth('));
+  sc.eq('㊾ (R) 부산 요약 표 맨 왼쪽 \'특이사항\' 칸(빨강 = 특이사항 + 중요)', [/<tr><th class="h-bs">특이사항<\/th><th class="h-bs">날짜<\/th>/.test(bb), /class="vred"/.test(bb)], [true, true]);
+  const vm = HTML.slice(HTML.indexOf('function viewMonth('), HTML.indexOf('function specTable('));
+  sc.eq('㊾ (N\') 분당 주일 표에도 위 · 아래 꺾쇠(앞 · 뒤 주)', [/edgeHtml\('sun', 'top'\)/.test(vm), /edgeHtml\('sun', 'bot'\)/.test(vm)], [true, true]);
+  sc.eq('㊾ 꺾쇠는 날짜 칸 가로 삼등분 자리(^ 1/3 · v 2/3) — 붙어 있어 잘못 눌리던 것', [/\.edge \.eu\{left:33\.3%\}/.test(HTML), /\.edge \.ed\{left:66\.7%\}/.test(HTML)], [true, true]);
 }
 
 sc.done();
