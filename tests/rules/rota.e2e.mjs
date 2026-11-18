@@ -558,10 +558,12 @@ console.log('⑳ (1117-Z 3) 메뉴 세 탭 · 부산 탭 지난 일정 단추');
     const a = [document.querySelector('.vtop [data-act="pastmore"]').textContent, /다가오는 부산 일정/.test(document.body.textContent), !!document.querySelector('details.more')];
     document.querySelector('[data-act="pastmore"]').click(); await w(450); const c1 = cnt(), top1 = document.querySelector('.pastm .vrow').dataset.visit;
     document.querySelector('[data-act="pastmore"]').click(); await w(450); const c2 = cnt(), top2 = document.querySelector('.pastm .vrow').dataset.visit, band = [...document.querySelectorAll('.yband')].map(x => x.textContent);
+    const seg = [document.querySelectorAll('.vtop .pseg button').length, document.querySelector('.pseg [data-act="pastmore"]').disabled];
     document.querySelector('[data-act="pastless"]').click(); await w(450); const c3 = cnt();
-    document.querySelector('[data-act="pastless"]').click(); await w(450); const gone = !!document.querySelector('.pastm');
-    S.book.visits = S.book.visits.filter(v => !pv.includes(v)); PREF.tab = 'week'; render(); return a.concat(c1, top1, c2, top2, band.includes('2026년'), c3, gone); });
-  ok('⑳ 부산 탭: 맨 위 \'지난 부산 일정 보기\' · 한 달 더(10월 둘 → 12월이 위로) · 해가 바뀌면 2026년 띠 · 한 달씩 접힘', bz, ['지난 부산 일정 보기', false, false, 2, 'v|2026-10-04', 3, 'v|2025-12-28', true, 2, false]);
+    document.querySelector('[data-act="pastmore"]').click(); await w(450);
+    document.querySelector('[data-act="pastreset"]').click(); await w(450); const gone = !!document.querySelector('.pastm'), back = (document.querySelector('.vtop [data-act="pastmore"]') || {}).textContent;
+    S.book.visits = S.book.visits.filter(v => !pv.includes(v)); PREF.tab = 'week'; render(); return a.concat(c1, top1, c2, top2, band.includes('2026년'), seg, c3, gone, back); });
+  ok('⑳ 부산 탭: 맨 위 \'지난 부산 일정 보기\' · 한 달 더(10월 둘 → 12월이 위로) · 2026년 띠 · 펴면 세 칸(끝이면 + 꺼짐) · 한 달 접기 · ↺ 모두 접기 → 처음 글자 단추', bz, ['지난 부산 일정 보기', false, false, 2, 'v|2026-10-04', 3, 'v|2025-12-28', true, 3, true, 2, false, '지난 부산 일정 보기']);
 }
 
 console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트(고친 글은 계정 공통)');
