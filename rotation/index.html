@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-14 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B) -->
+<!-- 교역자 로테이션 v. 26-1118-15 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -306,17 +306,18 @@ table.grid tr:last-child td{border-bottom:0}
 .vrow .vd{grid-column:1;grid-row:1/4;display:flex;flex-direction:column;line-height:1.35}
 .vrow .vd b{font-size:15px;font-variant-numeric:tabular-nums} .vrow .vd .dw{font-size:12px;color:var(--tx3)} .vrow .vd .dw.x{color:var(--bz-day)}
 .vrow .vwho{grid-column:2;grid-row:1;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:15px;font-weight:500;min-width:0}
+.vrow .vwho>span:first-child{white-space:nowrap}
 .vrow .vttl{font-size:12px;font-weight:500;color:var(--bz-sp);letter-spacing:.02em}
 .vrow .vwarn,.vrow .vwho .pill{font-size:11px;font-weight:500;line-height:1.5;color:var(--bz-bad);background:none;box-shadow:inset 0 0 0 1px currentColor;border-radius:5px;padding:0 5px;border:0}
 .vrow .vst{grid-column:3;grid-row:1;display:flex;flex-direction:column;align-items:flex-end;gap:2px;max-width:min(58vw,330px);text-align:right}
 .vrow .vss{font-size:12px;color:var(--tx3);white-space:nowrap} .vrow .vss.ok{color:var(--bz-sp)}
 .vrow .vsd{font-size:12px;color:var(--tx3);line-height:1.45;word-break:keep-all}
 .vrow .vwk{grid-column:2/4;grid-row:2;display:grid;margin-top:4px;min-width:0}
-.vrow .vc{min-width:0;display:flex;flex-direction:column;gap:3px;padding:0 3px 0 6px;font-size:12px}
-.vrow .vdl{font-size:11px;color:var(--tx3);height:22px;display:flex;align-items:center;margin:0 -3px 2px -6px;padding-left:6px}
-.vrow .vc.on .vdl{background:var(--bz-band);color:var(--tx);font-weight:500} .vrow .vc.x .vdl{color:var(--bz-day)}
-.vrow .vc.on.first .vdl{border-radius:6px 0 0 6px} .vrow .vc.on.last .vdl{border-radius:0 6px 6px 0} .vrow .vc.on.first.last .vdl{border-radius:6px}
-.vrow .du{display:flex;align-items:flex-start;gap:5px;line-height:1.35;word-break:keep-all;overflow-wrap:normal;color:var(--tx3)}
+.vrow .vwk{grid-auto-flow:row dense;row-gap:3px;font-size:12px}
+.vrow .vdl{grid-row:1;font-size:11px;height:22px;display:flex;align-items:center;padding-left:6px;margin-bottom:2px;color:var(--tx)}
+.vrow .vdl.off{color:var(--tx3);opacity:.55} .vrow .vdl.on{background:var(--bz-band);font-weight:500} .vrow .vdl.x{color:var(--bz-day)}
+.vrow .vdl.on.first{border-radius:6px 0 0 6px} .vrow .vdl.on.last{border-radius:0 6px 6px 0} .vrow .vdl.on.first.last{border-radius:6px}
+.vrow .du{min-width:0;padding:0 4px 0 6px;display:flex;align-items:flex-start;gap:5px;line-height:1.35;word-break:keep-all;overflow-wrap:normal;color:var(--tx3)}
 .vrow .du i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:4px;box-shadow:inset 0 0 0 1.2px var(--hue)}
 .vrow .du.staff i{background:var(--hue)} .vrow .du.lay i{background:linear-gradient(90deg,var(--hue) 50%,transparent 50%)} .vrow .du.none i{opacity:.55}
 .vrow .du.staff{color:var(--hue);font-weight:500} .vrow .du.lay{color:var(--tx2)} .vrow .du.off{padding-left:14px}
@@ -324,7 +325,7 @@ table.grid tr:last-child td{border-bottom:0}
 .vrow .du.staff.h-sun{color:var(--tx)}
 .vrow .vaux{grid-column:2/4;grid-row:3;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--tx3);line-height:1.45;margin-top:4px;word-break:keep-all}
 .vrow .vaux .vred{font-size:13px;color:var(--bz-bad)}
-@media (min-width:641px){.vrow{grid-template-columns:72px minmax(0,1fr) 230px;gap:4px 16px} .vrow .vst{grid-row:1/4;max-width:none} .vrow .vwk{grid-column:2;max-width:600px} .vrow .vaux{grid-column:2} .vrow .vc{font-size:13px}}
+@media (min-width:641px){.vrow{grid-template-columns:72px minmax(0,1fr) 230px;gap:4px 16px} .vrow .vst{grid-row:1/4;max-width:none} .vrow .vwk{grid-column:2;max-width:600px;font-size:13px} .vrow .vaux{grid-column:2}}
 .vred{color:var(--bad)}
 table.tsheet.bt td.bti{text-align:left;min-width:92px;max-width:180px;white-space:normal;word-break:keep-all;line-height:1.4}
 .inp.hot{color:var(--bad)}
@@ -729,7 +730,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). visits[].hot : 메모 '중요'(빨강, 목록에도) · note : 메모 '일반'(판 안에서만, 1117-Z 5b). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-14';
+const APP_VERSION = 'v. 26-1118-15';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -3197,9 +3198,15 @@ function busanRow(v, cls, pm, bad, bsp) {
   const hue = (x) => x.ev ? 'ev' : x.svc, mode = (x) => x.m || 'none';
   const du = (x) => `<span class="du ${mode(x)} h-${hue(x)}"><i></i>${esc(x.ev ? (x.t ? x.t + ' ' : '') + x.bare : x.text)}</span>`;
   const friGray = bf && fn && !ls.some(x => x.svc === 'fri') && cols.includes(fd);
-  // 칸 폭: 맡은 일이 있는 칸만 넓게 · 빈 금 · 주일은 중간(줄마다 자리가 크게 안 흔들리게)
-  const cells = cols.map((d, i) => { const c = DOW[dowOf(d)], on = ds.has(d), us = ls.filter(x => x.date === d), full = us.length || (d === fd && friGray);
-    return { w: full ? '1.4fr' : c === '금' || c === '일' ? '.9fr' : '.45fr', h: `<span class="${['vc', on ? 'on' : '', on && !ds.has(cols[i - 1]) ? 'first' : '', on && !ds.has(cols[i + 1]) ? 'last' : '', c === '토' || c === '일' ? '' : 'x'].filter(Boolean).join(' ')}"><span class="vdl">${c}</span>${us.map(du).join('')}${d === fd && friGray ? `<span class="du off fname gray">${fn}</span>` : ''}</span>` }; });
+  // 칸 폭은 모든 줄이 같다(같은 요일 = 같은 세로 자리, HB 11/18 C) — 금 · 주일은 넓게. 맡은 일은 자기 요일에서 시작해
+  //   다음으로 맡은 일이 있는 요일 앞까지 오른쪽 빈 칸을 함께 쓴다. 그 자리가 좁으면(칸 하나 · 금보다 좁음) 끝까지 쓰고 다음 요일 것은 아랫줄로(계단).
+  const wOf = (d) => { const c = DOW[dowOf(d)]; return c === '일' ? 1.6 : c === '금' ? 1.1 : .7; };
+  const items = cols.map((d, i) => ({ i, d, us: ls.filter(x => x.date === d).map(du).concat(d === fd && friGray ? [`<span class="du off fname gray">${fn}</span>`] : []) })).filter(x => x.us.length);
+  const span = (k) => { const a = items[k].i, nx = items[k + 1] ? items[k + 1].i : cols.length; let w = 0; for (let c = a; c < nx; c++) w += wOf(cols[c]); return w >= 1.1 ? nx + 1 : -1; };
+  // 요일 글자: 내려가는 날 = 주말 밖이면 빨강 · 토 · 주일은 기본색 / 내려가지 않는 날(보조로만 나온 칸)은 옅게 (HB 11/18 A)
+  const heads = cols.map((d, i) => { const c = DOW[dowOf(d)], on = ds.has(d);
+    return `<span class="${['vdl', on ? 'on' : 'off', on && !ds.has(cols[i - 1]) ? 'first' : '', on && !ds.has(cols[i + 1]) ? 'last' : '', on && c !== '토' && c !== '일' ? 'x' : ''].filter(Boolean).join(' ')}" style="grid-column:${i + 1}">${c}</span>`; }).join('');
+  const body = items.map((it, k) => it.us.map(h => h.replace('<span class="du ', `<span style="grid-column:${it.i + 1}/${span(k)}" class="du `)).join('')).join('');
   const st = stayState(v), stays = v.stay.filter(x => x.status !== 'cancel').map(x => esc(stayLineOf(v, x)) + (staySub(x) ? ' (' + staySubH(x) + ')' : ''));
   const red = (v.issues || []).map(x => (x.cat ? x.cat + ': ' : '') + x.text).concat(v.hot ? [v.hot] : []).filter(Boolean);
   const gray = [v.meet ? meetText(v.meet) : '', v.travel.length ? v.travel.map(t => (t.dir === 'down' ? '↓' : '↑') + [t.mode, timeS(t.time)].filter(Boolean).join(' ')).join(' ') : '', (v.mates || []).length ? '동행 ' + mateText(S.book, v) : '', v.note || ''].filter(Boolean);
@@ -3207,7 +3214,7 @@ function busanRow(v, cls, pm, bad, bsp) {
   return `<button class="vrow${cls}" data-visit="${esc(v.id)}"><span class="vd"><b>${md(v.date)}</b><span class="dw${dowOf(v.date) === 0 ? '' : ' x'}">${dw}</span></span>
     <span class="vwho"><span>${esc(whoText(S.book, v.who, '', pm)) || '<span class="muted" style="font-weight:400">비어 있음</span>'}</span>${v.title ? `<span class="vttl">${esc(v.title)}</span>` : ''}${bad ? '<span class="vwarn">겹침</span>' : ''}${bsp || ''}</span>
     <span class="vst"><span class="vss${st === 'done' ? ' ok' : ''}">${st === 'done' ? '숙소 ✓' : st === 'open' ? '숙소 미정' : '숙소 없음'}</span>${stays.length ? `<span class="vsd">${stays.join('<br>')}</span>` : ''}</span>
-    <span class="vwk" style="grid-template-columns:${cells.map(c => c.w).join(' ')}">${cells.map(c => c.h).join('')}</span>
+    <span class="vwk" style="grid-template-columns:${cols.map(d => wOf(d) + 'fr').join(' ')}">${heads}${body}</span>
     ${red.length || gray.length ? `<span class="vaux">${red.map(t => `<span class="vred">${esc(t)}</span>`).join('')}${gray.map(t => `<span>${esc(t)}</span>`).join('')}</span>` : ''}</button>`;
 }
 // 지난 부산 일정 — 달마다 묶음(오래된 달이 앞) · 지난 일정이 있는 달만

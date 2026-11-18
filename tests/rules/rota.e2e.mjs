@@ -698,9 +698,13 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
     const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`), r = (s) => b.querySelector(s).getBoundingClientRect(), br = b.getBoundingClientRect();
     const aux = [...b.querySelectorAll('.vaux > span')].map(x => x.getBoundingClientRect().top);
     return { stRight: Math.abs(r('.vst').right - br.right) <= 4, stTop: r('.vst').top < r('.vwk').top, sdUnder: !b.querySelector('.vsd') || r('.vsd').top > r('.vss').top,
-      days: [...b.querySelectorAll('.vc.on .vdl')].map(x => x.textContent).join(''), auxRows: aux.length >= 2 && aux.every((t, i) => !i || t > aux[i - 1]),
+      days: [...b.querySelectorAll('.vdl.on')].map(x => x.textContent).join(''), cols: [...b.querySelectorAll('.vdl')].map(x => Math.round(x.getBoundingClientRect().left)),  auxRows: aux.length >= 2 && aux.every((t, i) => !i || t > aux[i - 1]),
       wkFull: r('.vwk').right > r('.vst').left, scroll: document.documentElement.scrollWidth <= innerWidth }; }, V); };
   const ph = await look(390), wd = await look(1024);
+  const al = await hb.evaluate(() => { const rs = [...document.querySelectorAll('#panel .vrow')].filter(b => b.querySelectorAll('.vdl').length === 4).map(b => [...b.querySelectorAll('.vdl')].map(x => Math.round(x.getBoundingClientRect().left)).join(','));
+    const nm = [...document.querySelectorAll('#panel .vrow .vwho>span:first-child')].every(x => x.getClientRects().length === 1 || x.getBoundingClientRect().height < 30);
+    return [rs.length > 1, new Set(rs).size, nm]; });
+  ok('㉔ 넓은 화면: 네 칸 줄은 모두 같은 요일 = 같은 세로 자리(1117-Z 7b C) · 이름은 한 줄(B)', al, [true, 1, true]);
   ok('㉔ 폰(390): 숙소는 오른쪽 위 · 세부는 그 아래 · 요일 칸은 넓게(숙소 아래로) · 보조 항목은 한 줄에 하나 · 옆 스크롤 없음', [ph.stRight, ph.stTop, ph.sdUnder, ph.auxRows, ph.wkFull, ph.scroll], [true, true, true, true, true, true]);
   ok('㉔ 넓은 화면(1024): 숙소는 오른쪽 기둥(요일 칸과 나란히) · 머무는 날 띠', [wd.stRight, wd.wkFull, wd.days.length >= 2], [true, false, true]);
   await hb.setViewportSize(vp0); await hb.evaluate(() => render());
