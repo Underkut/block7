@@ -326,7 +326,7 @@ console.log('⑬ (1116-2 D) 특별예배 — 주일이 아닌 날 부산 일정 
   ok('⑬ 요약 판: \'예배\' 칸에 둘 · 주일 광고 줄 없음(주일에 안 머묾) · 제목에 이름', await hb.evaluate(() => [[...document.querySelectorAll('#pane [data-vsec="ev"] .lchip')].map(x => x.textContent), !!document.querySelector('#pane [data-act="ads"]'), /부산 일정 · 성탄/.test(document.querySelector('#pane .phead').textContent)]),
     [['목 저녁 성탄 전야 예배 · 성도 인도자', '금 10:30 성탄 예배 인도'], false, true]);
   await hb.evaluate(() => closePane()); await sleep(200);
-  ok('⑬ 부산 탭 줄에 이름 알약 · 글자는 \'부산 일정\'', await hb.evaluate(() => [!!document.querySelector('[data-visit="v|2026-12-24"] .pill.ttl'), /다가오는 부산 일정/.test(document.body.textContent), /방문 더하기/.test(document.body.textContent)]), [true, true, false]);
+  ok('⑬ 부산 탭 줄에 이름 알약 · 글자는 \'부산 일정\'', await hb.evaluate(() => [!!document.querySelector('[data-visit="v|2026-12-24"] .pill.ttl'), /부산 일정 더하기/.test(document.body.textContent), /방문 더하기/.test(document.body.textContent)]), [true, true, false]);
   // 교역자(가나다)는 이 일정에 들지 않았다 — 보기만, 예배 판도 안 열림
   ok('⑬ 교역자 화면에도 오고 예배 판은 안 열림', await until(() => ga.evaluate(async () => { const v = S.book.visits.find(x => x.id === 'v|2026-12-24'); if (!v || !v.evs) return null;
     openPane({ kind: 'visit', id: v.id }); await new Promise(r => setTimeout(r, 300)); const b = document.querySelector('#pane [data-vsec="ev"]'); if (b) b.click(); await new Promise(r => setTimeout(r, 200));
@@ -541,6 +541,22 @@ console.log('⑲ (1117-Z 2 고침) 낡은 앱과 핑퐁 없음 · 다시 그려�
     saveUi({ al: {} }); S.acat = ''; render(); return out; });
   ok('⑲ 넓은 화면: 갈래를 바꿔도 기둥이 툭 올라가지 않는다(모두 같은 높이)', new Set(tops).size, 1);
   await hb.setViewportSize({ width: 390, height: 844 }); await sleep(300);
+}
+
+console.log('⑳ (1117-Z 3) 메뉴 세 탭 · 부산 탭 지난 일정 단추');
+{
+  const tabsOf = (pg) => pg.evaluate(async () => { closePane(); closeMenu(); openMenu(); await new Promise(r => setTimeout(r, 200));
+    const names = [...document.querySelectorAll('#menu .mtab')].map(b => b.textContent), out = { names, has: {} };
+    for (const b of [...document.querySelectorAll('#menu .mtab')]) { b.click(); await new Promise(r => setTimeout(r, 600));
+      out.has[b.textContent] = ['theme', 'home', 'logout', 'myavail', 'wpull', 'importpick', 'upd'].filter(k => k === 'theme' ? !!document.querySelector('#menu [data-theme]') : !!document.querySelector(`#menu [data-act="${k}"]`)); }
+    closeMenu(); return out; });
+  const h = await tabsOf(hb), g = await tabsOf(ga);
+  ok('⑳ HB: 보기(테마 · 첫 화면) · 계정(로그아웃) · 개발(예배팀 받기 · 시트 가져오기 — 버전은 개발자 계정만)', h, { names: ['보기', '계정', '개발'], has: { '보기': ['theme', 'home'], '계정': ['logout'], '개발': ['wpull', 'importpick'] } });
+  ok('⑳ 교역자: 보기 · 계정 두 탭(개발 없음) · 계정에 내 부재', g, { names: ['보기', '계정'], has: { '보기': ['theme', 'home'], '계정': ['logout', 'myavail'] } });
+  const bz = await hb.evaluate(async () => { const pv = { id: 'v|2026-10-04', date: '2026-10-04', who: [], days: '토일', stay: [], travel: [] }; S.book.visits.push(pv); PREF.tab = 'busan'; render(); const t1 = document.querySelector('.vtop [data-act="pastfold"]'); const a = [!!t1 && t1.textContent, /다가오는 부산 일정/.test(document.body.textContent), !!document.querySelector('details.more')];
+    t1.click(); await new Promise(r => setTimeout(r, 500)); const n = document.querySelectorAll('.pastlist .vrow').length;
+    document.querySelector('[data-act="pastfold"]').click(); await new Promise(r => setTimeout(r, 500)); const gone = !!document.querySelector('.pastlist'); S.book.visits = S.book.visits.filter(v => v !== pv); PREF.tab = 'week'; render(); return a.concat(n > 0, gone); });
+  ok('⑳ 부산 탭: 맨 위 \'지난 부산 일정 보기\'(숫자 없음) · \'다가오는 … n번\' 없음 · 누르면 지난 일정 · 다시 누르면 접힘', bz, ['지난 부산 일정 보기', false, false, true, false]);
 }
 
 console.log('⑥ HB 가 이메일을 지우면');
