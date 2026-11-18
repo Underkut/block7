@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-2 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) -->
+<!-- 교역자 로테이션 v. 26-1118-3 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -184,7 +184,7 @@ table.wtab th.g-sun b{color:var(--sun)} table.wtab th.g-wed b{color:var(--wed)} 
 .achip.c-urgent{--ac:var(--bad)} .achip.c-busan{--ac:var(--bs)} .achip.c-bd{--ac:var(--sun)} .achip.c-chk{--ac:var(--warn)}
 .ahint{font-size:12px;color:var(--tx3);padding:0 2px}
 .alist{display:flex;flex-direction:column;gap:5px;padding-bottom:4px}
-.arow{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;box-sizing:border-box;padding:6px 8px;border-radius:10px;background:var(--s1);text-align:left}
+.arow{flex:none;display:flex;align-items:center;gap:10px;width:100%;min-height:44px;box-sizing:border-box;padding:6px 8px;border-radius:10px;background:var(--s1);text-align:left}
 .arow .ad{flex:0 0 40px;display:flex;flex-direction:column;align-items:center;font-size:13px;line-height:1.25;color:var(--tx2)}
 .arow .ad b{font-weight:600}
 .arow .ad small{font-size:11px}
@@ -196,6 +196,7 @@ table.wtab th.g-sun b{color:var(--sun)} table.wtab th.g-wed b{color:var(--wed)} 
 .arow.warn .am > span{color:var(--warn)}
 .aempty{font-size:13px;color:var(--tx3);padding:8px 4px}
 @media (max-width:999.98px){.alist{max-height:min(52vh,430px);overflow-y:auto;overscroll-behavior:contain}}   /* 폰: 판이 '이번 주' 를 너무 밀지 않게 — 목록만 굴림 */
+/* ⚠️ .arow 의 flex:none — 목록 높이를 막으면 줄이 눌려 글자가 겹쳤다(v. 26-1118-2 폰, 11/18). 줄은 줄어들지 않고 목록이 굴러야 한다 */
 #side{display:none}
 @media (min-width:1000px){
   .wrap.sided{max-width:1060px}
@@ -603,7 +604,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-2';
+const APP_VERSION = 'v. 26-1118-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));

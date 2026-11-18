@@ -1390,6 +1390,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊶ 네 탭이 같은 판(topBanner) — 탭마다 그리던 alertList · choreList · 취소 기한 줄 · 그다음 줄은 없다',
     [(HTML.match(/\$\{topBanner\(\)\}/g) || []).length, /function alertList\(|function choreList\(|class="wafter"|\$\{alertList\(/.test(HTML)], [4, false]);
   sc.eq('㊶ 접기는 이 기기(PREF — localStorage)에만, 책 · 계정에 넣지 않음', [/PREF\.afold = !PREF\.afold; savePref\(\);/.test(HTML), /afold/.test(HTML.slice(HTML.indexOf('function cloudSave('), HTML.indexOf('function cloudSave(') + 1500))], [true, false]);
+  sc.eq('㊶ 알림 줄은 줄어들지 않는다(flex:none) — 폰에서 목록 높이를 막으면 줄이 눌려 글자가 겹쳤다(v. 26-1118-2)', /\.arow\{flex:none;/.test(HTML), true);
   sc.eq('㊶ 부산 요약 표 · 숙소 판의 취소 기한도 같은 기준(cancelSoon)', (HTML.match(/cancelSoon\(/g) || []).length >= 5, true);
 }
 
