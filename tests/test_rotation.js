@@ -1611,12 +1611,20 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
   const row = HTML.slice(HTML.indexOf('function busanRow('), HTML.indexOf('// 지난 부산 일정 — 달마다 묶음'));
   sc.eq('(51) viewBusan 은 busanRow 한 곳으로 그린다', [/const line = \(v, cls\) => busanRow\(/.test(vb), row.length > 500], [true, true]);
-  sc.eq('(51) 요일 칸: 머무는 날 = on(초록 띠) · 띠 양 끝 first/last · 주말 밖 요일 = x · 맡은 일은 그 날짜 칸(x.date === d)', [/ds\.has\(d\)/.test(row), /'first'/.test(row) && /'last'/.test(row), /c === '토' \|\| c === '일' \? '' : 'x'/.test(row), /ls\.filter\(x => x\.date === d\)/.test(row)], [true, true, true, true]);
+  sc.eq('(51) 요일 칸: 머무는 날 = on(초록 띠) · 띠 양 끝 first/last · 주말 밖 요일 = x · 맡은 일은 그 날짜 칸(x.date === d)', [/ds\.has\(d\)/.test(row), /'first'/.test(row) && /'last'/.test(row), /on && c !== '토' && c !== '일' \? 'x' : ''/.test(row), /ls\.filter\(x => x\.date === d\)/.test(row)], [true, true, true, true]);
   sc.eq('(51) 맡은 일: 색 = 어느 예배(h-fri · h-sun · h-ll · h-ev) · 모양 = 누가(staff · lay · relay · none)', [/h-\$\{hue\(x\)\}/.test(row), /x\.ev \? 'ev' : x\.svc/.test(row), /x\.m \|\| 'none'/.test(row)], [true, true, true]);
   sc.eq('(51) 보조 줄은 한 항목 한 줄(가운데 점으로 잇지 않음) · 빨강(특이사항 · 중요)이 먼저 · 일반 메모는 흐림', [/red\.map\(t => `<span class="vred">/.test(row), /gray\.map\(t => `<span>/.test(row), /join\(' · '\)\}<\/span>`\)\.join/.test(row), /\.vrow \.vaux\{[^}]*flex-direction:column/.test(HTML)], [true, true, false, true]);
   sc.eq('(51) 숙소: 상태 아래 세부, 폰도 오른쪽 위(옛 폰 규칙 display:contents 없음)', [/\.vrow \.vst\{grid-column:3;grid-row:1;[^}]*align-items:flex-end/.test(HTML), /\.vrow \.vst\{display:contents\}/.test(HTML), /\.vrow \.vwk\{grid-column:2\/4;grid-row:2/.test(HTML)], [true, false, true]);
   sc.eq('(51) 색은 이 목록에서만(--bz-*) — 라이트 하나 · 다크 둘(시스템 · 고름) · 공용 --fri 는 그대로', [(HTML.match(/--bz-fri:/g) || []).length, /--fri:#7b4fc4/.test(HTML)], [3, true]);
   sc.eq('(51) 보통은 목 ~ 주일 네 칸(줄마다 같은 자리) · 많아도 8칸', [/addDays\(sun, -3\)/.test(HTML.slice(HTML.indexOf('function busanCols('), HTML.indexOf('function busanRow('))), /cols\.length < 8/.test(HTML)], [true, true]);
+}
+
+// (52) 1117-Z 7b — HB 11/18 사진: A 요일 글자 · B 이름 줄바꿈 · C 같은 요일 같은 세로 자리
+{
+  const row = HTML.slice(HTML.indexOf('function busanRow('), HTML.indexOf('// 지난 부산 일정 — 달마다 묶음'));
+  sc.eq('(52) A 내려가는 날만 색(주말 밖 빨강 · 토 · 주일 기본) · 안 내려가는 날은 옅게(off)', [/on \? 'on' : 'off'/.test(row), /\.vrow \.vdl\.off\{color:var\(--tx3\);opacity/.test(HTML), /\.vrow \.vdl\.x\{color:var\(--bz-day\)\}/.test(HTML)], [true, true, true]);
+  sc.eq('(52) B 이름은 줄바꿈 안 함(내 이름 형광이 붙어도)', /\.vrow \.vwho>span:first-child\{white-space:nowrap\}/.test(HTML), true);
+  sc.eq('(52) C 칸 폭은 요일로만 정함(맡은 일 유무로 안 바뀜) · 맡은 일은 다음 요일 앞까지 빈 칸을 씀 · 좁으면 끝까지(계단)', [/grid-template-columns:\$\{cols\.map\(d => wOf\(d\) \+ 'fr'\)/.test(row), /us\.length \? '1\.4fr'|full \? '1\.4fr'/.test(row), /return w >= 1\.1 \? nx \+ 1 : -1;/.test(row), /grid-auto-flow:row dense/.test(HTML)], [true, false, true, true]);
 }
 
 sc.done();
