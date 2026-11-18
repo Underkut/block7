@@ -407,6 +407,52 @@ console.log('⑮ (1117-Z 1) 숙소 금액 · 취소 기한은 HB 전용 — 교�
   await ga.evaluate(() => closePane()); await sleep(300);
 }
 
+console.log('⑯ (1117-Z 2) 알림 판 — HB 만 · 줄을 누르면 그 판 · 접기는 이 기기에 기억 · 넓으면 오른쪽 기둥');
+{
+  // HB 가 다섯 주 뒤 주일에 예약 완료 호텔(취소 기한 이틀 뒤)을 적는다 — 날짜는 오늘에서 셈(시험 날짜와 상관없이)
+  const VZ = await hb.evaluate(() => { const td = todayYmd(), sun = visitSun(addDays(td, 35)), id = visitId(sun);
+    put(S.book, 'visits', { id, who: ['pa'], days: '토일', stay: [{ kind: 'hotel', name: '알림 호텔', status: 'done', nights: 1, cancelBy: addDays(td, 2), cancelAt: '18:00' }] }, byNow(), Date.now()); saveBook();
+    PREF.tab = 'week'; PREF.afold = false; S.acat = ''; S.sun = sunOf(td); render(); return id; });
+  const p1 = await hb.evaluate(() => { const p = document.querySelector('#panel .apanel'); return p && { chips: [...p.querySelectorAll('.achip')].map(b => b.textContent.replace(/\d+$/, '')), sel: p.querySelector('.achip[aria-selected="true"]').textContent.replace(/\d+$/, ''), rows: [...p.querySelectorAll('.arow')].map(r => r.innerText) }; });
+  ok('⑯ HB 이번 주 맨 위에 판: 갈래 넷 · 처음엔 급함 · 알림 호텔 취소 기한(D-2)', p1 && [p1.chips, p1.sel, p1.rows.some(t => /알림 호텔 취소 기한 18:00/.test(t) && /D-2/.test(t))], [['급함', '부산', '분당', '확인'], '급함', true]);
+  const tabsSame = await hb.evaluate(() => ['month', 'busan', 'people'].map(t => { PREF.tab = t; render(); return document.querySelectorAll('#panel .apanel').length; }));
+  ok('⑯ 네 탭 모두 같은 판 하나(달력표 · 부산 · 사람에도)', tabsSame, [1, 1, 1]);
+  ok('⑯ 옛 알림 자리(겹침 목록 · 챙길 것 · 그다음 줄)는 없다', await hb.evaluate(() => { PREF.tab = 'week'; render(); return document.querySelectorAll('#panel > .alerts, #panel .wafter').length; }), 0);
+  // 줄을 누르면 그 판 — 숙소 판의 그 숙소, 취소 기한 칸(빨간 테두리)
+  await hb.click('#panel .arow:has-text("알림 호텔")'); await sleep(400);
+  ok('⑯ 취소 기한 줄 → 그 부산 일정의 숙소 판 · 그 숙소 · 기한 칸 · 기한 글이 빨강', await hb.evaluate((VZ) => [S.pane && S.pane.kind, S.pane && S.pane.id === VZ, S.pane.edit && S.pane.edit.sec, S.pane.edit && S.pane.edit.i, S.pane.edit && S.pane.edit.focus, !!document.querySelector('#pane .flabel .badc')], VZ), ['visit', true, 'stay', 0, 'cancel', true]);
+  await hb.evaluate(() => closePane()); await sleep(500);
+  await hb.click('#panel .achip[data-acat="bd"]'); await sleep(400);
+  await hb.click('#panel .apanel .arow >> nth=0'); await sleep(400);
+  ok('⑯ 분당 갈래 → 줄을 누르면 사람 고르기 판', await hb.evaluate(() => [S.acat, S.pane && S.pane.kind]), ['bd', 'pick']);
+  await hb.evaluate(() => closePane()); await sleep(500);
+  // 접기 — 한 줄(급함 · 미정)로, 이 기기에 기억(책 · 계정에는 없음)
+  await hb.click('#panel .apanel [data-act="afold"]'); await sleep(500);
+  const f1 = await hb.evaluate(() => { const p = document.querySelector('#panel .apanel'); return [p.classList.contains('fold'), /급함 \d+/.test(p.innerText) && /미정 \d+/.test(p.innerText), p.querySelectorAll('.arow').length, JSON.parse(localStorage.getItem('rota_pref_v1')).afold]; });
+  ok('⑯ 접으면 한 줄(급함 n · 미정 n) · 목록 없음 · 이 기기(localStorage)에 기억', f1, [true, true, 0, true]);
+  const pg2 = await hb.context().newPage(); await pg2.goto(ROOT); await sleep(800);
+  ok('⑯ 같은 기기에서 새로 열어도 접힌 채', await pg2.evaluate(() => { PREF.tab = 'week'; render(); const p = document.querySelector('#panel .apanel'); return !!p && p.classList.contains('fold'); }), true);
+  await pg2.close();
+  const dz = await getDoc('rota/' + HB);
+  ok('⑯ 접은 것은 계정 문서 · 책에 없다', [JSON.stringify(dz).includes('afold'), 'afold' in (dz.ui || {})], [false, false]);
+  // 넓은 화면 — 같은 판이 오른쪽 기둥(360px) · 접으면 얇은 띠(64px)
+  await hb.setViewportSize({ width: 1280, height: 860 }); await sleep(300);
+  await hb.evaluate(() => { PREF.afold = false; savePref(); render(); }); await sleep(400);
+  const w1 = await hb.evaluate(() => ({ side: !!document.querySelector('#side .apanel'), inPanel: !!document.querySelector('#panel .apanel'), w: Math.round(document.querySelector('#side').getBoundingClientRect().width), sided: document.querySelector('#wrap').classList.contains('sided') }));
+  ok('⑯ 넓은 화면: 판은 오른쪽 기둥(360px)에만 · 왼쪽 화면에는 없음', w1, { side: true, inPanel: false, w: 360, sided: true });
+  await hb.click('#side [data-act="afold"]'); await sleep(700);
+  ok('⑯ 넓은 화면에서 접으면 얇은 띠(64px) · 급함 개수는 그대로 보임', await hb.evaluate(() => [Math.round(document.querySelector('#side').getBoundingClientRect().width), !!document.querySelector('#side .astrip .acnt')]), [64, true]);
+  await hb.click('#side [data-act="afold"]'); await sleep(700);
+  await hb.setViewportSize({ width: 390, height: 844 }); await sleep(300); await hb.evaluate(() => render());
+  // 교역자 — 판이 없다(좁을 때도 넓을 때도)
+  const g16 = await ga.evaluate(() => { const out = []; for (const t of ['week', 'month', 'busan']) { PREF.tab = t; render(); out.push(document.querySelectorAll('.apanel').length); } return [out, alertData()]; });
+  ok('⑯ 교역자: 어느 탭에도 알림 판이 없다', g16, [[0, 0, 0], null]);
+  await ga.setViewportSize({ width: 1280, height: 860 }); await sleep(300);
+  ok('⑯ 교역자 넓은 화면: 옆 기둥도 없다(왼쪽 화면 그대로)', await ga.evaluate(() => { render(); return [document.querySelector('#wrap').classList.contains('sided'), document.querySelector('#side').innerHTML]; }), [false, '']);
+  await ga.setViewportSize({ width: 390, height: 844 });
+  await hb.evaluate((VZ) => { drop(S.book, 'visits', VZ, byNow(), Date.now()); saveBook(); }, VZ);
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });
