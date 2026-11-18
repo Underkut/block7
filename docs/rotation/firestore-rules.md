@@ -69,12 +69,12 @@ HB 계정은 BLOCK7 과 같은 이메일 · 비밀번호 계정이다. 같은 �
 ## 클라우드 모양 (참고)
 
 - `rota/{HB uid}`
-  - `b15`: { v, at, people[], slots[], visits[], marks[], opts[], shows[], specs[], buls[] } — 옛 칸 `book` · `b2` ~ `b14` 은 읽어 합친 뒤 지운다(같은 책이 여러 벌 쌓여 1MB 를 넘지 않게).
+  - `b16`: { v, at, people[], slots[], visits[], marks[], opts[], shows[], specs[], buls[], adtx[] } — 옛 칸 `book` · `b2` ~ `b15` 은 읽어 합친 뒤 지운다(같은 책이 여러 벌 쌓여 1MB 를 넘지 않게).
   - `team`: 이 책을 읽어도 되는 이메일 목록 — 사람 탭 '계정 이메일' 에서 앱이 저절로 만든다(손으로 고칠 것 없음).
   - 줄마다 `at`(고친 때) · `by`(누가). 지우면 내용을 비운 표지(`del: true`)만 남는다.
   - 숙소 줄의 `status`(1116-2 C): `''` 미정 · `pre` 예약 전(호텔) / 대화 전(성도님 댁) · `ask` 대화 중(성도님 댁만) · `done` 예약 완료 / 대화 완료 · `cancel` 취소. 옛 호텔의 `ask`(예전 글자 '대화 중')는 읽을 때 `pre` 로 옮긴다. 성도님 댁은 취소 기한이 없다.
   - 숙소 · 교통 · 모임(방문) · 부재 · 가능 일정(사람)은 칸마다 고친 때(`stayAt` …)와 교역자가 적었으면 그 사람(`stayBy` …)이 따로 있다 — 나중에 적은 쪽이 이긴다.
-- `rota/{HB uid}/staff/{교역자 uid}` — 교역자 한 분의 칸: `email` · `visits`(방문마다 `stay` · `travel` · `meet`(모임, 1116-2 B) · `bs`(부산 상영) + 고친 때 — 규칙은 `visits` 안을 가리지 않으니 칸이 늘어도 규칙을 고칠 것은 없다) · `away` · `can` + 고친 때. 교역자 앱만 쓴다.
+- `rota/{HB uid}/staff/{교역자 uid}` — 교역자 한 분의 칸: `email` · `visits`(방문마다 `stay` · `travel` · `meet`(모임, 1116-2 B) · `bs`(부산 상영) · `tx`(전달용 텍스트, 1117-Z 4) + 고친 때 — 규칙은 `visits` 안을 가리지 않으니 칸이 늘어도 규칙을 고칠 것은 없다) · `away` · `can` + 고친 때. 교역자 앱만 쓴다.
 - `rota/{HB uid}/img/{id}` — 숙소 예약 화면 사진 한 장(`d`: 줄인 JPEG, `visit`, `at`, 교역자가 올렸으면 `by`). 책에는 사진 id 만 들어 있다.
 - 모양과 맞추는 규칙은 `rotation/index.html` 의 `rotation-core`, 시험은 `tests/test_rotation.js`.
 - 문서 한 장은 1MB 까지다. 앱은 900KB 를 넘기면 올리지 않고 알린다.

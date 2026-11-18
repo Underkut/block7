@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-8 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 -->
+<!-- 교역자 로테이션 v. 26-1118-9 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -311,7 +311,9 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.5}
 .inp[type=date],.inp[type=time]{min-height:40px;padding-left:34px;background-repeat:no-repeat;background-position:10px 50%;background-size:16px 16px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a9099' stroke-width='1.7' stroke-linecap='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='2'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E")}
 .inp[type=time]{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a9099' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5V12l3 2'/%3E%3C/svg%3E")}
-.inp[type=date]:invalid::before,.inp[type=time]:invalid::before{content:attr(placeholder);color:var(--tx3)}
+.inp[type=date]:invalid::before,.inp[type=time]:invalid::before{content:attr(placeholder);color:var(--tx3);white-space:nowrap;flex:none}
+/* 아이패드 사파리: 빈 날짜 칸의 안쪽 상자가 폭 0 이라 '날짜' 가 한 글자씩 세로로 쪼개졌다(1117-Z 4 E, HB 사진) — 글은 한 줄 · 안쪽 상자는 남은 폭을 채움 */
+.inp[type=date]::-webkit-date-and-time-value,.inp[type=time]::-webkit-date-and-time-value{text-align:left;min-width:0}
 /* 날짜 · 시각 한 쌍(취소 기한) — 둘이 같은 폭 · 같은 높이(1116-2 A, 아이폰은 칸마다 제 크기를 가져 들쭉날쭉했다) */
 .dtpair .inp{flex:1 1 0;width:auto;min-width:0;height:42px;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:left}
 .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:400;color:var(--tx2);cursor:pointer}
@@ -534,6 +536,19 @@ table.mx8 .f.bad{background:var(--bad);color:var(--on);box-shadow:none}
 .adcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
 .adcard h4{margin:-12px -14px 0;padding:8px 14px;border-radius:13px 13px 0 0;font-size:13px;font-weight:500;color:var(--tx3);letter-spacing:.02em}
 .adcard.vid h4{background:var(--adv-band);color:var(--adv-tx)}.adcard.spk h4{background:var(--ads-band);color:var(--ads-tx)}
+/* 전달용 텍스트 (1117-Z 4) — 말풍선 + 오른쪽 위 아이콘 셋 · 맨 아래 오른쪽 작은 글 줄 */
+.adcard.txt h4{background:var(--s1);color:var(--tx2)}
+.adtxbub{position:relative;border:1px solid var(--line2);border-radius:16px 16px 4px 16px;background:var(--bg);padding:8px 12px 12px;display:grid;gap:2px;min-width:0;transition:border-color .2s}
+.adtxbub.editing{border-color:var(--tx2)}
+.adtxi{display:flex;justify-content:flex-end;gap:2px;margin:-2px -6px 0 0}
+.adtxb{width:32px;height:32px;display:grid;place-items:center;color:var(--tx2);border-radius:8px}
+.adtxb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.adtxb:disabled{color:var(--tx3);opacity:.35}
+.adtxpre{margin:0;font:inherit;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;color:var(--tx);user-select:text;-webkit-user-select:text}
+.adtxed{width:100%;min-height:160px;border:0;background:transparent;padding:0;font:inherit;font-size:16px;line-height:1.6;color:var(--tx);resize:none;outline:none;overflow:hidden}
+.adtxnote{margin:0}
+.adfoot{display:grid;justify-items:end;gap:2px;font-size:12px;color:var(--tx3);text-align:right;padding-top:2px}
+.adfoot .txtbtn{font-size:12px;padding:4px 0}
 .adv{display:grid;gap:4px;min-width:0}.advt{font-size:16px;font-weight:500;line-height:1.45}
 .adlink{color:var(--wed);text-decoration:none;overflow-wrap:anywhere;justify-self:start}.adlink:hover{text-decoration:underline}
 .adarr{font-size:.85em;margin-left:2px}
@@ -659,7 +674,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-8';
+const APP_VERSION = 'v. 26-1118-9';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1103,6 +1118,23 @@ function normShow(o) {
   b.bs = o.bs; return b;
 }
 function showOf(book, sun) { const r = ((book && book.shows) || []).find(x => x.id === showId(sun) && !x.del); return r ? r.bs : ''; }
+/* 전달용 텍스트 (1117-Z 4, HB 11/18) — 카톡 글을 사람이 고쳤으면 주일마다 한 줄: adtx = [{ id: 't|주일', sun, tx }].
+   줄이 없으면(또는 지우기 표지면) 앱이 만든 글(adsText). ↻ = 지우기 표지. 다른 기기 · 교역자까지 공통(HB 답).
+   고치는 사람 = 상영을 고르는 사람(HB · 그 주일 부산 교역자 · 그 달 주보 담당) — 교역자는 자기 칸 그 방문 줄 tx · txAt → absorb.
+   상영 줄(shows)과 따로 둔다: 줄 하나에 두 사람의 칸이 들면 나중에 고친 줄이 다른 칸까지 덮는다. */
+const ADTX_MAX = 3000;
+function adtxId(sun) { return 't|' + sun; }
+const adtxClean = (t) => String(t == null ? '' : t).replace(/\r\n?/g, '\n').slice(0, ADTX_MAX);
+function normAdtx(o) {
+  if (!o || typeof o !== 'object') return null;
+  const sun = String(o.id || '').slice(2); if (String(o.id).slice(0, 2) !== 't|' || !isYmd(sun) || dowOf(sun) !== 0) return null;
+  const b = base(o); b.sun = sun; if (b.del) return b;
+  const tx = adtxClean(o.tx); if (!tx.trim()) return null;
+  b.tx = tx; return b;
+}
+function adtxOf(book, sun) { const r = ((book && book.adtx) || []).find(x => x.id === adtxId(sun) && !x.del); return r ? r.tx : ''; }
+// 화면 · 복사에 쓸 글 — 고친 글이 있으면 그것, 없으면 만든 글. edited = 고친 글이고 만든 글과 다름
+function adtxPick(book, sun, auto) { const t = adtxOf(book, sun); return t && t !== auto ? { text: t, edited: true } : { text: auto || '', edited: false }; }
 /* ---- 주보 담당 (1117-Z 2c, HB 11/18) — 한 달씩 ㄱㄴㄷ 순으로 돈다 ----
    people[].bul = 순번에 듦. buls = 달마다 직접 정한 담당 [{ id: 'u|YYYY-MM', ym, p }].
    정하지 않은 달은 그 앞에서 가장 가까운 정한 달부터 ㄱㄴㄷ(이름) 순으로 센다. 정한 달이 하나도 없으면 아무도 아님.
@@ -1127,7 +1159,7 @@ function bulOf(book, ym) {
   if (at < 0) { const a = live(book.people).find(p => p.id === set.p); if (!a) return ''; at = ord.filter(p => p.name.localeCompare(a.name, 'ko') < 0).length - 1; }   // 순번에서 빠진 분이면 그 이름 다음 분부터
   return ord[(((at + monthDiff(set.ym, ym)) % ord.length) + ord.length) % ord.length].id;
 }
-const LISTS = { people: normPerson, slots: normSlot, visits: normVisit, marks: normMark, opts: normOpt, shows: normShow, specs: normSpec, buls: normBul };
+const LISTS = { people: normPerson, slots: normSlot, visits: normVisit, marks: normMark, opts: normOpt, shows: normShow, specs: normSpec, buls: normBul, adtx: normAdtx };
 function normBook(o) {
   const b = { v: 1, at: num(o && o.at) };
   for (const [k, fn] of Object.entries(LISTS)) {
@@ -1167,7 +1199,7 @@ function pickBook(local, cloud) {
    book = R1(v. 26-1114-1) · b2 = R2 ~ v. 26-1114-4 · b3 = v. 26-1114-5 부터(성도 인도자 · 숙소 취소 기한 · 사진 · 요일 하나씩).
    읽을 때는 모두 합친다(맞추기는 지우지 않으니 옛 칸에만 있는 것도 살아난다). 쓸 때는 WRITE_FIELD 하나 + 옛 칸은 지운다(OLD_FIELDS) —
    문서 한 장 1MB 에 같은 책이 여러 벌 쌓이지 않게. 낡은 앱이 다시 옛 칸에 써도 다음에 또 합치고 지운다. */
-const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11', 'b12', 'b13', 'b14'], WRITE_FIELD = 'b15';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6) · b8 = v. 26-1116-3 부터(부산 주일예배 · LL 인도 — R11) · b9 = v. 26-1116-4 부터(인도 세 갈래 lead — R12 A) · b10 = v. 26-1116-11 부터(부산 상영 shows — R12 C4b) · b11 = v. 26-1117-1 부터(동행 mates · 모임 meet — 1116-2 B) · b12 = v. 26-1117-2 부터(숙소 상태 '예약 전 / 대화 전' pre — 1116-2 C, 낡은 앱은 pre 를 '미정' 으로 떨군다) · b13 = v. 26-1117-4 부터(부산 일정 이름 title · 더한 예배 evs — 1116-2 D) · b14 = v. 26-1117-6 부터(분당 특별예배 specs · 그 자리 '날짜|xk|역할' — 1116-2 E, 낡은 앱은 둘 다 떨군다) · b15 = v. 26-1118-4 부터(주보 담당 people[].bul · buls — 1117-Z 2c)
+const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11', 'b12', 'b13', 'b14', 'b15'], WRITE_FIELD = 'b16';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6) · b8 = v. 26-1116-3 부터(부산 주일예배 · LL 인도 — R11) · b9 = v. 26-1116-4 부터(인도 세 갈래 lead — R12 A) · b10 = v. 26-1116-11 부터(부산 상영 shows — R12 C4b) · b11 = v. 26-1117-1 부터(동행 mates · 모임 meet — 1116-2 B) · b12 = v. 26-1117-2 부터(숙소 상태 '예약 전 / 대화 전' pre — 1116-2 C, 낡은 앱은 pre 를 '미정' 으로 떨군다) · b13 = v. 26-1117-4 부터(부산 일정 이름 title · 더한 예배 evs — 1116-2 D) · b14 = v. 26-1117-6 부터(분당 특별예배 specs · 그 자리 '날짜|xk|역할' — 1116-2 E, 낡은 앱은 둘 다 떨군다) · b15 = v. 26-1118-4 부터(주보 담당 people[].bul · buls — 1117-Z 2c) · b16 = v. 26-1118-9 부터(전달용 텍스트 adtx — 1117-Z 4)
 function pickDoc(local, doc) {
   const cur = doc && doc[WRITE_FIELD] ? doc[WRITE_FIELD] : null;
   const olds = OLD_FIELDS.map(k => doc && doc[k]).filter(Boolean);
@@ -1202,6 +1234,7 @@ function normStaff(o) {
     const e = vs[k]; if (!e || typeof e !== 'object') continue; const n = {};
     for (const f of Object.keys(STAFF_VISIT)) { const val = f in e ? STAFF_VISIT[f](e[f]) : undefined; if (val !== undefined && num(e[f + 'At'])) { n[f] = val; n[f + 'At'] = num(e[f + 'At']); } }
     if (ADS_BS[e.bs] && num(e.bsAt)) { n.bs = e.bs; n.bsAt = num(e.bsAt); }   // 부산 상영 (C4b) — 그 방문의 주일 줄로 간다
+    if (typeof e.tx === 'string' && num(e.txAt)) { n.tx = adtxClean(e.tx); n.txAt = num(e.txAt); }   // 전달용 텍스트 (1117-Z 4) — '' = 원래 글로
     if (Object.keys(n).length) s.visits[k] = n;
   }
   for (const f of ['away', 'can']) if (Array.isArray(o[f]) && num(o[f + 'At'])) { s[f] = ranges(o[f]); s[f + 'At'] = num(o[f + 'At']); }
@@ -1213,6 +1246,7 @@ function absorb(book, staffs) {
   const byEmail = {}; for (const p of live(book.people)) if (p.email) byEmail[p.email] = p;
   const best = {};   // '목록|줄 id' → { 칸: { val, at, by } } — 모두 모은 뒤 한 번에 넣는다(교역자 순서와 상관없이 같은 결과)
   const shows = {};  // 부산 상영(C4b): 주일 줄 id → { bs, at, by } — 줄 하나에 칸 하나라 줄의 고친 때(at)로 겨룬다
+  const txs = {};    // 전달용 텍스트(1117-Z 4): 주일 줄 id → { tx, at, by } — 상영과 같은 사람 · 같은 겨룸
   const offer = (list, row, f, val, at, by) => {
     if (!(at > (row[f + 'At'] || 0))) return;
     const k = list + '|' + row.id, b = best[k] || (best[k] = {});
@@ -1230,6 +1264,8 @@ function absorb(book, staffs) {
       if (mine) for (const f of Object.keys(STAFF_VISIT)) if (e[f + 'At']) offer('visits', v, f, f === 'stay' ? stayKeep(v.stay, e.stay) : e[f], e[f + 'At'], p.id);   // 숙소의 금액 · 기한은 HB 책 것 그대로 (1117-Z 1)
       if (e.bsAt && vSun(v)) { const id = showId(vSun(v)), cur = book.shows.find(x => x.id === id), b = shows[id];
         if (e.bsAt > ((cur && cur.at) || 0) && (!b || e.bsAt > b.at || (e.bsAt === b.at && p.id < b.by))) shows[id] = { bs: e.bs, at: e.bsAt, by: p.id }; }
+      if (e.txAt && vSun(v)) { const id = adtxId(vSun(v)), cur = book.adtx.find(x => x.id === id), b = txs[id];
+        if (e.txAt > ((cur && cur.at) || 0) && (!b || e.txAt > b.at || (e.txAt === b.at && p.id < b.by))) txs[id] = { tx: e.tx, at: e.txAt, by: p.id }; }
     }
   }
   const changed = [];
@@ -1246,6 +1282,10 @@ function absorb(book, staffs) {
   }
   for (const id of Object.keys(shows).sort()) { const b = shows[id], n = normShow({ id, at: b.at, by: 'staff:' + b.by, bs: b.bs }); if (!n) continue;
     book.shows = book.shows.filter(x => x.id !== id).concat(n).sort((a, c) => (a.id < c.id ? -1 : 1)); book.at = Math.max(book.at || 0, n.at); changed.push(id); }
+  for (const id of Object.keys(txs).sort()) { const b = txs[id], cur = book.adtx.find(x => x.id === id);
+    const n = b.tx.trim() ? normAdtx({ id, at: b.at, by: 'staff:' + b.by, tx: b.tx }) : { id, at: b.at, by: 'staff:' + b.by, del: true, sun: id.slice(2) };
+    if (!n || (n.del && (!cur || cur.del))) continue;   // 없는 글을 되돌리기는 할 일이 없다
+    book.adtx = book.adtx.filter(x => x.id !== id).concat(n).sort((a, c) => (a.id < c.id ? -1 : 1)); book.at = Math.max(book.at || 0, n.at); changed.push(id); }
   return { book, changed };
 }
 /* ---- 숙소 금액 · 취소 기한은 HB 전용 (1117-Z 1, HB 11/17) ----
@@ -1278,6 +1318,7 @@ function staffPatch(email, kind, key, val, now) {
   // 모임 — 칸을 모두 적는다: Firestore 합치기(merge)는 객체 안으로 들어가 합치므로, 빠진 칸이 있으면 옛 값(메모 등)이 남는다
   if (kind === 'meet') { const m = normMeet(val); return { email, at: now, visits: { [key]: { meet: m ? { k: m.k, g: m.g || '', who: m.who || '', n: m.n || 0, memo: m.memo || '' } : null, meetAt: now } } }; }
   if (kind === 'bs') return ADS_BS[val] ? { email, at: now, visits: { [key]: { bs: val, bsAt: now } } } : null;   // 부산 상영 — 그 방문 줄 안(규칙이 허락하는 visits 칸)
+  if (kind === 'tx') { const t = adtxClean(val); return { email, at: now, visits: { [key]: { tx: t.trim() ? t : '', txAt: now } } }; }   // 전달용 텍스트 — '' = 원래 글로 (1117-Z 4)
   if (kind === 'away' || kind === 'can') return { email, at: now, [kind]: val, [kind + 'At']: now };
   if (kind === 'ui') return { email, at: now, ui: normUi(Object.assign({}, val, { at: now }), true) };   // 내 화면 취향 — 책에는 안 들어간다 (R8b)
   return null;
@@ -1314,7 +1355,7 @@ function drop(book, list, id, by, now) {
   const t = { id, at: now, by, del: true };   // 다듬은 줄과 같은 칸 순서 — 기기마다 글자까지 같게
   if (list === 'slots') { const [date, svc, role] = id.split('|'); Object.assign(t, { date, svc, role }); }
   if (list === 'visits') t.date = id.slice(2);
-  if (list === 'marks' || list === 'shows') t.sun = id.slice(2);
+  if (list === 'marks' || list === 'shows' || list === 'adtx') t.sun = id.slice(2);
   if (list === 'specs') { t.date = id.split('|')[1]; t.k = +id.split('|')[2]; }
   if (list === 'buls') t.ym = id.slice(2);
   if (list === 'opts') t.type = id.split('|')[1];
@@ -3988,7 +4029,7 @@ function adsOpen(sun, back) {
   if (!sun) return;
   if (!DEMO && !FB.user) return toast('로그인해야 볼 수 있습니다');
   const c = (lsGet(ADS_KEY, {}) || {})[sun];
-  openPane({ kind: 'ads', sun, back: back || null, state: c ? 'done' : 'busy', data: c ? normAds(c.o) : null, at: c ? c.at : 0, stale: !!c, showText: false });
+  openPane({ kind: 'ads', sun, back: back || null, state: c ? 'done' : 'busy', data: c ? normAds(c.o) : null, at: c ? c.at : 0, stale: !!c, txEdit: false });
   adsLoad();
 }
 async function adsLoad() {
@@ -4001,7 +4042,7 @@ async function adsLoad() {
     if (bsWarn() !== w0 && !editing()) render();   // 영상 광고가 생기거나 없어지면 뒤 화면의 경고 줄 · 알약도 (C4b)
     const Q = S.pane; if (!(Q && Q.kind === 'ads' && Q.sun === sun)) return;
     // 새로 읽은 것이 화면 것과 같으면 다시 그리지 않는다 — '읽은 때' 글만 바꾼다 (보던 자리 · 펼침이 그대로)
-    if (Q.state === 'done' && !Q.warn && !Q.showText && Q.data && JSON.stringify(Q.data) === JSON.stringify(o)) { Object.assign(Q, { at, stale: false }); const w = $('#ads-when'); if (w) { w.textContent = adsWhen(Q); return; } }
+    if (Q.state === 'done' && !Q.warn && !Q.txEdit && Q.data && JSON.stringify(Q.data) === JSON.stringify(o)) { Object.assign(Q, { at, stale: false }); const w = $('#ads-when'); if (w) { w.textContent = adsWhen(Q); return; } }
     adsSet({ state: 'done', data: o, at, stale: false });
   } catch (e) {
     if (!(S.pane && S.pane.kind === 'ads' && S.pane.sun === sun)) return;
@@ -4066,10 +4107,32 @@ const BS_PILL = '<span class="pill warn bsp">상영 미정</span>';
 function bsPill(v, w) { return w && v && vSun(v) === w ? BS_PILL : ''; }   // 주일에 머무는 부산 일정만 (1116-2 D)
 function bsBar() { const w = bsWarn(); return w ? `<button class="banner bsbar" data-act="ads" data-sun="${w}"><span><b>${esc(mdd(w))} 부산 상영 여부를 아직 고르지 않았습니다</b><small>영상 광고가 있는 주일입니다 · 눌러서 고르기</small></span><span class="chev">›</span></button>` : ''; }
 function adsCopy() {   // ⚠️ 아이폰: 누른 그 자리에서 바로 복사를 시작한다 (무엇을 기다린 뒤면 막힌다)
-  const P = S.pane, tx = P && P.data ? adsText(P.data, adsOpt(P.sun)) : ''; if (!tx) return;
-  const fall = () => { adsSet({ showText: true }); const el = $('#ads-text'); if (el) { el.focus(); el.select(); } toast('자동 복사가 막혔습니다\n선택된 글을 길게 눌러 복사해 주세요'); };
+  const P = S.pane, ta = $('#ads-tx'), tx = ta ? ta.value : adsTxNow(P).text; if (!tx) return;   // 고치는 중이면 그 글 그대로 (1117-Z 4)
+  const fall = () => { if (ta) { ta.focus(); ta.select(); } else { const el = $('#ads-text'), r = document.createRange(), sel = getSelection(); if (el && sel) { r.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(r); } }
+    toast('자동 복사가 막혔습니다\n선택된 글을 길게 눌러 복사해 주세요'); };
   try { navigator.clipboard.writeText(tx).then(() => toast('복사했습니다\n카톡에 붙여 넣으세요'), fall); } catch (_) { fall(); }
 }
+function adtxFit(ta) { if (!ta) return; ta.style.height = 'auto'; ta.style.height = Math.max(160, ta.scrollHeight + 2) + 'px'; }
+function adtxEdit() {
+  const P = S.pane; if (!P || P.kind !== 'ads' || !P.data) return;
+  if (!bsCan(P.sun)) return toast('전달용 텍스트는 그 주일 부산에 내려가는 교역자 ·\n그 달 주보 담당 · HB 만 고칠 수 있습니다');
+  if (!P.txEdit) {
+    P.txEdit = true; P.txDraft = adsTxNow(P).text; renderPane();
+    const ta = $('#ads-tx'); if (ta) { adtxFit(ta); ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (_) { } }
+    return;
+  }
+  const ta = $('#ads-tx'), was = adsTxNow(P).text, saved = ta ? adtxSave(P.sun, ta.value) : false;
+  P.txEdit = false; P.txDraft = null; renderPane();
+  if (saved || adsTxNow(P).text !== was) toast(adsTxNow(P).edited ? '고친 글을 저장했습니다\n다른 기기 · 교역자에게도 같은 글이 보입니다' : 'Monday 내용으로 만든 글과 같아\n원래 글로 둡니다');
+}
+function adtxReset() {
+  const P = S.pane; if (!P || P.kind !== 'ads' || !P.data || !bsCan(P.sun) || !adsTxNow(P).edited) return;
+  adtxSave(P.sun, ''); P.txEdit = false; P.txDraft = null; renderPane();
+  toast('원래 글로 되돌렸습니다\nMonday 내용으로 만든 글입니다');
+}
+// 고치는 중: 글은 판에 기억(다시 그려도 그대로) · 칸을 벗어나면(change — × · 뒤로 · 다른 곳 누름) 조용히 저장
+document.addEventListener('input', (e) => { const t = e.target; if (!t || t.id !== 'ads-tx' || !S.pane || S.pane.kind !== 'ads') return; S.pane.txDraft = t.value; adtxFit(t); });
+document.addEventListener('change', (e) => { const t = e.target; if (!t || t.id !== 'ads-tx' || !S.pane || S.pane.kind !== 'ads') return; adtxSave(S.pane.sun, t.value); });
 /* 광고 판 (C4a, HB 고른 안 11/16) — A 카드형: 영상 광고 · 구두 광고가 카드 하나씩.
    부산 관련 Monday 글은 날짜로 묶고 답글은 그 아래 들여쓰기 · 긴 글은 3줄 + '더 보기'(S.pane.more 에 기억 — 다시 그려도 그대로).
    결과 두 줄(부산 상영 결과 · 리포터 판단)은 말풍선 안 글 — 상영 말풍선의 꼬리는 고른 단추 가운데를 가리킨다. 리포터 말풍선은 노란 테두리. */
@@ -4092,7 +4155,7 @@ function adsNotes(v, vi) {
 const adsWhen = (P) => (P.stale ? '새로 읽는 중…' : P.at ? '읽은 때 ' + new Date(P.at).toTimeString().slice(0, 5) : '');
 function paneAds() {
   const P = S.pane, a = P.data, back = P.back ? `<button class="iconbtn" data-act="adsback" aria-label="부산 일정으로"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>` : '<span></span>';
-  const head = `<div class="phead">${back}<b>${esc(mdd(P.sun))} 부산 광고<span class="sub">Monday 에서 읽기만 합니다</span></b>${xBtn}</div>`;
+  const head = `<div class="phead">${back}<b>${esc(mdd(P.sun))} 부산 광고</b>${xBtn}</div>`;   // 'Monday 에서 읽기만 합니다' 는 맨 아래 오른쪽으로 (1117-Z 4 F)
   if (P.state === 'busy') return head + `<div class="pbody"><p class="note" style="margin:0">${esc(P.msg || 'Monday 에서 광고를 읽는 중입니다')}</p></div>`;
   if (P.state === 'need') return head + `<div class="pbody"><p class="note" style="margin:0">${P.bad ? '<b>열쇠가 맞지 않습니다.</b> 새 열쇠를 넣어 주세요.<br>' : '처음 한 번 Monday 열쇠를 넣습니다.<br>'}· Monday 오른쪽 위 내 사진 → <b>개발자</b> → 왼쪽 <b>API 토큰</b> → '개인 토큰' <b>복사</b><br>· 열쇠는 <b>서버에만</b> 맡깁니다 — 이 폰 · 교역자에게 가지 않습니다.<br>· 광고를 <b>읽기만</b> 합니다.</p>
       <div class="addrow"><input class="inp" id="mon-key" type="password" placeholder="Monday 열쇠 붙여 넣기" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" data-act="adskey">넣기</button></div></div>`;
@@ -4121,10 +4184,40 @@ function paneAds() {
     <p class="adwho"><span>1부 · 2부</span>${esc(opt.who || '교역자 미정')}</p>
     <section class="adcard vid"><h4>영상 광고</h4>${video}</section>
     <section class="adcard spk"><h4>구두 광고</h4>${spoken}</section>
-    ${P.showText ? `<textarea class="inp" id="ads-text" readonly style="min-height:200px;font-size:13px">${esc(adsText(a, opt))}</textarea>` : ''}
-    <div class="btnrow"><button class="btn" data-act="adscopy">카톡용 복사</button><button class="btn ghost" data-act="adsload">다시 읽기</button><span class="spacer"></span><span class="tiny muted" id="ads-when">${esc(when)}</span></div>
-    ${isStaff() ? '' : '<button class="txtbtn" data-act="adsoff" style="justify-self:start">Monday 연결 끊기</button>'}
+    ${adsTxCard(P, a, opt)}
+    <div class="adfoot"><span>Monday 에서 읽기만 합니다</span><span id="ads-when">${esc(when)}</span><button class="txtbtn" data-act="adsload">다시 읽기</button>${isStaff() ? '' : '<button class="txtbtn" data-act="adsoff">Monday 연결 끊기</button>'}</div>
   </div>`;
+}
+/* 전달용 텍스트 카드 (1117-Z 4, HB 사진 11/18 I · J · K) — 카톡 글을 말풍선에 미리 보이고 오른쪽 위 아이콘 셋:
+   ↻ 원래 글로(고친 글일 때만) · ✎ 고치기(누르면 ✓ — 다 고쳤음) · 복사. 고치기 · 되돌리기는 상영을 고르는 사람만(bsCan), 복사는 모두.
+   고친 글은 책의 adtx(다른 기기 · 교역자 공통, HB 11/18) — 칸을 벗어날 때(change) 조용히 저장, ✓ 는 보기로 돌아감. */
+const ADTX_ICO = {
+  reset: '<svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.7h3.7"/></svg>',
+  edit: '<svg viewBox="0 0 24 24"><path d="M15.5 4.5l4 4L9 19l-4.8.8L5 15z"/><path d="M13.5 6.5l4 4"/></svg>',
+  done: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  copy: '<svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="12" rx="2"/><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/></svg>' };
+function adsTxNow(P) { const a = P && P.data; if (!a) return { text: '', edited: false }; return adtxPick(S.book, P.sun, adsText(a, adsOpt(P.sun))); }
+function adsTxCard(P, a, opt) {
+  const cur = adsTxNow(P), can = bsCan(P.sun), ed = !!P.txEdit && can;
+  const ib = (act, ico, label, off) => `<button class="adtxb" data-act="${act}" aria-label="${label}" title="${label}"${off ? ' disabled' : ''}>${ADTX_ICO[ico]}</button>`;
+  const icons = (can ? ib('adtxreset', 'reset', '원래 글로 되돌리기', !cur.edited || ed) + ib('adtxedit', ed ? 'done' : 'edit', ed ? '다 고쳤음' : '고치기') : '') + ib('adscopy', 'copy', '복사');
+  const body = ed ? `<textarea class="adtxed" id="ads-tx" spellcheck="false" aria-label="전달용 텍스트 고치기">${esc(P.txDraft != null ? P.txDraft : cur.text)}</textarea>`
+    : `<pre class="adtxpre" id="ads-text">${esc(cur.text)}</pre>`;
+  return `<section class="adcard txt"><h4>전달용 텍스트</h4>
+    <div class="adtxbub${cur.edited ? ' edited' : ''}${ed ? ' editing' : ''}"><div class="adtxi">${icons}</div>${body}</div>
+    ${cur.edited && !ed ? '<p class="adhint adtxnote">고친 글입니다 · ↻ 를 누르면 Monday 내용으로 만든 글로 돌아갑니다</p>' : ''}
+  </section>`;
+}
+// 고친 글 저장 — 만든 글과 같거나 비면 '원래 글로'(지우기 표지). 다시 그리지 않는다(치는 중 · 칸을 벗어나는 중일 수 있다)
+function adtxSave(sun, text) {
+  if (!bsCan(sun)) return false;
+  const P = S.pane, auto = P && P.kind === 'ads' && P.sun === sun && P.data ? adsText(P.data, adsOpt(sun)) : '';
+  let t = adtxClean(text); if (!t.trim() || t === auto) t = '';
+  if (t === adtxOf(S.book, sun)) return false;
+  if (isStaff()) { const v = bsVisit(sun); if (!v) return false; staffWrite('tx', v.id, t); return true; }
+  const now = Date.now();
+  if (t) put(S.book, 'adtx', { id: adtxId(sun), sun, tx: t }, byNow(), now); else drop(S.book, 'adtx', adtxId(sun), byNow(), now);
+  saveBook(); return true;
 }
 // 그린 뒤: 3줄을 넘는 글에만 '더 보기' · 상영 말풍선 꼬리를 앞 단추에서 옮겨 온다 (접힌 묶음 안은 펼칠 때 다시)
 function adsFit(root) {
@@ -4343,6 +4436,8 @@ document.addEventListener('click', (e) => {
   if (d.act === 'adskey') return adsKey();
   if (d.act === 'adsoff') return adsOff();
   if (d.act === 'adscopy') return adsCopy();
+  if (d.act === 'adtxedit') return adtxEdit();
+  if (d.act === 'adtxreset') return adtxReset();
   if (d.adsbs) return adsBs(d.adsbs);
   if (d.act === 'adsfold') { const dt = t.closest('details.adnotes'); if (!dt || !S.pane || S.pane.kind !== 'ads') return;   // 펼친 글 맨 아래 꺾쇠 — 접고 기억도 함께
     S.anchor = null; dt.open = false; S.pane.open = Object.assign({}, S.pane.open, { [dt.dataset.ni]: false });
@@ -4351,7 +4446,7 @@ document.addEventListener('click', (e) => {
     const lim = (hd ? hd.getBoundingClientRect().bottom : pn.getBoundingClientRect().top) + 8, y = sm.getBoundingClientRect().top;
     if (y < lim) pn.scrollTo({ top: pn.scrollTop - (lim - y), behavior: quiet() ? 'auto' : 'smooth' }); return; }
   if (d.act === 'admore' && S.pane && S.pane.kind === 'ads') { S.pane.more = Object.assign({}, S.pane.more, { [d.k]: !(S.pane.more || {})[d.k] }); return renderPane(); }
-  if (d.act === 'adsback') { const bk = S.pane && S.pane.back; if (bk) { S.pane = bk; return renderPane(); } return closePane(); }
+  if (d.act === 'adsback') { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); const bk = S.pane && S.pane.back; if (bk) { S.pane = bk; return renderPane(); } return closePane(); }
   if (d.act === 'mailscan') return mailScan();
   if (d.act === 'mailconnect') return mailConnect();
   if (d.act === 'mailoff') return mailOff();
@@ -4476,7 +4571,7 @@ function staffOk(t, d) {
   }
   if (t.closest('#pane') && S.pane && (S.pane.kind === 'myavail' || S.pane.kind === 'namefmt' || S.pane.kind === 'home' || S.pane.kind === 'alset')) return true;   // 기간 설정(2b)도 자기 계정 것
   if (t.closest('#pane') && S.pane && S.pane.kind === 'slotv') return d.act === 'closepane' || d.act === 'myavail';
-  if (t.closest('#pane') && S.pane && S.pane.kind === 'ads') return ['closepane', 'adsload', 'adscopy', 'adsback', 'admore', 'adsfold'].includes(d.act) || (!!d.adsbs && bsCan(S.pane.sun));   // 보기 · 더 보기 · 복사 + 부산 상영 고르기는 그 주일 부산에 내려가는 교역자만(C4b) — 열쇠 넣기 · 끊기는 HB
+  if (t.closest('#pane') && S.pane && S.pane.kind === 'ads') return ['closepane', 'adsload', 'adscopy', 'adsback', 'admore', 'adsfold'].includes(d.act) || ((!!d.adsbs || d.act === 'adtxedit' || d.act === 'adtxreset') && bsCan(S.pane.sun));   // 보기 · 더 보기 · 복사 + 부산 상영 고르기는 그 주일 부산에 내려가는 교역자만(C4b) — 열쇠 넣기 · 끊기는 HB
   if (d.tab || d.mtab || d.week !== undefined || d.month !== undefined || d.mview || d.theme !== undefined || d.calf || d.ext || d.me || d.mwk || d.calday || d.gowk || d.img || d.visit || d.pick || d.acat || d.al !== undefined || d.altab || d.alpre || d.alwset || d.alcut || d.alday || d.alpdel !== undefined) return true;   // 알림 판 갈래 · 줄 (1117-Z 2c) · 기간 (2b — 자기 계정의 ui)
   return !!d.act && STAFF_ACTS.has(d.act);
 }
