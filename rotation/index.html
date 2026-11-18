@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-15 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) -->
+<!-- 교역자 로테이션 v. 26-1118-16 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -111,7 +111,6 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .nav .wseg button{width:27px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--tx3)}
 .nav .wseg button[aria-pressed="true"]{background:var(--paper);color:var(--tx)}
 .wseg svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.4}
-.wseg button[aria-pressed="true"] svg{fill:currentColor}
 @media (max-width:430px){.nav b{min-width:128px}}
 .bsrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 8px;width:100%;text-align:left;margin-top:7px;padding:8px 10px;border-radius:10px;background:var(--bs-soft);font-size:14px}
 .bsrow > b{color:var(--bs);font-weight:600}
@@ -730,7 +729,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). visits[].hot : 메모 '중요'(빨강, 목록에도) · note : 메모 '일반'(판 안에서만, 1117-Z 5b). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-15';
+const APP_VERSION = 'v. 26-1118-16';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -2828,7 +2827,7 @@ function viewWeek() {
     const d0 = addDays(sun, -2), span = Array.from({ length: 10 }, (_, k) => addDays(d0, k)), d9 = span[9];
     const bars = plan.stays.map(v => { const ds = stayDates(v).filter(x => x >= d0 && x <= d9).sort(); return ds.length ? { v, a: span.indexOf(ds[0]) + 1, b: span.indexOf(ds[ds.length - 1]) + 2, end: stayDates(v).slice().sort().pop() < today } : null; }).filter(Boolean).sort((x, y) => x.a - y.a);
     const sc = (d) => { const c = [dowOf(d) === 0 ? 'su' : dowOf(d) === 5 ? 'fr' : '', d === today ? 'now' : ''].filter(Boolean).join(' '); return c ? ` class="${c}"` : ''; };
-    const vrow = (v) => { const sub = [stayPeriod(v), stayWhole(v) ? '' : dayS(sortDays(v.date, v.days || defaultDays(v.date))), travelT(v), (v.mates || []).length ? '동행 ' + mateText(S.book, v) : '', meetText(v.meet)].filter(Boolean), red = [issuesT(v), v.hot || ''].filter(Boolean).join(' · ');   // 특이사항 · 중요 메모만 빨갛게(일반 메모는 판 안에서, 1117-Z 5b)
+    const vrow = (v) => { const sub = [stayPeriod(v), stayWhole(v) ? '' : dayS(sortDays(v.date, v.days || defaultDays(v.date))), travelT(v), (v.mates || []).length ? mateText(S.book, v) + ' 동행' : '', meetText(v.meet)].filter(Boolean), red = [issuesT(v), v.hot || ''].filter(Boolean).join(' · ');   // 특이사항 · 중요 메모만 빨갛게(일반 메모는 판 안에서, 1117-Z 5b)
       return `<button class="wv" data-visit="${esc(v.id)}"><span>${esc(whoText(S.book, v.who, '', pm)) || '<span class="muted">교역자 미정</span>'}${ttlP(v)}</span><span>${esc(stayText(v)) || '<span class="muted">숙소 —</span>'} ${bsP(v)} ${badP(v)} ${stP(v)}<small>${esc(sub.join(' · '))}${red ? `${sub.length ? ' · ' : ''}<span class="vred">${esc(red)}</span>` : ''}</small>${leadChips(v)}</span></button>`; };
     body = `<div class="card"><div class="wh sun"><b>분당</b></div>
       <div class="wtab-x"><table class="wtab"><thead><tr><th></th>${rows.map(r => r.h.th).join('')}</tr></thead><tbody>${['설교', '헌금', '인도'].map((lab, i) => rows.some(r => r.h.c[i]) ? `<tr><td class="wr">${lab}</td>${rows.map(r => `<td>${r.h.c[i] || '<span class="muted">–</span>'}</td>`).join('')}</tr>` : '').join('')}</tbody></table></div></div>
@@ -3207,9 +3206,9 @@ function busanRow(v, cls, pm, bad, bsp) {
   const heads = cols.map((d, i) => { const c = DOW[dowOf(d)], on = ds.has(d);
     return `<span class="${['vdl', on ? 'on' : 'off', on && !ds.has(cols[i - 1]) ? 'first' : '', on && !ds.has(cols[i + 1]) ? 'last' : '', on && c !== '토' && c !== '일' ? 'x' : ''].filter(Boolean).join(' ')}" style="grid-column:${i + 1}">${c}</span>`; }).join('');
   const body = items.map((it, k) => it.us.map(h => h.replace('<span class="du ', `<span style="grid-column:${it.i + 1}/${span(k)}" class="du `)).join('')).join('');
-  const st = stayState(v), stays = v.stay.filter(x => x.status !== 'cancel').map(x => esc(stayLineOf(v, x)) + (staySub(x) ? ' (' + staySubH(x) + ')' : ''));
+  const st = stayState(v), stays = v.stay.filter(x => x.status !== 'cancel').map(x => [esc(stayLineOf(v, x)), staySubH(x)].filter(Boolean).join(' · ').split(' · ').join('<br>'));
   const red = (v.issues || []).map(x => (x.cat ? x.cat + ': ' : '') + x.text).concat(v.hot ? [v.hot] : []).filter(Boolean);
-  const gray = [v.meet ? meetText(v.meet) : '', v.travel.length ? v.travel.map(t => (t.dir === 'down' ? '↓' : '↑') + [t.mode, timeS(t.time)].filter(Boolean).join(' ')).join(' ') : '', (v.mates || []).length ? '동행 ' + mateText(S.book, v) : '', v.note || ''].filter(Boolean);
+  const gray = [v.meet ? meetText(v.meet) : '', v.travel.length ? v.travel.map(t => (t.dir === 'down' ? '↓' : '↑') + [t.mode, timeS(t.time)].filter(Boolean).join(' ')).join(' ') : '', (v.mates || []).length ? mateText(S.book, v) + ' 동행' : '', v.note || ''].filter(Boolean);
   const dw = dowOf(v.date) === 0 ? '주일' : DOW[dowOf(v.date)];
   return `<button class="vrow${cls}" data-visit="${esc(v.id)}"><span class="vd"><b>${md(v.date)}</b><span class="dw${dowOf(v.date) === 0 ? '' : ' x'}">${dw}</span></span>
     <span class="vwho"><span>${esc(whoText(S.book, v.who, '', pm)) || '<span class="muted" style="font-weight:400">비어 있음</span>'}</span>${v.title ? `<span class="vttl">${esc(v.title)}</span>` : ''}${bad ? '<span class="vwarn">겹침</span>' : ''}${bsp || ''}</span>
@@ -3518,7 +3517,7 @@ function newVisit(date) {
 const stPillOf = (st) => `<span class="pill${st.status === 'done' ? ' ok' : ''}">${stayStName(st)}</span>`;   // 호텔: 예약 전 · 예약 완료 / 댁: 대화 전 · 대화 중 · 대화 완료 (1116-2 C)
 function stayLineOf(v, s) { return [(s.for ? s.for + ' ' : '') + (s.name || (s.kind === 'home' ? '성도님 댁' : '호텔')), (s.nights || autoNights(v)) + '박', s.kind === 'hotel' && s.cost ? won(s.cost) : ''].filter(Boolean).join(' · '); }
 function staySub(s) { if (!stayHotel(s)) return '';   // 성도님 댁은 예약 · 취소 기한이 없다
-  return [s.ref ? '예약 ' + s.ref : '', s.cancelBy ? '취소 ' + mdd(s.cancelBy) + (s.cancelAt ? ' ' + s.cancelAt : '') + '까지' : s.nofree ? '환불 불가' : '', (s.imgs || []).length ? '예약 화면 ' + s.imgs.length + '장' : ''].filter(Boolean).join(' · '); }
+  return [s.cancelBy ? '취소 ' + mdd(s.cancelBy) + (s.cancelAt ? ' ' + s.cancelAt : '') + '까지' : s.nofree ? '환불 불가' : '', (s.imgs || []).length ? '예약 화면 ' + s.imgs.length + '장' : ''].filter(Boolean).join(' · '); }
 // 같은 글을 화면용(HTML)으로 — 취소 기한이 7일 안(오늘 포함, 예약 완료 호텔)이면 그 부분만 빨강, 평소엔 지금 색 (1117-Z 1-1 · cancelSoon)
 function staySubH(s) { const t = esc(staySub(s)); if (!t || !cancelSoon(s, todayYmd())) return t;
   const c = esc('취소 ' + mdd(s.cancelBy) + (s.cancelAt ? ' ' + s.cancelAt : '') + '까지'); return t.replace(c, `<span class="badc">${c}</span>`); }
