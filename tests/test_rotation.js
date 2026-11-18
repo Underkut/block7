@@ -809,7 +809,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉚ 다시 그릴 때 \'더 보기\' 높이를 맞춘 뒤 보던 자리를 되돌린다 (아이패드에서 판이 툭 튀던 것, HB 11/16 A → B)', /if \(S\.pane\.kind === 'ads'\) adsFit\(el\);\n  el\.scrollTop = top;/.test(HTML), true);
   sc.eq('㉚ 새로 읽은 것이 같으면 다시 그리지 않고 \'읽은 때\' 만 바꾼다', /JSON\.stringify\(Q\.data\) === JSON\.stringify\(o\)\) \{ Object\.assign\(Q, \{ at, stale: false \}\); const w = \$\('#ads-when'\)/.test(HTML), true);
   sc.eq('㉚ 펼친 글 맨 아래 꺾쇠로 접는다 · 펼침 기억도 함께 · 교역자도', /data-act="adsfold" aria-label="접기"/.test(HTML) && /dt\.open = false; S\.pane\.open = Object\.assign\(\{\}, S\.pane\.open, \{ \[dt\.dataset\.ni\]: false \}\)/.test(HTML) && /'admore', 'adsfold'\]\.includes\(d\.act\)/.test(HTML), true);
-  sc.eq('㉚ 카드 머리 색띠: 영상 = 파랑 · 구두 = 노랑 (라이트 · 다크 모두 값)', /class="adcard vid"><h4>영상 광고/.test(HTML) && /class="adcard spk"><h4>구두 광고/.test(HTML) && (HTML.match(/--adv-band:/g) || []).length === 3 && (HTML.match(/--ads-band:/g) || []).length === 3, true);
+  sc.eq('㉚ 카드 머리 색띠: 영상 = 파랑 · 구두 = 초록 · 전달용 텍스트 = 노랑 (라이트 · 다크 모두 값, HB 11/18)', /class="adcard vid"><h4>영상 광고/.test(HTML) && /class="adcard spk"><h4>구두 광고/.test(HTML) && (HTML.match(/--adv-band:/g) || []).length === 3 && (HTML.match(/--ads-band:/g) || []).length === 3 && (HTML.match(/--adt-band:/g) || []).length === 3 && /\.adcard\.txt h4\{background:var\(--adt-band\)/.test(HTML), true);
   sc.eq('㉚ 링크 규칙: 짧은 주소는 그대로(https 빼고) · 긴 주소(30자 넘음)는 사이트 이름만', ['https://youtu.be/AbCdEfGhIjk', 'https://www.youtube.com/watch?v=AbCdEfGhIjk&list=PL0', 'https://drive.google.com/drive/folders/1AbCdEfGh'].map(A.adsLinkLabel),
     ['youtu.be/AbCdEfGhIjk', 'youtube.com', 'drive.google.com']);
   sc.eq('㉚ 글 조각: 주소 · 끝 문장부호는 글로 · 멘션(앞이 빈칸 · 줄 처음) · 메일 주소는 멘션 아님',

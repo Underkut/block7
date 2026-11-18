@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-9 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 -->
+<!-- 교역자 로테이션 v. 26-1118-10 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -37,7 +37,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --ok:#2e7d5b; --ok-soft:rgba(46,125,91,.11); --warn:#a87a06; --warn-soft:rgba(168,122,6,.13);
   --ll:#a8800f; --ll-soft:rgba(190,146,20,.15);   /* 라이프라인 — 노랑 ~ 황토 (HB 11/16) */
   --bad:#b83a3a; --bad-soft:rgba(184,58,58,.11); --on:#fff;
-  --adv-band:rgba(47,111,181,.13); --adv-tx:#2a5f9c; --ads-band:rgba(236,178,40,.24); --ads-tx:#8a6406;   /* 광고 판 카드 머리 — 영상 = 옅은 파랑 · 구두 = 옅은 노랑 (HB 11/16) */
+  --adv-band:rgba(47,111,181,.13); --adv-tx:#2a5f9c; --ads-band:rgba(46,125,91,.15); --ads-tx:#2a6d4f; --adt-band:rgba(236,178,40,.24); --adt-tx:#8a6406; --adt-line:rgba(200,150,30,.45);   /* 광고 판 카드 머리 — 영상 = 옅은 파랑 · 구두 = 옅은 노랑 (HB 11/16) */
   --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -47,7 +47,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --fri:#b393ec; --fri-soft:rgba(179,147,236,.14); --wed:#7fb0e8; --wed-soft:rgba(127,176,232,.14); --tue:#9aa8bb; --tue-soft:rgba(154,168,187,.13); --lead:#e58fd0; --lead-soft:rgba(229,143,208,.14); --sp:#eb9a82; --sp-soft:rgba(235,154,130,.14); --hl:rgba(240,196,90,.22); --hl2:rgba(240,196,90,.09);
   --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13); --warn:#e2b74a; --warn-soft:rgba(226,183,74,.14); --ll:#e7c25c; --ll-soft:rgba(231,194,92,.15);
   --bad:#ea8080; --bad-soft:rgba(234,128,128,.13); --on:#121417; color-scheme:dark;
-  --adv-band:rgba(127,176,232,.16); --adv-tx:#9cc3ef; --ads-band:rgba(240,196,90,.15); --ads-tx:#e8c46a}}
+  --adv-band:rgba(127,176,232,.16); --adv-tx:#9cc3ef; --ads-band:rgba(127,201,165,.16); --ads-tx:#8fd4b0; --adt-band:rgba(240,196,90,.15); --adt-tx:#e8c46a; --adt-line:rgba(226,183,74,.4)}}
 :root[data-theme="dark"]{
   --bg:#121417; --paper:#1a1d21; --s1:#1e2125; --s2:#262a2f; --line:#2c3036; --line2:#3d424a;
   --tx:#e6e8eb; --tx2:#a6adb6; --tx3:#7a818a;
@@ -55,7 +55,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --fri:#b393ec; --fri-soft:rgba(179,147,236,.14); --wed:#7fb0e8; --wed-soft:rgba(127,176,232,.14); --tue:#9aa8bb; --tue-soft:rgba(154,168,187,.13); --lead:#e58fd0; --lead-soft:rgba(229,143,208,.14); --sp:#eb9a82; --sp-soft:rgba(235,154,130,.14); --hl:rgba(240,196,90,.22); --hl2:rgba(240,196,90,.09);
   --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13); --warn:#e2b74a; --warn-soft:rgba(226,183,74,.14); --ll:#e7c25c; --ll-soft:rgba(231,194,92,.15);
   --bad:#ea8080; --bad-soft:rgba(234,128,128,.13); --on:#121417; color-scheme:dark;
-  --adv-band:rgba(127,176,232,.16); --adv-tx:#9cc3ef; --ads-band:rgba(240,196,90,.15); --ads-tx:#e8c46a}
+  --adv-band:rgba(127,176,232,.16); --adv-tx:#9cc3ef; --ads-band:rgba(127,201,165,.16); --ads-tx:#8fd4b0; --adt-band:rgba(240,196,90,.15); --adt-tx:#e8c46a; --adt-line:rgba(226,183,74,.4)}
 *{box-sizing:border-box}
 /* ⚠️ 페이지는 옆으로 움직이지 않는다 (아이폰에서 탭을 밀다 왼쪽이 잘린 채 남던 일, 11/14) */
 html{overflow-x:hidden}   /* ⚠️ touch-action 을 여기 걸면 표 안 가로 스크롤까지 막힌다(11/14) — 옆 밀림은 overflow · 스크롤 되돌리기로 막는다 */
@@ -537,9 +537,9 @@ table.mx8 .f.bad{background:var(--bad);color:var(--on);box-shadow:none}
 .adcard h4{margin:-12px -14px 0;padding:8px 14px;border-radius:13px 13px 0 0;font-size:13px;font-weight:500;color:var(--tx3);letter-spacing:.02em}
 .adcard.vid h4{background:var(--adv-band);color:var(--adv-tx)}.adcard.spk h4{background:var(--ads-band);color:var(--ads-tx)}
 /* 전달용 텍스트 (1117-Z 4) — 말풍선 + 오른쪽 위 아이콘 셋 · 맨 아래 오른쪽 작은 글 줄 */
-.adcard.txt h4{background:var(--s1);color:var(--tx2)}
-.adtxbub{position:relative;border:1px solid var(--line2);border-radius:16px 16px 4px 16px;background:var(--bg);padding:8px 12px 12px;display:grid;gap:2px;min-width:0;transition:border-color .2s}
-.adtxbub.editing{border-color:var(--tx2)}
+.adcard.txt h4{background:var(--adt-band);color:var(--adt-tx)}
+.adtxbub{position:relative;border:1px solid var(--adt-line);border-radius:16px 16px 4px 16px;background:var(--bg);padding:8px 12px 12px;display:grid;gap:2px;min-width:0;transition:border-color .2s}
+.adtxbub.editing{border-color:var(--adt-tx)}
 .adtxi{display:flex;justify-content:flex-end;gap:2px;margin:-2px -6px 0 0}
 .adtxb{width:32px;height:32px;display:grid;place-items:center;color:var(--tx2);border-radius:8px}
 .adtxb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -674,7 +674,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-9';
+const APP_VERSION = 'v. 26-1118-10';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -1199,7 +1199,7 @@ function pickBook(local, cloud) {
    book = R1(v. 26-1114-1) · b2 = R2 ~ v. 26-1114-4 · b3 = v. 26-1114-5 부터(성도 인도자 · 숙소 취소 기한 · 사진 · 요일 하나씩).
    읽을 때는 모두 합친다(맞추기는 지우지 않으니 옛 칸에만 있는 것도 살아난다). 쓸 때는 WRITE_FIELD 하나 + 옛 칸은 지운다(OLD_FIELDS) —
    문서 한 장 1MB 에 같은 책이 여러 벌 쌓이지 않게. 낡은 앱이 다시 옛 칸에 써도 다음에 또 합치고 지운다. */
-const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11', 'b12', 'b13', 'b14', 'b15'], WRITE_FIELD = 'b16';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6) · b8 = v. 26-1116-3 부터(부산 주일예배 · LL 인도 — R11) · b9 = v. 26-1116-4 부터(인도 세 갈래 lead — R12 A) · b10 = v. 26-1116-11 부터(부산 상영 shows — R12 C4b) · b11 = v. 26-1117-1 부터(동행 mates · 모임 meet — 1116-2 B) · b12 = v. 26-1117-2 부터(숙소 상태 '예약 전 / 대화 전' pre — 1116-2 C, 낡은 앱은 pre 를 '미정' 으로 떨군다) · b13 = v. 26-1117-4 부터(부산 일정 이름 title · 더한 예배 evs — 1116-2 D) · b14 = v. 26-1117-6 부터(분당 특별예배 specs · 그 자리 '날짜|xk|역할' — 1116-2 E, 낡은 앱은 둘 다 떨군다) · b15 = v. 26-1118-4 부터(주보 담당 people[].bul · buls — 1117-Z 2c) · b16 = v. 26-1118-9 부터(전달용 텍스트 adtx — 1117-Z 4)
+const OLD_FIELDS = ['book', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11', 'b12', 'b13', 'b14', 'b15'], WRITE_FIELD = 'b16';   // b7 = v. 26-1115-1 부터(칸마다 고친 때 · 가능 일정 — R6) · b8 = v. 26-1116-3 부터(부산 주일예배 · LL 인도 — R11) · b9 = v. 26-1116-4 부터(인도 세 갈래 lead — R12 A) · b10 = v. 26-1116-11 부터(부산 상영 shows — R12 C4b) · b11 = v. 26-1117-1 부터(동행 mates · 모임 meet — 1116-2 B) · b12 = v. 26-1117-2 부터(숙소 상태 '예약 전 / 대화 전' pre — 1116-2 C, 낡은 앱은 pre 를 '미정' 으로 떨군다) · b13 = v. 26-1117-4 부터(부산 일정 이름 title · 더한 예배 evs — 1116-2 D) · b14 = v. 26-1117-6 부터(분당 특별예배 specs · 그 자리 '날짜|xk|역할' — 1116-2 E, 낡은 앱은 둘 다 떨군다) · b15 = v. 26-1118-4 부터(주보 담당 people[].bul · buls — 1117-Z 2c) · b16 = v. 26-1118-10 부터(전달용 텍스트 adtx — 1117-Z 4)
 function pickDoc(local, doc) {
   const cur = doc && doc[WRITE_FIELD] ? doc[WRITE_FIELD] : null;
   const olds = OLD_FIELDS.map(k => doc && doc[k]).filter(Boolean);
