@@ -1503,7 +1503,15 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const P = ['2026-11-08', '2026-10-25', '2026-10-04', '2026-08-30', '2025-12-28'].map(date => ({ date }));
   sc.eq('㊻ 달마다 묶음 · 지난 일정이 있는 달만 · 오래된 달이 앞(위로 더해짐)', pastMonths(P).map(([k, l]) => k + ':' + l.map(v => v.date.slice(8)).join(',')), ['2025-12:28', '2026-08:30', '2026-10:04,25', '2026-11:08']);
   const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastMonths('));
-  sc.eq('㊻ 단추: 한 달 더 보기 · 한 달 접기 · 해가 바뀌면 가로띠', [/data-act="pastmore">한 달 더 보기/.test(vb), /data-act="pastless">한 달 접기/.test(vb), /class="yband">\$\{y\}년/.test(vb), /pm2\.slice\(pm2\.length - n\)/.test(vb)], [true, true, true, true]);
+  sc.eq('㊻ 단추: 처음엔 글자 · 펴면 세 칸(+ 한 달 더 · − 한 달 접기 · ↺ 모두 접기) · 해가 바뀌면 가로띠', [/data-act="pastmore">지난 부산 일정 보기/.test(vb), /class="pseg"[^`]*data-act="pastmore"[^`]*data-act="pastless"[^`]*data-act="pastreset"/.test(vb), /aria-label="모두 접기"/.test(vb), /class="yband">\$\{y\}년/.test(vb), /pm2\.slice\(pm2\.length - n\)/.test(vb)], [true, true, true, true, true]);
+}
+
+// ㊿ 1118 — 모두 접기 · 달력표 한 칸에 여러 분 · 새 아이콘
+{
+  sc.eq('㊿ 모두 접기는 S.pastN = 0 으로(처음 화면) · 교역자도 누를 수 있음', [/function pastReset\(\)[^\n]*S\.pastN = 0; render\(\)/.test(HTML), /if \(d\.act === 'pastreset'\) return pastReset\(\)/.test(HTML), /STAFF_ACTS = new Set\(\[[^\]]*'pastreset'/.test(HTML)], [true, true, true]);
+  const ca = HTML.slice(HTML.indexOf('const cellAt = '), HTML.indexOf('const cell = (p, svc'));
+  sc.eq('㊿ 칸에 여러 분이면 자르지 않고 줄마다 한 분(nstack) · 한 분이면 예전처럼', [/ns\.length > 1 \? `<span class="nstack">/.test(ca), /esc\(short\(t\)\)/.test(ca), /\.nstack>span\+span\{border-top/.test(HTML)], [true, true, true]);
+  sc.eq('㊿ 아이콘 새로 받기(?v=2)', [/href="favicon\.png\?v=2"/.test(HTML), /href="apple-touch-icon\.png\?v=2"/.test(HTML)], [true, true]);
 }
 
 // ㊼ 부산 광고 판 다듬기 (1117-Z 4, HB 사진 11/18 E ~ K) — 지어낸 이름 · 이메일
