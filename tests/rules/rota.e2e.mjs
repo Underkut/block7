@@ -417,6 +417,11 @@ console.log('⑯ (1117-Z 2) 알림 판 — HB 만 · 줄을 누르면 그 판 ·
   ok('⑯ HB 이번 주 맨 위에 판: 갈래 넷 · 처음엔 급함 · 알림 호텔 취소 기한(D-2)', p1 && [p1.chips, p1.sel, p1.rows.some(t => /알림 호텔 취소 기한 18:00/.test(t) && /D-2/.test(t))], [['급함', '부산', '분당', '확인'], '급함', true]);
   const tabsSame = await hb.evaluate(() => ['month', 'busan', 'people'].map(t => { PREF.tab = t; render(); return document.querySelectorAll('#panel .apanel').length; }));
   ok('⑯ 네 탭 모두 같은 판 하나(달력표 · 부산 · 사람에도)', tabsSame, [1, 1, 1]);
+  // 줄이 많아도 줄끼리 겹치지 않는다(목록 높이를 막아도 줄은 눌리지 않고 목록이 굴러간다 — v. 26-1118-2 폰에서 겹쳤음)
+  const ov = await hb.evaluate(() => { PREF.tab = 'busan'; S.acat = 'bd'; render(); const rs = [...document.querySelectorAll('#panel .arow')].map(r => [r.offsetTop, r.offsetHeight, r.querySelector('.am').offsetHeight + 12]);   // 줄 높이 ≥ 글 높이 + 위아래 여백(6 + 6)
+    return { n: rs.length, overlap: rs.some((r, i) => i && r[0] < rs[i - 1][0] + rs[i - 1][1]), squeezed: rs.some(r => r[1] < r[2]) }; });
+  ok('⑯ 줄이 많아도 줄끼리 겹치지 않고 글자가 줄 밖으로 넘치지 않는다', [ov.n > 6, ov.overlap, ov.squeezed], [true, false, false]);
+  await hb.evaluate(() => { S.acat = ''; PREF.tab = 'week'; render(); });
   ok('⑯ 옛 알림 자리(겹침 목록 · 챙길 것 · 그다음 줄)는 없다', await hb.evaluate(() => { PREF.tab = 'week'; render(); return document.querySelectorAll('#panel > .alerts, #panel .wafter').length; }), 0);
   // 줄을 누르면 그 판 — 숙소 판의 그 숙소, 취소 기한 칸(빨간 테두리)
   await hb.click('#panel .arow:has-text("알림 호텔")'); await sleep(400);
