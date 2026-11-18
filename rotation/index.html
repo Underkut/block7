@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-18 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) -->
+<!-- 교역자 로테이션 v. 26-1118-19 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -474,7 +474,7 @@ table.bt td .cb:hover{background:var(--s2);border-radius:6px}
 .mghd{display:grid;place-items:center;width:34px;height:40px;color:var(--tx3);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .mgitem.lift .mghd{cursor:grabbing;color:var(--tx)}
 .mghd svg{width:16px;height:16px;fill:currentColor;stroke:none}
-.mgmore{display:grid;grid-template-columns:auto 1fr;gap:4px;align-items:center}
+.mgmore{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;display:grid;grid-template-columns:auto 1fr;gap:4px;align-items:center}
 .mgmorel{display:flex;align-items:center;gap:10px;color:var(--tx3);font-size:12.5px;padding-right:2px}
 .mgmorel::before,.mgmorel::after{content:"";flex:1;border-top:1.5px dashed var(--line2)}
 .mgmorel span{border:1px solid var(--line2);border-radius:999px;padding:2px 11px;background:var(--paper)}
@@ -732,7 +732,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). visits[].hot : 메모 '중요'(빨강, 목록에도) · note : 메모 '일반'(판 안에서만, 1117-Z 5b). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-18';
+const APP_VERSION = 'v. 26-1118-19';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -3855,9 +3855,9 @@ var MG = { el: null };   // var: renderPane 이 먼저 불려도 안전하게
 function mgEnd() { const el = MG.el; MG.el = null; if (el) { el.classList.remove('lift'); el.style.transform = ''; } }
 function mgInit() {
   document.addEventListener('pointerdown', e => {
-    const tg = e.target.closest && e.target.closest('#mglist .mghd, #mglist .mgname'); if (!tg || isStaff() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const tg = e.target.closest && e.target.closest('#mglist .mghd, #mglist .mgname, #mglist .mgmore'); if (!tg || isStaff() || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const el = tg.closest('.mgitem'); if (!el) return; mgEnd(); clearTimeout(MG.t); MG.pend = null;
-    if (tg.classList.contains('mghd')) { e.preventDefault(); return mgGrab(el, tg, e); }
+    if (tg.classList.contains('mghd') || tg.classList.contains('mgmore')) { e.preventDefault(); return mgGrab(el, tg, e); }
     // 줄 가운데: 손가락은 0.45초 꾹 눌러야 들린다(숙소 알약 spInit 과 같다) · 그냥 누르면 고치기 열기 · 빨리 밀면 화면 스크롤 · 마우스는 8px 끌면
     MG.pend = { el, tg, pid: e.pointerId, x0: e.clientX, y0: e.clientY, mouse: e.pointerType === 'mouse', e };
     if (!MG.pend.mouse) MG.t = setTimeout(() => { const p = MG.pend; if (!p) return; MG.pend = null; MG.eat = Date.now(); mgGrab(p.el, p.tg, p.e); }, 450);
