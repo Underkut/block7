@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1118-6 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) -->
+<!-- 교역자 로테이션 v. 26-1118-7 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 단추 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -596,6 +596,17 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 .sheet .sh{display:flex;align-items:center}
 .sheet .sh b{flex:1;text-align:center;font-weight:500}
 .sheet .gap{width:36px}
+/* 메뉴 세 탭 (1117-Z 3) — 보기 · 계정 · 개발. 제목 자리에 탭, 판은 손가락을 따라 넘어간다 */
+.mtabs{flex:1;display:flex;justify-content:center;position:relative;min-width:0}
+.mtab{padding:6px 12px 8px;font-size:15px;color:var(--tx3)}
+.mtab.on{color:var(--tx);font-weight:500}
+.mbar{position:absolute;bottom:0;left:0;height:2px;background:var(--tx);border-radius:2px;transition:transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1)}
+.mbody{overflow:hidden;margin:0 -16px;padding:0 16px}
+.mpage{display:grid;gap:12px;will-change:transform,opacity}
+/* 부산 탭 맨 위 줄 — 지난 부산 일정 보기(왼쪽) · 메일에서 숙소 예약 찾기(오른쪽) */
+.vtop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 2px}
+.vtop .txtbtn{color:var(--tx2);font-size:13px}
+.pastlist{overflow:hidden}
 /* 개발자(HB)에게만 보이는 버전 · 새 버전 확인 — 다른 앱(심방 노트 .verbadge)과 같은 결 */
 .verbadge{padding:6px 4px;font-size:10px;line-height:1.2;color:var(--tx3);letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
 .verbadge.busy{opacity:.4}
@@ -645,7 +656,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1118-6';
+const APP_VERSION = 'v. 26-1118-7';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -3037,11 +3048,20 @@ function viewBusan() {
       <span>${st === 'done' ? '<span class="pill ok">숙소 완료</span>' : st === 'open' ? '<span class="pill">숙소 미정</span>' : '<span class="pill">숙소 없음</span>'}</span>
       <span class="sub">${daysHtml(sortDays(v.date, v.days || defaultDays(v.date)))}${v.stay.filter(x => x.status !== 'cancel').map(x => ' · ' + esc(stayLineOf(v, x)) + (staySub(x) ? ' (' + staySubH(x) + ')' : '')).join('')}${v.travel.length ? ' · ' + esc(v.travel.map(t => (t.dir === 'down' ? '↓' : '↑') + [t.mode, timeS(t.time)].filter(Boolean).join(' ')).join(' ')) : ''}${(v.mates || []).length ? ' · ' + esc(mateText(S.book, v)) : ''}${v.meet ? ' · ' + esc(meetText(v.meet)) : ''}${(v.issues || []).length ? ' · 특이사항 ' + v.issues.length : ''}</span></button>`; };
   return `${topBanner()}
-  <p class="note">다가오는 부산 일정 ${up.length}번${aiCan() ? `<button class="txtbtn" data-act="mailscan" style="float:right">메일에서 숙소 예약 찾기</button>` : ''}</p>
+  ${past.length || aiCan() ? `<div class="vtop">${past.length ? `<button class="txtbtn" data-act="pastfold" aria-expanded="${!!S.pastOpen}">${S.pastOpen ? '지난 부산 일정 접기' : '지난 부산 일정 보기'}</button>` : '<span></span>'}${aiCan() ? `<button class="txtbtn" data-act="mailscan">메일에서 숙소 예약 찾기</button>` : ''}</div>` : ''}
+  ${past.length && S.pastOpen ? `<div class="pastlist">${past.map(v => line(v, ' past')).join('')}</div>` : ''}
   ${up.length ? up.map(v => line(v, '')).join('') : '<p class="empty">정해 둔 부산 일정이 없습니다.</p>'}
   ${isStaff() ? '' : `<div class="addrow"><input class="inp" id="nv-date" type="date" value="${nextFreeSunday()}" aria-label="부산 일정 날짜"><button class="btn" data-act="newvisit">부산 일정 더하기</button></div>`}
-  <p class="note tiny" style="margin-top:0">보통은 주일입니다. 성탄 · 송구영신 같은 특별예배는 그 날을 고르고, 열린 판의 '예배' 에서 예배를 더합니다.</p>
-  ${past.length ? `<details class="more"><summary>지난 부산 일정 ${past.length}번 보기</summary>${past.map(v => line(v, ' past')).join('')}</details>` : ''}`;
+  <p class="note tiny" style="margin-top:0">보통은 주일입니다. 성탄 · 송구영신 같은 특별예배는 그 날을 고르고, 열린 판의 '예배' 에서 예배를 더합니다.</p>`;
+}
+// 지난 부산 일정 펴기 · 접기 — 높이가 스르륵 (접을 땐 접은 뒤 다시 그림, quiet() 이면 바로)
+function pastFold() {
+  const el = $('#panel .pastlist');
+  if (S.pastOpen) { if (quiet() || !el || !el.animate) { S.pastOpen = false; return render(); }
+    const a = el.animate([{ height: el.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 260, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' });
+    a.onfinish = () => { S.pastOpen = false; render(); }; return; }
+  S.pastOpen = true; render(); const nl = $('#panel .pastlist');
+  if (!quiet() && nl && nl.animate) nl.animate([{ height: '0px', opacity: 0 }, { height: nl.offsetHeight + 'px', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 function nextFreeSunday() { let s = visitSun(todayYmd()); for (let i = 0; i < 60 && live(S.book.visits).some(v => v.date === s); i++) s = addDays(s, 7); return s; }
 
@@ -4189,13 +4209,27 @@ function importFile(f) {
   rd.readAsText(f);
 }
 
-/* ---------- 메뉴 (로그인 · 버전) — 우상단 × 로 닫는다 ---------- */
+/* ---------- 메뉴 — 보기 · 계정 · 개발 세 탭 (1117-Z 3, HB 11/18) · 우상단 × 로 닫는다 ---------- */
+const MTAB_NAME = { view: '보기', acct: '계정', dev: '개발' };
+function menuTabs() { return isStaff() ? ['view', 'acct'] : ['view', 'acct', 'dev']; }   // 개발(예배팀 받기 · 시트 가져오기 · 버전)은 HB 만
+function mCur() { const t = menuTabs(); return t.includes(S.mtab) ? S.mtab : 'view'; }
 function openMenu() { if ($('#menu')) return; const bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.id = 'menu-bg'; bg.dataset.act = 'close';
-  const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'menu'; document.body.append(bg, sh); renderMenu(); }
+  const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'menu'; document.body.append(bg, sh);
+  // 로그인 전이면 계정 탭부터, 아니면 이 기기에서 마지막에 본 탭
+  S.mtab = !DEMO && !FB.user ? 'acct' : menuTabs().includes(PREF.mtab) ? PREF.mtab : 'view';
+  menuSwipe(sh); renderMenu(); }
 function closeMenu() { const a = $('#menu'), b = $('#menu-bg'); if (a) a.remove(); if (b) b.remove(); }
-function renderMenu() {
-  const m = $('#menu'); if (!m) return;
-  const keep = ['fb-em', 'fb-pw'].map(id => [id, ($('#' + id) || {}).value || '', document.activeElement && document.activeElement.id === id]);   // 로그인 도구가 늦게 와 다시 그려도 치던 글자는 남게
+function menuPage(tab) {
+  if (tab === 'view') return `<div class="field"><span class="flabel">밝기</span><div class="seg3">${[['', '시스템'], ['light', '라이트'], ['dark', '다크']].map(([k, l]) => `<button data-theme="${k}" aria-pressed="${(PREF.theme || '') === k}">${l}</button>`).join('')}</div></div>
+    <button class="btn ghost" data-act="home">첫 화면 정하기 <span class="muted">· ${esc(homeName(UI_OF().home))}</span></button>`;
+  if (tab === 'dev') {
+    const own = !DEMO && FB.user && FB.role === 'owner', imp = !DEMO && !isStaff();
+    return `${own ? `<button class="btn ghost" data-act="wpull">예배팀 일정 지금 받기</button><p class="tiny muted" style="margin:-4px 0 0;text-align:center">${esc(worshipLine())}</p>` : ''}
+    ${imp ? `<button class="btn ghost" data-act="importpick">시트 기록 가져오기 (파일)</button>
+      <p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>` : ''}
+    ${!own && !imp ? '<p class="small muted" style="margin:0;text-align:center">미리보기에서는 예배팀 받기 · 시트 가져오기를 쓰지 않습니다.</p>' : ''}
+    ${isDev() ? `<p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>` : ''}`;
+  }
   const acct = DEMO ? `<p class="small muted" style="margin:0;text-align:center">미리보기 — 로그인 없이 지어낸 자료로 봅니다.<br><a href="./">미리보기 끄기</a></p>`
     : FB.user ? `<p class="small" style="margin:0;text-align:center">${esc(FB.user.email)}<br><span class="muted tiny">${isStaff() ? (myPid() ? '교역자로 들어왔습니다 · 보기 + 내 숙소 · 교통 · 일정' : '팀 명단에서 내 이름을 찾지 못했습니다 — HB 께 계정 이메일을 확인해 달라고 해 주세요') : FB.synced ? '계정과 맞춰져 있습니다' : '맞추는 중…'}</span></p>
       ${isStaff() && myPid() ? '<button class="btn ghost" data-act="myavail">내 부재 · 가능 일정</button>' : ''}<button class="btn ghost" data-act="logout">로그아웃</button>`
@@ -4204,15 +4238,57 @@ function renderMenu() {
        <div class="field"><label for="fb-em">이메일 (BLOCK7 과 같은 계정)</label><input class="inp" id="fb-em" type="email" autocomplete="username"></div>
        <div class="field"><label for="fb-pw">비밀번호</label><input class="inp" id="fb-pw" type="password" autocomplete="current-password"></div>
        <button class="btn ghost" data-act="login"${FB.busy ? ' disabled' : ''}>${FB.busy ? '로그인 중…' : '이메일로 로그인'}</button>`;
-  m.innerHTML = `<div class="sh"><span class="gap"></span><b>계정</b><button class="iconbtn modal-x" data-act="close" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    ${acct}${FB.err ? `<p class="err" style="margin:0">${esc(FB.err)}</p>` : ''}
-    <div class="field"><span class="flabel">화면</span><div class="seg3">${[['', '시스템'], ['light', '라이트'], ['dark', '다크']].map(([k, l]) => `<button data-theme="${k}" aria-pressed="${(PREF.theme || '') === k}">${l}</button>`).join('')}</div></div>
-    <button class="btn ghost" data-act="home">첫 화면 정하기 <span class="muted">· ${esc(homeName(UI_OF().home))}</span></button>
-    ${!DEMO && FB.user && FB.role === 'owner' ? `<button class="btn ghost" data-act="wpull">예배팀 일정 지금 받기</button><p class="tiny muted" style="margin:-4px 0 0;text-align:center">${esc(worshipLine())}</p>` : ''}
-    ${DEMO || isStaff() ? '' : `<button class="btn ghost" data-act="importpick">시트 기록 가져오기 (파일)</button>
-      <p class="small muted" style="margin:0;text-align:center"><a href="?demo=1">미리보기로 둘러보기</a></p>`}
-    ${isDev() ? `<p class="ver" style="margin:0"><button data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button></p>` : ''}`;
+  return `${acct}${FB.err ? `<p class="err" style="margin:0">${esc(FB.err)}</p>` : ''}`;
+}
+// 머리줄(탭)은 탭 목록이 같으면 그대로 두고 표시만 바꾼다 — 밑줄이 스르륵 옮겨 가게. 판 안만 다시 그린다.
+function menuHead() {
+  const m = $('#menu'); if (!m) return; const tabs = menuTabs(), key = tabs.join(',');
+  if (m.dataset.tk !== key || !m.querySelector('.mpage')) { m.dataset.tk = key;
+    m.innerHTML = `<div class="sh"><span class="gap"></span><nav class="mtabs" role="tablist">${tabs.map(t => `<button class="mtab" role="tab" data-mtab="${t}">${MTAB_NAME[t]}</button>`).join('')}<span class="mbar"></span></nav><button class="iconbtn modal-x" data-act="close" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="mbody"><div class="mpage"></div></div>`; }
+  const cur = mCur(); let on = null;
+  m.querySelectorAll('.mtab').forEach(b => { const y = b.dataset.mtab === cur; b.classList.toggle('on', y); b.setAttribute('aria-selected', String(y)); if (y) on = b; });
+  const bar = m.querySelector('.mbar'); if (bar && on) { bar.style.width = (on.offsetWidth - 16) + 'px'; bar.style.transform = `translateX(${on.offsetLeft + 8}px)`; }
+}
+function renderMenu() {
+  const m = $('#menu'); if (!m) return;
+  const keep = ['fb-em', 'fb-pw'].map(id => [id, ($('#' + id) || {}).value || '', document.activeElement && document.activeElement.id === id]);   // 로그인 도구가 늦게 와 다시 그려도 치던 글자는 남게
+  menuHead(); const pg = m.querySelector('.mpage'); pg.dataset.tab = mCur(); pg.innerHTML = menuPage(mCur());
   for (const [id, v, f] of keep) { const el = $('#' + id); if (el) { if (v) el.value = v; if (f) el.focus(); } }
+}
+// 탭 바꾸기 — 나가고(150ms) → 그리고 → 들어온다(300ms), 판 높이도 스르륵. 손가락으로 밀던 중이면 그 자리(sw)에서 이어 나간다.
+function mTab(id, sw) {
+  const tabs = menuTabs(), i0 = tabs.indexOf(mCur()), i1 = tabs.indexOf(id); if (i1 < 0 || i1 === i0) return;
+  const dir = i1 > i0 ? 1 : -1, m = $('#menu'); S.mtab = id; PREF.mtab = id; savePref(); menuHead();
+  const bd = m && m.querySelector('.mbody'), pg = m && m.querySelector('.mpage');
+  if (quiet() || !pg || !pg.animate) { pg && (pg.style.transform = '', pg.style.opacity = ''); return renderMenu(); }
+  const h0 = bd.offsetHeight, w = bd.clientWidth || 300;
+  const out = pg.animate([{ transform: `translateX(${sw ? sw.dx : 0}px)`, opacity: sw ? sw.op : 1 }, { transform: `translateX(${-dir * (sw ? w * 0.5 : 36)}px)`, opacity: 0 }], { duration: sw ? 140 : 150, easing: 'ease-in', fill: 'forwards' });
+  out.onfinish = () => { pg.style.transform = ''; pg.style.opacity = ''; renderMenu(); out.cancel();
+    const h1 = bd.offsetHeight; if (h0 !== h1) bd.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' });
+    pg.animate([{ transform: `translateX(${dir * (sw ? 48 : 36)}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); };
+}
+// 메뉴 판을 손가락으로 넘기기 — 앱 탭 넘기기와 같은 규칙(4분의 1 · 빠른 튕김 40px · 끝은 고무줄). 글자 칸에서는 넘기지 않는다.
+function menuSwipe(sh) {
+  let x0 = 0, y0 = 0, t0 = 0, dx = 0, on = false, locked = null;
+  sh.addEventListener('touchstart', e => { if (e.touches.length !== 1 || !e.target.closest('.mbody') || e.target.closest('input,textarea,select')) { on = false; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0; on = true; locked = null; }, { passive: true });
+  sh.addEventListener('touchmove', e => {
+    if (!on) return; const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+    if (locked === null && Math.abs(mx) + Math.abs(my) > 10) locked = Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y';
+    if (locked !== 'x') return;
+    const tabs = menuTabs(), i = tabs.indexOf(mCur()), edge = (mx > 0 && i === 0) || (mx < 0 && i === tabs.length - 1);
+    dx = edge ? mx * 0.25 : mx; const pg = sh.querySelector('.mpage'), w = sh.clientWidth || 1;
+    if (pg) { pg.style.transform = `translateX(${dx}px)`; pg.style.opacity = String(1 - Math.min(Math.abs(dx) / w, 1) * 0.6); }
+  }, { passive: true });
+  const end = () => {
+    if (!on || locked !== 'x') { on = false; return; } on = false;
+    const pg = sh.querySelector('.mpage'); if (!pg) return; const w = sh.clientWidth || 1, fast = Date.now() - t0 < 250 && Math.abs(dx) > 40;
+    const tabs = menuTabs(), j = tabs.indexOf(mCur()) + (dx < 0 ? 1 : -1);
+    if ((Math.abs(dx) > w / 4 || fast) && j >= 0 && j < tabs.length) return mTab(tabs[j], { dx, op: pg.style.opacity || 1 });
+    if (!quiet() && pg.animate) pg.animate([{ transform: `translateX(${dx}px)`, opacity: pg.style.opacity || 1 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.22,.8,.24,1)' });
+    pg.style.transform = ''; pg.style.opacity = '';
+  };
+  sh.addEventListener('touchend', end); sh.addEventListener('touchcancel', end);
 }
 
 /* 부산 이야기 펼침은 판을 다시 그려도(새로 읽기 · 계정 맞추기) 그대로 둔다 — 예전엔 다시 그릴 때 접혀 '열렸다 바로 닫힘' 으로 보였다 */
@@ -4286,6 +4362,8 @@ document.addEventListener('click', (e) => {
   if (d.pin) return personApply(d.pid, p => { p.pin = (p.pin || []).includes(d.pin) ? p.pin.filter(x => x !== d.pin) : (p.pin || []).concat(d.pin); });
   if (d.picksvc) { const [date, , role] = S.pane.id.split('|'); S.pane.all = false; S.pane.id = slotId(date, d.picksvc, role); return renderPane(); }
   if (d.mview) { S.navd = true; PREF.mview = d.mview; savePref(); closeViewsDrop(); if (S.pane && S.pane.kind === 'views') closePane(); else render(); return; }
+  if (d.mtab) return mTab(d.mtab);   // 메뉴 세 탭 (1117-Z 3)
+  if (d.act === 'pastfold') return pastFold();   // 부산 탭 '지난 부산 일정 보기' (1117-Z 3)
   if (d.theme !== undefined && t.closest('#menu')) { PREF.theme = d.theme; savePref(); applyTheme(); return renderMenu(); }
   if (d.calf) { PREF.calf = d.calf; savePref(); return render(); }
   if (d.ext) { S.ext = S.ext || {}; const e = S.ext[d.ext] || { b: 0, a: 0 }; e[d.dir] = Math.max(0, Math.min(6, e[d.dir] + (d.c ? -1 : 1))); S.ext[d.ext] = e; return render(); }
@@ -4376,7 +4454,7 @@ document.addEventListener('click', (e) => {
   if (a === 'addtag') { const el = $('#mk-new'); const tg = (el && el.value || '').trim(); if (!tg) return; return markApply(m => { if (!m.tags.includes(tg)) m.tags.push(tg); }); }
 });
 /* 교역자(보기만)가 누를 수 있는 것 — 보기 · 넘기기 · 내 일정 · 자기 방문의 숙소 · 교통 · 자기 부재 · 가능 일정. 나머지는 HB 몫 (R6) */
-const STAFF_ACTS = new Set(['menu', 'close', 'closepane', 'login', 'glogin', 'logout', 'upd', 'views', 'mgrid', 'export', 'expcopy', 'expcsv', 'expall', 'wsort', 'wlay', 'fold', 'closelb', 'myavail', 'avadd', 'namefmt', 'home', 'ads', 'afold', 'alset', 'alclose', 'alreset', 'alpsave']);
+const STAFF_ACTS = new Set(['menu', 'pastfold', 'close', 'closepane', 'login', 'glogin', 'logout', 'upd', 'views', 'mgrid', 'export', 'expcopy', 'expcsv', 'expall', 'wsort', 'wlay', 'fold', 'closelb', 'myavail', 'avadd', 'namefmt', 'home', 'ads', 'afold', 'alset', 'alclose', 'alreset', 'alpsave']);
 function staffOk(t, d) {
   if (t.closest('#pane') && S.pane && S.pane.kind === 'visit') {
     if (d.act === 'closepane' || d.act === 'vback' || d.img || d.act === 'closelb' || (d.act === 'ads' && !S.pane.edit)) return true;   // 주일 광고는 누구 방문이든 볼 수 있다 (R12 C)
@@ -4388,7 +4466,7 @@ function staffOk(t, d) {
   if (t.closest('#pane') && S.pane && (S.pane.kind === 'myavail' || S.pane.kind === 'namefmt' || S.pane.kind === 'home' || S.pane.kind === 'alset')) return true;   // 기간 설정(2b)도 자기 계정 것
   if (t.closest('#pane') && S.pane && S.pane.kind === 'slotv') return d.act === 'closepane' || d.act === 'myavail';
   if (t.closest('#pane') && S.pane && S.pane.kind === 'ads') return ['closepane', 'adsload', 'adscopy', 'adsback', 'admore', 'adsfold'].includes(d.act) || (!!d.adsbs && bsCan(S.pane.sun));   // 보기 · 더 보기 · 복사 + 부산 상영 고르기는 그 주일 부산에 내려가는 교역자만(C4b) — 열쇠 넣기 · 끊기는 HB
-  if (d.tab || d.week !== undefined || d.month !== undefined || d.mview || d.theme !== undefined || d.calf || d.ext || d.me || d.mwk || d.calday || d.gowk || d.img || d.visit || d.pick || d.acat || d.al !== undefined || d.altab || d.alpre || d.alwset || d.alcut || d.alday || d.alpdel !== undefined) return true;   // 알림 판 갈래 · 줄 (1117-Z 2c) · 기간 (2b — 자기 계정의 ui)
+  if (d.tab || d.mtab || d.week !== undefined || d.month !== undefined || d.mview || d.theme !== undefined || d.calf || d.ext || d.me || d.mwk || d.calday || d.gowk || d.img || d.visit || d.pick || d.acat || d.al !== undefined || d.altab || d.alpre || d.alwset || d.alcut || d.alday || d.alpdel !== undefined) return true;   // 알림 판 갈래 · 줄 (1117-Z 2c) · 기간 (2b — 자기 계정의 ui)
   return !!d.act && STAFF_ACTS.has(d.act);
 }
 function staffNoMsg() { return '보기만 할 수 있습니다\n내 부산 일정의 숙소 · 교통 · 모임 · 부산 상영과\n내 부재 · 가능 일정만 적을 수 있어요'; }

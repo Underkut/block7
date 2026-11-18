@@ -1476,4 +1476,20 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊹ 넓은 화면 기둥: 붙는 높이 = 원래 자리(머리줄 바로 아래) — 짧은 목록 · 긴 목록에서 같은 자리', [/\.wrap\.sided #side\{[^}]*top:var\(--hdr,100px\);/.test(HTML), /top:calc\(var\(--hdr,100px\) \+ 10px\)/.test(HTML)], [true, false]);
 }
 
+// ㊺ 메뉴 세 탭 · 부산 탭 지난 일정 단추 (1117-Z 3, HB 11/18)
+{
+  const mp = HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('));
+  const part = (k) => { const a = mp.indexOf(`if (tab === '${k}')`); return a < 0 ? '' : mp.slice(a, mp.indexOf('\n  if (tab', a + 5) > 0 ? mp.indexOf('\n  if (tab', a + 5) : mp.indexOf('const acct', a)); };
+  const view = part('view'), dev = part('dev'), acct = mp.slice(mp.indexOf('const acct'));
+  sc.eq('㊺ 세 탭 이름 · 교역자는 보기 · 계정만', [/const MTAB_NAME = \{ view: '보기', acct: '계정', dev: '개발' \}/.test(HTML), /function menuTabs\(\) \{ return isStaff\(\) \? \['view', 'acct'\] : \['view', 'acct', 'dev'\]; \}/.test(HTML)], [true, true]);
+  sc.eq('㊺ 보기 = 밝기 테마 · 첫 화면 정하기', [/data-theme=/.test(view), /data-act="home"/.test(view), /data-act="wpull"|data-act="login"/.test(view)], [true, true, false]);
+  sc.eq('㊺ 계정 = 로그인 · 로그아웃 · 내 부재', [/data-act="glogin"/.test(acct), /data-act="login"/.test(acct), /data-act="logout"/.test(acct), /data-act="myavail"/.test(acct), /data-act="wpull"|data-theme/.test(acct)], [true, true, true, true, false]);
+  sc.eq('㊺ 개발 = 예배팀 받기 · 시트 가져오기 · 버전', [/data-act="wpull"/.test(dev), /data-act="importpick"/.test(dev), /data-act="upd"/.test(dev), /data-theme|data-act="login"/.test(dev)], [true, true, true, false]);
+  sc.eq('㊺ 로그인 전엔 계정 탭부터 · 고른 탭은 이 기기(PREF) — 계정 ui 에 넣지 않음', [/S\.mtab = !DEMO && !FB\.user \? 'acct'/.test(HTML), /PREF\.mtab = id; savePref\(\)/.test(HTML), /saveUi\(\{ mtab/.test(HTML)], [true, true, false]);
+  sc.eq('㊺ 탭 넘김: 손가락을 따라가고 quiet() 이면 끔 · 닫기는 × 하나', [/function menuSwipe\(sh\)/.test(HTML), /if \(quiet\(\) \|\| !pg \|\| !pg\.animate\)/.test(HTML), /data-act="close" aria-label="닫기"/.test(HTML.slice(HTML.indexOf('function menuHead('), HTML.indexOf('function renderMenu(')))], [true, true, true]);
+  sc.eq('㊺ 교역자도 탭은 넘긴다(staffOk) · 지난 일정 단추도', [/if \(d\.tab \|\| d\.mtab \|\|/.test(HTML), /STAFF_ACTS = new Set\(\['menu', 'pastfold',/.test(HTML)], [true, true]);
+  const vb = HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function pastFold('));
+  sc.eq('㊺ 부산 탭: \'다가오는 … n번\' 글 없음 · 맨 위에 \'지난 부산 일정 보기\'(숫자 없음) · 맨 아래 펼침 없음', [/다가오는 부산 일정/.test(vb), /'지난 부산 일정 보기'/.test(vb), /past\.length\}번/.test(vb), /details class="more"/.test(vb)], [false, true, false, false]);
+}
+
 sc.done();
