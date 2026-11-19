@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1119-2 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) · 1119 H · I 사진 보기(카드 아이콘 · 썸네일 · 좌우 넘기기 · 다운로드 · 끌어내려 닫기) -->
+<!-- 교역자 로테이션 v. 26-1119-3 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) · 1119 H · I 사진 보기(카드 아이콘 · 썸네일 · 좌우 넘기기 · 다운로드 · 끌어내려 닫기) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -378,6 +378,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:22px;background
   background:var(--paper);border-radius:18px 18px 0 0;padding:0 max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left));
   box-shadow:0 -8px 30px rgba(0,0,0,.14);width:100%;max-width:600px;margin:0 auto}
 .phead{position:sticky;top:0;z-index:2;background:var(--paper);display:grid;grid-template-columns:36px 1fr 36px;align-items:center;padding:12px 0 8px}
+.phead{touch-action:none;cursor:grab}   /* 제목줄 = 손잡이: 끌어내리면 닫힘(paneGest) — 판 안 스크롤은 제목줄 밖에서 */
+.phead .modal-x,.phead button{cursor:pointer}
+/* 판이 열린 동안 뒤 화면 잠금(pageLock) — 보던 자리만큼 body 를 위로 올려 고정 */
+html.plock body{position:fixed;left:0;right:0;width:100%}
 .phead b{text-align:center;font-weight:500;font-size:16px}
 .phead .sub{display:block;text-align:center;font-size:12px;color:var(--tx3);font-weight:400}
 .modal-x svg{width:18px;height:18px;stroke-width:1.8}
@@ -748,7 +752,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). visits[].hot : 메모 '중요'(빨강, 목록에도) · note : 메모 '일반'(판 안에서만, 1117-Z 5b). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1119-2';
+const APP_VERSION = 'v. 26-1119-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -3388,28 +3392,120 @@ function addPerson(lay) {
 
 /* ---------- 아래에서 올라오는 판 ----------
    S.pane = { kind:'pick', id, all } | { kind:'visit', id } | { kind:'mark', sun }
-   닫기는 우상단 × 하나(그리고 바깥 누르기 · ESC). 고치는 것은 누르는 즉시 저장된다 — '저장' 단추가 없다. */
+   닫기는 우상단 × 하나(그리고 바깥 누르기 · ESC · 손짓 둘 — paneGest). 고치는 것은 누르는 즉시 저장된다 — '저장' 단추가 없다. */
 function openPane(p) {
   closeMenu(); S.pane = p;
   let bg = $('#pane-bg'), el = $('#pane'), fresh = !el;
+  // 닫히는 중(아직 안 걷힌 판)에 다시 열면: 닫기 움직임을 멈추고 그 판을 그대로 다시 올린다 — 예전엔 닫기 끝에 새 판까지 지워졌다
+  if (el && el.dataset.closing) { delete el.dataset.closing; for (const n of [el, bg]) if (n && n.getAnimations) n.getAnimations().forEach(a => a.cancel()); fresh = true; }
+  pageLock(true);   // C(HB 11/19): 뒤 화면을 판 붙이기 **전에** 잠근다 — 굴러가던 화면 위에 붙은 판이 아이폰에서 위로 떠 잘리던 것
   if (!bg) { bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.id = 'pane-bg'; bg.dataset.act = 'closepane'; document.body.appendChild(bg); }
-  if (!el) { el = document.createElement('div'); el.className = 'pane'; el.id = 'pane'; el.setAttribute('role', 'dialog'); document.body.appendChild(el); }
+  if (!el) { el = document.createElement('div'); el.className = 'pane'; el.id = 'pane'; el.setAttribute('role', 'dialog'); document.body.appendChild(el); paneGest(el); }
   renderPane();
   if (fresh && !quiet() && el.animate) { el.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); bg.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); }
 }
-function closePane() {
+// o = 손짓으로 닫을 때 { from: 지금 자리, to: 나갈 쪽, bg: 지금 그늘 } — 손가락이 놓은 자리에서 이어 나간다
+function closePane(o) {
   const el = $('#pane'), bg = $('#pane-bg');
   // ⚠️ 먼저 글자 칸을 벗어나 '바뀜' 을 저장하고, 미뤄 둔 저장도 지금 한다 — 그다음에 판을 비운다.
   //   (예전엔 판을 먼저 비워, × 를 누르는 순간 생기는 저장이 갈 곳을 잃었다 — HB 11/14 '나가면 저장이 안 돼')
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   // 방문의 항목 판이 열려 있으면: 초안을 버리고 요약으로 (목록 관리 중이면 그 판으로) — '저장' 을 눌러야만 저장된다
-  if (S.pane && S.pane.kind === 'visit' && S.pane.edit) { if (S.pane.edit.manage) { S.pane.edit.manage = null; return renderPane(); } return closeVEdit(false); }
-  S.pane = null; busyToast();
-  const done = () => { if (el) el.remove(); if (bg) bg.remove(); render(); };
+  if (S.pane && S.pane.kind === 'visit' && S.pane.edit) { if (S.pane.edit.manage) { S.pane.edit.manage = null; return renderPane(); } return closeVEdit(false, o); }
+  S.pane = null; if (el) el.dataset.closing = '1'; busyToast();
+  const done = () => { if (el) el.remove(); if (bg) bg.remove(); render(); if (!$('#pane')) pageLock(false); };
   if (!el || quiet() || !el.animate) return done();
-  el.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
-  if (bg) bg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' });
+  const k = o || {}, ms = k.from ? 200 : 160;
+  el.animate([{ transform: k.from || 'none' }, { transform: k.to || 'translateY(100%)' }], { duration: ms, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
+  if (bg) bg.animate([{ opacity: k.bg != null && k.bg !== '' ? +k.bg : 1 }, { opacity: 0 }], { duration: ms, fill: 'forwards' });
 }
+// × 를 눌렀을 때 판이 남는가(요약 · 항목 판으로 돌아감) — closePane 의 앞 줄과 같은 판단
+function paneStays() { const P = S.pane; return !!(P && P.kind === 'visit' && P.edit && (P.edit.manage || !P.direct)); }
+
+/* 판이 열린 동안 뒤 화면 잠그기 (C, HB 11/19 사진) — 아이폰에서 부산 탭을 한참 내린 뒤 날짜 줄을 누르면 판이 아래가 아니라
+   화면 위쪽에 떠서 위아래가 잘렸다(뒤 그늘도 같이 밀려 아래쪽이 안 어두웠다). 굴러가던 화면 위에 position:fixed 를 새로 붙이면
+   WebKit 이 옛 스크롤 자리를 기준으로 놓는 일로 본다. 잠그면(body 를 fixed 로 · 보던 자리만큼 위로) 문서 스크롤이 0 이 되어
+   판이 언제나 화면 맨 아래 기준으로 놓이고, 판 뒤 화면이 손가락에 굴러가지도 않는다.
+   ⚠️ 풀 때 보던 자리로 그대로 되돌린다(맨 위로 튀지 않게). 붙어 있던 것(제목줄 · 넓은 화면 기둥)은 잠그기 전 화면 자리에 그대로 둔다. */
+var PL = { on: false, y: 0, st: [] };
+function pageLock(on) {
+  const de = document.documentElement, b = document.body; if (!b || on === PL.on) return; PL.on = on;
+  if (on) {
+    PL.y = window.scrollY || de.scrollTop || 0;
+    PL.st = [...document.querySelectorAll('header.top, #side')].map(n => [n, n.getBoundingClientRect().top]);
+    b.style.top = -PL.y + 'px'; de.classList.add('plock');
+    for (const [n, t] of PL.st) { n.style.position = 'relative'; n.style.top = '0px'; n.style.top = (t - n.getBoundingClientRect().top) + 'px'; }
+    return;
+  }
+  de.classList.remove('plock'); b.style.top = '';
+  for (const [n] of PL.st) { n.style.position = ''; n.style.top = ''; } PL.st = [];
+  window.scrollTo(0, PL.y);
+}
+
+/* 판 손짓 닫기 (HB 11/19 — 모든 앱 · 모든 팝업 공통, CLAUDE.md 'UI 원칙 › 팝업·전체화면 페이지')
+   ① 제목줄(.phead)을 끌어내리기 · ② 화면 왼쪽 가장자리(PG_EDGE)에서 오른쪽으로 밀기. 판이 손가락을 따라가고 뒤 그늘이 옅어진다.
+   4분의 1 넘게(빠른 튕김 40px) 밀면 그쪽으로 이어 나가며 닫히고, 못 미치면 제자리 · 반대쪽은 고무줄(0.2, 16px까지).
+   닫기는 × 와 같은 길(closePane) — 항목 편집 중이면 요약으로(판은 나갔다 다시 들어온다), 표에서 바로 연 항목이면 판째 닫힘.
+   판 안 스크롤(제목줄 밖) · 글자 칸 · 목록 끌기(MG) · 숙소 알약 끌기(SP)와는 엉키지 않는다 — 그쪽이 잡고 있으면 손짓을 놓는다. */
+const PG_EDGE = 24;
+var PG = { eat: 0 };
+function paneGest(el) {
+  let g = null;
+  const busy = () => !!(MG.el || MG.pend || (SP.el && (SP.lift || SP.drag)) || $('#lightbox'));
+  const start = (x, y, tg, mouse) => { g = null;
+    if (!S.pane || busy() || !tg.closest || tg.closest('input,textarea,select')) return;
+    const head = !!tg.closest('.phead'), edge = !mouse && x <= PG_EDGE; if (!head && !edge) return;
+    g = { x0: x, y0: y, t0: Date.now(), head, edge, axis: '', d: 0 }; };
+  // true = 이 움직임은 판 손짓 몫(화면이 굴러가지 않게)
+  const move = (x, y) => {
+    if (!g) return false;
+    if (busy() || !S.pane) { snap(); return false; }
+    const mx = x - g.x0, my = y - g.y0;
+    if (!g.axis) {
+      if (Math.abs(mx) + Math.abs(my) < 8) return g.head || (g.edge && mx > Math.abs(my));
+      if (g.edge && mx > 0 && mx > Math.abs(my) * 1.2) g.axis = 'x';
+      else if (g.head && Math.abs(my) >= Math.abs(mx)) g.axis = 'y';
+      else { const h = g.head; g = null; return h; }   // 다른 쪽이면 손짓이 아니다 — 판 안 스크롤에 맡긴다
+      if (el.getAnimations) el.getAnimations().forEach(a => a.cancel());   // 올라오는 중에 잡아도 손가락 자리에서
+    }
+    const v = g.axis === 'x' ? mx : my, big = (g.axis === 'x' ? el.offsetWidth : el.offsetHeight) || 1;
+    g.d = v > 0 ? v : Math.max(v * 0.2, -16);
+    el.style.transform = g.axis === 'x' ? `translateX(${g.d}px)` : `translateY(${g.d}px)`;
+    const bg = $('#pane-bg'); if (bg) bg.style.opacity = String(1 - Math.min(Math.max(g.d, 0) / big, 1) * 0.8);
+    return true;
+  };
+  const snap = () => { const k = g; g = null; if (!k || !k.axis) return;
+    const from = el.style.transform, bg = $('#pane-bg'), bo = bg ? bg.style.opacity : ''; el.style.transform = ''; if (bg) bg.style.opacity = '';
+    if (quiet() || !el.animate) return;
+    el.animate([{ transform: from }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,.8,.24,1)' });
+    if (bg && bo !== '') bg.animate([{ opacity: +bo }, { opacity: 1 }], { duration: 220 }); };
+  const end = (cancel) => {
+    if (!g) return; if (!g.axis) { g = null; return; } PG.eat = Date.now();   // 손짓 끝에 딸려 오는 누름(× 위에서 놓음 등)은 버린다
+    const x = g.axis === 'x', big = (x ? el.offsetWidth : el.offsetHeight) || 1, fast = Date.now() - g.t0 < 250 && g.d > 40;
+    if (cancel || !(g.d > big / 4 || fast)) return snap();   // 못 미치면 제자리
+    g = null;
+    const from = el.style.transform, bg = $('#pane-bg'), bo = bg ? bg.style.opacity : ''; el.style.transform = ''; if (bg) bg.style.opacity = '';
+    if (!paneStays()) return closePane({ from, to: x ? 'translateX(100%)' : 'translateY(100%)', bg: bo });
+    // 요약으로 돌아갈 때: 판이 그쪽으로 조금 나갔다가 → 요약을 그리고 → 반대쪽에서 들어온다(뒤로 가기 결)
+    const back = () => { closePane(); const p = $('#pane'), b2 = $('#pane-bg'); if (!p || quiet() || !p.animate) return;
+      p.animate([{ transform: x ? 'translateX(-48px)' : 'translateY(48px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' });
+      if (b2 && bo !== '') b2.animate([{ opacity: +bo }, { opacity: 1 }], { duration: 300 }); };
+    if (quiet() || !el.animate) return back();
+    const a = el.animate([{ transform: from, opacity: 1 }, { transform: x ? `translateX(${Math.round(big * 0.5)}px)` : `translateY(${Math.round(big * 0.35)}px)`, opacity: 0 }], { duration: 140, easing: 'ease-in', fill: 'forwards' });
+    if (bg && bo !== '') bg.style.opacity = bo;
+    a.onfinish = () => { a.cancel(); if (bg) bg.style.opacity = ''; back(); };
+  };
+  // 손가락
+  el.addEventListener('touchstart', e => { if (e.touches.length !== 1) { g = null; return; } const t = e.touches[0]; start(t.clientX, t.clientY, e.target, false); }, { passive: true });
+  el.addEventListener('touchmove', e => { if (e.touches.length !== 1) return end(true); const t = e.touches[0]; if (move(t.clientX, t.clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+  el.addEventListener('touchend', () => end(false)); el.addEventListener('touchcancel', () => end(true));
+  // 마우스(PC): 제목줄 끌어내리기만
+  el.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0 || !e.target.closest || !e.target.closest('.phead')) return;
+    start(e.clientX, e.clientY, e.target, true); if (!g) return; e.preventDefault();   // 글자 고르기 없이
+    const mv = ev => move(ev.clientX, ev.clientY), up = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); end(ev.type === 'pointercancel'); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up); });
+}
+document.addEventListener('click', e => { if (PG.eat && Date.now() - PG.eat < 500) { PG.eat = 0; e.stopPropagation(); e.preventDefault(); } }, true);
 const xBtn = `<button class="iconbtn modal-x" data-act="closepane" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
 function renderPane() {
   const el = $('#pane'); if (!el || !S.pane) return;
@@ -3620,10 +3716,10 @@ function focusCol(f) {
   if (/^(INPUT|TEXTAREA)$/.test(t.tagName) && !t.disabled) { try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }
   else { t.classList.remove('hl'); void t.offsetWidth; t.classList.add('hl'); }
 }
-function closeVEdit(saved) {
+function closeVEdit(saved, o) {
   const ed = S.pane && S.pane.edit; if (!ed) return;
   if (!saved && ed.newImgs.length && !DEMO && FB.user && FB.db) ed.newImgs.forEach(id => imgDoc(id).delete().catch(() => {}));   // 버린 초안에 올린 사진은 치운다
-  S.pane.edit = null; if (S.pane.direct) return closePane();   // 표에서 바로 열었으면 표로 돌아간다
+  S.pane.edit = null; if (S.pane.direct) return closePane(o);   // 표에서 바로 열었으면 표로 돌아간다 (손짓이면 놓은 자리에서 이어 나감)
   renderPane(); const el = $('#pane'); if (el) el.scrollTop = 0;
 }
 const VSEC_NAME = { who: '교역자 · 요일', ev: '예배', stay: '숙소', travel: '교통', mate: '동행', meet: '모임', issue: '특이사항', note: '메모' };
