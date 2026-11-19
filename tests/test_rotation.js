@@ -1636,4 +1636,17 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(53) E 줄 가운데(.mgname)도 끌기 — 손가락 0.45초 꾹 · 8px 먼저 움직이면 화면 스크롤 · 그냥 누르면 고치기', [/#mglist \.mghd, #mglist \.mgname, #mglist \.mgmore/.test(mg), /setTimeout\(\(\) => \{[^]*?\}, 450\)/.test(mg), /< 8\) return/.test(mg), /clearTimeout\(MG\.t\); MG\.pend = null/.test(mg), /MG\.eat/.test(mg)], [true, true, true, true, true]);
 }
 
+// (54) 1119 H · I — 사진 보기 하나를 카드 아이콘 · 숙소 판 썸네일이 함께 씀 (HB 11/19 사진)
+{
+  const pv = HTML.slice(HTML.indexOf('function openPhotos('), HTML.indexOf('/* ---------- 메일에서 숙소 예약 찾기'));
+  const row = HTML.slice(HTML.indexOf('function busanRow('), HTML.indexOf('// 지난 부산 일정 — 달마다 묶음'));
+  sc.eq('(54) 옛 openLightbox 는 없고 사진 보기 하나(openPhotos) · id 는 그대로 lightbox(ESC · × 길 공용)', [/function openLightbox\(/.test(HTML), /el\.id = 'lightbox'/.test(pv), /if \(\$\('#lightbox'\)\) return closePhotos\(\);/.test(HTML), /if \(a === 'closelb'\) return closePhotos\(\);/.test(HTML)], [false, true, true, true]);
+  sc.eq('(54) 여러 장: 손가락을 따라(4분의 1 · 빠른 튕김 40px · 끝은 고무줄 0.25) · \'2 / 3\' · PC 좌우 단추 · 방향키', [/Math\.abs\(dx\) > w \/ 4 \|\| fast/.test(pv), /Math\.abs\(dx\) > 40/.test(pv), /mx \* 0\.25/.test(pv), /\(PV\.i \+ 1\) \+ ' \/ ' \+ PV\.ids\.length/.test(pv), /data-act="pvprev"/.test(pv) && /data-act="pvnext"/.test(pv), /ArrowLeft/.test(pv) && /ArrowRight/.test(pv), /\.pview\.many \.pvnav\{display:grid\}/.test(HTML)], [true, true, true, true, true, true, true]);
+  sc.eq('(54) 다운로드: 폰은 기다림 없이 파일로 바꿔 공유(await 없음) · 아니면 a[download] · 빼기는 숙소 판에서 열 때만', [/navigator\.share\(\{ files: \[f\] \}\)/.test(pv), /a\.download = name/.test(pv), /await/.test(pv.slice(pv.indexOf('function pvSave('))), /\$\{del \? `<button class="del" data-act="pvdel">/.test(pv)], [true, true, false, true]);
+  sc.eq('(54) 빼기는 초안에서만(저장해야 반영) · 썸네일 = 그 사진부터 + 빼기 · 카드 아이콘 = 그 일정 숙소 사진 전부, 빼기 없음', [/if \(d\.act === 'pvdel'\) \{[^\n]*\n[^\n]*ed\.d\.imgs = \(ed\.d\.imgs \|\| \[\]\)\.filter\(x => x !== id\)/.test(HTML), /openPhotos\(dd\.imgs \|\| \[\], \+d\.pvi, true\)/.test(HTML), /openPhotos\(visitPics\(v\), 0, false\)/.test(HTML), /<button class="thb" data-pvi=/.test(HTML)], [true, true, true, true]);
+  sc.eq('(54) 카드: \'예약 화면 N장\' 글은 없고 숙소 상태 왼쪽에 사진 아이콘(span[data-act] — 카드 열기와 따로) · 교역자는 없음', [/예약 화면 ' \+ s\.imgs\.length/.test(HTML), /<span class="vpic" data-act="vpics" data-vid=/.test(row), /const pics = isStaff\(\) \? \[\] : visitPics\(v\)/.test(row), row.indexOf('class="vpic"') < row.indexOf('class="vss')], [false, true, true, true]);
+  const vm2 = require('vm'), ctx = {}; vm2.runInNewContext(HTML.match(/function visitPics\(v\) \{[^\n]*\}/)[0] + ';this.f = visitPics;', ctx);
+  sc.eq('(54) visitPics: 숙소 여럿의 사진을 차례대로 · 겹치면 한 번', JSON.stringify(ctx.f({ stay: [{ imgs: ['a', 'b'] }, {}, { imgs: ['b', 'c'] }] })), JSON.stringify(['a', 'b', 'c']));
+}
+
 sc.done();
