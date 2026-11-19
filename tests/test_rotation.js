@@ -67,7 +67,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   adtxId, normAdtx, adtxOf, adtxPick, adtxClean, ADTX_MAX,
   alertsOf, alertEnd, cancelSoon, dDay, ddText, ALERT_CATS, CANCEL_DAYS, colTarget: colTarget,
   normBul, bulId, bulOf, bulOrder, monthDiff,
-  AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf };`, ctx);
+  AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1255,9 +1255,9 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('㊳ 빈 기기 + 계정(b16) = 계정 그대로 · 다시 안 씀', (r => [r.book.specs.length, r.push])(A.pickDoc(null, { b18: J(XB) })), [3, false]);
   sc.eq('㊳ 교역자 칸에는 특별예배가 없다(받지 않음)', J(A.normStaff({ email: 'ga@example.com', specs: [{ id: 'x|2026-12-24|1', n: '바꿈' }], visits: {} })).specs, undefined);
   // 화면
-  const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('function viewWeek(') + 16000);
+  const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('/* ---------- 달력표 보기 틀'));
   sc.eq('㊳ 이번 주: 특별예배 카드(A) · 표 줄(C) · 쉬는 날 옅게 · HB 만 \'+ 분당 특별예배 더하기\'',
-    [/sps\.forEach\(sp => cards\.push/.test(vw), /sps\.forEach\(sp => rows\.push/.test(vw), /restC\(plan\.fri\)/.test(vw) && /restN\(plan\.wed\)/.test(vw), /own \? `<button class="txtbtn" data-act="specnew"/.test(vw)], [true, true, true, true]);
+    [/specsIn\(S\.book, ws, sat\)\.forEach\(sp => out\.push/.test(vw), /specsIn\(S\.book, ws, addDays\(ws, 6\)\)\.forEach\(sp => rows\.push/.test(vw), /restC\(plan\.fri\)/.test(vw) && /restN\(plan\.wed\)/.test(vw), /own \? `<button class="txtbtn" data-act="specnew"/.test(vw)], [true, true, true, true]);
   const ps = HTML.slice(HTML.indexOf('function paneSpec('), HTML.indexOf('function specClick('));
   sc.eq('㊳ 특별예배 판: 날짜(새로만) · 때 · 이름(알약) · 자리 · 수 · 금요일이면 쉼 · 지우기 · 저장',
     ['data-spf="date"', 'data-spt=', 'data-spf="tm"', 'data-spf="n"', 'data-spn=', 'data-spr=', 'data-act="sprest"', 'data-act="spdel"', 'data-act="spsave"'].every(k => ps.includes(k)), true);
@@ -1267,9 +1267,9 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
 
 // ㊴ 분당 판 축 바꿈 (1117-G, HB 11/17 — 시안 A): 줄 = 자리, 칸 = 예배. 부산 띠처럼 날짜가 가로로 흐른다.
 {
-  const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('function viewWeek(') + 16000);
+  const vw = HTML.slice(HTML.indexOf('function viewWeek('), HTML.indexOf('/* ---------- 달력표 보기 틀'));
   sc.eq('㊴ 머리 줄 = 예배(rows 의 th) · 몸 줄 = 설교 · 헌금 · 인도 · 빈 자리는 –',
-    [/<thead><tr><th><\/th>\$\{rows\.map\(r => r\.h\.th\)/.test(vw), /\['설교', '헌금', '인도'\]\.map\(\(lab, i\)/.test(vw), /<span class="muted">–<\/span>/.test(vw), !/<th>설교<\/th><th>헌금<\/th><th>인도<\/th>/.test(vw)], [true, true, true, true]);
+    [/<thead><tr><th><\/th>\$\{rs\.map\(r => r\.h\.th\)/.test(vw), /\['설교', '헌금', '인도'\]\.map\(\(lab, i\)/.test(vw), /<span class="muted">–<\/span>/.test(vw), !/<th>설교<\/th><th>헌금<\/th><th>인도<\/th>/.test(vw)], [true, true, true, true]);
 }
 
 // ㊵ 숙소 금액 · 취소 기한은 HB 전용 (1117-Z 1, HB 11/17) — 지어낸 이름 · 이메일
@@ -1666,4 +1666,21 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(56) 닫히는 중에 다시 열면 닫기 움직임을 멈추고 그 판을 다시 올림', /if \(el && el\.dataset\.closing\) \{ delete el\.dataset\.closing;/.test(pn), true);
 }
 
+// (57) 1119-W — 다가오는 한 주 (HB 11/19 시안 E): 이번 주 탭은 처음에 '오늘부터 7일', 스위치로 달력 주
+{
+  const W1 = A.weekWindow('up', '2026-11-19', '2026-11-15');
+  sc.eq('(57) 목요일 오늘 → 11/19 ~ 11/25, 두 달력 주(11/15 · 11/22)에 걸침', J(W1), { from: '2026-11-19', to: '2026-11-25', suns: ['2026-11-15', '2026-11-22'] });
+  sc.eq('(57) 주일 오늘 → 그 주 하나(주일 ~ 토)', J(A.weekWindow('up', '2026-11-22', '2026-11-15')), { from: '2026-11-22', to: '2026-11-28', suns: ['2026-11-22'] });
+  sc.eq('(57) 달력 주(cal) → 고른 주의 주일 ~ 토 그대로', J(A.weekWindow('cal', '2026-11-19', '2026-11-29')), { from: '2026-11-29', to: '2026-12-05', suns: ['2026-11-29'] });
+  sc.eq('(57) 해를 넘는 주(토요일 오늘)', J(A.weekWindow('up', '2026-12-26', '2026-12-20')).suns, ['2026-12-20', '2026-12-27']);
+  sc.eq('(57) 알약: 오늘 · 내일 · N일 뒤(두 주 안) · 지난 날 · 먼 날은 비움', ['2026-11-19', '2026-11-20', '2026-11-22', '2026-12-02', '2026-12-03', '2026-11-18'].map(d => A.soonText('2026-11-19', d)), ['오늘', '내일', '3일 뒤', '13일 뒤', '', '']);
+  const vw = HTML.slice(HTML.indexOf('function viewWeek() {'), HTML.indexOf('/* ---------- 달력표 보기 틀'));
+  sc.eq('(57) 처음 값은 다가오는 한 주 · 기억하지 않음(PREF 아님) · 달력표에서 그 주로 오면 달력 주', [/wm: 'up'/.test(HTML), !/PREF\.wm/.test(HTML), /S\.sun = d\.gowk; S\.wm = 'cal';/.test(HTML)], [true, true, true]);
+  sc.eq('(57) 화면: 스위치 둘 · 7일 띠(카드 보기만) · 지난 날 접힘(다가오는 한 주만) · 오늘 줄 · 다음 주로 이어서 · 알약', [/data-act="wmode" data-v="up"/.test(vw), /data-v="cal"/.test(vw), /if \(lay === 'a'\) \{\s*const days/.test(vw), /if \(up\) \{\s*if \(past\.length\)/.test(vw), /오늘 \$\{mdd\(today\)\}/.test(vw), /다음 주로 이어서/.test(vw), /class="dday/.test(vw)], [true, true, true, true, true, true, true]);
+  sc.eq('(57) 지난 날 = 이번 주에서 오늘 전에 다 끝난 것만(다음 주 것은 안 접힘)', /it\.ds\.every\(x => x < today\) && it\.ds\[0\] >= thisSun/.test(vw), true);
+  sc.eq('(57) 표 보기도 같은 날들(두 주의 예배를 모아 오늘부터 7일만)', /for \(const ws of W\.suns\)/.test(vw) && /rows\.filter\(r => r\.d\.slice\(0, 10\) >= W\.from && r\.d\.slice\(0, 10\) <= W\.to\)/.test(vw), true);
+  sc.eq('(57) 교역자도 누를 수 있음(보기 동작)', ['wmode', 'wpast', 'wday'].every(x => new RegExp("'" + x + "'").test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))), true);
+}
+
 sc.done();
+

@@ -340,7 +340,7 @@ console.log('⑬ (1116-2 D) 특별예배 — 주일이 아닌 날 부산 일정 
 
 console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 고르면 계정 b15 · 교역자는 보기만 · 낡은 앱(b13)');
 {
-  await hb.evaluate(() => { closePane(); S.sun = '2026-12-20'; PREF.tab = 'week'; render(); }); await sleep(300);
+  await hb.evaluate(() => { closePane(); S.sun = '2026-12-20'; S.wm = 'cal'; PREF.tab = 'week'; render(); }); await sleep(300);
   await hb.click('[data-act="specnew"]'); await sleep(300);
   ok('⑭ \'+ 분당 특별예배 더하기\' → 판 · 날짜는 그 주 목요일(12/24)', await hb.evaluate(() => S.pane && [S.pane.kind, S.pane.d.date]), ['spec', '2026-12-24']);
   await hb.fill('#sp-n', '성탄 전야 예배'); await hb.click('#pane [data-spt="저녁"]'); await hb.click('#pane [data-spr="lead"]'); await sleep(100);
@@ -356,7 +356,7 @@ console.log('⑭ (1116-2 E) 분당 특별예배 — HB 가 더하고 자리를 �
   // 교역자(가나다): 보이고 · 내 일정에 · 특별예배 판은 없음 · 자리는 보기만
   ok('⑭ 교역자: 특별예배와 내 자리가 보임 · 고치기 단추 없음 · 자리를 누르면 보기만', await until(() => ga.evaluate(async () => {
     if (!S.book.specs.length || !S.book.slots.some(x => x.id === '2026-12-24|x1|preach')) return null;
-    closePane(); S.sun = '2026-12-20'; PREF.tab = 'week'; render(); await new Promise(r => setTimeout(r, 200));
+    closePane(); S.sun = '2026-12-20'; S.wm = 'cal'; PREF.tab = 'week'; render(); await new Promise(r => setTimeout(r, 200));
     const hasEdit = !!document.querySelector('[data-spec],[data-act="specnew"]'); const b = document.querySelector('[data-pick="2026-12-24|x1|preach"]'); if (b) b.click(); await new Promise(r => setTimeout(r, 300));
     const k = S.pane && S.pane.kind; closePane();
     return [hasEdit, k, myItems(S.book, 'pa', '2026-12-20', '2026-12-31').filter(r => r.kind === 'slot').map(r => itemLabel(r))]; })), [false, 'slotv', ['성탄 전야 예배 설교']]);
@@ -381,7 +381,7 @@ console.log('⑮ (1117-Z 1) 숙소 금액 · 취소 기한은 HB 전용 — 교�
   const g = await ga.evaluate(() => { const out = {};
     PREF.tab = 'month'; PREF.mview = 'busan'; S.ym = '2026-11'; render(); const p = document.querySelector('#panel');
     out.th = [...p.querySelectorAll('.tsheet.bt th')].map(t => t.textContent); out.busan = p.innerText; out.cells = p.querySelectorAll('[data-vcol="cost"], [data-vcol="cancel"]').length;
-    PREF.tab = 'week'; S.sun = '2026-11-22'; render(); out.week = document.querySelector('#panel').innerText;
+    PREF.tab = 'week'; S.sun = '2026-11-22'; S.wm = 'cal'; render(); out.week = document.querySelector('#panel').innerText;
     PREF.tab = 'month'; PREF.mview = 'mine'; render(); out.mine = document.querySelector('#panel').innerText; return out; });
   ok('⑮ 교역자 부산 요약: 금액 · 취소 기한 열 · 칸이 없다', [g.th.includes('금액') || g.th.includes('취소 기한'), g.cells, g.th.includes('숙소')], [false, 0, true]);
   ok('⑮ 교역자 화면 글(부산 요약 · 이번 주 · 내 일정)에 금액 · 기한이 없다', [PRIV.test(g.busan), PRIV.test(g.week), PRIV.test(g.mine), /비밀 호텔/.test(g.busan)], [false, false, false, true]);
@@ -412,7 +412,7 @@ console.log('⑯ (1117-Z 2) 알림 판 — HB 만 · 줄을 누르면 그 판 ·
   // HB 가 다섯 주 뒤 주일에 예약 완료 호텔(취소 기한 이틀 뒤)을 적는다 — 날짜는 오늘에서 셈(시험 날짜와 상관없이)
   const VZ = await hb.evaluate(() => { const td = todayYmd(), sun = visitSun(addDays(td, 35)), id = visitId(sun);
     put(S.book, 'visits', { id, who: ['pa'], days: '토일', stay: [{ kind: 'hotel', name: '알림 호텔', status: 'done', nights: 1, cancelBy: addDays(td, 2), cancelAt: '18:00' }] }, byNow(), Date.now()); saveBook();
-    PREF.tab = 'week'; PREF.afold = false; S.acat = ''; S.sun = sunOf(td); render(); return id; });
+    PREF.tab = 'week'; PREF.afold = false; S.acat = ''; S.sun = sunOf(td); S.wm = 'cal'; render(); return id; });
   const p1 = await hb.evaluate(() => { const p = document.querySelector('#panel .apanel'); return p && { chips: [...p.querySelectorAll('.achip')].map(b => b.textContent.replace(/\d+$/, '')), sel: p.querySelector('.achip[aria-selected="true"]').textContent.replace(/\d+$/, ''), rows: [...p.querySelectorAll('.arow')].map(r => r.innerText) }; });
   ok('⑯ HB 이번 주 맨 위에 판: 갈래 넷 · 처음엔 급함 · 알림 호텔 취소 기한(D-2)', p1 && [p1.chips, p1.sel, p1.rows.some(t => /알림 호텔 취소 기한 18:00/.test(t) && /D-2/.test(t))], [['급함', '부산', '분당', '확인'], '급함', true]);
   const tabsSame = await hb.evaluate(() => ['month', 'busan', 'people'].map(t => { PREF.tab = t; render(); return document.querySelectorAll('#panel .apanel').length; }));
@@ -675,7 +675,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   await hb.evaluate(() => closePane()); await sleep(450);
   const row = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return [(b.querySelector('.vred') || {}).textContent || '', b.textContent.includes('일반 메모 글')]; }, V);
   ok('㉓ 부산 목록: 중요만 빨간 글자 · 일반 메모는 흐린 줄로 보임(1117-Z 7, HB 11/18)', [row[0].includes('중고등부 설교 필요'), row[1]], [true, true]);
-  const wk = await hb.evaluate(() => { S.sun = '2026-11-15'; PREF.tab = 'week'; PREF.wlay = 'a'; render(); return [document.querySelector('#panel').textContent.includes('중고등부 설교 필요'), document.querySelector('#panel').textContent.includes('일반 메모 글')]; });
+  const wk = await hb.evaluate(() => { S.sun = '2026-11-15'; S.wm = 'cal'; PREF.tab = 'week'; PREF.wlay = 'a'; render(); return [document.querySelector('#panel').textContent.includes('중고등부 설교 필요'), document.querySelector('#panel').textContent.includes('일반 메모 글')]; });
   ok('㉓ 이번 주(그 앞 주 — 내려갈 부산 일정 카드): 중요는 보이고 일반 메모는 안 보임', wk, [true, false]);
   const sm = await hb.evaluate((v) => { PREF.tab = 'month'; S.ym = '2026-11'; PREF.mview = 'busan'; render(); const h = [...document.querySelectorAll('table.bt th')].map(x => x.textContent); const tr = document.querySelector(`table.bt button[data-visit="${v}"][data-vcol="issue"]`); return [h[0], h[1], tr && (tr.querySelector('.vred') || {}).textContent]; }, V);
   ok('㉓ 부산 요약 맨 왼쪽 \'특이사항\' 칸 = 빨간 중요 글', sm, ['특이사항', '날짜', '중고등부 설교 필요']);
