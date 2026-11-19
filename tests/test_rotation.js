@@ -1655,4 +1655,15 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(55) 세로로 먼저 움직이면 끌어내리기(axis y) · 높이 6분의 1 또는 빠른 튕김 40px 넘으면 닫기 · 못 미치면 제자리 · 위로는 고무줄', [/axis = Math\.abs\(my\) > Math\.abs\(mx\) \? 'y' : 'x'/.test(sw), /dy > h \/ 6 \|\| fast/.test(sw), /closePhotos\(true\)/.test(sw), /el\.style\.backgroundColor = ''; pvPlace\(true, from\)/.test(sw), /my \* 0\.2/.test(sw)], [true, true, true, true, true]);
 }
 
+// (56) 1119-3 — 판 손짓 닫기(A) · 판이 열린 동안 뒤 화면 잠금(C) (HB 11/19 사진)
+{
+  const pn = HTML.slice(HTML.indexOf('function openPane('), HTML.indexOf('const xBtn = '));
+  const pg = pn.slice(pn.indexOf('function paneGest('));
+  sc.eq('(56) A 제목줄 끌어내리기 · 왼쪽 가장자리 24px 밀기 · 4분의 1 또는 빠른 튕김 40px · 반대쪽 고무줄 · 그늘 옅어짐', [/const PG_EDGE = 24;/.test(pn), /tg\.closest\('\.phead'\)/.test(pg), /g\.d > big \/ 4 \|\| fast/.test(pg), /g\.d > 40/.test(pg), /Math\.max\(v \* 0\.2, -16\)/.test(pg), /bg\.style\.opacity = String\(1 - /.test(pg)], [true, true, true, true, true, true]);
+  sc.eq('(56) A 닫기는 × 와 같은 길 — 편집 중이면 요약으로(paneStays), 표에서 바로 연 항목은 놓은 자리에서 이어 나감(closeVEdit → closePane(o))', [/if \(!paneStays\(\)\) return closePane\(\{ from, to:/.test(pg), /return closeVEdit\(false, o\)/.test(pn), /if \(S\.pane\.direct\) return closePane\(o\);/.test(HTML), /function paneStays\(\) \{ const P = S\.pane; return !!\(P && P\.kind === 'visit' && P\.edit && \(P\.edit\.manage \|\| !P\.direct\)\); \}/.test(pn)], [true, true, true, true]);
+  sc.eq('(56) A 목록 끌기(MG) · 알약 끌기(SP) · 사진 보기 · 글자 칸과 안 엉킴 · 손짓 끝 누름은 버림 · 제목줄 touch-action:none', [/MG\.el \|\| MG\.pend \|\| \(SP\.el && \(SP\.lift \|\| SP\.drag\)\) \|\| \$\('#lightbox'\)/.test(pg), /tg\.closest\('input,textarea,select'\)/.test(pg), /PG\.eat = Date\.now\(\)/.test(pg), /\.phead\{touch-action:none/.test(HTML)], [true, true, true, true]);
+  sc.eq('(56) C 판을 붙이기 전에 뒤 화면 잠금 · 닫힌 뒤(다른 판 없으면) 풀고 보던 자리로 · body fixed · 붙은 것(제목줄 · 기둥)은 제자리', [pn.indexOf('pageLock(true)') < pn.indexOf("el.id = 'pane'"), /if \(!\$\('#pane'\)\) pageLock\(false\)/.test(pn), /window\.scrollTo\(0, PL\.y\)/.test(pn), /html\.plock body\{position:fixed/.test(HTML), /header\.top, #side/.test(pn)], [true, true, true, true, true]);
+  sc.eq('(56) 닫히는 중에 다시 열면 닫기 움직임을 멈추고 그 판을 다시 올림', /if \(el && el\.dataset\.closing\) \{ delete el\.dataset\.closing;/.test(pn), true);
+}
+
 sc.done();

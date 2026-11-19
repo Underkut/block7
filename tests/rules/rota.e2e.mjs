@@ -710,6 +710,61 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   await hb.setViewportSize(vp0); await hb.evaluate(() => render());
 }
 
+{
+  console.log('㉕ 판 손짓 닫기 · 스크롤 뒤 열기 (HB 11/19 — 아이폰 크기 · 손가락)');
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  await ctx.route('https://www.gstatic.com/firebasejs/**', r => { const f = r.request().url().split('/').pop(); r.fulfill({ path: path.join(NM, f), contentType: 'text/javascript' }); });
+  await ctx.route('https://fonts.googleapis.com/**', r => r.abort()); await ctx.route('https://fonts.gstatic.com/**', r => r.abort());
+  const tp = await ctx.newPage(); tp.errs = []; tp.on('pageerror', e => tp.errs.push('㉕: ' + e.message));
+  await tp.goto(ROOT + '?demo=1'); await tp.waitForTimeout(500);
+  await tp.evaluate(() => { PREF.tab = 'busan'; renderShell(); }); await tp.waitForTimeout(300);
+  const cdp = await ctx.newCDPSession(tp);
+  const line = (a, z, k = 12) => Array.from({ length: k + 1 }, (_, i) => [a[0] + (z[0] - a[0]) * i / k, a[1] + (z[1] - a[1]) * i / k]);
+  const drag = async (pts, step = 16) => { await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: pts[0][0], y: pts[0][1] }] });
+    for (const q of pts.slice(1)) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: q[0], y: q[1] }] }); await sleep(step); }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(600); };
+  const st = () => tp.evaluate(() => { const p = document.querySelector('#pane'), r = p && p.getBoundingClientRect();
+    return { pane: S.pane ? S.pane.kind + (S.pane.edit ? ':' + S.pane.edit.sec : '') : '', bottom: r ? Math.round(r.bottom) : -1, y: Math.round(scrollY), lock: document.documentElement.classList.contains('plock') }; });
+  const head = () => tp.evaluate(() => { const r = document.querySelector('#pane .phead b').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+  await tp.evaluate(() => scrollTo(0, 900)); await sleep(200);
+  const Y = await tp.evaluate(() => Math.round(scrollY));
+  const row = await tp.evaluate(() => { const b = [...document.querySelectorAll('#panel .vrow')].map(x => x.getBoundingClientRect()).find(r => r.top > 150 && r.bottom < 800); return [b.left + 30, b.top + 12]; });
+  const open = async () => { await tp.touchscreen.tap(row[0], row[1]); await sleep(500); };
+  await open();
+  const o1 = await st(), hdTop = await tp.evaluate(() => Math.round(document.querySelector('header.top').getBoundingClientRect().top));
+  ok('㉕ C 한참 내린 뒤 열어도 판은 화면 맨 아래에 붙는다 · 뒤 화면 잠김 · 맨 위 제목줄은 제자리', [Y > 500, o1.pane, o1.bottom, o1.lock, hdTop], [true, 'visit', 844, true, 0]);
+  let h = await head(); await drag(line(h, [h[0], h[1] + 60]));
+  ok('㉕ A 제목줄을 조금(4분의 1 못 미치게) 끌어내리면 제자리', await st(), { pane: 'visit', bottom: 844, y: 0, lock: true });
+  h = await head(); await drag(line(h, [h[0], h[1] + 320]));
+  ok('㉕ A 제목줄을 4분의 1 넘게 끌어내리면 닫힘 · 잠금 풀림 · 보던 자리 그대로(맨 위로 안 튐)', await st(), { pane: '', bottom: -1, y: Y, lock: false });
+  await open(); await drag(line([8, 520], [80, 524]));
+  ok('㉕ A 왼쪽 가장자리에서 조금 밀면 제자리', (await st()).pane, 'visit');
+  await drag(line([8, 520], [230, 526]));
+  ok('㉕ A 왼쪽 가장자리에서 4분의 1 넘게 오른쪽으로 밀면 닫힘 · 보던 자리 그대로', await st(), { pane: '', bottom: -1, y: Y, lock: false });
+  await open(); await drag(line([8, 520], [72, 520], 3), 10);
+  ok('㉕ A 빠른 튕김(40px 넘게)도 닫힘', (await st()).pane, '');
+  await open(); await drag(line([200, 720], [200, 420]));
+  ok('㉕ A 판 안 스크롤(가장자리 · 제목줄 밖)은 판을 닫지 않고 판만 굴러감', [(await st()).pane, await tp.evaluate(() => document.querySelector('#pane').scrollTop > 100)], ['visit', true]);
+  await tp.evaluate(() => document.querySelector('#pane [data-vsec="stay"]').click()); await sleep(300);
+  h = await head(); await drag(line(h, [h[0], h[1] + 400]));
+  ok('㉕ A 항목 편집 중에 끌어내리면 × 와 같이 요약으로(판은 남음)', await st(), { pane: 'visit', bottom: 844, y: 0, lock: true });
+  await tp.evaluate(() => document.querySelector('#pane [data-vsec="stay"]').click()); await sleep(300);
+  await drag(line([6, 620], [300, 620]));
+  ok('㉕ A 항목 편집 중에 가장자리 밀기도 요약으로', (await st()).pane, 'visit');
+  await drag(line([6, 620], [300, 620]));
+  ok('㉕ A 요약에서 한 번 더 밀면 닫힘', await st(), { pane: '', bottom: -1, y: Y, lock: false });
+  await open(); await tp.click('#pane [data-act="closepane"]'); await sleep(400);
+  ok('㉕ × 로 닫아도 잠금 풀림 · 보던 자리 그대로', await st(), { pane: '', bottom: -1, y: Y, lock: false });
+  // 마우스(PC): 제목줄 끌어내리기
+  await open(); h = await head(); await tp.mouse.move(h[0], h[1]); await tp.mouse.down(); for (let i = 1; i <= 10; i++) { await tp.mouse.move(h[0], h[1] + i * 32); await sleep(16); } await tp.mouse.up(); await sleep(600);
+  ok('㉕ A 마우스로 제목줄 끌어내려도 닫힘', (await st()).pane, '');
+  // 닫히는 중에 다시 열면 새 판이 남는다
+  await open(); await tp.evaluate(() => { closePane(); document.querySelector('#panel .vrow').click(); }); await sleep(500);
+  ok('㉕ 닫히는 중에 다시 열어도 판이 남고 잠금도 그대로', [(await st()).pane, !!(await tp.evaluate(() => document.querySelector('#pane'))), (await st()).lock], ['visit', true, true]);
+  ok('㉕ 화면 오류 없음', tp.errs, []);
+  await ctx.close();
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });
