@@ -1649,4 +1649,10 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(54) visitPics: 숙소 여럿의 사진을 차례대로 · 겹치면 한 번', JSON.stringify(ctx.f({ stay: [{ imgs: ['a', 'b'] }, {}, { imgs: ['b', 'c'] }] })), JSON.stringify(['a', 'b', 'c']));
 }
 
+// (55) 1119-2 — 사진 보기에서 아래로 끌어내리면 닫힘 (HB 11/19)
+{
+  const sw = HTML.slice(HTML.indexOf('function pvSwipe('), HTML.indexOf('// 다운로드 — dataURL'));
+  sc.eq('(55) 세로로 먼저 움직이면 끌어내리기(axis y) · 높이 6분의 1 또는 빠른 튕김 40px 넘으면 닫기 · 못 미치면 제자리 · 위로는 고무줄', [/axis = Math\.abs\(my\) > Math\.abs\(mx\) \? 'y' : 'x'/.test(sw), /dy > h \/ 6 \|\| fast/.test(sw), /closePhotos\(true\)/.test(sw), /el\.style\.backgroundColor = ''; pvPlace\(true, from\)/.test(sw), /my \* 0\.2/.test(sw)], [true, true, true, true, true]);
+}
+
 sc.done();
