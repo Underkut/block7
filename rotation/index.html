@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 교역자 로테이션 v. 26-1119-1 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) · 1119 H · I 사진 보기(카드 아이콘 · 썸네일 · 좌우 넘기기 · 다운로드) -->
+<!-- 교역자 로테이션 v. 26-1119-2 — 부산 방문 순번 · 분당 예배 자리 독립 앱 (rotation/ → sweeter.my/rotation/) · R8b 내 일정(다음 차례 · 부산 준비 · 8주 표) · Aa 내 이름 모양 · 첫 화면 정하기 · R9a 예약 화면 사진에서 숙소 채우기 · R9b 메일에서 숙소 예약 찾기 · R12 A 부산 인도 세 갈래(교역자 · 성도 · 중계) · R12 C Monday 주일 광고(HB 카톡 양식 · C4a 카드형 판 · 묶음째 Monday 글 · 상영 말풍선 · C4b 부산 상영 계정 저장 · 경고 · B 인도 싣기 · 내보내기 새 판) · 1116-2 C 숙소 알약(끌어 순서 · 꾹 눌러 고침) · 호텔 / 성도님 댁 상태 · 숙소 쓰는 사람 · 1117-Z 2 알림 판(HB 만 · 두 달 미정 · 갈래 알약 · 넓으면 옆 기둥 · 접기) · 1117-Z 3 메뉴 세 탭(보기 · 계정 · 개발) · 부산 탭 지난 일정 한 달씩 · 해 가로띠 · 1117-Z 4 부산 광고 판 전달용 텍스트(고친 글 공통) · 아래 오른쪽 줄 · 1117-Z 5 숙소 목록 손잡이 · '더 보기' 줄 · 달력표 꺾쇠 · 부산 목록 줄 · 5b 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 · 1118 지난 일정 세 칸 단추(+ − ↺ 모두 접기) · 달력표 한 칸에 여러 분 쌓기 · 새 아이콘 · 1117-Z 7 부산 목록 한 줄 요일 칸(시안 B · 7b 같은 요일 같은 자리) · 1119 H · I 사진 보기(카드 아이콘 · 썸네일 · 좌우 넘기기 · 다운로드 · 끌어내려 닫기) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -748,7 +748,7 @@ table.bt tr.badrow td{background:var(--bad-soft)}
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). visits[].hot : 메모 '중요'(빨강, 목록에도) · note : 메모 '일반'(판 안에서만, 1117-Z 5b). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1119-1';
+const APP_VERSION = 'v. 26-1119-2';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -4141,18 +4141,28 @@ function pvPlace(anim, from) {
   const p = el.querySelector('.pvnav.prev'), n = el.querySelector('.pvnav.next'); if (p) p.disabled = PV.i === 0; if (n) n.disabled = PV.i === PV.ids.length - 1;
 }
 function pvGo(dir) { const j = PV.i + dir; if (j < 0 || j >= PV.ids.length) return; const tr = $('#lightbox .pvtrack'); const from = tr && tr.style.transform; PV.i = j; pvPlace(true, from); }
-// 손가락(마우스)을 따라 판이 움직인다 — 가만히 누르고 떼면(8px 안) 사진 밖은 닫기
+// 손가락(마우스)을 따라 판이 움직인다 — 옆으로 = 넘기기, 아래로 = 끌어내려 닫기(1119-2) · 가만히 누르고 떼면(8px 안) 사진 밖은 닫기
 function pvSwipe(el) {
-  const tr = el.querySelector('.pvtrack'); let x0 = 0, y0 = 0, t0 = 0, dx = 0, on = false, moved = false, pid = null;
-  el.addEventListener('pointerdown', e => { if (e.target.closest('button') || (e.pointerType === 'mouse' && e.button !== 0)) return; on = true; moved = false; pid = e.pointerId; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); dx = 0; });
-  el.addEventListener('pointermove', e => { if (!on || e.pointerId !== pid) return; const mx = e.clientX - x0;
-    if (!moved && Math.abs(mx) + Math.abs(e.clientY - y0) > 8) { moved = true; try { el.setPointerCapture(pid); } catch (_) { } }
-    if (!moved || PV.ids.length < 2) return;
+  const tr = el.querySelector('.pvtrack'); let x0 = 0, y0 = 0, t0 = 0, dx = 0, dy = 0, on = false, moved = false, axis = '', pid = null;
+  el.addEventListener('pointerdown', e => { if (e.target.closest('button') || (e.pointerType === 'mouse' && e.button !== 0)) return; on = true; moved = false; axis = ''; pid = e.pointerId; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); dx = dy = 0; });
+  el.addEventListener('pointermove', e => { if (!on || e.pointerId !== pid) return; const mx = e.clientX - x0, my = e.clientY - y0;
+    if (!moved && Math.abs(mx) + Math.abs(my) > 8) { moved = true; axis = Math.abs(my) > Math.abs(mx) ? 'y' : 'x'; try { el.setPointerCapture(pid); } catch (_) { } }
+    if (!moved) return;
+    if (axis === 'y') { dy = my > 0 ? my : my * 0.2; const h = el.clientHeight || 1;   // 위로는 고무줄
+      tr.style.transform = `translate(${-PV.i * 100}%, ${dy}px) scale(${1 - Math.min(Math.max(dy, 0) / h, 1) * 0.15})`;
+      el.style.backgroundColor = `rgba(0,0,0,${0.94 * (1 - Math.min(Math.max(dy, 0) / h, 1) * 0.8)})`; return; }
+    if (PV.ids.length < 2) return;
     const edge = (mx > 0 && PV.i === 0) || (mx < 0 && PV.i === PV.ids.length - 1); dx = edge ? mx * 0.25 : mx;
     const w = el.clientWidth || 1; tr.style.transform = `translateX(calc(${-PV.i * 100}% + ${dx}px))`;
     const cur = tr.children[PV.i]; if (cur) cur.style.opacity = String(1 - Math.min(Math.abs(dx) / w, 1) * 0.5); });
   const end = (e) => { if (!on || e.pointerId !== pid) return; on = false;
     if (!moved) { if (e.type === 'pointerup' && !e.target.closest('img,button')) closePhotos(); return; }
+    if (axis === 'y') { const h = el.clientHeight || 1, fast = Date.now() - t0 < 250 && dy > 40, from = tr.style.transform;
+      if (dy > h / 6 || fast) {   // 끌어내린 쪽으로 이어서 내려가며 닫힌다
+        if (quiet() || !tr.animate) return closePhotos(true);
+        tr.animate([{ transform: from }, { transform: `translate(${-PV.i * 100}%, ${h}px) scale(.8)` }], { duration: 200, easing: 'ease-in', fill: 'forwards' });
+        el.animate([{ backgroundColor: el.style.backgroundColor }, { backgroundColor: 'rgba(0,0,0,0)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = () => closePhotos(true); return; }
+      el.style.backgroundColor = ''; pvPlace(true, from); return; }   // 못 미치면 제자리
     if (PV.ids.length < 2) return;
     const w = el.clientWidth || 1, fast = Date.now() - t0 < 250 && Math.abs(dx) > 40, dir = dx < 0 ? 1 : -1, j = PV.i + dir, from = tr.style.transform;
     if ((Math.abs(dx) > w / 4 || fast) && j >= 0 && j < PV.ids.length) PV.i = j;
