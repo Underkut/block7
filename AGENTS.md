@@ -136,6 +136,14 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 `<script id="timer-core">` 에 모아 두었고 `tests/test_timer.js` 가 그것만 떼어 시험한다.
 저장은 그 기기 안뿐이다(`localStorage` 의 `b7timer_v1`, 내 소리 파일은 IndexedDB `b7timer`).
 
+### 플립 시계(`clock/`)도 따로 돈다 — 주소는 `block7.my/clock/`
+
+타이머와 같은 사정이다: `clock/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+개발본 두 파일·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+계획과 까닭은 `docs/ROADMAP.md` '1121-C'. 규칙(시각 글자 · 날짜 줄 · 설정 읽기 · 문구 프리셋)은
+`<script id="clock-core">` 에 모아 두었고 `tests/test_clock.js` 가 그것만 떼어 시험한다.
+저장은 그 기기 안뿐이다(`localStorage` 의 `b7clock_v1`). 초 · 12시간은 주소 `?s=0&h=12` 로도 정하지만 **저장하지 않는다.**
+
 ### 심방 노트(`care/`)도 따로 돈다 — 주소는 `sweeter.my/care/`
 
 기도노트와 같은 사정이다: `care/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
