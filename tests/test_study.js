@@ -247,6 +247,13 @@ function mk(o) {
   sc.eq('⑮ 고르는 줄에 기타는 없다', A.pickSubj().some(x => x.k === 'etc'), false);
   sc.eq('⑮ 옛 기록의 기타는 그대로 읽힌다', A.subjOf('etc').n, '기타');
   sc.eq('⑮ 숙제 방식은 처음엔 안 고른 상태 · 옛 now 는 다시 묻는다', [A.blankState().hwMode, A.normState({hwMode: 'eve'}).hwMode, A.normState({hwMode: 'now'}).hwMode], ['', 'eve', '']);
+  { const SAT = A.addDays(MON, 5), NMON = A.addDays(MON, 7), NFRI = A.addDays(MON, 4);
+    sc.eq('⑮ 쉬는 요일: 월 제출 · 토일 쉼 → 금', A.hwDoDate('eve', MON, NMON, [0, 6]), NFRI);
+    sc.eq('⑮ 쉬는 요일이 없으면 그대로 전날', A.hwDoDate('eve', MON, NMON, []), A.addDays(NMON, -1));
+    sc.eq('⑮ 당기다 오늘을 지나면 오늘', A.hwDoDate('eve', NFRI, NMON, [0, 6]), NFRI);
+    sc.eq('⑮ 일곱 요일 다 쉼은 무시', A.hwDoDate('eve', MON, NMON, [0, 1, 2, 3, 4, 5, 6]), A.addDays(NMON, -1));
+    sc.eq('⑮ 그날 바로는 쉬는 요일과 상관없음', A.hwDoDate('day', MON, NMON, [0, 6]), MON);
+    sc.eq('⑮ hwSkip 정리', [A.normState({hwSkip: [6, 0, 0, 9, 'x']}).hwSkip, A.blankState().hwSkip], [[0, 6], []]); }
   sc.eq('⑮ 고른 day 는 남는다', A.normState({hwMode: 'day'}).hwMode, 'day');
   sc.eq('⑮ 할 것 넣기 버튼은 할 것이 없을 때만', HTML.includes("${!S.books.length && !S.tasks.length ? `<button class=\"addone\" data-a=\"add\">"), true);
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1025-2 -->
+<!-- 공부 친구들 v. 26-1121-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -506,7 +506,7 @@ const clampInt = (v, lo, hi, def) => { v = Math.round(Number(v)); return Number.
 
 function blankState() {
   return {v: 1, books: [], tasks: [], sessions: [], run: null, snooze: {}, dismiss: {}, coins: 0, spent: 0,
-    applied: [], promisesSeen: [], subjects: [], hw: [], hwMode: '', hwSeen: '', art: 'A', kind: 'rabbit', nick: '', made: Date.now(), sfx: true, sfxVol: 4, bgmVol: 2, mute: false, bgmSel: null, bgmOrder: null, lastBackup: 0};
+    applied: [], promisesSeen: [], subjects: [], hw: [], hwMode: '', hwSkip: [], hwSeen: '', art: 'A', kind: 'rabbit', nick: '', made: Date.now(), sfx: true, sfxVol: 4, bgmVol: 2, mute: false, bgmSel: null, bgmOrder: null, lastBackup: 0};
 }
 function normBook(b) {
   if (!b || typeof b !== 'object' || !b.id || !b.name) return null;
@@ -534,6 +534,7 @@ function normState(o) {
   s.hw = (Array.isArray(o.hw) ? o.hw : []).filter(h => h && h.id && h.title && isD(h.doDate))
     .map(h => ({id: String(h.id), title: String(h.title).slice(0, 40), subj: subjOf(h.subj).k, due: isD(h.due) ? h.due : '', doDate: h.doDate, done: isD(h.done) ? h.done : ''}));
   s.hwMode = o.hwMode === 'eve' || o.hwMode === 'day' ? o.hwMode : '';   // '' = 아직 안 고름 → 오늘 화면에 고르는 칸 (옛 'now' 는 저절로 들어간 값이라 다시 묻는다)
+  s.hwSkip = Array.isArray(o.hwSkip) ? [...new Set(o.hwSkip.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))].sort() : [];   // 숙제를 안 하는 요일(0=일 ~ 6=토)
   s.hwSeen = isD(o.hwSeen) ? o.hwSeen : '';
   s.art = ['A', 'B', 'C', 'D', 'E'].includes(o.art) ? o.art : 'A';   // 캐릭터 그림 스타일 — 처음엔 A 파스텔 플랫 (샤론 1024 ③)
   s.books = (Array.isArray(o.books) ? o.books : []).map(normBook).filter(Boolean);
@@ -657,7 +658,15 @@ function questsFor(st, date, today) {
  * h.done 은 그 기록이 생긴 날 — finishRun 이 적고 removeSession · '다시 해 볼까?' 가 지운다. */
 const keyOfHw = h => 'h:' + h.id;
 const hwOfKey = (st, key) => st.hw.find(h => keyOfHw(h) === key) || null;
-const hwDoDate = (mode, today, due) => mode === 'eve' && due ? (addDays(due, -1) > today ? addDays(due, -1) : today) : today;
+/* skip = 숙제를 안 하는 요일 목록. 제출 하루 전이 그 요일이면 하루씩 더 앞으로 당긴다(월 제출 · 토일 쉼 → 금).
+ * 7요일을 다 쉬면 의미가 없으니 무시하고, 당기다 오늘을 지나면 오늘로 둔다. */
+const hwDoDate = (mode, today, due, skip) => {
+  if (mode !== 'eve' || !due) return today;
+  const sk = Array.isArray(skip) && skip.length < 7 ? skip : [];
+  let d = addDays(due, -1);
+  for (let i = 0; i < 7 && sk.includes(dowOf(d)); i++) d = addDays(d, -1);
+  return d > today ? d : today;
+};
 const hwFor = (st, today) => st.hw.filter(h => h.doDate <= today && (!h.done || h.done === today))
   .sort((a, b) => (!!a.done - !!b.done) || (a.due || '9').localeCompare(b.due || '9'));
 function hwQuest(st, h, today) {
@@ -817,7 +826,7 @@ const sundayOf = s => addDays(s, -dowOf(s));   // 아이 화면의 한 주는 �
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1025-2';
+const APP_VERSION = 'v. 26-1121-1';
 const $ = id => document.getElementById(id);
 // ── 앱 아이콘 여섯 가지 (샤론 1024 ⑧, 기도노트와 같은 방식) — 설정에서 이 기기마다 고른다. 처음은 '연필과 지우개'.
 // 아이폰은 '홈 화면에 추가' 할 때 머리 태그 · manifest 를 한 번만 읽는다 → 바꾼 뒤 홈 화면에서 지우고 다시 추가해야 바뀐다.
@@ -1329,6 +1338,7 @@ function hwWhen(q, today) {
 // 숙제는 언제 할까 — 처음 한 번만 묻는 칸. 고르면 접혀 사라지고, 바꾸기는 설정에서 (샤론 1024 ②)
 const hwPickCard = () => `<div class="pick" id="hwPick"><span class="pick-bd">${myBuddy('read')}</span><b>숙제는 언제 할까요?</b><p>한 번 고르면 앞으로 넣는<br>숙제가 모두 그렇게 돼요</p>
     <div class="pick2"><button data-a="hwMode" data-v="day"><b>그날 바로</b><small>숙제 받은 날 해요</small></button><button data-a="hwMode" data-v="eve"><b>제출 전날</b><small>내기 하루 전에 해요</small></button></div></div>`;
+const skipHint = () => S.hwSkip.length && S.hwSkip.length < 7 ? S.hwSkip.map(i => DOW[i]).join('·') + '요일에는 숙제를 안 해요. 그날이 숙제 날이면 그 앞의 쉬지 않는 날로 당겨서 나와요. 이미 넣은 숙제는 그대로예요.' : '쉬는 요일을 누르면, 숙제 날이 그 요일에 걸릴 때 앞으로 당겨져요.';
 const HWMODE_TOAST = {day: '앞으로 숙제는\n받은 날 바로 해요', eve: '앞으로 숙제는\n제출 하루 전에 나와요'};
 function renderToday() {
   const t = todayStr(), qs = questsFor(S, t, t), L = levelOf(starsOf(S));
@@ -1537,10 +1547,10 @@ function hwEditor(id) {
     $('hwGo').onclick = () => { sync(); const name = H.title.trim();
       if (!name) { toast('무슨 숙제인지 써 주세요'); $('hwT').focus(); return; }
       if (eve && !H.due) { toast('제출 날짜를 골라 주세요'); return; }
-      if (h0) Object.assign(h0, {title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: h0.done ? h0.doDate : eve ? hwDoDate('eve', t, H.due) : h0.doDate});
-      else { const nid = 'h' + sid(); JUST_ADD = 'h:' + nid; S.hw.push({id: nid, title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: hwDoDate(eve ? 'eve' : 'now', t, H.due), done: ''}); }
+      if (h0) Object.assign(h0, {title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: h0.done ? h0.doDate : eve ? hwDoDate('eve', t, H.due, S.hwSkip) : h0.doDate});
+      else { const nid = 'h' + sid(); JUST_ADD = 'h:' + nid; S.hw.push({id: nid, title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: hwDoDate(eve ? 'eve' : 'now', t, H.due, S.hwSkip), done: ''}); }
       save(); closeSheet(); render(); sfx('ok');
-      const dd = eve ? hwDoDate('eve', t, H.due) : t;
+      const dd = eve ? hwDoDate('eve', t, H.due, S.hwSkip) : t;
       toast(h0 ? '고쳤어요' : dd === t ? '넣었어요!\n오늘의 숙제에 있어요' : '넣었어요!\n' + (parseYmd(dd).getMonth() + 1) + '/' + parseYmd(dd).getDate() + ' ' + DOW[dowOf(dd)] + '요일에 나와요'); };
     if ($('hwDel')) $('hwDel').onclick = () => { if (!confirm('"' + h0.title + '" 숙제를 지울까요?')) return; S.hw = S.hw.filter(x => x.id !== h0.id); save(); closeSheet(); render(); toast('지웠어요'); };
   };
@@ -1783,7 +1793,10 @@ function settingsSheet() {
       <div id="trkBox"></div>
       <button class="addrow" id="sndTest" data-snd style="margin-top:12px"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z"/><path d="M16.5 9a4 4 0 010 6"/></svg>소리 들어 보기</button></div>
     <div class="box"><div class="lab">숙제는 언제 할까요?</div><div class="seg2" id="stHw">${[['day', '그날 바로'], ['eve', '제출 전날']].map(x => `<button data-v="${x[0]}" class="${S.hwMode === x[0] ? 'on' : ''}" aria-pressed="${S.hwMode === x[0]}">${x[1]}</button>`).join('')}</div>
-      <div class="hint" id="stHwH">${S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : S.hwMode === 'day' ? '숙제를 넣은 날 바로 오늘의 숙제에 나와요.' : '아직 안 골랐어요.'} 이미 넣은 숙제는 그대로예요.</div></div>
+      <div class="hint" id="stHwH">${S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : S.hwMode === 'day' ? '숙제를 넣은 날 바로 오늘의 숙제에 나와요.' : '아직 안 골랐어요.'} 이미 넣은 숙제는 그대로예요.</div>
+      <div id="stSkipBox" style="${S.hwMode === 'eve' ? '' : 'display:none'}"><div class="lab" style="font-size:15px;margin-top:14px">숙제 안 하는 요일</div>
+      <div class="days7" id="stSkip">${[1, 2, 3, 4, 5, 6, 0].map(i => `<button data-w="${i}" class="${S.hwSkip.includes(i) ? 'on' : ''}" aria-pressed="${S.hwSkip.includes(i)}">${DOW[i]}</button>`).join('')}</div>
+      <div class="hint" id="stSkipH">${skipHint()}</div></div></div>
     ${S.books.length || S.tasks.length ? `<div class="box"><div class="lab">오늘의 할일</div><button class="addrow" id="stAdd">${PLUS}할 것 넣기</button><div class="hint">요일마다 하는 공부 · 한 번만 하는 할일을 넣어요.</div></div>` : ''}
     <div id="stFam"></div><div id="stPush"></div>
     <div class="box"><div class="lab">백업</div><div class="hint" style="margin-top:0">폰을 바꾸거나 앱을 지우기 전에 파일로 저장해 두세요. ${S.lastBackup ? '마지막 백업: ' + new Date(S.lastBackup).toLocaleDateString('ko-KR') : ''}</div>
@@ -1813,7 +1826,12 @@ function settingsSheet() {
   $('stHw').onclick = e => { const b = e.target.closest('[data-v]'); if (!b || b.dataset.v === S.hwMode) return; S.hwMode = b.dataset.v; save(); render();
     $('stHw').querySelectorAll('[data-v]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     $('stHwH').textContent = (S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : '숙제를 넣은 날 바로 오늘의 숙제에 나와요.') + ' 이미 넣은 숙제는 그대로예요.';
+    $('stSkipBox').style.display = S.hwMode === 'eve' ? '' : 'none';
     toast(HWMODE_TOAST[S.hwMode]); };
+  $('stSkip').onclick = e => { const b = e.target.closest('[data-w]'); if (!b) return; const w = +b.dataset.w;
+    if (!S.hwSkip.includes(w) && S.hwSkip.length >= 6) { toast('모든 요일을 쉴 수는 없어요'); return; }
+    S.hwSkip = S.hwSkip.includes(w) ? S.hwSkip.filter(x => x !== w) : S.hwSkip.concat(w).sort();
+    save(); b.classList.toggle('on', S.hwSkip.includes(w)); b.setAttribute('aria-pressed', S.hwSkip.includes(w)); $('stSkipH').textContent = skipHint(); };
   $('stFile').onclick = saveBackupFile;
   $('stOpen').onclick = () => $('stFileIn').click();
   $('stFileIn').onchange = () => { const f = $('stFileIn').files[0]; if (!f) return; const r = new FileReader();
