@@ -1682,5 +1682,20 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(57) 교역자도 누를 수 있음(보기 동작)', ['wmode', 'wpast', 'wday'].every(x => new RegExp("'" + x + "'").test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))), true);
 }
 
+// (58) 1119-2 자잘이 (HB 11/19 사진 A ~ J)
+{
+  const vw = HTML.slice(HTML.indexOf('function viewWeek() {'), HTML.indexOf('/* ---------- 달력표 보기 틀'));
+  const row = HTML.slice(HTML.indexOf('function busanRow('), HTML.indexOf('// 지난 부산 일정 — 달마다 묶음'));
+  sc.eq('(58) A 맨 아래 꺾쇠가 잘리지 않게 판 아래 여백', /#panel\{[^}]*padding-bottom:14px/.test(HTML), true);
+  sc.eq('(58) B 챙길 것 알약 자리도 펴기 · 접기', /<button class="acb" data-act="afold"/.test(HTML), true);
+  sc.eq('(58) C 안내 글은 ★ 내 일정 · 7일 띠의 내 날은 빨간 별', [/★<\/b> 내 일정/.test(vw), /x === 'me' \? '★'/.test(vw), /노란 점/.test(vw)], [true, true, false]);
+  sc.eq('(58) D 이번 주 스위치 · 주 넘김은 효과 없이 바로', [/S\.wm = v; S\.sun = sunOf\(todayYmd\(\)\); return render\(\);/.test(HTML), /if \(PREF\.tab === 'week'\) \{ S\.sun = to; return render\(\); \}/.test(HTML)], [true, true]);
+  sc.eq('(58) E 네 예배 같은 헌금인도도 1, 2, 3부, LL 작게', /role === 'offer' && x\.text \? ' <span class="muted tiny">1, 2, 3부, LL<\/span>'/.test(vw), true);
+  sc.eq('(58) F 부산 요약 머리 첫 칸은 붙지 않음', /table\.tsheet\.bt th:first-child\{position:static\}/.test(HTML), true);
+  sc.eq('(58) G · H 표 상자는 화면 폭 안(grid minmax 0) — 가로 스크롤', /\.sheets\{display:grid;gap:14px;grid-template-columns:minmax\(0,1fr\)\}/.test(HTML), true);
+  sc.eq('(58) I 메일에서 숙소 예약 찾기는 메뉴 개발 탭으로(부산 탭 줄에 없음)', [/data-act="mailscan"/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuPage(') + 2500)), /data-act="mailscan"/.test(HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function busanRow(')))], [true, false]);
+  sc.eq('(58) J 간략히가 처음 값(PREF.bdet 가 true 일 때만 자세히) · 날짜 · 요일 · 이름 · 요일 묶음만 · 교역자도 누름', [/if \(PREF\.bdet !== true\) return `<button class="vrow brief/.test(row), /<span class="vbd">\$\{daysHtml\(sortDays/.test(row), /'bdet'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 300))], [true, true, true]);
+}
+
 sc.done();
 
