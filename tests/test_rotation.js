@@ -936,6 +936,8 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
   sc.eq('㉜ 내보내기 판: 보기 고르기(지금 보던 보기) · 이번달 전체(누르면 고르기가 흐려짐) · 복사 · CSV 오른쪽 · exportRows 한 곳에서',
     [/openPane\(\{ kind: 'exp', v: viewOk\(PREF\.mview\) \? PREF\.mview : 'sheet', all: false \}\)/.test(HTML), /<select class="inp expsel\$\{all \? ' dim' : ''\}" id="exp-view"/.test(HTML) && /if \(t\.id === 'exp-view'\) \{ S\.pane\.v = t\.value; S\.pane\.all = false;/.test(HTML), /data-act="expall" aria-pressed="\$\{all\}"/.test(HTML) && /if \(a === 'expall'\) \{ S\.pane\.all = !S\.pane\.all;/.test(HTML),
       /<span class="spacer"><\/span><button class="btn" data-act="expcopy">복사<\/button><button class="btn ghost" data-act="expcsv">CSV<\/button>/.test(HTML), (HTML.match(/exportRows\(S\.book/g) || []).length], [true, true, true, true, 1]);
+  sc.eq('㉜ 주차별: 금요 영역 첫 줄에 금요예배 이름(머리줄 아님) · 마지막 금요일은 WORSHIP NIGHT · 넷째 금요일이 마지막이 아니면 비움',
+    [/svc === 'fri' && role === 'preach' \? `<tr\$\{sep\}><td class="rl h-fri">금요예배<\/td>/.test(HTML), /weekFriName\(p\.sun\) \|\| \(isLastFri\(p\.fri\) \? 'WORSHIP NIGHT' : ''\)/.test(HTML), /\$\{weekLabel\(p\.sun\)\}\$\{p\.mark/.test(HTML), ['2026-11-27', '2026-11-20', '2026-11-06', '2026-11-13'].map(d => A.isLastFri(d))], [true, true, true, [true, false, false, false]]);
   sc.eq('㉜ 화면: 부산 요약 \'예배 인도\' 칸 · 내 일정 부산 줄 · 8주 표 부산 칸 · 부산 준비 카드에 인도 알약',
     [/<th class="h-bs">예배 인도<\/th>/.test(HTML), /<td style="text-align:left">\$\{cb_\(v, 'lead', leadChips\(v\)\)\}<\/td>/.test(HTML), (HTML.match(/leadChips\(v, ' · '\)/g) || []).length, /leadChips\(x\.v\)/.test(HTML), /leadChips\(v, ' · '\)\}\$\{others\.length/.test(HTML)], [true, true, 2, true, true]);
 }
