@@ -68,7 +68,7 @@ await ga.evaluate(() => closePane()); await ga.waitForTimeout(600); ga.toasts.le
 await ga.evaluate(() => { const b = document.createElement('button'); b.dataset.pick = '2026-11-22|sun1|offer'; b.id = 'probe'; document.body.appendChild(b); b.click(); });
 ok('② 자리를 누르면 고르기 대신 \'보기만\' 판(누가 · 걸리는 것) · 고르는 단추 없음', await ga.evaluate(() => [S.pane && S.pane.kind, /보기만/.test($('#pane').innerText), !!document.querySelector('#pane [data-who]')]), ['slotv', true, false]);
 await ga.evaluate(() => closePane()); await ga.waitForTimeout(600);
-ok('② 자동 배열 단추 · 방문 더하기는 안 보인다', await ga.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'sheet'; render(); const a = !!document.querySelector('[data-act="auto"]'); PREF.tab = 'busan'; render(); const b = !!document.querySelector('[data-act="newvisit"]'); return [a, b]; }), [false, false]);
+ok('② 자동 배열 단추 · 방문 더하기는 안 보인다', await ga.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'sheet'; render(); const a = !!document.querySelector('[data-act="auto"]'); PREF.tab = 'busan'; PREF.bdet = true; render(); const b = !!document.querySelector('[data-act="newvisit"]'); return [a, b]; }), [false, false]);
 // 자기 방문 숙소 적기 — 실제 판 · 저장 단추
 await ga.waitForTimeout(600); await ga.evaluate(() => openPane({ kind: 'visit', id: 'v|2026-11-22' })); await ga.waitForTimeout(400);
 if (!(await ga.$('#pane [data-vsec="stay"]'))) console.log('    (판)', await ga.evaluate(() => [S.pane, !!$('#pane'), $('#pane') && $('#pane').innerText.slice(0, 200)]));
@@ -162,7 +162,7 @@ console.log('⑨ (R12 C4b) 부산 상영 — 계정에 저장 · 경고 · 교�
 {
   // 토요일(11/21)인 척 + 11/22 영상 광고를 이 기기에서 읽은 적 있음 → 경고
   const sat = (pg) => pg.evaluate(() => { window.todayYmd = () => '2026-11-21';
-    localStorage.setItem('rota_ads_v1', JSON.stringify({ '2026-11-22': { at: 1, o: { sun: '2026-11-22', busan: { found: true }, video: [{ title: '가을 음악회 안내' }] } } })); closePane(); PREF.tab = 'busan'; render(); });
+    localStorage.setItem('rota_ads_v1', JSON.stringify({ '2026-11-22': { at: 1, o: { sun: '2026-11-22', busan: { found: true }, video: [{ title: '가을 음악회 안내' }] } } })); closePane(); PREF.tab = 'busan'; PREF.bdet = true; render(); });
   await sat(hb); await sat(ga); await sleep(500);
   const seen = (pg) => pg.evaluate(() => [!!document.querySelector('#panel .bsbar'), document.querySelectorAll('#panel .bsp').length]);
   ok('⑨ 영상 광고가 있는 주일 · 안 고름 → HB · 내려가는 교역자 모두 맨 위 경고 줄 + 부산 탭 그 줄 알약', [await seen(hb), await seen(ga)], [[true, 1], [true, 1]]);
@@ -418,7 +418,7 @@ console.log('⑯ (1117-Z 2) 알림 판 — HB 만 · 줄을 누르면 그 판 ·
   const tabsSame = await hb.evaluate(() => ['month', 'busan', 'people'].map(t => { PREF.tab = t; render(); return document.querySelectorAll('#panel .apanel').length; }));
   ok('⑯ 네 탭 모두 같은 판 하나(달력표 · 부산 · 사람에도)', tabsSame, [1, 1, 1]);
   // 줄이 많아도 줄끼리 겹치지 않는다(목록 높이를 막아도 줄은 눌리지 않고 목록이 굴러간다 — v. 26-1118-2 폰에서 겹쳤음)
-  const ov = await hb.evaluate(() => { PREF.tab = 'busan'; S.acat = 'bd'; render(); const rs = [...document.querySelectorAll('#panel .arow')].map(r => [r.offsetTop, r.offsetHeight, r.querySelector('.am').offsetHeight + 12]);   // 줄 높이 ≥ 글 높이 + 위아래 여백(6 + 6)
+  const ov = await hb.evaluate(() => { PREF.tab = 'busan'; PREF.bdet = true; S.acat = 'bd'; render(); const rs = [...document.querySelectorAll('#panel .arow')].map(r => [r.offsetTop, r.offsetHeight, r.querySelector('.am').offsetHeight + 12]);   // 줄 높이 ≥ 글 높이 + 위아래 여백(6 + 6)
     return { n: rs.length, overlap: rs.some((r, i) => i && r[0] < rs[i - 1][0] + rs[i - 1][1]), squeezed: rs.some(r => r[1] < r[2]) }; });
   ok('⑯ 줄이 많아도 줄끼리 겹치지 않고 글자가 줄 밖으로 넘치지 않는다', [ov.n > 6, ov.overlap, ov.squeezed], [true, false, false]);
   await hb.evaluate(() => { S.acat = ''; PREF.tab = 'week'; render(); });
@@ -554,7 +554,7 @@ console.log('⑳ (1117-Z 3) 메뉴 세 탭 · 부산 탭 지난 일정 단추');
   ok('⑳ HB: 보기(테마 · 첫 화면) · 계정(로그아웃) · 개발(예배팀 받기 · 시트 가져오기 — 버전은 개발자 계정만)', h, { names: ['보기', '계정', '개발'], has: { '보기': ['theme', 'home'], '계정': ['logout'], '개발': ['wpull', 'importpick'] } });
   ok('⑳ 교역자: 보기 · 계정 두 탭(개발 없음) · 계정에 내 부재', g, { names: ['보기', '계정'], has: { '보기': ['theme', 'home'], '계정': ['logout', 'myavail'] } });
   const bz = await hb.evaluate(async () => { const mk = (d) => ({ id: 'v|' + d, date: d, who: [], days: '토일', stay: [], travel: [] }); const pv = [mk('2025-12-28'), mk('2026-10-04'), mk('2026-10-18')];
-    S.book.visits.push(...pv); PREF.tab = 'busan'; S.pastN = 0; render(); const w = (ms) => new Promise(r => setTimeout(r, ms)); const cnt = () => document.querySelectorAll('.pastm .vrow').length;
+    S.book.visits.push(...pv); PREF.tab = 'busan'; PREF.bdet = true; S.pastN = 0; render(); const w = (ms) => new Promise(r => setTimeout(r, ms)); const cnt = () => document.querySelectorAll('.pastm .vrow').length;
     const a = [document.querySelector('.vtop [data-act="pastmore"]').textContent, /다가오는 부산 일정/.test(document.body.textContent), !!document.querySelector('details.more')];
     document.querySelector('[data-act="pastmore"]').click(); await w(450); const c1 = cnt(), top1 = document.querySelector('.pastm .vrow').dataset.visit;
     document.querySelector('[data-act="pastmore"]').click(); await w(450); const c2 = cnt(), top2 = document.querySelector('.pastm .vrow').dataset.visit, band = [...document.querySelectorAll('.yband')].map(x => x.textContent);
@@ -612,7 +612,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
 {
   console.log('㉒ 숙소 목록 손잡이 · \'더 보기\' 줄 · 부산 목록 줄 (1117-Z 5)');
   const V = 'v|2026-11-22';
-  await hb.evaluate(async () => { closePane(); await new Promise(r => setTimeout(r, 450)); PREF.tab = 'busan'; render(); }); await sleep(200);
+  await hb.evaluate(async () => { closePane(); await new Promise(r => setTimeout(r, 450)); PREF.tab = 'busan'; PREF.bdet = true; render(); }); await sleep(200);
   await hb.evaluate((v) => openPane({ kind: 'visit', id: v }), V); await sleep(400);
   await hb.click('#pane [data-vsec="stay"]'); await sleep(250);
   await hb.click('#pane [data-vmanage="stay"]'); await sleep(250);
@@ -650,7 +650,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   const d2 = await getDoc('rota/' + HB);
   ok('㉒ 낡은 앱(b16) 사본과 합쳐도 more 그대로(계정 · 앱)', [d2.b18.opts.filter(o => o.type === 'stay' && o.more).length, await hb.evaluate(() => optList(S.book, 'stay').filter(o => o.more).length)], [hidden.length, hidden.length]);
   // 부산 목록 줄
-  const rowv = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return { vst: !!b.querySelector('.vst .vss'), du: !!b.querySelector('.vwk .du'), red: (b.querySelector('.vred') || {}).textContent || '' }; }, V);
+  const rowv = await hb.evaluate((v) => { PREF.tab = 'busan'; PREF.bdet = true; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return { vst: !!b.querySelector('.vst .vss'), du: !!b.querySelector('.vwk .du'), red: (b.querySelector('.vred') || {}).textContent || '' }; }, V);
   ok('㉒ 부산 목록 줄: 오른쪽 숙소 · 요일 칸 아래 맡은 일(1117-Z 7) · 빨강은 특이사항 · 중요만', [rowv.vst, rowv.du, rowv.red.length > 0], [true, true, false]);
   // 달력표 금요 표: 꺾쇠 알약 바탕 없음 · 아래 꺾쇠는 표 밖 상자 테두리 위 · 아래 여백 없음
   const ed = await hb.evaluate(() => { PREF.tab = 'month'; PREF.mview = 'sheet'; render(); const box = document.querySelector('.extbox'), w = box.querySelector('.tblwrap'), b = box.querySelector(':scope > .edge.bot'), c = box.querySelector('td.edged');
@@ -666,14 +666,14 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
 {
   console.log('㉓ 메모 중요 · 일반 · 부산 요약 특이사항 칸 · 분당 주일 꺾쇠 (1117-Z 5b)');
   const V = 'v|2026-11-22';
-  await hb.evaluate(async (v) => { closePane(); await new Promise(r => setTimeout(r, 450)); PREF.tab = 'busan'; render(); openPane({ kind: 'visit', id: v }); }, V); await sleep(400);
+  await hb.evaluate(async (v) => { closePane(); await new Promise(r => setTimeout(r, 450)); PREF.tab = 'busan'; PREF.bdet = true; render(); openPane({ kind: 'visit', id: v }); }, V); await sleep(400);
   await hb.click('#pane [data-vsec="note"]'); await sleep(250);
   ok('㉓ 메모 판 = 중요(빨강) · 일반 두 칸', await hb.evaluate(() => [!!$('#df-hot'), !!$('#df-note'), getComputedStyle($('#df-hot')).color === getComputedStyle(document.documentElement).getPropertyValue('--bad').trim() || /rgb\(1[5-9]\d|rgb\(2\d\d/.test(getComputedStyle($('#df-hot')).color)]), [true, true, true]);
   await hb.fill('#df-hot', '중고등부 설교 필요'); await hb.fill('#df-note', '일반 메모 글'); await hb.click('#pane [data-act="vsave"]'); await sleep(300);
   const d1 = await until(async () => { const d = await getDoc('rota/' + HB); const v = d.b18 && d.b18.visits.find(x => x.id === V); return v && v.hot ? d : null; });
   ok('㉓ 계정 책(b18): hot = 중요 · note = 일반', d1 && (v => [v.hot, v.note])(d1.b18.visits.find(x => x.id === V)), ['중고등부 설교 필요', '일반 메모 글']);
   await hb.evaluate(() => closePane()); await sleep(450);
-  const row = await hb.evaluate((v) => { PREF.tab = 'busan'; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return [(b.querySelector('.vred') || {}).textContent || '', b.textContent.includes('일반 메모 글')]; }, V);
+  const row = await hb.evaluate((v) => { PREF.tab = 'busan'; PREF.bdet = true; render(); const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`); return [(b.querySelector('.vred') || {}).textContent || '', b.textContent.includes('일반 메모 글')]; }, V);
   ok('㉓ 부산 목록: 중요만 빨간 글자 · 일반 메모는 흐린 줄로 보임(1117-Z 7, HB 11/18)', [row[0].includes('중고등부 설교 필요'), row[1]], [true, true]);
   const wk = await hb.evaluate(() => { S.sun = '2026-11-15'; S.wm = 'cal'; PREF.tab = 'week'; PREF.wlay = 'a'; render(); return [document.querySelector('#panel').textContent.includes('중고등부 설교 필요'), document.querySelector('#panel').textContent.includes('일반 메모 글')]; });
   ok('㉓ 이번 주(그 앞 주 — 내려갈 부산 일정 카드): 중요는 보이고 일반 메모는 안 보임', wk, [true, false]);
@@ -694,7 +694,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   console.log('㉔ 부산 목록 한 줄 — 시안 B 요일 칸 (1117-Z 7, HB 11/18)');
   const V = 'v|2026-11-22', vp0 = hb.viewportSize();
   await hb.evaluate(async () => { closePane(); await new Promise(r => setTimeout(r, 450)); });
-  const look = async (w) => { await hb.setViewportSize({ width: w, height: 900 }); return hb.evaluate((v) => { PREF.tab = 'busan'; render();
+  const look = async (w) => { await hb.setViewportSize({ width: w, height: 900 }); return hb.evaluate((v) => { PREF.tab = 'busan'; PREF.bdet = true; render();
     const b = document.querySelector(`#panel .vrow[data-visit="${v}"]`), r = (s) => b.querySelector(s).getBoundingClientRect(), br = b.getBoundingClientRect();
     const aux = [...b.querySelectorAll('.vaux > span')].map(x => x.getBoundingClientRect().top);
     return { stRight: Math.abs(r('.vst').right - br.right) <= 4, stTop: r('.vst').top < r('.vwk').top, sdUnder: !b.querySelector('.vsd') || r('.vsd').top > r('.vss').top,
@@ -717,7 +717,7 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   await ctx.route('https://fonts.googleapis.com/**', r => r.abort()); await ctx.route('https://fonts.gstatic.com/**', r => r.abort());
   const tp = await ctx.newPage(); tp.errs = []; tp.on('pageerror', e => tp.errs.push('㉕: ' + e.message));
   await tp.goto(ROOT + '?demo=1'); await tp.waitForTimeout(500);
-  await tp.evaluate(() => { PREF.tab = 'busan'; renderShell(); }); await tp.waitForTimeout(300);
+  await tp.evaluate(() => { PREF.tab = 'busan'; PREF.bdet = true; renderShell(); }); await tp.waitForTimeout(300);
   const cdp = await ctx.newCDPSession(tp);
   const line = (a, z, k = 12) => Array.from({ length: k + 1 }, (_, i) => [a[0] + (z[0] - a[0]) * i / k, a[1] + (z[1] - a[1]) * i / k]);
   const drag = async (pts, step = 16) => { await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: pts[0][0], y: pts[0][1] }] });
