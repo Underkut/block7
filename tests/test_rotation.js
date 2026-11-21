@@ -37,6 +37,7 @@
 //  ㊴ 이번 주 표(C) 분당 판 축 바꿈(1117-G): 줄 = 설교 · 헌금 · 인도, 칸 = 예배(부산 띠와 같은 결)
 //  ㊳ 분당 특별예배(1116-2 E): specs 한 줄 · 자리 '날짜|xk|역할' · 그 날 정해진 예배 쉼 · 부산 겹침 · 내 일정 · 시트 내보내기 · 지우면 자리도 · b14 · 화면
 //  ㊵ 숙소 금액 · 취소 기한은 HB 전용(1117-Z 1): 교역자 화면 책에서 걷어 냄 · 교역자 칸의 값은 안 받음(이미 든 값은 그대로) · 교역자는 못 고침 · HB 화면은 그대로
+//  (59) 구글 자료(1121-G G1): 탭 이름 · 맨 뒤 판 · 합친 칸 펴기 · 날짜(해 넘김 · 특별예배 글) · 예배팀 / 예배위원 시트 읽기(글자로 찾기 · 판교중계 = 중계 · 옆 표 안 읽음) · 두 달 합치기 · 읽기만
 //  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
 //  ㊷ 교역자 판 · 주보 담당(1117-Z 2c): 교역자 판 = 겹침 · 확인 + 자기 부산 일정 교통편 · 상영만 · 주보 담당 한 달씩 ㄱㄴㄷ · 그 달만 직접 · 주보 담당의 상영 고르기 받음 · b15
@@ -67,7 +68,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   adtxId, normAdtx, adtxOf, adtxPick, adtxClean, ADTX_MAX,
   alertsOf, alertEnd, cancelSoon, dDay, ddText, ALERT_CATS, CANCEL_DAYS, colTarget: colTarget,
   normBul, bulId, bulOf, bulOrder, monthDiff,
-  AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText };`, ctx);
+  AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
+  GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1697,6 +1699,126 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(58) G · H 표 상자는 화면 폭 안(grid minmax 0) — 가로 스크롤', /\.sheets\{display:grid;gap:14px;grid-template-columns:minmax\(0,1fr\)\}/.test(HTML), true);
   sc.eq('(58) I 메일에서 숙소 예약 찾기는 메뉴 개발 탭으로(부산 탭 줄에 없음)', [/data-act="mailscan"/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuPage(') + 2500)), /data-act="mailscan"/.test(HTML.slice(HTML.indexOf('function viewBusan('), HTML.indexOf('function busanRow(')))], [true, false]);
   sc.eq('(58) J 간략히가 처음 값(PREF.bdet 가 true 일 때만 자세히) · 날짜 · 요일 · 이름 · 요일 묶음만 · 교역자도 누름', [/if \(PREF\.bdet !== true\) return `<button class="vrow brief/.test(row), /<span class="vbd">\$\{daysHtml\(sortDays/.test(row), /'bdet'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 300))], [true, true, true]);
+}
+
+// (59) 1121-G G1 — 부산 예배팀 · 예배위원 구글 시트 읽기 (HB 11/21). 이름은 모두 지어낸 것.
+//      시트 모양은 실제 두 시트(11/21 열어 봄)를 본떴다: 합친 칸 · 오른쪽 옆 표(준비물 · 청소 당번 · 횟수 · 이름 줄) · 특별예배 글
+{
+  // 칸 주소로 지어낸 탭을 만든다 — 'B3' 처럼
+  const grid = () => { const v = [], mg = [], at = a => { const m = /^([A-Z]+)(\d+)$/.exec(a); let c = 0; for (const ch of m[1]) c = c * 26 + ch.charCodeAt(0) - 64; return [+m[2] - 1, c - 1]; };
+    return { v, mg, set(a, x) { const [r, c] = at(a); while (v.length <= r) v.push([]); while (v[r].length < c) v[r].push(''); v[r][c] = x; },
+      merge(a, b) { const [r0, c0] = at(a), [r1, c1] = at(b); mg.push({ startRowIndex: r0, endRowIndex: r1 + 1, startColumnIndex: c0, endColumnIndex: c1 + 1 }); },
+      top() { /* 합친 칸 정보 없이 왼쪽 위만 남긴 모양 = 구글 값 그대로 */ return v; } }; };
+  const col = n => { let s = ''; n++; while (n) { s = String.fromCharCode(65 + (n - 1) % 26) + s; n = Math.floor((n - 1) / 26); } return s; };
+
+  // ── 탭 이름 · 맨 뒤 판
+  sc.eq('(59) 탭 이름 YY년 M월 MMDD-N · YY-MMDD-N · 판 없음 · 사본 · 13월은 안 읽음',
+    ['26년 11월 1117-1', '26년 2월 26-0214-1', '26년 12월', '26년 11월 1117-1의 사본', '26년 13월 1201-1', '부산 예배팀'].map(t => { const x = A.gsTabInfo(t); return x && [x.ym, x.ver]; }),
+    [['2026-11', '1117-1'], ['2026-02', '26-0214-1'], ['2026-12', ''], null, null, null]);
+  sc.eq('(59) 판 순서: 1월 탭을 12월에 만든 판(1228-1 · 25-1227-1)은 1월에 만든 판보다 앞', [A.gsTabInfo('27년 1월 1228-1').rank < A.gsTabInfo('27년 1월 0103-1').rank, A.gsTabInfo('26년 1월 25-1227-1').rank < A.gsTabInfo('26년 1월 26-0102-1').rank, A.gsTabInfo('26년 11월 1117-2').rank > A.gsTabInfo('26년 11월 1117-1').rank], [true, true, true]);
+  const T = ['26년 11월 1117-1', '26년 11월 1029-1', '26년 10월 1024-1', '26년 12월 1120-2', '26년 12월 1120-1', '26년 12월 1118-1', '26년 11월 1117-1의 사본'];   // 실제 시트처럼 새 탭이 앞
+  sc.eq('(59) 이번 달 · 다음 달 하나씩, 같은 달이면 맨 뒤 판', J(A.gsPickTabs(T, '2026-11-21')), [{ ym: '2026-11', title: '26년 11월 1117-1', ver: '1117-1' }, { ym: '2026-12', title: '26년 12월 1120-2', ver: '1120-2' }]);
+  sc.eq('(59) 다음 달 탭이 아직 없으면 빈 이름 · 해 넘김(12월 → 1월)', J(A.gsPickTabs(['26년 12월 1201-1', '25년 12월 1129-1'], '2026-12-05')), [{ ym: '2026-12', title: '26년 12월 1201-1', ver: '1201-1' }, { ym: '2027-01', title: '', ver: '' }]);
+  sc.eq('(59) 판 이름이 같은 탭 둘이면 시트에서 앞(왼쪽) 것', A.gsPickTabs(['26년 11월 1117-1', '26년 11월  1117-1'], '2026-11-01')[0].title, '26년 11월 1117-1');
+
+  // ── 날짜 · 예배 · 이름
+  sc.eq('(59) 날짜: 탭의 달로 해를 정함 · 12월 탭의 1/3 = 다음 해 · 1월 탭의 12/28 = 앞 해 · 없는 날 · 시각 · 판 표시는 날짜 아님',
+    [['11/1', '2026-11'], ['1/3', '2026-12'], ['12/28', '2027-01'], ['2/30', '2026-02'], ['11:30', '2026-11'], ['2026.11', '2026-11'], ['v.1117-1', '2026-11'], ['목 11:30', '2026-12'], ['2026-11-15', '2026-11'], ['11월 8일', '2026-11']].map(([t, ym]) => A.gsDate(t, ym)),
+    ['2026-11-01', '2027-01-03', '2026-12-28', '', '', '', '', '', '2026-11-15', '2026-11-08']);
+  sc.eq('(59) 특별예배 칸(실제 2025-12): 날짜 + 뒤 글', ['12/24(수) 8PM 워십나잇', '12/19 7:30PM\n크리스마스 콘서트\n(꿈동산 생중계)', '11/6'].map(t => J(A.gsDateRest(t, '2025-12'))),
+    [{ date: '2025-12-24', rest: '8PM 워십나잇' }, { date: '2025-12-19', rest: '7:30PM 크리스마스 콘서트 (꿈동산 생중계)' }, { date: '2025-11-06', rest: '' }]);
+  sc.eq('(59) 예배 칸 머리: 1부 · 2부 예배 (안내: 4층만) · 라이프라인 예배 · LL · 모르는 것', ['1부', '2부 예배\n(안내: 4층만)', '라이프라인 예배', 'LL', '3부', '어쿠스틱', '성탄 예배'].map(A.gsSvc), ['1', '2', 'LL', 'LL', '3', '', '']);
+  sc.eq('(59) 이름 나누기: 쉼표 · 빈칸 · 줄바꿈 · 판교중계는 이름 아님 · A/B 표시는 그대로', [A.gsNames('하늬, 다솜'), A.gsNames('김하늬A 김하늬B'), A.gsNames('가온\n나린'), A.gsNames('판교중계'), A.gsNames('')], [['하늬', '다솜'], ['김하늬A', '김하늬B'], ['가온', '나린'], [], []]);
+  sc.eq('(59) 합친 칸 펴기 — 왼쪽 위 글을 범위 전체에, 빈 줄도 만든다', J(A.gsFill([['', '가'], [], ['x']], [{ startRowIndex: 0, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 3 }])), [['', '가', '가'], ['', '가', '가'], ['x']]);
+
+  // ── 부산 예배팀 — 실제 11월 탭과 같은 자리 · 같은 합친 칸
+  const tm = (() => { const G = grid(); G.set('B1', '최종'); G.merge('B1', 'D1'); G.set('E1', '12월부터 조명 더함');
+    G.set('B3', '주  일  예  배'); G.set('C3', 'v.1117-1'); G.set('D3', '미정'); G.set('B4', '2026.11'); G.merge('B4', 'B5');
+    const R = ['예배 인도', '싱어1', '싱어2', '싱어3', '메인 건반', '세컨 건반', '어쿠스틱', '드럼', '베이스', '일렉', '비올라', '조명', '음향 & 중계', '자막', '봉독', '교역자', '토요모임'];
+    R.forEach((x, i) => G.set('B' + (6 + i), x));
+    ['11/1', '11/8', '11/15', '11/22', '11/29'].forEach((d, w) => { const c = 2 + w * 3, C = k => col(c + k);
+      G.set(C(0) + '4', d); G.merge(C(0) + '4', C(2) + '4'); ['1부', '2부', '라이프라인'].forEach((x, k) => G.set(C(k) + '5', x));
+      G.set(C(0) + '6', '판교중계'); G.merge(C(0) + '6', C(0) + '16');   // 1부는 늘 중계(예배 인도 ~ 비올라 합친 칸)
+      if (w !== 0) { G.set(C(2) + '6', '판교중계'); G.merge(C(2) + '6', C(2) + '16'); }   // 라이프라인은 첫 주만 부산 팀
+      G.set(C(1) + '6', '한바다'); G.set(C(1) + '7', '윤슬기'); G.set(C(1) + '8', '서하람'); G.set(C(1) + '10', w === 4 ? '조은솔' : '차나무'); G.set(C(1) + '13', w % 2 ? '진우람' : '문이든');
+      G.set(C(0) + '17', '문이든'); G.merge(C(0) + '17', C(0) + '18'); G.set(C(1) + '17', '진우람'); G.set(C(1) + '18', '진우람');
+      G.set(C(2) + '17', '조은솔, 길하랑'); G.merge(C(2) + '17', C(2) + '18');
+      G.set(C(0) + '19', '정다온'); G.set(C(1) + '19', '정다온'); G.set(C(1) + '20', '고은결'); G.set(C(1) + '21', '목사' + (w + 1)); G.set(C(1) + '22', '기도회, 곡연습'); });
+    G.set('C6', '판교중계'); G.set('E6', '한바다'); G.set('E7', '윤슬기'); G.set('E12', '한바다'); G.set('E13', '문이든');   // 첫 주 라이프라인은 부산 팀(어쿠스틱 겸 인도)
+    G.set('AD4', '예배 인도'); G.set('AE4', '마이크'); G.set('AD5', '어쿠스틱'); G.set('AD6', '싱어1');   // 오른쪽 준비물 표 — 안 읽음
+    G.set('B25', '금 요 예 배'); ['어웨이크', '리바이브드', '인카운터', '워십나잇'].forEach((x, i) => G.set(col(2 + i) + '25', x));
+    ['11/6', '11/13', '11/20', '11/27'].forEach((x, i) => G.set(col(2 + i) + '26', x));
+    R.slice(0, 14).forEach((x, i) => G.set('B' + (27 + i), x));
+    for (const C of ['C', 'F']) { G.set(C + '27', '판교중계'); G.merge(C + '27', C + '37'); }
+    G.set('D27', '목사3'); G.set('D28', '정다온'); G.set('D31', '목사3'); G.set('E27', '목사4'); G.set('E28', '정다온'); G.set('E33', '목사4'); G.set('E34', '문이든');
+    G.set('C38', '문이든'); G.set('D38', '길하랑'); G.set('E38', '하나래'); G.set('F38', '조은솔');
+    G.set('K25', '예배팀 청소(토요일)'); G.merge('K25', 'L25'); ['11/7', '11/14', '11/21', '11/28', '12/5'].forEach((x, i) => G.set(col(11 + i) + '26', x));   // 청소 당번 표 — 안 읽음
+    G.set('K27', '강단'); G.merge('K27', 'K28'); G.set('L27', '차나무'); G.set('Y26', '9'); G.set('Z26', '윤슬기'); G.set('AA26', '싱어 2부 매주4');   // 횟수 집계 — 안 읽음
+    return G; })();
+  const t1 = A.gsReadTeam(tm.v, tm.mg, '2026-11');
+  sc.eq('(59) 예배팀: 경고 없음 · 주일 5주 × 3 · 금요 4', [J(t1.warn), t1.sun.length, t1.fri.length, A.gsCount(t1)], [[], 15, 4, '주일 5 · 금요 4']);
+  sc.eq('(59) 예배팀: 역할 줄 이름(시트 그대로) · 금요 판은 자막까지', [t1.roles.sun.map(r => r.label).join(','), t1.roles.fri.length, t1.roles.fri[13].k], ['예배 인도,싱어1,싱어2,싱어3,메인 건반,세컨 건반,어쿠스틱,드럼,베이스,일렉,비올라,조명,음향 & 중계,자막,봉독,교역자,토요모임', 14, '자막']);
+  const e = (d, sv) => t1.sun.find(x => x.date === d && x.svc === sv);
+  sc.eq('(59) 예배팀 11/22 2부: 칸마다 이름 · 교역자 · 토요모임', J(e('2026-11-22', '2').cells), { '예배인도': ['한바다'], '싱어1': ['윤슬기'], '싱어2': ['서하람'], '메인건반': ['차나무'], '드럼': ['진우람'], '조명': ['진우람'], '음향&중계': ['진우람'], '자막': ['정다온'], '봉독': ['고은결'], '교역자': ['목사4'], '토요모임': ['기도회', '곡연습'] });
+  sc.eq('(59) 예배팀 판교중계: 1부는 중계(예배 인도 ~ 비올라는 이름 없음) · 조명 · 음향 · 자막은 부산 사람 그대로', [e('2026-11-22', '1').relay, J(e('2026-11-22', '1').cells)], [true, { '조명': ['문이든'], '음향&중계': ['문이든'], '자막': ['정다온'] }]);
+  sc.eq('(59) 예배팀 라이프라인: 첫 주는 부산 팀 · 다음 주부터 중계 · 한 칸 두 분(쉼표)', [e('2026-11-01', 'LL').relay, e('2026-11-01', 'LL').cells['예배인도'], e('2026-11-08', 'LL').relay, e('2026-11-08', 'LL').cells['조명']], [false, ['한바다'], true, ['조은솔', '길하랑']]);
+  sc.eq('(59) 예배팀 금요: 예배 이름 · 날짜 · 중계 · 인도', t1.fri.map(f => [f.date, f.name, f.relay, (f.cells['예배인도'] || []).join()]), [['2026-11-06', '어웨이크', true, ''], ['2026-11-13', '리바이브드', false, '목사3'], ['2026-11-20', '인카운터', false, '목사4'], ['2026-11-27', '워십나잇', true, '']]);
+  sc.eq('(59) 예배팀: 오른쪽 옆 표(준비물 · 청소 당번 · 횟수)는 안 읽음 — 날짜 12/5 · 이름 차나무(청소) 가 금요에 없음', [t1.fri.some(f => f.date === '2026-12-05'), t1.sun.some(x => x.svc === '' || !x.date), JSON.stringify(t1).includes('마이크')], [false, false, false]);
+  const t1b = A.gsReadTeam(tm.top(), [], '2026-11');
+  sc.eq('(59) 합친 칸 정보가 없어도(왼쪽 위만) 날짜를 잇고 중계를 알아봄', [J(t1b.warn), t1b.sun.length, e('2026-11-22', '1').relay === t1b.sun.find(x => x.date === '2026-11-22' && x.svc === '1').relay, t1b.fri[0].relay], [[], 15, true, true]);
+
+  // ── 부산 예배위원 — 실제 11월 탭과 같은 자리
+  const sv = (() => { const G = grid(); G.set('B1', '최종'); G.merge('B1', 'E1'); G.set('B2', ' 2026년 11월 예배 위원_부산 캠퍼스'); G.merge('B2', 'H2'); G.set('F3', 'v. 1117-1');
+    ['주일', '구분', '1부 예배', '2부 예배\n(안내: 4층만)', '라이프라인 예배'].forEach((x, k) => G.set(col(1 + k) + '4', x)); G.set('I4', '헌금 위원'); G.set('J4', '안내 위원');
+    ['11/1', '11/8', '11/15', '11/22', '11/29'].forEach((d, w) => { const r = 5 + w * 4; G.set('B' + r, d); G.merge('B' + r, 'B' + (r + 3));
+      ['안내위원', '헌금위원', '봉독위원', '광고위원'].forEach((x, k) => G.set('C' + (r + k), x));
+      G.set('E' + r, '나은솔'); G.set('F' + r, '김하늬A'); G.set('D' + (r + 1), '임가온'); G.set('E' + (r + 1), '나은솔 김하늬B'); G.set('F' + (r + 1), '박새롬');
+      G.set('E' + (r + 2), '고은결'); G.set('D' + (r + 3), '목사' + (w + 1)); G.set('E' + (r + 3), '목사' + (w + 1)); });
+    G.set('H5', '금요예배'); ['11/6', '11/13', '11/20', '11/27'].forEach((d, i) => G.set('H' + (6 + i), d));
+    G.set('I6', '김하늬A'); G.set('I7', '박새롬'); G.set('I9', '김하늬A, 임가온'); G.set('J8', '이나래'); G.set('J9', '이나래');
+    ['한바다', '진우람', '문이든'].forEach((x, i) => G.set('L' + (5 + i), x));   // 맨 오른쪽 이름 줄 — 안 읽음
+    return G; })();
+  const s1 = A.gsReadServe(sv.v, sv.mg, '2026-11'), se = (d, s) => s1.sun.find(x => x.date === d && x.svc === s);
+  sc.eq('(59) 예배위원: 경고 없음 · 주일 5 × 3 · 금요 4 · 역할 넷 · 금요 둘', [J(s1.warn), s1.sun.length, s1.fri.length, s1.roles.sun.map(r => r.k).join(), s1.roles.fri.map(r => r.k).join()], [[], 15, 4, '안내,헌금,봉독,광고', '헌금,안내']);
+  sc.eq('(59) 예배위원 11/15 2부: 한 칸 두 분은 빈칸으로 · 광고 = 교역자', J(se('2026-11-15', '2').cells), { '안내': ['나은솔'], '헌금': ['나은솔', '김하늬B'], '봉독': ['고은결'], '광고': ['목사3'] });
+  sc.eq('(59) 예배위원 1부 · 라이프라인', [J(se('2026-11-15', '1').cells), J(se('2026-11-15', 'LL').cells)], [{ '헌금': ['임가온'], '광고': ['목사3'] }, { '안내': ['김하늬A'], '헌금': ['박새롬'] }]);
+  sc.eq('(59) 예배위원 금요(머리는 한 줄 위) · 쉼표 두 분 · 맨 오른쪽 이름 줄 안 읽음', [s1.fri.map(f => f.date + ':' + (f.cells['헌금'] || []).join('+') + ':' + (f.cells['안내'] || []).join('+')).join(' '), JSON.stringify(s1).includes('한바다')], ['2026-11-06:김하늬A: 2026-11-13:박새롬: 2026-11-20::이나래 2026-11-27:김하늬A+임가온:이나래', false]);
+  const s1b = A.gsReadServe(sv.top(), [], '2026-11');
+  sc.eq('(59) 예배위원: 합친 칸 정보 없이도 날짜를 아래로 이어 같은 답', JSON.stringify(s1b.sun), JSON.stringify(s1.sun));
+
+  // ── 12월(특별예배) — 실제 2025-12 탭처럼: 주일 판에 성탄(목) 12/25 · 금요 판에 '12/24(수) 8PM 워십나잇'
+  const dc = (() => { const G = grid(); ['주일', '구분', '1부 예배', '2부 예배', '라이프라인 예배'].forEach((x, k) => G.set(col(1 + k) + '4', x));
+    [['12/21', 5], ['12/25', 9], ['1/4', 13]].forEach(([d, r]) => { G.set('B' + r, d); ['안내위원', '헌금위원', '봉독위원', '광고위원'].forEach((x, k) => G.set('C' + (r + k), x)); G.set('E' + (r + 3), '목사' + r); });
+    G.set('B10', '목 11:30'); G.set('I4', '헌금 위원'); G.set('H5', '금요예배'); G.set('H6', '12/19 7:30PM\n크리스마스 콘서트'); G.set('H7', '12/24(수) 8PM 워십나잇'); G.set('I7', '김하늬A');
+    G.set('H9', '12/23(화) 극동방송 홀에서 진행되는 워십나잇은'); return G; })();
+  const d1 = A.gsReadServe(dc.v, dc.mg, '2025-12');
+  sc.eq('(59) 12월: 성탄 12/25 도 주일 판 그대로 · 다음 달 1/4 는 다음 해 · 날짜 아래 시각 줄은 무시', [[...new Set(d1.sun.map(x => x.date))], d1.sun.find(x => x.date === '2025-12-25' && x.svc === '2').cells['광고'], J(d1.warn)], [['2025-12-21', '2025-12-25', '2026-01-04'], ['목사9'], []]);
+  sc.eq('(59) 12월 금요: 날짜 + 특별예배 이름 · 빈 줄 아래 안내 글은 안 읽음', d1.fri.map(f => [f.date, f.name]), [['2025-12-19', '7:30PM 크리스마스 콘서트'], ['2025-12-24', '8PM 워십나잇']]);
+
+  // ── 못 찾으면 짐작하지 않고 알림
+  sc.eq('(59) 엉뚱한 시트: 예배팀 · 예배위원 모두 경고(멈추지 않음) · 읽은 것 없음', [A.gsReadTeam([['아무', '표']], [], '2026-11').warn.length, A.gsReadServe([['아무', '표']], [], '2026-11').warn.length, A.gsReadTeam(null, null, '2026-11').sun.length], [2, 2, 0]);
+  const odd = grid(); odd.set('B3', '주일예배'); odd.set('C4', '11/1'); odd.set('D4', '11/1'); odd.set('E4', '11/1'); odd.set('C5', '2부'); odd.set('D5', '성탄 예배'); odd.set('E5', '라이프라인'); odd.set('B6', '예배 인도'); odd.set('C6', '한바다'); odd.set('D6', '윤슬기');
+  const o1 = A.gsReadTeam(odd.v, [], '2026-11');
+  sc.eq("(59) 모르는 예배 칸('성탄 예배')은 짐작해 넣지 않고 알림 · 그 너머 칸은 그대로 읽음", [o1.sun.map(x => x.svc).join(), o1.warn.some(w => /성탄 예배' 칸은 읽지 않았습니다/.test(w))], ['2,LL', true]);
+
+  // ── 두 달 합치기 · 한 줄 글
+  const j = A.gsJoin([{ ym: '2026-11', sun: [{ date: '2026-11-29', svc: '2', cells: { a: ['가'] } }, { date: '2026-12-06', svc: '2', cells: { a: ['11월 탭'] } }], fri: [], roles: { sun: [{ k: 'a', label: '인도' }], fri: [] } },
+    { ym: '2026-12', sun: [{ date: '2026-12-06', svc: '2', cells: { a: ['12월 탭'] } }, { date: '2026-12-06', svc: '1', relay: true, cells: {} }], fri: [{ date: '2026-12-04', name: '어웨이크', cells: {} }], roles: { sun: [{ k: 'a', label: '인도' }, { k: 'b', label: '싱어' }], fri: [] } }]);
+  sc.eq('(59) 두 달 합치기: 같은 날은 그 날의 달 탭이 이김 · 날짜순 · 같은 날 1부 → 2부 · 역할 합침', [j.sun.map(x => x.date + x.svc + ':' + ((x.cells.a || [])[0] || '')).join(' '), j.fri.length, j.roles.sun.map(r => r.k).join()], ['2026-11-292:가 2026-12-061: 2026-12-062:12월 탭', 1, 'a,b']);
+  sc.eq('(59) 한 줄 글: 역할 차례대로 · 중계면 앞에', [A.gsLine({ cells: { a: ['가', '나'] } }, [{ k: 'b', label: '싱어' }, { k: 'a', label: '인도' }]), A.gsLine({ relay: true, cells: { b: ['다'] } }, [{ k: 'b', label: '조명' }])], ['인도 가 나', '분당 중계 · 조명 다']);
+
+  // ── 미리보기 탭(지어낸 이름)도 같은 규칙으로 읽힘
+  const dm = ['bteam', 'bserve'].map(k => { const x = A.gsDemo(k, '2026-12'); return [A.gsTabInfo(x.title).ym, J(A.gsRead(k, x.values, x.merges, '2026-12').warn), A.gsCount(A.gsRead(k, x.values, x.merges, '2026-12'))]; });
+  sc.eq('(59) 미리보기 탭 두 시트: 그 달 탭 이름 · 경고 없음 · 주일 · 금요 수', dm, [['2026-12', [], '주일 4 · 금요 4'], ['2026-12', [], '주일 4 · 금요 4']]);
+
+  // ── 화면 · 지킬 것 (코드에서)
+  const gs = HTML.slice(HTML.indexOf("/* ---------- 구글 자료 (1121-G G1"), HTML.indexOf('/* ---------- 부산 주일 광고 (R12 C)'));
+  sc.eq('(59) 읽기만: 구글에 쓰는 요청이 없음(method · update · append · batchUpdate · clear) · 계정에 안 씀 · /off 안 부름', [/method\s*:/.test(gs), /values:(update|append|batchUpdate|clear)|:batchUpdate|\/values\/[^'"]*\?[^'"]*valueInputOption/.test(gs), /FB\.db|\.set\(|\.update\(/.test(gs), /'\/off'/.test(gs)], [false, false, false, false]);
+  sc.eq('(59) 열쇠: 캘린더 · 심방 노트와 한 벌(/token 메일 아님) · 연결은 care:true(고른 파일만) · 돌아올 자리 ?g=src · 드라이브 전체 권한 없음', [/gfn\('\/token'\)/.test(gs), /gfn\('\/start', \{ ret: GS_RET, care: true \}\)/.test(gs), /GS_RET = 'https:\/\/sweeter\.my\/rotation\/\?g=src'/.test(gs), /auth\/drive['"\s]|drive\.readonly|spreadsheets['"]\s*\]/.test(HTML)], [true, true, true, false]);
+  sc.eq('(59) 고르기 창: 심방 노트와 같은 공개 키 · 프로젝트 번호 · 시트만', [/GS_PICKER_KEY = 'AIzaSyAOLbBCajy6vF33xN1PQWk1qnU7VoynuC8'/.test(gs), /GS_PICKER_APP = '517626689480'/.test(gs), /ViewId\.SPREADSHEETS/.test(gs)], [true, true, true]);
+  sc.eq('(59) HB 만: gsCan = 주인(owner) · 메뉴 개발 탭 단추 · 교역자 누름 목록에 없음', [/function gsCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(gs), /gsCan\(\) \? '<button class="btn ghost" data-act="gsopen">구글 자료/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('))), /'gsopen'|'gsread'|'gsconnect'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))], [true, true, false]);
+  sc.eq('(59) 고른 파일은 이 기기에만(미리보기는 다른 칸) · 읽은 표는 메모리(GS.res)', [/GS_KEY = DEMO \? 'rota_demo_gsrc_v1' : 'rota_gsrc_v1'/.test(gs), /lsSet\(GS_KEY/.test(gs), !/lsSet\([^)]*GS\.res/.test(gs)], [true, true, true]);
+  sc.eq('(59) 판: 판 목록에 gsrc · 돌아오면(?g=src) 구글 자료 판을 다시 엶 · 읽은 것 보기', [/gsrc: paneGsrc/.test(HTML), /const src = q\.get\('g'\) === 'src'/.test(HTML) && /gsOpen\(\); \} \}, 500\); return; \}/.test(HTML), /읽은 것 보기/.test(gs)], [true, true, true]);
 }
 
 sc.done();
