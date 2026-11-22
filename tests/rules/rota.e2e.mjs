@@ -765,6 +765,40 @@ console.log('㉑ (1117-Z 4) 부산 광고 판: 아래 줄 · 전달용 텍스트
   await ctx.close();
 }
 
+console.log('㉖ 구글 자료 계정에 두기 (1121-G G2) — 지어낸 이름');
+{
+  const bookOf = d => JSON.stringify(Object.keys(d).filter(k => /^b\d+$/.test(k)).sort().map(k => d[k]));
+  const book0 = bookOf(await getDoc('rota/' + HB));
+  // 시트를 읽은 것처럼 — 미리보기 탭(지어낸 이름)을 같은 규칙으로 읽어 GS.res 에 두고 올린다
+  const fake = (pg, k, keep) => pg.evaluate(async ([k, keep]) => { const ym = todayYmd().slice(0, 7), x = gsDemo(k, ym);
+    const part = Object.assign(gsRead(k, x.values, x.merges, ym), { tab: x.title }); if (keep) { part.sun = part.sun.slice(0, keep); part.fri = []; }
+    GS.res[k] = { tabs: [{ ym, title: x.title, ver: '0101-1' }], parts: [part], joined: gsJoin([part]), at: Date.now() }; await gsStore(k); return GS.res[k].saved; }, [k, keep]);
+  ok('㉖ 처음 읽은 표 → 계정에 올림', await fake(hb, 'bteam'), { state: 'ok' });
+  const g1 = await until(() => getDoc('rota/' + HB + '/gs/bteam'));
+  ok('㉖ 계정 gs/bteam: 판 1 · 칸 수 · 지문 · 탭', g1 && [g1.v, g1.n > 8, typeof g1.h, g1.tabs[0].ver], [1, true, 'string', '0101-1']);
+  ok('㉖ 교역자 앱이 같은 표를 받는다(지문 같음) · 고른 파일(src)은 안 들음', await until(() => ga.evaluate(h => S.gs.bteam && S.gs.bteam.h === h && !('src' in S.gs) ? [S.gs.bteam.n, S.gs.bteam.joined.sun.length > 0] : null, g1.h)), [g1.n, true]);
+  ok('㉖ 다시 읽어 같으면 안 씀(same) · 계정 문서 그대로', [await fake(hb, 'bteam'), (await getDoc('rota/' + HB + '/gs/bteam')).at], [{ state: 'same' }, g1.at]);
+  const held = await fake(hb, 'bteam', 1);
+  ok('㉖ 한 칸만 읽히면(크게 줄어듦) 올리지 않고 까닭 + 판에 \'그래도 올리기\'', [held.state, /절반 넘게 줄어/.test(held.why), (await getDoc('rota/' + HB + '/gs/bteam')).h === g1.h], ['held', true, true]);
+  await hb.evaluate(() => gsOpen()); await sleep(300);
+  ok('㉖ 구글 자료 판: 멈춘 까닭 · 그래도 올리기 단추', await hb.evaluate(() => [!!document.querySelector('#pane [data-gsforce="bteam"]'), /그대로 두었습니다/.test($('#pane').innerText)]), [true, true]);
+  await hb.click('#pane [data-gsforce="bteam"]');
+  const g2 = await until(async () => { const d = await getDoc('rota/' + HB + '/gs/bteam'); return d && d.n === 1 ? d : null; });
+  ok('㉖ 그래도 올리기 → 계정 표가 바뀜 · 교역자 앱도 따라옴', [!!g2, await until(() => ga.evaluate(() => S.gs.bteam && S.gs.bteam.n === 1))], [true, true]);
+  await hb.evaluate(() => closePane()); await sleep(500);
+  // 고른 파일 — HB 만, 두 번째 HB 기기가 그대로 씀
+  await hb.evaluate(() => gsCloudSrc({ at: Date.now(), bteam: { id: 'demoFile_1', name: '부산 예배팀 (시험)' } }));
+  ok('㉖ 고른 파일은 계정 gs/src 에(파일 id · 이름)', await until(async () => { const d = await getDoc('rota/' + HB + '/gs/src'); return d && d.bteam ? d.bteam : null; }), { id: 'demoFile_1', name: '부산 예배팀 (시험)' });
+  ok('㉖ HB 두 번째 기기는 다시 고르지 않아도 같은 파일', await until(() => hb2.evaluate(() => (gsFiles().bteam || {}).id)), 'demoFile_1');
+  const deny = await ga.evaluate(async () => { const r = []; for (const f of [() => FB.db.collection('rota').doc(FB.team).collection('gs').doc('src').get(), () => FB.db.collection('rota').doc(FB.team).collection('gs').doc('bteam').set({ v: 1 })]) { try { await f(); r.push('ok'); } catch (e) { r.push(e.code); } } return r; });
+  ok('㉖ 교역자는 고른 파일을 못 읽고 · 표에 못 쓴다', deny, ['permission-denied', 'permission-denied']);
+  // 구글이 연결 안 된 HB 기기의 자동 읽기 — 조용히 아무것도 안 함
+  const hbT2 = hb.toasts.length;
+  await hb.evaluate(async () => { GS.autoAt = 0; S.gs.bteam = null; await gsAuto(); });
+  ok('㉖ 구글 연결이 없으면 자동 읽기는 조용히(토스트 없음 · 연결 없음 표시)', [hb.toasts.length - hbT2, await hb.evaluate(() => GS.conn)], [0, 'no']);
+  ok('㉖ 책(b…)은 그대로 — 구글 자료는 책에 안 씀', bookOf(await getDoc('rota/' + HB)), book0);
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });

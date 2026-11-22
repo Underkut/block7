@@ -37,6 +37,7 @@
 //  ㊴ 이번 주 표(C) 분당 판 축 바꿈(1117-G): 줄 = 설교 · 헌금 · 인도, 칸 = 예배(부산 띠와 같은 결)
 //  ㊳ 분당 특별예배(1116-2 E): specs 한 줄 · 자리 '날짜|xk|역할' · 그 날 정해진 예배 쉼 · 부산 겹침 · 내 일정 · 시트 내보내기 · 지우면 자리도 · b14 · 화면
 //  ㊵ 숙소 금액 · 취소 기한은 HB 전용(1117-Z 1): 교역자 화면 책에서 걷어 냄 · 교역자 칸의 값은 안 받음(이미 든 값은 그대로) · 교역자는 못 고침 · HB 화면은 그대로
+//  (60) 구글 자료 계정에 두기(1121-G G2): 지문(칸 차례 무관) · 다듬기 · 올릴지(같음 · 비면 · 절반 넘게 줄면 멈춤 · 그래도) · 고른 파일 · 한 시간
 //  (59) 구글 자료(1121-G G1): 탭 이름 · 맨 뒤 판 · 합친 칸 펴기 · 날짜(해 넘김 · 특별예배 글) · 예배팀 / 예배위원 시트 읽기(글자로 찾기 · 판교중계 = 중계 · 옆 표 안 읽음) · 두 달 합치기 · 읽기만
 //  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
@@ -69,7 +70,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   alertsOf, alertEnd, cancelSoon, dDay, ddText, ALERT_CATS, CANCEL_DAYS, colTarget: colTarget,
   normBul, bulId, bulOf, bulOrder, monthDiff,
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
-  GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo };`, ctx);
+  GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1811,13 +1812,48 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const dm = ['bteam', 'bserve'].map(k => { const x = A.gsDemo(k, '2026-12'); return [A.gsTabInfo(x.title).ym, J(A.gsRead(k, x.values, x.merges, '2026-12').warn), A.gsCount(A.gsRead(k, x.values, x.merges, '2026-12'))]; });
   sc.eq('(59) 미리보기 탭 두 시트: 그 달 탭 이름 · 경고 없음 · 주일 · 금요 수', dm, [['2026-12', [], '주일 4 · 금요 4'], ['2026-12', [], '주일 4 · 금요 4']]);
 
+  // ── (60) 계정에 두기 (G2) — 지어낸 이름
+  const RES = (sun, fri, tabs) => ({ tabs: tabs || [{ ym: '2026-11', title: '26년 11월 1117-1', ver: '1117-1' }, { ym: '2026-12', title: '', ver: '' }],
+    parts: [{ tab: '26년 11월 1117-1', warn: ['가 줄을 못 찾았습니다'] }], joined: { sun, fri: fri || [], roles: { sun: [{ k: '예배인도', label: '예배 인도' }], fri: [] } } });
+  const sunN = (n, ym) => Array.from({ length: n }, (_, i) => ({ date: (ym || '2026-11') + '-' + String(i + 1).padStart(2, '0'), svc: '2', relay: false, cells: { 예배인도: ['김가람'] } }));
+  const p1 = A.gsPack(RES(sunN(4)), 1000);
+  sc.eq('(60) 문서 모양: 판 · 읽은 때 · 칸 수 · 지문 · 탭 · 경고(탭 이름 붙임)', [p1.v, p1.at, p1.n, typeof p1.h, p1.tabs.length, p1.warn], [1, 1000, 4, 'string', 2, ['26년 11월 1117-1 — 가 줄을 못 찾았습니다']]);
+  sc.eq('(60) 지문은 읽은 때와 상관없음 · 칸 이름 차례와도 상관없음(파이어베이스가 이름순으로 돌려줘도 같음)', [A.gsPack(RES(sunN(4)), 9999).h === p1.h, A.gsCanon({ b: 1, a: [{ y: 2, x: 1 }] }) === A.gsCanon({ a: [{ x: 1, y: 2 }], b: 1 })], [true, true]);
+  sc.eq('(60) 이름이 하나라도 바뀌면 지문이 바뀜', A.gsPack(RES(sunN(4).map((e, i) => i === 2 ? Object.assign({}, e, { cells: { 예배인도: ['이나래'] } }) : e)), 1000).h === p1.h, false);
+  const up = A.gsUnpack(J(p1));
+  sc.eq('(60) 계정 → 화면: 그대로 돌아옴(joined · 탭 · 경고 · 지문)', [up.joined.sun.length, up.joined.sun[0].cells['예배인도'], up.tabs[0].ver, up.warn.length, up.h === p1.h, up.n], [4, ['김가람'], '1117-1', 1, true, 4]);
+  sc.eq('(60) 모양이 틀린 문서는 버림(판 다름 · 지문 없음 · 빈 것)', [A.gsUnpack({ v: 2, h: 'x' }), A.gsUnpack({ v: 1 }), A.gsUnpack(null), A.gsUnpack('x')], [null, null, null, null]);
+  const dirty = A.gsUnpack({ v: 1, h: 'x', at: 5, sun: [{ date: '2026-11-01', svc: '2', cells: { a: ['가'.repeat(50), 3, '', '나'], b: 'x', ['c'.repeat(60)]: ['다'] } }, { date: '11/8', svc: '2', cells: {} }, { date: '2026-11-08', svc: '9', cells: {} }, null],
+    fri: [{ date: '2026-11-06', name: '이'.repeat(80), relay: 'yes', cells: {} }], roles: { sun: [{ k: 'a' }, { label: 'k없음' }], fri: 'x' }, warn: ['w', 3] });
+  sc.eq('(60) 계정에서 온 것 다듬기: 긴 이름 자름 · 글 아닌 이름 · 틀린 날짜 · 모르는 예배 · 긴 칸 이름 · 줄 relay 는 참 거짓만', [dirty.joined.sun.length, dirty.joined.sun[0].cells.a.map(x => x.length), Object.keys(dirty.joined.sun[0].cells).map(k => k.length), dirty.joined.fri[0].name.length, dirty.joined.fri[0].relay, dirty.joined.roles.sun.map(r => r.label), dirty.joined.roles.fri, dirty.warn],
+    [1, [20, 1], [1, 40], 40, false, ['a'], [], ['w']]);
+  sc.eq('(60) 칸 수 상한(400) — 이상한 시트가 와도', A.gsPack(RES(Array.from({ length: 900 }, (_, i) => ({ date: '2026-11-01', svc: '2', cells: { a: ['가' + i] } }))), 1).sun.length, 400);
+  // 올릴까
+  const prev = A.gsUnpack(J(p1));
+  sc.eq('(60) 처음(계정에 없음) → 올림 · 같으면 안 올림(same)', [A.gsSaveCheck(null, p1).ok, A.gsSaveCheck(prev, A.gsPack(RES(sunN(4)), 5000))], [true, { ok: false, same: true, why: '' }]);
+  sc.eq('(60) 이번에 읽은 날이 하나도 없으면 계정 표를 그대로 둠 (빈 시트 · 탭 이름 바뀜)', [A.gsSaveCheck(prev, A.gsPack(RES([]), 1)).ok, /하나도 없어/.test(A.gsSaveCheck(prev, A.gsPack(RES([]), 1)).why)], [false, true]);
+  sc.eq('(60) 같은 달 칸이 절반 넘게 줄면 멈춤(잘못 읽은 한 번이 교역자 화면을 비우지 않게) · 절반까지는 올림', [A.gsSaveCheck(prev, A.gsPack(RES(sunN(1)), 1)).ok, /11월 칸이 4 → 1/.test(A.gsSaveCheck(prev, A.gsPack(RES(sunN(1)), 1)).why), A.gsSaveCheck(prev, A.gsPack(RES(sunN(2)), 1)).ok], [false, true, true]);
+  sc.eq('(60) 달이 넘어가 지난 달이 빠지는 것은 줄어듦이 아님(그 달을 이번에 안 읽었으므로)', A.gsSaveCheck(prev, A.gsPack(RES(sunN(1, '2026-12')), 1)).ok, true);
+  sc.eq('(60) HB 가 그래도 올리기 → 올림 (같으면 그래도 안 씀)', [A.gsSaveCheck(prev, A.gsPack(RES([]), 1), true).ok, A.gsSaveCheck(prev, A.gsPack(RES(sunN(4)), 1), true).same], [true, true]);
+  // 고른 파일 · 한 시간
+  sc.eq('(60) 고른 파일: 구글 파일 id 꼴만 · 이름 자름 · 모르는 칸 버림', A.gsSrcNorm({ at: 3, bteam: { id: '1NvZ-abc_9', name: '가'.repeat(100) }, bserve: { id: 'a b/../x' }, zz: { id: 'q' } }), { at: 3, bteam: { id: '1NvZ-abc_9', name: '가'.repeat(80) } });
+  sc.eq('(60) 이 기기 · 계정 중 나중에 고른 쪽 (같으면 이 기기 · 계정이 없어도)', [A.gsSrcPick({ at: 5, bteam: { id: 'L' } }, { at: 9, bteam: { id: 'C' } }).bteam.id, A.gsSrcPick({ at: 9, bteam: { id: 'L' } }, { at: 5, bteam: { id: 'C' } }).bteam.id, A.gsSrcPick({ bteam: { id: 'L' } }, null).bteam.id, A.gsSrcPick({}, { at: 1, bserve: { id: 'C' } }).bserve.id], ['C', 'L', 'L', 'C']);
+  sc.eq('(60) 다시 읽을 때: 계정 표가 없거나 한 시간 넘음', [A.gsStale(null, 1e9), A.gsStale({ at: 1e9 - A.GS_STALE_MS + 1 }, 1e9), A.gsStale({ at: 1e9 - A.GS_STALE_MS - 1 }, 1e9), A.gsStale({ at: 0 }, 1e9)], [true, false, true, true]);
+
   // ── 화면 · 지킬 것 (코드에서)
   const gs = HTML.slice(HTML.indexOf("/* ---------- 구글 자료 (1121-G G1"), HTML.indexOf('/* ---------- 부산 주일 광고 (R12 C)'));
-  sc.eq('(59) 읽기만: 구글에 쓰는 요청이 없음(method · update · append · batchUpdate · clear) · 계정에 안 씀 · /off 안 부름', [/method\s*:/.test(gs), /values:(update|append|batchUpdate|clear)|:batchUpdate|\/values\/[^'"]*\?[^'"]*valueInputOption/.test(gs), /FB\.db|\.set\(|\.update\(/.test(gs), /'\/off'/.test(gs)], [false, false, false, false]);
+  sc.eq('(59) 읽기만: 구글에 쓰는 요청이 없음(method · update · append · batchUpdate · clear) · /off 안 부름', [/method\s*:/.test(gs), /values:(update|append|batchUpdate|clear)|:batchUpdate|\/values\/[^'"]*\?[^'"]*valueInputOption/.test(gs), /'\/off'/.test(gs)], [false, false, false]);
+  // (60) G2: 계정에 쓰는 곳은 gs 칸 둘(고른 파일 · 읽은 표)뿐 — 책 · 교역자 칸 · update 없음
+  const sets = gs.match(/\.(set|update|delete)\(/g) || [];
+  sc.eq('(60) 계정에 쓰는 곳: gsRef(…).set 셋(src · 표 · 읽은 때)뿐 · collection(\'gs\') 밖으로 안 씀 · update/delete 없음', [sets.length, (gs.match(/gsRef\([^)]*\)\.set\(/g) || []).length, /\.update\(|\.delete\(/.test(gs.replace(/delete GS\.res\[[^\]]+\]/g, '')), /collection\('(staff|img|ext)'\)/.test(gs), /FB\.db\.collection\('rota'\)\.doc\([^)]*\)\.set\(/.test(gs)], [3, 3, false, false, false]);
+  sc.eq('(60) HB 만 계정에 씀(owner) · 교역자는 표 둘만 듣고 src 는 안 들음', [/function gsCloudSrc\(o\) \{ if \(DEMO \|\| !FB\.user \|\| FB\.role !== 'owner'\) return;/.test(gs), /if \(!FB\.user \|\| FB\.role !== 'owner'\) \{ r\.saved = \{ state: 'off' \}; return; \}/.test(gs), /GS_SRC\.map\(x => x\.k\)\.concat\(own \? \['src'\] : \[\]\)/.test(gs), /listenGs\(u\.uid, true\)/.test(HTML), /listenGs\(team, false\)/.test(HTML)], [true, true, true, true, true]);
+  sc.eq('(60) 미리보기 시트 채우기는 시트 칸(bteam · bserve)으로 판단 — 고른 파일에 at 칸이 생겨도', /if \(DEMO && !GS_SRC\.some\(x => gsFiles\(\)\[x\.k\]\)\) lsSet\(GS_KEY/.test(gs) && !/Object\.keys\(gsFiles\(\)\)/.test(gs), true);
+  sc.eq('(60) 견주기는 지문(h)끼리 — 계정 문서를 JSON.stringify 로 견주지 않음(1117-F)', /JSON\.stringify\(S\.gs|JSON\.stringify\(d\.data\(\)/.test(gs), false);
+  sc.eq('(60) 로그아웃 · 계정 바뀜이면 표 · 읽은 것 · 자동 시각을 비움(남의 표를 들고 있지 않게)', /function stopListen\(\) \{[^\n]*'unsubG'[^\n]*S\.gs = \{\}; GS\.res = \{\}; GS\.autoAt = 0; \}/.test(HTML), true);
   sc.eq('(59) 열쇠: 캘린더 · 심방 노트와 한 벌(/token 메일 아님) · 연결은 care:true(고른 파일만) · 돌아올 자리 ?g=src · 드라이브 전체 권한 없음', [/gfn\('\/token'\)/.test(gs), /gfn\('\/start', \{ ret: GS_RET, care: true \}\)/.test(gs), /GS_RET = 'https:\/\/sweeter\.my\/rotation\/\?g=src'/.test(gs), /auth\/drive['"\s]|drive\.readonly|spreadsheets['"]\s*\]/.test(HTML)], [true, true, true, false]);
   sc.eq('(59) 고르기 창: 심방 노트와 같은 공개 키 · 프로젝트 번호 · 시트만', [/GS_PICKER_KEY = 'AIzaSyAOLbBCajy6vF33xN1PQWk1qnU7VoynuC8'/.test(gs), /GS_PICKER_APP = '517626689480'/.test(gs), /ViewId\.SPREADSHEETS/.test(gs)], [true, true, true]);
   sc.eq('(59) HB 만: gsCan = 주인(owner) · 메뉴 개발 탭 단추 · 교역자 누름 목록에 없음', [/function gsCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(gs), /gsCan\(\) \? '<button class="btn ghost" data-act="gsopen">구글 자료/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('))), /'gsopen'|'gsread'|'gsconnect'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))], [true, true, false]);
-  sc.eq('(59) 고른 파일은 이 기기에만(미리보기는 다른 칸) · 읽은 표는 메모리(GS.res)', [/GS_KEY = DEMO \? 'rota_demo_gsrc_v1' : 'rota_gsrc_v1'/.test(gs), /lsSet\(GS_KEY/.test(gs), !/lsSet\([^)]*GS\.res/.test(gs)], [true, true, true]);
+  sc.eq('(59) 고른 파일은 이 기기(미리보기는 다른 칸) + 계정 src · 읽은 표는 이 기기에 안 둠(GS.res)', [/GS_KEY = DEMO \? 'rota_demo_gsrc_v1' : 'rota_gsrc_v1'/.test(gs), /lsSet\(GS_KEY/.test(gs), !/lsSet\([^)]*GS\.res/.test(gs), /gsCloudSrc\(o\)/.test(gs)], [true, true, true, true]);
   sc.eq('(59) 판: 판 목록에 gsrc · 돌아오면(?g=src) 구글 자료 판을 다시 엶 · 읽은 것 보기', [/gsrc: paneGsrc/.test(HTML), /const src = q\.get\('g'\) === 'src'/.test(HTML) && /gsOpen\(\); \} \}, 500\); return; \}/.test(HTML), /읽은 것 보기/.test(gs)], [true, true, true]);
 }
 
