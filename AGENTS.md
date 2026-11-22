@@ -252,6 +252,7 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 - **구글 자료(1121-G)**: HB 가 고른 구글 시트(부산 예배팀 · 예배위원)를 HB 앱이 **읽기만**(구글 열쇠는 캘린더 · 심방 노트와 한 벌, `drive.file` = 고른 파일만).
   읽은 표는 `rota/{uid}/gs/bteam` · `gs/bserve`(HB 쓰기 · 팀 읽기), 고른 파일은 `gs/src`(HB 만). 책에 넣지 말 것 · 시트에 쓰지 말 것 · 지문(`h`)이 다를 때만 쓴다(`gsSaveCheck`, `test_rotation` (60)).
   ⚠️ 여기서 '구글 연결 끊기'(`/off`)를 만들지 말 것 — 한 벌이라 BLOCK7 캘린더 · 심방 노트까지 끊긴다.
+  **맞춰 보기(G4)**: 어긋남 판단은 `gsDiff`, 반영은 `gsFix` — HB 가 '앱에 반영' 을 누른 그 줄 하나만(저절로 바꾸지 말 것). 넘긴 줄은 HB `ui.gsk`(자리 + 지문, 이름 없음). 교역자 화면에는 없다(`test_rotation` (62) · e2e ㉗).
 - **부산 교역자는 `visits` 한 곳에만** 적는다. 예배 구성의 '부산 교역자' 줄은 거기서 읽어 보여 준다(두 시트가 어긋나던 까닭).
 - **예배팀 일정(R13)**: 서버 `gcal-functions/src/worship.js`(+ `worship-core.js` · `test_worship`)가 2시간마다 예배팀 API 를 **읽기만** 해 `rota/{HB}/ext/worship` 에 기간 통째로 바꿔 끼운다(쓰기 규칙 없음 = 서버만). 열쇠는 Secret Manager `SCHEDULE_API_KEY` — 값을 코드 · 저장소 · 로그 · 화면에 두지 말 것, 앱이 예배팀 API 를 직접 부르지 말 것.
   저장하는 사람은 **인도자 전원 + 우리 명단 분만**(나머지 팀원은 버림 — 예배팀 개발자께 한 약속). 이름 맞추기 명단은 HB 앱이 문서 맨 위 `wkeys`(+ `wpull`)에 적는다 — 책(`b10`)에 넣지 말 것. 겹침은 `worshipClash` (미정 = 노랑). 순서는 `docs/rotation/worship-setup.md`.
