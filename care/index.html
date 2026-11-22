@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1117-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1122-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -612,6 +612,12 @@ textarea.inp{min-height:118px;resize:vertical;line-height:1.65}
 .opt{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;border:1px solid var(--line2);font-size:13.5px;color:var(--tx2)}
 .opt svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.6;fill:none}
 .opt[aria-pressed="true"]{border-color:var(--ac);background:var(--ac-soft);color:var(--ac);font-weight:500}
+/* 1122-K 구분 사람마다 — 탭은 안 골라도 옅은 알약 · 점선 = 일부만 · 색 점 = 그분 */
+.rseg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:4px 0 10px;padding:1px}.rseg::-webkit-scrollbar{display:none}
+.rseg button{flex:none;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--s1);color:var(--tx2);font-size:13px}
+.rseg button[aria-pressed="true"]{border-color:var(--ac);background:var(--ac-soft);color:var(--ac);font-weight:600}
+.rseg i,.rdots i{display:block;border-radius:50%;background:var(--hc)}.rseg i{width:7px;height:7px}
+.opt.part{border-style:dashed;border-color:var(--ac);color:var(--ac)}.rdots{display:inline-flex;gap:2px;margin-left:1px}.rdots i{width:6px;height:6px}
 .opt.kk[aria-pressed="true"]{border-color:var(--k);background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--tx)}
 .opt.etc{border-style:dashed;color:var(--tx3)}
 .hint{font-size:12px;color:var(--tx3);margin-top:6px;line-height:1.55}
@@ -1058,7 +1064,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1117-2';
+const APP_VERSION = 'v. 26-1122-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2054,6 +2060,32 @@ function peopleRolePlan(values, changes, nowMs, rnd) {
     const c = last[k], value = proleCell(c.roles);
     if (rows[k]) out.set.push({ row: rows[k], col: cr, value });
     else out.add.push(h.map(x => ({ '성도ID': newId('P', (nowMs || 0) + i, rnd == null ? Math.random() : rnd), '이름': norm(c.name), '구분': value })[x] || ''));
+  });
+  return out;
+}
+// ── 1122-K 여럿을 한꺼번에 적을 때 구분을 사람마다 (HB 2026-11-22, 시안 1 '사람 탭') ──
+// 창이 사람마다 구분을 따로 든다: per = { 이름열쇠: [구분…] }. '모두' 에서 누르면 모두에게, 이름 탭에서 누르면 그분만.
+// all = '모두' 에서 더하고 뺀 것의 누적(나중에 들어온 이름도 받는다 — 예전 roleCarry 와 같은 뜻).
+function roleMerge(a, d) {
+  a = a || { added: [], removed: [] }; d = d || { added: [], removed: [] };
+  return { added: roleUnion([a.added.filter(x => !d.removed.includes(x)), d.added]), removed: roleUnion([a.removed.filter(x => !d.added.includes(x)), d.removed]) };
+}
+// 구분 하나가 사람들에게 어떻게 들었나 — 'on' 모두 · 'part' 일부 · '' 아무도
+function roleState(per, r) { const ks = Object.keys(per || {}), n = ks.filter(k => (per[k] || []).includes(r)).length; return !ks.length || !n ? '' : n === ks.length ? 'on' : 'part'; }
+// '모두' 에서 누름 — 모두 가졌으면 모두에게서 빼고, 아니면(일부 · 아무도) 모두에게 더한다 → { per, d }
+function roleTogAll(per, r) {
+  const on = roleState(per, r) === 'on', out = {};
+  Object.keys(per || {}).forEach(k => { const c = per[k] || []; out[k] = on ? c.filter(x => x !== r) : c.includes(r) ? c.slice() : c.concat(r); });
+  return { per: out, d: on ? { added: [], removed: [r] } : { added: [r], removed: [] } };
+}
+function roleTogOne(per, k, r) { const out = Object.assign({}, per), c = out[k] || []; out[k] = c.includes(r) ? c.filter(x => x !== r) : c.concat(r); return out; }
+// 사람 값이 바뀌는 분만 [{ name, roles }] — 차례가 달라도 같은 값이면 안 바뀐 것. 셀 표시는 뺀다
+function rolePerChanges(names, per, map) {
+  const out = [], seen = new Set(), S = a => roleUnion([a]).slice().sort().join('|');
+  (names || []).forEach(n0 => {
+    const n = norm(n0), k = nameKey(n); if (!k || seen.has(k) || groupCanon(n) || !(per || {})[k]) return; seen.add(k);
+    const cur = ((map || {})[k] || { roles: [] }).roles;
+    if (S(cur) !== S(per[k])) out.push({ name: n, roles: roleUnion([per[k]]) });
   });
   return out;
 }
@@ -4664,6 +4696,7 @@ function visOptLabel(k) { return k === 'pay' ? (DATA.payTitle || '사주심 / �
 // 1109-E1 구분 · 태그 · 할 일 — 선택지 원본은 예전처럼 시트 '속성' 탭 ↔ 구글폼(attrAdd · attrHide). 끌어 옮기기는 하지 않는다
 const ATTR_KEY = { roles: '구분', tags: '태그', acts: '액션' };
 function multiHtml(L, k, label, base, etcKey, ph, pre, kind) {
+  if (k === 'roles' && rolePer(L)) return rolePillsHtml(L, label, base, ph);   // 1122-K 사람마다
   const f = L.form, chosen = f[k] || [], list = base.concat(chosen.filter(x => !base.includes(x))), etcV = f[etcKey] || '', open = (L.open && L.open[k]) || !!norm(etcV);
   if (DATA.state !== 'ok' && !list.length && !open) return '<div class="fld"><span class="lb">' + label + ' <small>여럿</small></span>' + PILL_WAIT + '</div>';   // 1115-X 선택지를 아직 못 읽음
   let h = '<div class="fld"><span class="lb">' + label + ' <small>여럿</small></span><div class="opts pills" data-k="' + k + '">';
@@ -4752,28 +4785,73 @@ function roleBase(L) { return L.type === 'attedit' ? attRoleBase() : filterOptio
 function roleSet(L, list) { const RO = roleBase(L); L.form.roles = list.filter(r => RO.includes(r)); L.form.rolesEtc = list.filter(r => !RO.includes(r)).join(', '); }
 function roleSync(L) {
   if (!L || !L.form || L.impSlot || (L.type !== 'edit' && L.type !== 'attedit') || DATA.state !== 'ok' || !DATA.proles) return;
-  const names = roleNames(L), sig = names.map(nameKey).join('|');
+  const names = roleNames(L).filter(n => !groupCanon(n)), sig = names.map(nameKey).join('|');
   if (L.rk && L.rk.sig === sig) return;
-  const init = roleUnion(names.map(rolesOf)), field = attRoleList(L.form.roles, L.form.rolesEtc), old = !!(L.key || L.id);
-  let next;
-  if (!L.rk) { L.rk = { rec: old ? field : null }; next = old ? init : roleUnion([init, field]); }   // 고치기: 그분 값을 불러온다 · 새로: 먼저 고른 것은 더해 둔다
-  else next = roleCarry(field, L.rk.init, init);
-  L.rk.sig = sig; L.rk.init = init;
-  if (old && !names.length) next = field;   // 이름을 다 지운 고치기 — 칸은 그대로
-  roleSet(L, next);
+  const field = attRoleList(L.form.roles, L.form.rolesEtc), old = !!(L.key || L.id);
+  if (!L.rk) L.rk = { rec: old ? field : null, all: { added: old ? [] : field, removed: [] }, per: {}, nm: {}, sel: '', typed: '' };   // 고치기: 그분 값을 불러온다 · 새로: 먼저 고른 것은 모두에게 더해 둔다
+  else if (!Object.keys(L.rk.per).length) L.rk.all = roleMerge(L.rk.all, roleDiff(L.rk.init || [], field));   // 이름이 없을 때 고른 것도 모두에게
+  // 1122-K 사람마다 — 있던 분은 손댄 값 그대로, 새로 든 분은 그분 값 + '모두' 에서 더하고 뺀 것
+  const per = {}, nm = {};
+  names.forEach(n => { const k = nameKey(n); if (!k || per[k]) return; per[k] = L.rk.per[k] ? L.rk.per[k].slice() : roleApply(rolesOf(n), L.rk.all); nm[k] = n; });
+  L.rk.per = per; L.rk.nm = nm; L.rk.sig = sig; L.rk.init = roleUnion(names.map(rolesOf));
+  if (L.rk.sel && !per[L.rk.sel]) L.rk.sel = '';
+  if (old && !names.length) return;   // 이름을 다 지운 고치기 — 칸은 그대로
+  roleSet(L, names.length ? rolePerUnion(L) : roleApply([], L.rk.all));
 }
-// 저장 직전 — { changes: [{name, roles}] 성도 탭에 적을 것, same: 구분을 안 고침 }. 안 고친 고치기는 기록 칸을 예전 값 그대로 둔다
+// 1122-K 창이 사람마다 구분을 드는 중인가(이름이 하나라도 있으면)
+function rolePer(L) { return !!(L && L.rk && !L.impSlot && DATA.state === 'ok' && Object.keys(L.rk.per || {}).length); }
+function rolePerUnion(L) { const P = L.rk.per; return roleUnion(Object.keys(P).map(k => P[k])); }
+function roleTog(L, r) {
+  roleAddFlush(L);
+  const R = L.rk;
+  if (R.sel) R.per = roleTogOne(R.per, R.sel, r);
+  else { const t = roleTogAll(R.per, r); R.per = t.per; R.all = roleMerge(R.all, t.d); }
+  roleSet(L, rolePerUnion(L));
+}
+// 직접 적은 구분 — Enter · 칸을 떠날 때 · 탭을 바꿀 때 · 저장할 때 지금 고르고 있는 분(들)에게 알약으로 더한다
+function roleAddFlush(L) {
+  const R = L && L.rk; if (!R || !norm(R.typed)) return false;
+  const xs = attRoleList([], R.typed); R.typed = '';
+  xs.forEach(r => { if (R.sel) { if (!R.per[R.sel].includes(r)) R.per = roleTogOne(R.per, R.sel, r); } else if (roleState(R.per, r) !== 'on') { const t = roleTogAll(R.per, r); R.per = t.per; R.all = roleMerge(R.all, t.d); } });
+  roleSet(L, rolePerUnion(L)); return true;
+}
+// 구분 칸 — 이름이 둘 이상이면 위에 '모두 · 이름…' 탭(안 고른 탭도 옅은 알약으로 보인다, HB 11/22)
+const ROLE_HUE = ['blue', 'orange', 'purple', 'green', 'pink', 'red', 'yellow', 'gray'];
+function roleHue(L, k) { return 'var(--mk-' + ROLE_HUE[Math.max(0, Object.keys(L.rk.per).indexOf(k)) % ROLE_HUE.length] + ')'; }
+function rolePillsHtml(L, label, base, ph) {
+  const R = L.rk, P = R.per, ks = Object.keys(P), multi = ks.length > 1, sel = multi ? R.sel : '';
+  const list = roleUnion([base, rolePerUnion(L)]), open = (L.open && L.open.roles) || !!norm(R.typed);
+  R.drawn = R.sig;
+  let h = '<div class="fld"><span class="lb">' + label + ' <small>여럿' + (multi ? ' · 사람마다' : '') + '</small></span>';
+  if (multi) h += '<div class="rseg" role="group" aria-label="누구 구분을 고치나"><button data-act="rsel" data-k="roles" data-v="" aria-pressed="' + !sel + '">모두</button>' +
+    ks.map(k => '<button data-act="rsel" data-k="roles" data-v="' + esc(k) + '" aria-pressed="' + (sel === k) + '"><i style="--hc:' + roleHue(L, k) + '"></i>' + esc(R.nm[k]) + '</button>').join('') + '</div>';
+  h += '<div class="opts pills" data-k="roles">' + list.map(x => {
+    const st = sel ? (P[sel].includes(x) ? 'on' : '') : roleState(P, x);
+    const dots = st === 'part' ? '<span class="rdots">' + ks.filter(k => P[k].includes(x)).map(k => '<i style="--hc:' + roleHue(L, k) + '"></i>').join('') + '</span>' : '';
+    return '<button class="opt' + (st === 'part' ? ' part' : '') + '" data-act="ftog" data-k="roles" data-v="' + esc(x) + '" aria-pressed="' + (st === 'on') + '">' + esc(x) + dots + '</button>';
+  }).join('') + plusHtml(L, 'roles', label, open) + '</div>';
+  if (open) h += '<input class="inp etc" data-f="roleAdd" value="' + esc(R.typed || '') + '" placeholder="' + esc((sel ? R.nm[sel] + ' 님에게 — ' : multi ? '모두에게 — ' : '') + ph + ' · Enter') + '" enterkeyhint="done" aria-label="' + esc(label) + ' 직접 적기">';
+  if (multi) h += '<div class="hint">' + (sel ? esc(R.nm[sel]) + ' 님 구분만 고칩니다' : '점선 = 일부 분만 · 색 점 = 그분 · 누르면 모두에게 더하고, 다시 누르면 모두에게서 뺍니다') + '</div>';
+  return h + '</div>';
+}
+// 저장 직전 — { changes: [{name, roles}] 성도 탭에 적을 것, same: 구분을 안 고침, per: 사람마다 구분 }. 안 고친 고치기는 기록 칸을 예전 값 그대로 둔다
 function roleCommit(L) {
   if (!L || !L.rk || L.impSlot || DATA.state !== 'ok') return { changes: [], same: true };
+  roleAddFlush(L);
+  if (rolePer(L)) {
+    const ch = rolePerChanges(roleNames(L), L.rk.per, DATA.proles);
+    if (!ch.length) { if (L.rk.rec) roleSet(L, L.rk.rec); return { changes: [], same: true, per: L.rk.per }; }
+    roleSet(L, rolePerUnion(L)); return { changes: ch, same: false, per: L.rk.per };
+  }
   const final = attRoleList(L.form.roles, L.form.rolesEtc), d = roleDiff(L.rk.init, final);
   if (!d.added.length && !d.removed.length) { if (L.rk.rec) roleSet(L, L.rk.rec); return { changes: [], same: true }; }
   return { changes: personRoleChanges(roleNames(L), DATA.proles, d), same: false };
 }
+function roleChangesNow(L) { return rolePer(L) ? rolePerChanges(roleNames(L), L.rk.per, DATA.proles) : personRoleChanges(roleNames(L), DATA.proles, roleDiff(L.rk.init, attRoleList(L.form.roles, L.form.rolesEtc))); }
 // 입력 창 구분 칸 아래 한 줄 — 저장하면 누구 구분이 어떻게 바뀌나
 function roleHint(L) {
   if (!L || !L.rk || L.impSlot || DATA.state !== 'ok') return '<div data-rhint></div>';
-  const d = roleDiff(L.rk.init, attRoleList(L.form.roles, L.form.rolesEtc));
-  const ch = personRoleChanges(roleNames(L), DATA.proles, d); if (!ch.length) return '<div data-rhint></div>';
+  const ch = roleChangesNow(L); if (!ch.length) return '<div data-rhint></div>';
   return '<div class="hint" data-rhint>저장하면 성도 탭의 구분도 바뀝니다 — ' + ch.slice(0, 4).map(c => esc(c.name) + ' ' + esc(c.roles.join(' · ') || '없음')).join(', ') + (ch.length > 4 ? ' 외 ' + (ch.length - 4) + '분' : '') + '</div>';
 }
 // 성도 탭에 사람 구분 쓰기 — 탭이 없으면 만든다 · 쓰기 직전에 탭을 새로 읽어 이름으로 줄을 찾는다(그사이 줄이 밀려도)
@@ -4949,6 +5027,10 @@ function qnAddFrom(inp) {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.target.dataset && /^al:/.test(e.target.dataset.f || '')) { e.preventDefault(); actLinesAdd(e.target); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.target.dataset && e.target.dataset.qnadd) { e.preventDefault(); qnAddFrom(e.target); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.target.dataset && e.target.dataset.f === 'roleAdd') { e.preventDefault(); const L = topLayer(); if (L && L.rk) { L.rk.typed = e.target.value; if (roleAddFlush(L)) render(); } } });
+document.addEventListener('change', e => { const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (!L || !L.rk) return;   // 1122-K 칸을 떠날 때 — 직접 적은 구분은 알약으로 · 이름이 바뀌었으면 사람 탭을 맞춘다
+  if (f === 'roleAdd') { L.rk.typed = e.target.value; if (roleAddFlush(L)) render(); }
+  else if (f === 'name' && L.type === 'attedit') { roleSync(L); if (L.rk.drawn !== undefined && L.rk.drawn !== L.rk.sig) render(); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.optadd) { e.preventDefault(); attOptCommit(e.target); } });
 // 1112-M 이름 칸 — Enter 로 알약 (한글 조합 중에는 안 함)
 document.addEventListener('keydown', e => {
@@ -5103,7 +5185,8 @@ async function saveAttend(L) {
   roleSync(L); const rc = roleCommit(L);   // 1115-5 ④ 구분을 고쳤으면 그분(들) 값도
   L.form.role = attRoleList(L.form.roles, L.form.rolesEtc).join(', ');   // 1115-4 구분
   const f = Object.assign({}, L.form, { name: names[0] });
-  if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n }))); L.dirty = false; closeLayer(true); if (rc.changes.length) await personRolesSave(rc.changes); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
+  const prole = n => { const P = rolePer(L) ? L.rk.per : null, x = P && P[nameKey(n)]; return x ? roleUnion([x]).join(', ') : L.form.role; };   // 1122-K 출석은 한 분씩 한 줄 — 줄마다 그분 구분만
+  if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n, role: prole(n) }))); L.dirty = false; closeLayer(true); if (rc.changes.length) await personRolesSave(rc.changes); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
   else {
     const old = AT().find(x => x.id === L.id); if (!old) throw new Error('이 출석 기록을 찾지 못했습니다');
     if (rc.same) f.role = old.role;   // 구분을 안 고쳤으면 그 기록 칸은 예전 값 그대로
@@ -6777,6 +6860,7 @@ document.addEventListener('input', e => {
   const f = e.target.dataset && e.target.dataset.f, L = topLayer();
   if (f && L && L.type === 'imp') { if (f === 'ipaste') L.paste = e.target.value; if (f === 'lkq') { L.lkq = e.target.value; const sg = $('lkSugg'); if (sg) sg.innerHTML = lkSuggHtml(L); } return; }
   if (!f || !L || (L.type !== 'edit' && L.type !== 'planedit' && L.type !== 'b7send' && L.type !== 'attedit' && L.type !== 'attpaste')) return;
+  if (f === 'roleAdd') { if (L.rk) { L.rk.typed = e.target.value; L.dirty = true; } return; }   // 1122-K 직접 적기 — Enter · 칸을 떠날 때 알약으로
   if (L.type === 'attpaste') { L.form[f] = e.target.value; L.dirty = !!norm(e.target.value); const pv = $('attPrev'); if (pv) pv.innerHTML = attPreviewHtml(L); return; }
   if (L.type === 'attedit') {
     L.dirty = true;
@@ -6848,8 +6932,10 @@ document.addEventListener('click', e => {
   if (a === 'prepare') { busy(ensurePrepared).then(() => render()); return; }
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
   if (a === 'pickname') { const L = topLayer(); if (L && L.type === 'attedit') { attNameAdd(L, [v], true); render(); return; } }
+  if (a === 'rsel') { const L = topLayer(); if (L && L.rk) { roleAddFlush(L); L.rk.sel = v; render(); } return; }   // 1122-K 누구 구분을 고치나
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
     const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit' && !(L.type === 'attedit' && a === 'ftog'))) return; L.dirty = true;
+    if (a === 'ftog' && k === 'roles' && rolePer(L)) { roleTog(L, v); render(); return; }   // 1122-K 모두 · 그분
     if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); crowSync(L); if (k === 'roles') roleHintSync(L); return; }
     else if (a === 'fone') {
       L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = '';

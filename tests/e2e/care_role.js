@@ -6,6 +6,7 @@
 //  ④ 여럿이 함께한 기록 고치기 — 더한 구분은 모두에게
 //  ⑤ 출석 입력 · 고치기 — 같은 규칙(적는 중에 아는 이름이면 불러옴 · 안 고치면 기록 칸 그대로)
 //  ⑥ 모두 빼면 성도 탭에 '없음' — 다시 읽어도 지난 기록 구분이 되살아나지 않는다
+//  ⑦ 1122-K 여럿 출석 — '모두 · 이름' 탭(안 고른 탭도 옅은 알약) · 점선 = 일부만 · 이름 탭은 그분만 · 줄마다 그분 구분만
 const { chromium } = require('playwright');
 const path = require('path'), fs = require('fs'), vm = require('vm');
 const FILE = 'file://' + path.join(__dirname, '..', '..', 'care', 'index.html');
@@ -110,6 +111,34 @@ const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.string
   eq('⑥ 다시 읽어도 지난 기록 구분이 되살아나지 않는다', await page.evaluate(() => [rolesOf('다온'), rolesOf('나래')]), [[], ['셀리더', '셀원', '예배팀']]);
   await page.evaluate(() => { S.layers = []; openLayer('person', { name: '다온' }); }); await page.waitForTimeout(250);
   eq('⑥ 성도 카드 이름 아래 구분 비어 있음', await page.$eval(LY + ' .dt-when', e => e.textContent), '');
+  await close();
+
+  // ⑦ 1122-K 여럿을 한꺼번에 — 구분을 사람마다
+  await page.evaluate(() => { S.layers = []; S.view = 'attend'; render(); openAttEdit(null, ''); }); await page.waitForTimeout(250);
+  await page.fill(LY + ' input[data-f="name"]', '가온, 나래, 다온'); await page.dispatchEvent(LY + ' input[data-f="name"]', 'change'); await page.waitForTimeout(250);
+  const tabs = () => page.$$eval(LY + ' .rseg button', bs => bs.map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')));
+  const pill = r => page.$eval(LY + ' [data-act="ftog"][data-k="roles"][data-v="' + r + '"]', b => (b.getAttribute('aria-pressed') === 'true' ? 'on' : b.classList.contains('part') ? 'part' + b.querySelectorAll('.rdots i').length : ''));
+  eq('⑦ 이름 탭 — 모두가 골라진 채', await tabs(), ['모두*', '가온', '나래', '다온']);
+  eq('⑦ 안 고른 탭도 알약 테두리 · 바탕이 보인다', await page.$eval(LY + ' .rseg button[aria-pressed="false"]', b => { const c = getComputedStyle(b); return [c.borderTopStyle, c.borderTopWidth, c.backgroundColor !== 'rgba(0, 0, 0, 0)']; }), ['solid', '1px', true]);
+  eq('⑦ 합쳐서 켜지지 않는다 — 셀원은 두 분만(점선 · 점 둘) · 예배팀은 한 분', [await pill('셀원'), await pill('예배팀'), await pill('장년부')], ['part2', 'part1', '']);
+  eq('⑦ 안 고쳤으면 알림 줄 없음', await hint(), '');
+  await page.click(LY + ' [data-act="ftog"][data-k="roles"][data-v="셀원"]');
+  eq('⑦ 모두 — 점선을 누르면 모두에게', [await pill('셀원'), await hint()], ['on', '저장하면 성도 탭의 구분도 바뀝니다 — 다온 셀원']);
+  await page.click(LY + ' .rseg button:has-text("다온")');
+  eq('⑦ 다온 탭 — 그분 구분만 보인다', [await tabs(), await pill('셀원'), await pill('예배팀')], [['모두', '가온', '나래', '다온*'], 'on', '']);
+  await page.click(LY + ' [data-act="ftog"][data-k="roles"][data-v="셀원"]');
+  await page.click(LY + ' [data-act="ftog"][data-k="roles"][data-v="청년부"]');
+  eq('⑦ 그분만 고친다 — 다른 분은 그대로', await hint(), '저장하면 성도 탭의 구분도 바뀝니다 — 다온 청년부');
+  await page.click(LY + ' .rseg button:has-text("나래")');
+  await page.click(LY + ' [data-act="aetc"][data-k="roles"]');
+  await page.fill(LY + ' input[data-f="roleAdd"]', '새가족'); await page.press(LY + ' input[data-f="roleAdd"]', 'Enter'); await page.waitForTimeout(150);
+  eq('⑦ 직접 적기 — 고른 분에게만 알약으로', [await pill('새가족'), await hint()], ['on', '저장하면 성도 탭의 구분도 바뀝니다 — 나래 셀리더 · 셀원 · 예배팀 · 새가족, 다온 청년부']);
+  await page.click(LY + ' .rseg button:has-text("모두")');
+  eq('⑦ 모두로 돌아오면 일부만 가진 것은 점선', [await pill('새가족'), await pill('청년부'), await pill('셀원')], ['part1', 'part2', 'part2']);
+  await page.evaluate(() => { topLayer().form.svc = '지어낸 모임'; });
+  await page.click(LY + ' [data-act="attsave"]'); await waitShut();
+  eq('⑦ 출석 줄마다 그분 구분만', att().slice(-3).map(r => r.slice(0, 2)), [['가온', '청년부, 셀원'], ['나래', '셀리더, 셀원, 예배팀, 새가족'], ['다온', '청년부']]);
+  eq('⑦ 성도 탭 — 바뀐 두 분만', people(), [['가온', '청년부, 셀원'], ['나래', '셀리더, 셀원, 예배팀, 새가족'], ['다온', '청년부']]);
   await close();
 
   eq('오류 없음', page.errs, []);
