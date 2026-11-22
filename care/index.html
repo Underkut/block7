@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1122-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1122-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -1064,7 +1064,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1122-1';
+const APP_VERSION = 'v. 26-1122-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2403,6 +2403,21 @@ function planAttrSync(summary, rows, managed) {
   });
   return out;
 }
+// 1122-K K2 알약 끌어 순서 바꾸기 — 끌어 놓은 차례(order)를 폼 선택지 차례(opts)에 입힌다.
+// order 에 없는 선택지(숨긴 것 · 화면에 안 보이던 것)는 제 앞 선택지 뒤에 그대로 남고, opts 에 없는 값(직접 적은 것)은 버린다 → 새 목록 (같으면 null)
+function attrOrderPlan(opts, order) {
+  const O = (opts || []).slice(), want = (order || []).filter((v, i, a) => O.includes(v) && a.indexOf(v) === i);
+  if (want.length < 2) return null;
+  const set = new Set(want), out = []; let w = 0;
+  O.forEach(v => { if (set.has(v)) out.push(want[w++]); else out.push(v); });   // 보이는 것들의 자리에 새 차례로 채워 넣는다
+  return out.join('\u0001') === O.join('\u0001') ? null : out;
+}
+// '속성' 탭 '순서' 칸 — 그 속성(상위 값 없는 줄)을 새 차례대로 1, 2, 3 … → [{ row, v }] (바뀐 칸만)
+function attrOrderCells(rows, title, list) {
+  const out = [];
+  (rows || []).filter(r => r.attr === title && !r.parent).forEach(r => { const i = list.indexOf(r.val); if (i >= 0 && String(r.order) !== String(i + 1)) out.push({ row: r.row, v: i + 1 }); });
+  return out;
+}
 // 폼 고치기 요청 — 선택지만 바꾼다(질문 글 · 종류 · '기타' 칸은 그대로)
 function formUpdateRequests(formRaw, formOps) {
   const reqs = [];
@@ -2725,6 +2740,19 @@ const ATT_SOLO = '혼자';
 function attWithList(w) { return splitNames(w).filter(x => x !== ATT_SOLO); }
 function attWithJoin(list) { const out = []; (list || []).forEach(x => { x = norm(x); if (x && !out.some(o => nameKey(o) === nameKey(x))) out.push(x); }); return out.join(', '); }
 function attWithToggle(w, v) { const l = norm(w) === ATT_SOLO ? [] : attWithList(w), k = nameKey(v), has = l.some(x => nameKey(x) === k); return attWithJoin(has ? l.filter(x => nameKey(x) !== k) : l.concat([v])); }
+// 1122-K K3 여럿 출석 — 함께 온 분 · 섬김도 사람마다 (HB 11/22)
+// 함께: 같이 적은 분들은 서로 함께 온 분으로 저절로 채우고 **그 줄의 본인은 뺀다**. '모두' 에서 '혼자' 면 모두 혼자(따로 온 분들을 몰아 적을 때).
+function attWithAuto(names, self, common) {
+  if (norm(common) === ATT_SOLO) return ATT_SOLO;
+  const k = nameKey(self);
+  return attWithJoin((names || []).filter(n => nameKey(n) !== k && !groupCanon(n)).concat(attWithList(common)).filter(n => nameKey(n) !== k));
+}
+// 줄마다 함께 · 섬김 — common = '모두' 값 { with, serve }, over = { 이름열쇠: { with?, serve? } } 그분만 고른 것(없으면 모두 값 · 저절로)
+function attPerRows(names, common, over) {
+  const C = common || {}, O = over || {};
+  return (names || []).map(n => { const o = O[nameKey(n)] || {}, w = o.with != null ? o.with : attWithAuto(names, n, C.with);
+    return { name: n, with: attWithJoin(attWithList(w).filter(x => nameKey(x) !== nameKey(n))) || (norm(w) === ATT_SOLO ? ATT_SOLO : ''), serve: o.serve != null ? o.serve : (C.serve || '') }; });
+}
 function attWithText(w) { w = norm(w); if (!w) return ''; if (w === ATT_SOLO) return ATT_SOLO; const l = attWithList(w); return l.length ? l.join(', ') + ' 함께' : ''; }
 // 1115-4 출석 구분 — 고른 알약 + 직접 적은 것(쉼표) → 겹침 없는 목록. 시트엔 ', ' 로 잇는다
 function attRoleList(roles, etc) { const out = []; (roles || []).concat(String(etc || '').split(/[,，]/)).forEach(x => { x = norm(x); if (x && !out.includes(x)) out.push(x); }); return out; }
@@ -3984,6 +4012,24 @@ async function attrHide(title, val) {
     await batchValues(s.id, cells.filter(c => h.indexOf(c[0]) >= 0).map(c => ({ range: a1('속성', h.indexOf(c[0]), r.row), values: [[c[1]]] })));
   });
 }
+// 1122-K K2 구분 · 태그 · 할 일 알약 순서 — 폼 선택지 차례 + 속성 탭 '순서' 칸. 화면 먼저, 실패하면 예전 차례로
+async function attrReorder(k, order) {
+  const title = ATTR_KEY[k]; if (!title || !dataOk(true)) return;
+  const before = JSON.stringify(DATA.opts || null), cur = ((DATA.opts || {})[k] || []), local = attrOrderPlan(cur, order);
+  if (!local) { render(); return; }
+  DATA.opts = Object.assign({}, DATA.opts, { [k]: local }); render();
+  try {
+    if (!(await ensurePrepared())) throw new Error('시트 준비가 끝나지 않았습니다');
+    const s = saved().sheet, f = saved().form, fj = await gapi(FORMS + f.id), q = formSummary(fj).find(x => x.title === title && x.kind === 'choice');
+    if (!q) throw new Error("폼에서 '" + title + "' 질문을 찾지 못했습니다");
+    const next = attrOrderPlan(q.options, order);
+    if (next) await gapi(FORMS + f.id + ':batchUpdate', { method: 'POST', body: { requests: formUpdateRequests(fj, { [q.qid]: next }), writeControl: { requiredRevisionId: fj.revisionId } } });
+    const { v, h } = await attrTab(s), cells = attrOrderCells(parseAttrRows(v), title, next || q.options);
+    if (cells.length && h.indexOf('순서') >= 0) await batchValues(s.id, cells.map(c => ({ range: a1('속성', h.indexOf('순서'), c.row), values: [[c.v]] })));
+    DATA.form = null; DATA.formRaw = null; toast('알약 순서를 바꿨습니다\n폼 선택지도 같은 차례로', 2000);
+    await loadData(true);
+  } catch (e) { DATA.opts = JSON.parse(before); render(); toast('알약 순서를 바꾸지 못했습니다\n' + (e.status === 400 ? '그사이 폼이 바뀌었습니다 — 다시 해 주세요' : e.message)); }
+}
 async function addPlaceQuestion() {
   const f = saved().form, fj = await gapi(FORMS + f.id), rq = placeQuestionRequest(fj);
   if (!rq) { toast('폼에 이미 \'장소 · 메모\' 질문이 있습니다'); return; }
@@ -4794,10 +4840,30 @@ function roleSync(L) {
   const per = {}, nm = {};
   names.forEach(n => { const k = nameKey(n); if (!k || per[k]) return; per[k] = L.rk.per[k] ? L.rk.per[k].slice() : roleApply(rolesOf(n), L.rk.all); nm[k] = n; });
   L.rk.per = per; L.rk.nm = nm; L.rk.sig = sig; L.rk.init = roleUnion(names.map(rolesOf));
-  if (L.rk.sel && !per[L.rk.sel]) L.rk.sel = '';
+  if (L.rk.sel && (!per[L.rk.sel] || Object.keys(per).length < 2)) { if (L.type === 'attedit') attSlotLoad(L, ''); L.rk.sel = ''; }
   if (old && !names.length) return;   // 이름을 다 지운 고치기 — 칸은 그대로
   roleSet(L, names.length ? rolePerUnion(L) : roleApply([], L.rk.all));
 }
+// 1122-K K3 출석 여럿 — 탭 한 줄에 구분 · 함께 온 분 · 섬김. 함께 · 섬김은 탭을 바꿀 때 칸을 바꿔 끼운다
+// (L.form.with · serve = 지금 탭의 값 · L.rk.allWS = '모두' 값 · L.rk.pp = 그분만 고른 것) — 그래서 알약 · 혼자 · 직접 적기 처리는 예전 것 그대로
+function attMulti(L) { return !!L && L.type === 'attedit' && !L.id && rolePer(L) && Object.keys(L.rk.per).length > 1; }
+function attNamesNow(L) { return splitNames(L.form.name); }
+function attSlotSave(L) {
+  const R = L.rk, cur = { with: L.form.with || '', serve: L.form.serve || '' };
+  if (!R.sel) { R.allWS = cur; return; }
+  const d = attPerRows(attNamesNow(L), R.allWS, {}).find(r => nameKey(r.name) === R.sel) || { with: '', serve: '' }, o = {};
+  R.pp = R.pp || {};
+  if (cur.with !== d.with) o.with = cur.with;
+  if (cur.serve !== d.serve) o.serve = cur.serve;
+  if (Object.keys(o).length) R.pp[R.sel] = o; else delete R.pp[R.sel];
+}
+function attSlotLoad(L, sel) {
+  const R = L.rk, A0 = R.allWS || { with: L.form.with || '', serve: L.form.serve || '' };
+  if (!sel) { L.form.with = A0.with; L.form.serve = A0.serve; }
+  else { const r = attPerRows(attNamesNow(L), A0, R.pp || {}).find(x => nameKey(x.name) === sel) || { with: '', serve: '' }; L.form.with = r.with; L.form.serve = r.serve; }
+  L.wtyped = []; if (L.open) L.open.with = false;
+}
+function attSlotTo(L, sel) { if (!L.rk || L.rk.sel === sel) return; attSlotSave(L); attSlotLoad(L, sel); L.rk.sel = sel; }
 // 1122-K 창이 사람마다 구분을 드는 중인가(이름이 하나라도 있으면)
 function rolePer(L) { return !!(L && L.rk && !L.impSlot && DATA.state === 'ok' && Object.keys(L.rk.per || {}).length); }
 function rolePerUnion(L) { const P = L.rk.per; return roleUnion(Object.keys(P).map(k => P[k])); }
@@ -4818,13 +4884,17 @@ function roleAddFlush(L) {
 // 구분 칸 — 이름이 둘 이상이면 위에 '모두 · 이름…' 탭(안 고른 탭도 옅은 알약으로 보인다, HB 11/22)
 const ROLE_HUE = ['blue', 'orange', 'purple', 'green', 'pink', 'red', 'yellow', 'gray'];
 function roleHue(L, k) { return 'var(--mk-' + ROLE_HUE[Math.max(0, Object.keys(L.rk.per).indexOf(k)) % ROLE_HUE.length] + ')'; }
+function roleTabsHtml(L) {
+  const R = L.rk, ks = Object.keys(R.per);
+  return '<div class="rseg" role="group" aria-label="누구 것을 고치나"><button data-act="rsel" data-k="roles" data-v="" aria-pressed="' + !R.sel + '">모두</button>' +
+    ks.map(k => '<button data-act="rsel" data-k="roles" data-v="' + esc(k) + '" aria-pressed="' + (R.sel === k) + '"><i style="--hc:' + roleHue(L, k) + '"></i>' + esc(R.nm[k]) + '</button>').join('') + '</div>';
+}
 function rolePillsHtml(L, label, base, ph) {
   const R = L.rk, P = R.per, ks = Object.keys(P), multi = ks.length > 1, sel = multi ? R.sel : '';
   const list = roleUnion([base, rolePerUnion(L)]), open = (L.open && L.open.roles) || !!norm(R.typed);
   R.drawn = R.sig;
   let h = '<div class="fld"><span class="lb">' + label + ' <small>여럿' + (multi ? ' · 사람마다' : '') + '</small></span>';
-  if (multi) h += '<div class="rseg" role="group" aria-label="누구 구분을 고치나"><button data-act="rsel" data-k="roles" data-v="" aria-pressed="' + !sel + '">모두</button>' +
-    ks.map(k => '<button data-act="rsel" data-k="roles" data-v="' + esc(k) + '" aria-pressed="' + (sel === k) + '"><i style="--hc:' + roleHue(L, k) + '"></i>' + esc(R.nm[k]) + '</button>').join('') + '</div>';
+  if (multi && !attMulti(L)) h += roleTabsHtml(L);   // 출석 여럿은 '사람마다' 머리에 한 번
   h += '<div class="opts pills" data-k="roles">' + list.map(x => {
     const st = sel ? (P[sel].includes(x) ? 'on' : '') : roleState(P, x);
     const dots = st === 'part' ? '<span class="rdots">' + ks.filter(k => P[k].includes(x)).map(k => '<i style="--hc:' + roleHue(L, k) + '"></i>').join('') + '</span>' : '';
@@ -4878,9 +4948,15 @@ function lAttEdit(L) {
   const f = L.form, names = splitNames(f.name), known = names.length === 1 && attNames().some(n => nameKey(n) === nameKey(names[0]));
   let h = lhead(L.id ? '출석 고치기' : '출석했어요', L) + '<div class="ph-body" style="padding-bottom:110px">' + earlyHtml(L);
   h += '<div class="fsec">누가</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="' + (L.id ? '성도 이름' : '성도 이름 (여럿은 쉼표로)') + '" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + attSuggHtml(L) + '</div>' +
-    '<div class="hint" id="nameHint">' + attNameHint(L) + '</div>' + (L.id ? '' : recentHtml(L)) + '</div>' + multiHtml(L, 'roles', '구분', attRoleBase(), 'rolesEtc', '직접 적기 (쉼표로 여럿)') + roleHint(L);   // 1115-4 구분 · 1115-5 ④ 사람 값 · 1113-D I 심방 입력과 같은 최근 이름 줄 · 셀
+    '<div class="hint" id="nameHint">' + attNameHint(L) + '</div>' + (L.id ? '' : recentHtml(L)) + '</div>';
+  const multi = attMulti(L), rolesF = multiHtml(L, 'roles', '구분', attRoleBase(), 'rolesEtc', '직접 적기 (쉼표로 여럿)') + roleHint(L);   // 1115-4 구분 · 1115-5 ④ 사람 값 · 1113-D I 심방 입력과 같은 최근 이름 줄 · 셀
+  if (multi) {   // 1122-K K3 — 탭 한 줄 아래 구분 · 함께 온 분 · 섬김
+    const sel = L.rk.sel, nm = sel ? L.rk.nm[sel] : '', own = Object.keys(L.rk.pp || {}).filter(k => L.rk.per[k] && k !== sel).map(k => L.rk.nm[k]);
+    h += '<div class="fsec">사람마다</div>' + roleTabsHtml(L) + rolesF + attFieldHtml(L, 'with') + attFieldHtml(L, 'serve') +
+      '<p class="hint">' + (sel ? esc(nm) + ' 님 줄에만 적힙니다' : "같이 적은 분들은 서로 '함께 온 분' 으로 적힙니다(본인은 빼고) · 따로 왔으면 '혼자'") + (own.length ? '<br>' + esc(own.join(', ')) + ' 님은 함께 · 섬김을 따로 골랐습니다' : '') + '</p>';
+  } else h += rolesF;
   h += '<div class="fsec">언제 · 어디</div>' + attDateHtml(f) + attFieldHtml(L, 'svc');
-  h += '<div class="fsec">어떻게</div>' + attFieldHtml(L, 'from') + attFieldHtml(L, 'seen') + attFieldHtml(L, 'to') + attFieldHtml(L, 'seat') + attFieldHtml(L, 'with') + attFieldHtml(L, 'serve');
+  h += '<div class="fsec">어떻게</div>' + attFieldHtml(L, 'from') + attFieldHtml(L, 'seen') + attFieldHtml(L, 'to') + attFieldHtml(L, 'seat') + (multi ? '' : attFieldHtml(L, 'with') + attFieldHtml(L, 'serve'));
   h += '<div class="fsec">메모</div><div class="fld"><textarea class="inp" data-f="memo" rows="3" placeholder="본 것 · 들은 것" aria-label="메모">' + esc(f.memo) + '</textarea></div>';
   h += '<p class="hint">알약을 길게 누르면 이름 바꾸기 · 지우기, 길게 누른 채 끌면 순서를 바꿉니다(PC 는 오른쪽 단추 · 끌기).</p>';
   if (L.id) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn danger" data-act="attdel" data-v="' + esc(L.id) + '">이 출석 지우기</button></div>';
@@ -4929,7 +5005,7 @@ function omenuHtml(L) {
 }
 function attNameHint(L) {
   const names = splitNames(L.form.name);
-  if (names.length > 1) return L.id ? '고칠 때는 한 분만 적습니다.' : names.length + '분 — 같은 내용으로 한 분씩 한 줄씩 적힙니다.';
+  if (names.length > 1) return L.id ? '고칠 때는 한 분만 적습니다.' : names.length + '분 — 한 분씩 한 줄로 적힙니다. 구분 · 함께 · 섬김은 아래 \'사람마다\' 에서 따로 고를 수 있습니다.';
   if (DATA.state === 'ok' && names.length === 1 && !attNames().some(n => nameKey(n) === nameKey(names[0]))) return '처음 적는 이름입니다. 심방 기록이 없어도 그대로 적힙니다.';
   return '';
 }
@@ -4970,22 +5046,36 @@ function attOptCommit(inp) {
   if (v && C.change(o => attOptAdd(o, k, v), '알약을 더했습니다\n' + v)) { L.form[k] = v; if (L.open) L.open[k] = false; L.dirty = true; render(); }
   else render();
 }
-// 끌어 옮기기 · 길게 누르기 (손가락: 0.45초 누르면 들림 → 끌면 옮기기, 그대로 떼면 메뉴 / 마우스: 바로 끌기, 오른쪽 단추 = 메뉴)
-const DR = { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, x: 0, y: 0, eat: false };
-function drReset() { clearTimeout(DR.t); if (DR.el) DR.el.classList.remove('lift'); Object.assign(DR, { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, fixed: false }); document.body.classList.remove('dragging'); }
-function drLift() { if (!DR.el) return; DR.lifted = true; DR.el.classList.add('lift'); document.body.classList.add('dragging'); try { navigator.vibrate && navigator.vibrate(8); } catch (e) { } }
+// 끌어 옮기기 · 길게 누르기 (손가락: 0.45초 누르면 들리며 **그 자리에서 메뉴**(HB 11/22 — 뗄 때 말고) → 이어서 끌면 메뉴를 닫고 옮기기 / 마우스: 바로 끌기, 오른쪽 단추 = 메뉴)
+// 구분 · 태그 · 할 일(ftog)도 옮긴다(1122-K K2) — 그 차례는 폼 선택지 차례(attrReorder)
+const DR = { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, x: 0, y: 0, eat: false, menu: null };
+function drReset() { clearTimeout(DR.t); if (DR.el) DR.el.classList.remove('lift'); Object.assign(DR, { t: 0, el: null, k: '', lifted: false, moved: false, mouse: false, fixed: false, menu: null }); document.body.classList.remove('dragging'); }
+function drLift() {
+  if (!DR.el) return; DR.lifted = true; DR.el.classList.add('lift'); document.body.classList.add('dragging'); try { navigator.vibrate && navigator.vibrate(8); } catch (e) { }
+  if (!DR.mouse) { const el = DR.el; DR.menu = { k: el.dataset.k, v: el.dataset.v, act: el.dataset.act }; attOptMenu(DR.menu.k, DR.menu.v); }   // 손가락 — 누르고 있는 동안 메뉴
+}
+// 메뉴를 띄운 뒤 손가락을 움직이면 — 메뉴를 닫고, 다시 그려진 같은 알약을 들어 끌기로 잇는다
+function drMenuToDrag() {
+  const m = DR.menu, L = optL(); DR.menu = null; if (L) L.omenu = null; render();
+  const el = [...document.querySelectorAll('.pills[data-k="' + m.k + '"] .opt[data-act="' + m.act + '"]')].filter(x => x.dataset.v === m.v).pop();
+  if (!el) { drReset(); return false; }
+  DR.el = el; el.classList.add('lift'); return true;
+}
 function attOptMenu(k, v) { const L = optL(); if (!optCtx(L) || !dataOk(true)) return; L.omenu = { k, v }; render(); }
 document.addEventListener('pointerdown', e => {
-  const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"], .pills .opt[data-act="favgo"]'); if (!el || e.button === 2) return;
-  drReset(); Object.assign(DR, { el, k: el.dataset.k, x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse', fixed: el.dataset.act === 'ftog' });
-  if (DR.fixed && DR.mouse) { drReset(); return; }   // 마우스는 오른쪽 단추로만 메뉴
+  const el = e.target.closest && e.target.closest('.pills .opt[data-act="aone"], .pills .opt[data-act="ftog"], .pills .opt[data-act="favgo"]');
+  if (!el) { if (DR.menu) drReset(); return; }   // 1122-K 메뉴가 뜬 뒤 다른 곳을 누르면 — 놓친 '뗌' 이 있어도 누르는 중은 끝
+  if (e.button === 2) return;
+  drReset(); Object.assign(DR, { el, k: el.dataset.k, x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse', fixed: el.dataset.act === 'ftog', pid: e.pointerId });
+  if (DR.fixed && !attrPill(optL(), DR.k) && DR.mouse) { drReset(); return; }   // 옮길 수 없는 ftog(계획 등)는 마우스 끌기도 없음
   if (!DR.mouse) DR.t = setTimeout(drLift, 450);
 });
 document.addEventListener('pointermove', e => {
-  if (!DR.el) return;
+  if (!DR.el || e.pointerId !== DR.pid) return;   // 처음 누른 그 손가락(포인터)만 따른다
   const d = Math.hypot(e.clientX - DR.x, e.clientY - DR.y);
   if (!DR.lifted) { if (DR.mouse && d > 6) drLift(); else if (!DR.mouse && d > 8) { drReset(); return; } if (!DR.lifted) return; }
-  if (DR.fixed) return;   // 구분 · 태그 · 할 일은 옮기지 않는다
+  if (DR.menu) { if (d < 12 || !drMenuToDrag()) return; }   // 메뉴가 뜬 채 조금 흔들린 것은 그대로 · 더 움직이면 끌기로
+  if (DR.fixed && !attrPill(optL(), DR.k)) return;   // 구분 · 태그 · 할 일 밖의 ftog 는 옮기지 않는다
   if (d > 6) DR.moved = true;
   const t = document.elementFromPoint(e.clientX, e.clientY), over = t && t.closest && t.closest('.pills[data-k="' + DR.k + '"] .opt[data-act="' + DR.el.dataset.act + '"]');
   if (over && over !== DR.el && !over.getAnimations().length) {   // 밀려 움직이는 중인 알약 위에서는 기다린다(왔다 갔다 떨림 막기)
@@ -5005,11 +5095,13 @@ function flipMove(box, change) {
     k.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' + sc }, { transform: 'translate(0,0)' + sc }], { duration: 200, easing: 'cubic-bezier(.22,.8,.24,1)' });
   });
 }
-document.addEventListener('pointerup', () => {
-  if (!DR.el) return;
-  const { el, k, lifted, moved } = DR; drReset();
+document.addEventListener('pointerup', e => {
+  if (!DR.el || e.pointerId !== DR.pid) return;
+  const { el, k, lifted, moved, menu, fixed } = DR; drReset();
   if (!lifted) return;
   DR.eat = true; setTimeout(() => { DR.eat = false; }, 400);   // 뒤따르는 '누름' 은 먹는다
+  if (menu) return;   // 메뉴는 누르고 있을 때 이미 떴다
+  if (moved && fixed) { attrReorder(k, [...el.parentElement.querySelectorAll('.opt[data-act="ftog"]')].map(x => x.dataset.v)); return; }
   if (moved) {
     const order = [...el.parentElement.querySelectorAll('.opt[data-act="' + el.dataset.act + '"]')].map(x => x.dataset.v);
     const C = optCtx(optL()); if (C) C.change(o => { if (JSON.stringify(o[k]) === JSON.stringify(order)) return false; o[k] = order; return true; }, '알약 순서를 바꿨습니다');
@@ -5185,8 +5277,10 @@ async function saveAttend(L) {
   roleSync(L); const rc = roleCommit(L);   // 1115-5 ④ 구분을 고쳤으면 그분(들) 값도
   L.form.role = attRoleList(L.form.roles, L.form.rolesEtc).join(', ');   // 1115-4 구분
   const f = Object.assign({}, L.form, { name: names[0] });
+  const per = attMulti(L) ? (attSlotTo(L, ''), attPerRows(names, { with: L.form.with, serve: L.form.serve }, L.rk.pp)) : null;   // 1122-K K3 줄마다 함께 · 섬김
+  const pws = n => { const r = per && per.find(x => nameKey(x.name) === nameKey(n)); return r ? { with: r.with, serve: r.serve } : {}; };
   const prole = n => { const P = rolePer(L) ? L.rk.per : null, x = P && P[nameKey(n)]; return x ? roleUnion([x]).join(', ') : L.form.role; };   // 1122-K 출석은 한 분씩 한 줄 — 줄마다 그분 구분만
-  if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n, role: prole(n) }))); L.dirty = false; closeLayer(true); if (rc.changes.length) await personRolesSave(rc.changes); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
+  if (!L.id) { await attWriteNew(names.map(n => Object.assign({}, L.form, { name: n, role: prole(n) }, pws(n)))); L.dirty = false; closeLayer(true); if (rc.changes.length) await personRolesSave(rc.changes); toast('출석을 적었습니다\n' + names.join(', ') + '\n' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
   else {
     const old = AT().find(x => x.id === L.id); if (!old) throw new Error('이 출석 기록을 찾지 못했습니다');
     if (rc.same) f.role = old.role;   // 구분을 안 고쳤으면 그 기록 칸은 예전 값 그대로
@@ -6932,7 +7026,7 @@ document.addEventListener('click', e => {
   if (a === 'prepare') { busy(ensurePrepared).then(() => render()); return; }
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
   if (a === 'pickname') { const L = topLayer(); if (L && L.type === 'attedit') { attNameAdd(L, [v], true); render(); return; } }
-  if (a === 'rsel') { const L = topLayer(); if (L && L.rk) { roleAddFlush(L); L.rk.sel = v; render(); } return; }   // 1122-K 누구 구분을 고치나
+  if (a === 'rsel') { const L = topLayer(); if (L && L.rk) { roleAddFlush(L); if (L.type === 'attedit') attSlotTo(L, v); else L.rk.sel = v; render(); } return; }   // 1122-K 누구 구분을 고치나
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
     const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit' && !(L.type === 'attedit' && a === 'ftog'))) return; L.dirty = true;
     if (a === 'ftog' && k === 'roles' && rolePer(L)) { roleTog(L, v); render(); return; }   // 1122-K 모두 · 그분

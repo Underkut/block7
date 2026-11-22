@@ -6,6 +6,8 @@
 //  ④ 여럿이 함께한 기록 고치기 — 더한 구분은 모두에게
 //  ⑤ 출석 입력 · 고치기 — 같은 규칙(적는 중에 아는 이름이면 불러옴 · 안 고치면 기록 칸 그대로)
 //  ⑥ 모두 빼면 성도 탭에 '없음' — 다시 읽어도 지난 기록 구분이 되살아나지 않는다
+//  ⑧ 1122-K K2 길게 누르면 누르고 있는 동안 메뉴 · 구분 알약 끌기 → 폼 선택지 차례(손가락은 메뉴가 뜬 뒤 이어 끌어도)
+//  ⑨ 1122-K K3 여럿 출석 — 탭 한 줄에 구분 · 함께 · 섬김 · 함께는 같이 적은 분들로 저절로(본인 빼고) · 그분만 고른 것은 그 줄에만
 //  ⑦ 1122-K 여럿 출석 — '모두 · 이름' 탭(안 고른 탭도 옅은 알약) · 점선 = 일부만 · 이름 탭은 그분만 · 줄마다 그분 구분만
 const { chromium } = require('playwright');
 const path = require('path'), fs = require('fs'), vm = require('vm');
@@ -139,6 +141,56 @@ const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.string
   await page.click(LY + ' [data-act="attsave"]'); await waitShut();
   eq('⑦ 출석 줄마다 그분 구분만', att().slice(-3).map(r => r.slice(0, 2)), [['가온', '청년부, 셀원'], ['나래', '셀리더, 셀원, 예배팀, 새가족'], ['다온', '청년부']]);
   eq('⑦ 성도 탭 — 바뀐 두 분만', people(), [['가온', '청년부, 셀원'], ['나래', '셀리더, 셀원, 예배팀, 새가족'], ['다온', '청년부']]);
+  await close();
+
+  // ⑧ K2 길게 누르기 · 구분 알약 끌기
+  const fopts = () => FORM.items.find(i => i.title === '구분').questionItem.question.choiceQuestion.options.filter(o => !o.isOther).map(o => o.value);
+  await page.evaluate(() => { S.layers = []; render(); openEdit(null, ''); }); await page.waitForTimeout(250);
+  const PS = LY + ' .pills[data-k="roles"] .opt[data-act="ftog"]';
+  const order = () => page.$$eval(PS, b => b.map(x => x.dataset.v));
+  const o0 = await order();
+  eq('⑧ 화면 차례 = 폼 차례', o0, fopts());
+  const held = await page.evaluate(q => { const el = document.querySelectorAll(q)[1], r = el.getBoundingClientRect(), o = { bubbles: true, pointerType: 'touch', clientX: r.x + 5, clientY: r.y + 5 }; el.dispatchEvent(new PointerEvent('pointerdown', o));
+    return new Promise(res => setTimeout(() => { const n = document.querySelectorAll('#layers > .layer:last-child .omenu').length; document.dispatchEvent(new PointerEvent('pointerup', o)); res(n); }, 600)); }, PS);
+  eq('⑧ 손을 떼기 전에(누르고 있는 동안) 메뉴가 뜬다', held, 1);
+  eq('⑧ 뗀 뒤에도 메뉴는 그대로 · 고르기는 아니다', [await page.$$eval(LY + ' .omenu', x => x.length), await page.evaluate(() => topLayer().form.roles)], [1, []]);
+  await page.click(LY + ' .omenu [data-act="aoptx"]'); await page.waitForTimeout(150);
+  const box = async i => { const b = await (await page.$$(PS))[i].boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+  const [sx, sy] = await box(2), [tx, ty] = await box(0);
+  await page.mouse.move(sx, sy); await page.mouse.down(); await page.mouse.move(sx + 10, sy, { steps: 3 }); await page.mouse.move(tx - 8, ty, { steps: 12 }); await page.mouse.up(); await page.waitForTimeout(1500);
+  const want1 = [o0[2], o0[0], o0[1]].concat(o0.slice(3));
+  eq('⑧ 마우스로 끌면 화면 차례가 바뀐다', await order(), want1);
+  eq('⑧ 폼 선택지도 같은 차례로', fopts(), want1);
+  eq('⑧ 끈 알약은 골라지지 않는다', await page.evaluate(() => topLayer().form.roles), []);
+  const lp2 = await page.evaluate(q => { const els = document.querySelectorAll(q), a = els[3].getBoundingClientRect(), b = els[0].getBoundingClientRect(), o = { bubbles: true, pointerType: 'touch', clientX: a.x + a.width / 2, clientY: a.y + a.height / 2 };
+    els[3].dispatchEvent(new PointerEvent('pointerdown', o));
+    return new Promise(res => setTimeout(() => { const menu = document.querySelectorAll('.omenu').length; const steps = 10;
+      for (let i = 1; i <= steps; i++) document.dispatchEvent(new PointerEvent('pointermove', Object.assign({}, o, { clientX: o.clientX + (b.x + 4 - o.clientX) * i / steps, clientY: o.clientY + (b.y + b.height / 2 - o.clientY) * i / steps })));
+      setTimeout(() => { const m2 = document.querySelectorAll('.omenu').length; document.dispatchEvent(new PointerEvent('pointerup', o)); res([menu, m2]); }, 400); }, 600)); }, PS);
+  await page.waitForTimeout(1500);
+  eq('⑧ 손가락 — 메뉴가 뜬 뒤 이어 끌면 메뉴가 닫히고 끌기로', lp2, [1, 0]);
+  eq('⑧ 손가락으로 끈 차례도 폼에', fopts(), [want1[3], want1[0], want1[1], want1[2]].concat(want1.slice(4)));
+  await close();
+
+  // ⑨ K3 함께 온 분 · 섬김 — 사람마다
+  await page.evaluate(() => { S.layers = []; S.view = 'attend'; render(); openAttEdit(null, ''); }); await page.waitForTimeout(250);
+  await page.fill(LY + ' input[data-f="name"]', '가온, 나래, 다온'); await page.dispatchEvent(LY + ' input[data-f="name"]', 'change'); await page.waitForTimeout(250);
+  const secOf = k => page.evaluate(k => { const el = document.querySelector('#layers > .layer:last-child .pills[data-k="' + k + '"]'); if (!el) return null; let n = el.closest('.fld'); while (n && !(n.classList && n.classList.contains('fsec'))) n = n.previousElementSibling; return n ? n.textContent : null; }, k);
+  eq("⑨ 구분 · 함께 · 섬김은 '사람마다' 아래 · 자리는 '어떻게' 그대로", [await secOf('roles'), await secOf('with'), await secOf('serve'), await secOf('seat')], ['사람마다', '사람마다', '사람마다', '어떻게']);
+  eq('⑨ 탭은 한 줄뿐', await page.$$eval(LY + ' .rseg', x => x.length), 1);
+  const etc = async (k, val) => { if (!(await page.$(LY + ' input[data-f="' + k + '"][data-etc]'))) await page.click(LY + ' [data-act="aetc"][data-k="' + k + '"]'); await page.fill(LY + ' input[data-f="' + k + '"][data-etc]', val); };
+  await etc('with', '아내'); await etc('serve', '안내');
+  await page.click(LY + ' .rseg button:has-text("나래")'); await page.waitForTimeout(150);
+  eq('⑨ 나래 탭 — 함께는 같이 적은 분들 + 모두 값 · 본인은 빼고', await page.evaluate(() => [topLayer().form.with, topLayer().form.serve]), ['가온, 다온, 아내', '안내']);
+  await etc('serve', '');
+  await page.click(LY + ' .rseg button:has-text("다온")'); await page.waitForTimeout(150);
+  await page.click(LY + ' [data-act="attsolo"]'); await page.waitForTimeout(150);
+  await page.click(LY + ' .rseg button:has-text("모두")'); await page.waitForTimeout(150);
+  eq('⑨ 모두로 돌아오면 모두 값 · 따로 고른 분 안내', [await page.evaluate(() => [topLayer().form.with, topLayer().form.serve]), (await page.$eval(LY + ' .fsec + .rseg ~ p.hint', e => e.textContent)).includes('나래, 다온 님은 함께 · 섬김을 따로')], [['아내', '안내'], true]);
+  await page.evaluate(() => { topLayer().form.svc = '지어낸 모임'; });
+  await page.click(LY + ' [data-act="attsave"]'); await waitShut();
+  const att2 = () => { const t = T('출석'), h = t.rows[0]; return t.rows.slice(-3).map(r => [r[h.indexOf('성도')], r[h.indexOf('함께')] || '', r[h.indexOf('섬김')] || '']); };
+  eq('⑨ 줄마다 함께 · 섬김', att2(), [['가온', '나래, 다온, 아내', '안내'], ['나래', '가온, 다온, 아내', ''], ['다온', '혼자', '안내']]);
   await close();
 
   eq('오류 없음', page.errs, []);
