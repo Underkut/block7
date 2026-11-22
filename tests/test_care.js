@@ -54,7 +54,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT, glanceModel, attMark,
-  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
+  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, seatRecent, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
   ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attWithText, attWithList, attWithJoin, attWithToggle, attRoleList, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, svcTimeParse, svcTimeText, svcTimeHit, svcPick, attOptSetTime, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY, QN_TAB, QN_HEAD, QN_MAX, qnParse, qnEncode, qnDecode, parseQnTab, qnPlan, qnB7Text, qnSubs,
   groupCanon, parseWho, whoKeys, whoMerge, whoRemove, whoShort, splitNotes, joinNotes, visitPreview, personNote, cellFind, cellPeople, groupFromHistory,
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
@@ -1428,6 +1428,17 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const R = A.attPerRows(N, { with: '', serve: '안내' }, { '도윤': { serve: '' }, '서준': { with: '하늘, 서준, 아내' } });
   sc.eq('(53) 줄마다 — 그분만 고른 것 우선 · 없으면 모두 값', J(R), [{ name: '하늘', with: '도윤, 서준', serve: '안내' }, { name: '도윤', with: '하늘, 서준', serve: '' }, { name: '서준', with: '하늘, 아내', serve: '안내' }]);
   sc.eq('(53) 그분이 고른 혼자는 그대로', A.attPerRows(['하늘', '도윤'], {}, { '하늘': { with: '혼자' } })[0].with, '혼자');
+}
+
+// ── (54) 1122-S 출석 입력 '자리' — 그분(들)이 앉았던 자리 ──
+{
+  const L = [ // 최근 먼저 · 이름 · 자리는 모두 지어낸 것
+    { name: '하늘', seat: '앞 왼쪽' }, { name: '도윤', seat: '2층' }, { name: '하 늘', seat: '로비' }, { name: '하늘', seat: '앞왼쪽' }, { name: '하늘', seat: '' },
+    { name: '서준', seat: '뒤' }, { name: '하늘', seat: '뒤' }, { name: '하늘', seat: '로비' }, { name: '하늘', seat: '가운데' }];
+  sc.eq('(54) 많이 앉은 순 · 같으면 최근 순 · 띄어쓰기 무시로 하나로(보이는 꼴은 최근 것) · 빈 자리 빼고 · 셋까지', J(A.seatRecent(L, ['하늘'])), [{ seat: '앞 왼쪽', n: 2 }, { seat: '로비', n: 2 }, { seat: '뒤', n: 1 }]);
+  sc.eq('(54) 여럿이면 함께 적은 분들 모두를 센다', J(A.seatRecent(L, ['도윤', '서준'])), [{ seat: '2층', n: 1 }, { seat: '뒤', n: 1 }]);
+  sc.eq('(54) 미리 고르는 자리(attHabit)도 띄어쓰기 무시로 센다 — 칩 첫째와 같다', A.attHabit([{ name: '가온', seat: '가운데' }, { name: '가온', seat: '맨 앞' }, { name: '가온', seat: '맨앞' }], '가온').seat, '맨 앞');
+  sc.eq('(54) 몇 개까지 · 이름 없음 · 기록 없음', [A.seatRecent(L, ['하늘'], 1).length, J(A.seatRecent(L, [])), J(A.seatRecent(L, ['없는분'])), J(A.seatRecent(null, ['하늘']))], [1, [], [], []]);
 }
 
 sc.done();
