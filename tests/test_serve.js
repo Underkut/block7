@@ -85,6 +85,8 @@ sc.eq('④ 금요: 줄마다 이름이 모여 안내 셋 · 비전홀', [C('2026
 sc.eq('④ 셋째 주 · 다음 달 첫 수요(12/2)도 읽음', [C('2026-11-15|1|rd|'), C('2026-12-02|W|rd|')], [['다온'], ['나래']]);
 sc.eq('④ 옆 메모 · 아래 체크표 · 특이사항은 안 읽음', R.cells.some(c => c.names.includes('근무') || c.names.includes('이름') || c.names.includes('ㅇ')) || R.cells.some(c => c.role === 'rd' && c.date === '2026-11-01' && c.svc === '1' && c.names.length !== 1), false);
 sc.eq('④ 칸 수', R.cells.length, 2 * (4 + 2 + 1 + 3 + 2 + 3 + 3) + 2);
+const noM = tab(); const R3 = A.svReadTab(noM.values, [], '2026-11');
+sc.eq('④ 블록 이름 칸이 합쳐 있지 않아도(왼쪽에만 글) 수요 · 금요를 읽음', [R3.cells.some(c => c.svc === 'W'), R3.cells.some(c => c.svc === 'F'), R3.warn.some(w => w.includes('명단'))], [true, true, false]);
 const bad = A.svReadTab([['아무 글'], ['']], [], '2026-11');
 sc.eq('④ 구분 칸이 없으면 경고 · 짐작 안 함', [bad.cells.length, bad.warn.length > 0], [0, true]);
 const odd = tab(); odd.values[2][4] = '청년부'; odd.values[3 + 3][1] = '자막';
@@ -156,5 +158,14 @@ sc.eq('⑨ serve-core 에 성도 화면용 HB 글자 없음', /['"`][^'"`\n]*\bH
 const svB = [bd('2026-11', [cell('2026-11-22', '1', 'rd', '', ['가람'], 1), cell('2026-11-22', '1', 'gd', '2층 입구', ['나래'], 1), cell('2026-11-22', '1', 'gd', '1층', ['다온'], 1), cell('2026-11-22', '1', 'of', '', ['라온'], 1), cell('2026-11-22', '2', 'rd', '', ['마루'], 1)])];
 sc.eq('⑩ 한 예배 판: 그 예배만 · 안내 · 헌금 · 봉독 차례', A.svService(svB, '2026-11-22', '1').map(c => c.role + (c.pl ? ':' + c.pl : '')), ['gd:1층', 'gd:2층 입구', 'of', 'rd']);
 sc.eq('⑩ 칸 이름', [A.svLabel({ date: '2026-11-22', svc: 'LL', role: 'of', pl: '비전홀' }, true), A.svLabel({ date: '2026-11-27', svc: 'F', role: 'gd', pl: '' })], ['11/22 라이프라인 헌금 · 비전홀', '금요 안내']);
+
+// ⑪ 가져오기 판(S1b) — 코드에서 지킬 것
+const ui = HTML.slice(HTML.indexOf('/* ---------- 분당 예배위원 가져오기 (1122-V S1b)'), HTML.indexOf('/* ---------- 구글 자료 (1121-G G1'));
+sc.eq('⑪ 판 구역을 찾음', ui.length > 1000, true);
+sc.eq('⑪ 시트에 쓰지 않음(method · update · append · batchUpdate · clear 없음) · /off 안 부름', [/method\s*:/.test(ui), /values:(update|append|batchUpdate|clear)|:batchUpdate|valueInputOption/.test(ui), /'\/off'/.test(ui)], [false, false, false]);
+sc.eq('⑪ 계정에 쓰는 곳: svmRef · svRef 의 set 뿐 · update · delete 없음 · 책(b16) · 교역자 칸 안 건드림',
+  [(ui.match(/\.(set|update|delete)\(/g) || []).length === (ui.match(/(svmRef\([^)]*\)|svRef\([^)]*\))\.set\(/g) || []).length, /\.update\(|\.delete\(/.test(ui), /WRITE_FIELD|saveBook|cloudSave|collection\('staff'\)/.test(ui)], [true, false, false]);
+sc.eq('⑪ HB 만(svCan = 미리보기 또는 주인)', /function svCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(ui), true);
+sc.eq('⑪ 메뉴 단추는 svCan 일 때만', /svCan\(\) \? '<button class="btn ghost" data-act="svopen">/.test(HTML), true);
 
 sc.done();
