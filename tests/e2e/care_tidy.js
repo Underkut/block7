@@ -94,6 +94,20 @@ const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.string
   await page.click('#layers > .layer:last-child .hs-add[data-act="addrecp"]'); await page.waitForTimeout(300);
   eq('④ 심방 + → 이름이 채워진 입력 창', await page.evaluate(() => [topLayer().type, topLayer().form.name]), ['edit', '가온']);
 
+  // ⑥ 1122-K K4 첫 화면에서 연 입력을 저장하면 방금 적은 쪽 목록으로(기억해 둔 마지막 페이지도)
+  await page.evaluate(() => { S.layers = []; S.view = 'people'; save({ view: 'people' }); render(); openAttEdit(null, ''); }); await page.waitForTimeout(250);
+  await page.evaluate(() => { const L = topLayer(); L.form.name = '시험분'; L.form.svc = '지어낸 모임'; });
+  await page.click('#layers .layer:last-child [data-act="attsave"]'); await page.waitForTimeout(900);
+  eq('⑥ 출석 저장 → 출석 목록 · 기억도 출석', await page.evaluate(() => [S.view, savedRaw().view]), ['attend', 'attend']);
+  await page.evaluate(() => { S.layers = []; S.view = 'plan'; save({ view: 'plan' }); render(); openEdit(null, ''); whoAdd(topLayer(), ['가온']); }); await page.waitForTimeout(250);
+  await page.evaluate(() => { const L = topLayer(); L.form.method = '식사'; L.form.text = '새 이야기'; });
+  await page.click('#layers .layer:last-child [data-act="saverec"]'); await page.waitForTimeout(900);
+  eq('⑥ 심방 저장 → 심방 목록 · 기억도 심방', await page.evaluate(() => [S.view, savedRaw().view]), ['list', 'list']);
+  await page.evaluate(() => { S.layers = []; S.view = 'plan'; render(); openLayer('person', { name: '가온' }); openAttEdit(null, ''); }); await page.waitForTimeout(250);
+  await page.evaluate(() => { const L = topLayer(); L.form.name = '시험분'; L.form.svc = '지어낸 모임'; });
+  await page.click('#layers .layer:last-child [data-act="attsave"]'); await page.waitForTimeout(900);
+  eq('⑥ 사람 카드 위에서 연 입력은 그대로(계획 화면)', await page.evaluate(() => S.view), 'plan');
+
   // ⑤ 한눈에
   await page.evaluate(() => { S.layers = []; S.view = 'collect'; render(); }); await page.waitForTimeout(300);
   eq('⑤ 한눈에에 구분 나란히 없음', await page.evaluate(() => [/구분 나란히/.test($('app').innerText), !!document.querySelector('[data-act="gcard"][data-v="role"]')]), [false, false]);
