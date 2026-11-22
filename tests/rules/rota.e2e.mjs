@@ -799,6 +799,40 @@ console.log('㉖ 구글 자료 계정에 두기 (1121-G G2) — 지어낸 이름
   ok('㉖ 책(b…)은 그대로 — 구글 자료는 책에 안 씀', bookOf(await getDoc('rota/' + HB)), book0);
 }
 
+console.log('㉗ 시트와 맞춰 보기 (1121-G G4) — 지어낸 이름');
+{
+  const WF = await hb.evaluate(() => WRITE_FIELD), visitsOf = d => (d[WF] || {}).visits || [];
+  // 두 주 뒤 주일: 예배팀 교역자 · 예배위원 광고 = 가나다(앱에는 그 주 부산 일정이 없음) · 세 주 뒤: 사람 목록에 없는 이름
+  const S2 = await hb.evaluate(() => addDays(visitSun(todayYmd()), 14)), S3 = await hb.evaluate(() => addDays(visitSun(todayYmd()), 21));
+  const docs = await hb.evaluate(([s2, s3]) => { const R = k => ({ k, label: k });
+    return { bteam: gsPack({ joined: { sun: [{ date: s2, svc: '2', relay: false, cells: { 교역자: ['가나다'] } }, { date: s3, svc: '2', relay: false, cells: { 교역자: ['없는이름'] } }], fri: [], roles: { sun: [R('교역자')], fri: [] } } }, Date.now()),
+      bserve: gsPack({ joined: { sun: [{ date: s2, svc: '2', relay: false, cells: { 광고: ['가나다'] } }], fri: [], roles: { sun: [R('광고')], fri: [] } } }, Date.now()) }; }, [S2, S3]);
+  await admin(async db => { await db.doc('rota/' + HB + '/gs/bteam').set(docs.bteam); await db.doc('rota/' + HB + '/gs/bserve').set(docs.bserve); });
+  const d0 = await getDoc('rota/' + HB), nV0 = visitsOf(d0).length;
+  const al = await until(() => hb.evaluate(() => { const x = alertData().items.filter(y => y.kind === 'gs'); return x.length === 2 ? x.map(y => [y.cat, y.main, y.to.gs]) : null; }));
+  ok('㉗ HB 알림 판 확인 갈래에 두 줄(교역자 다름 · 못 이은 이름)', al, [['chk', '시트와 다름 · 부산 교역자', 'who|' + S2], ['chk', '시트와 다름 · 부산 교역자', 'who|' + S3]]);
+  ok('㉗ 계정 책은 아직 그대로(저절로 안 바뀜)', visitsOf(await getDoc('rota/' + HB)).length, nV0);
+  await hb.evaluate(() => { S.acat = 'chk'; render(); }); await sleep(200);
+  await hb.evaluate(() => { const i = (S.al || []).findIndex(x => x.kind === 'gs'); document.querySelector(`[data-al="${i}"]`).click(); }); await sleep(400);
+  ok('㉗ 알림 줄을 누르면 맞춰 보기 판 · 앱 값 · 시트 값 나란히 · 반영 단추는 고칠 수 있는 줄만',
+    await hb.evaluate(() => [S.pane && S.pane.kind, document.querySelectorAll('#pane .gsc').length, document.querySelectorAll('#pane [data-gsfix]').length, /부산 일정 없음/.test($('#pane').innerText), /'없는이름'/.test($('#pane').innerText)]), ['gscheck', 2, 1, true, true]);
+  await hb.click('#pane [data-gsfix="who|' + S2 + '"]');
+  const v2 = await until(async () => visitsOf(await getDoc('rota/' + HB)).find(v => v.id === 'v|' + S2 && !v.del));
+  ok('㉗ 앱에 반영 → 계정 책에 그 주 부산 일정(교역자 가나다) · 다른 부산 일정 수는 그대로', [v2 && v2.who, visitsOf(await getDoc('rota/' + HB)).length], [['pa'], nV0 + 1]);
+  ok('㉗ 반영한 줄은 판 · 알림에서 사라짐 · 토스트', await hb.evaluate(() => [document.querySelectorAll('#pane .gsc').length, alertData().items.filter(y => y.kind === 'gs').length]).then(x => x.concat(hb.toasts.some(t => /앱에 반영했습니다/.test(t)))), [1, 1, true]);
+  ok('㉗ 교역자 앱도 새 부산 일정을 받음', await until(() => ga.evaluate(s => !!S.book.visits.find(v => v.id === 'v|' + s && !v.del), S2)), true);
+  await hb.click('#pane [data-gsskip]');
+  const ui = await until(async () => { const d = await getDoc('rota/' + HB); return d.ui && d.ui.gsk && d.ui.gsk.length ? d.ui : null; });
+  ok('㉗ 넘기기 → 계정 ui.gsk 한 열쇠(이름 안 듦) · 알림에서 빠짐 · 판은 \'넘긴 것 1 보기\'',
+    [ui && ui.gsk.length, ui && /없는이름|가나다/.test(JSON.stringify(ui.gsk)), await hb.evaluate(() => [alertData().items.filter(y => y.kind === 'gs').length, document.querySelectorAll('#pane .gsc').length, /넘긴 것 1 보기/.test($('#pane').innerText)])], [1, false, [0, 0, true]]);
+  ok('㉗ HB 두 번째 기기도 넘긴 줄을 앎(같은 계정 ui)', await until(() => hb2.evaluate(() => (UIS.ui.gsk || []).length === 1 && alertData().items.filter(y => y.kind === 'gs').length === 0)), true);
+  await hb.evaluate(() => closePane()); await sleep(400);
+  // 교역자 — 같은 표를 받아도 알림 · 판 · 반영이 없음
+  await until(() => ga.evaluate(() => !!(S.gs.bteam && S.gs.bserve)));
+  ok('㉗ 교역자: 알림 판에 시트 줄 없음 · 판이 안 열림 · 반영 누름은 staffOk 가 막음',
+    await ga.evaluate(() => { gsChkOpen(); const b = document.createElement('button'); b.dataset.gsfix = 'x'; return [alertData().items.filter(y => y.kind === 'gs').length, !!(S.pane && S.pane.kind === 'gscheck'), staffOk(b, b.dataset), staffOk(b, { gsskip: 'k' })]; }), [0, false, false, false]);
+}
+
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });

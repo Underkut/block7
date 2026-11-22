@@ -32,6 +32,8 @@
 //  ㊾ (1115-4 ③) 자리 배치 — 가로 6칸 · 겹치면 안 놓임(다른 알약은 그대로) · 빈 곳 찾기 · 끌기 · 당기기 · 알약 이름 따라가기 · 틀린 저장값 거르기 · 배치는 제 시각으로 기기끼리 맞춤
 //  ㊿ (1115-4 ④) 자리 보기 — 배치 위에 그 모임에 온 분 이름 · 배치에 없는 자리 · 자리 기록 없음 · 한 분도 안 빠짐
 //  ㉜ (1115-5 ④) 구분은 사람에게 — '성도' 탭 '구분' 칸이 그분 값('없음' = 일부러 비움) · 칸이 비면 지난 기록을 모아(혼자 받은 기록 먼저) · 옛 기록 칸은 안 바뀜 · 더하고 뺀 것만 사람마다 · 탭엔 그 칸만
+//  (55) (1122-C) 개인 페이지에서 이름 · 소속 · 역할 고치기 — 성도 탭 그분 줄만(이름 · 구분 · '예전 이름') · 옛 기록은 안 고침 · 옛 이름 기록을 새 이름에 잇기 · 합치기 · 되돌리기
+//  (56) (1122-F) 이름 칸 빈칸으로도 여럿 — 모두 아는 이름 · 나누는 길이 하나일 때만 · 셀 표시 · 아는 한 이름 · 모르는 낱말은 그대로 · 쉼표는 예전 그대로
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -60,7 +62,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
   INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, actLineText, actLinesOf, actLinesPlan, actLineRow, ACT_HINT, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N,
-  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan, roleMerge, roleState, roleTogAll, roleTogOne, rolePerChanges, attrOrderPlan, attrOrderCells, attWithAuto, attPerRows };`, ctx);
+  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan, roleMerge, roleState, roleTogAll, roleTogOne, rolePerChanges, attrOrderPlan, attrOrderCells, attWithAuto, attPerRows,
+  PALIAS_COL, peopleAliases, aliasOf, aliasNames, attAlias, peopleEditPlan, spaceSplit, splitNamesBy, spaceNames, spaceStuck };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -1441,6 +1444,72 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('(54) 여럿이면 함께 적은 분들 모두를 센다', J(A.seatRecent(L, ['도윤', '서준'])), [{ seat: '2층', n: 1 }, { seat: '뒤', n: 1 }]);
   sc.eq('(54) 미리 고르는 자리(attHabit)도 띄어쓰기 무시로 센다 — 칩 첫째와 같다', A.attHabit([{ name: '가온', seat: '가운데' }, { name: '가온', seat: '맨 앞' }, { name: '가온', seat: '맨앞' }], '가온').seat, '맨 앞');
   sc.eq('(54) 몇 개까지 · 이름 없음 · 기록 없음', [A.seatRecent(L, ['하늘'], 1).length, J(A.seatRecent(L, [])), J(A.seatRecent(L, ['없는분'])), J(A.seatRecent(null, ['하늘']))], [1, [], [], []]);
+}
+
+// ── (55) 1122-C 개인 페이지에서 이름 · 소속 · 역할 고치기 ──
+{
+  const H = ['성도ID', '이름', '부르는 이름', '구분', '메모'];
+  const tab = [H, ['P1', '가온', '', '장년부', ''], ['P2', '나래', '', '', '메모 하나']];
+  const p1 = A.peopleEditPlan(tab, { old: '가온', name: '가온누리', roles: null }, 1, 0.5);
+  sc.eq("(55) 이름 바꾸기 — '예전 이름' 머리글은 오른쪽 끝에 · 그 줄 이름 칸 · 예전 이름 칸만", J(p1), { head: { col: 5, cells: ['예전 이름'] }, set: [{ row: 2, col: 1, value: '가온누리' }, { row: 2, col: 5, value: '가온' }], add: [], merge: false });
+  const p2 = A.peopleEditPlan(tab, { old: '나래', name: '나래', roles: ['청년부', '셀원'] }, 1, 0.5);
+  sc.eq('(55) 구분만 — 구분 칸 하나 · 머리글 안 더함', J(p2), { head: null, set: [{ row: 3, col: 3, value: '청년부, 셀원' }], add: [], merge: false });
+  sc.eq("(55) 모두 빼면 '없음'", J(A.peopleEditPlan(tab, { old: '가온', name: '가온', roles: [] }, 1, 0.5).set), [{ row: 2, col: 3, value: '없음' }]);
+  sc.eq('(55) 아무것도 안 고치면 할 일 없음', J(A.peopleEditPlan(tab, { old: '가온', name: '가온', roles: null }, 1, 0.5)), { head: null, set: [], add: [], merge: false });
+  sc.eq('(55) 띄어쓰기만 고치면 이름 칸만(기록은 띄어쓰기 무시로 이미 이어짐 · 예전 이름 안 적음)', J(A.peopleEditPlan(tab, { old: '가온', name: '가 온', roles: null }, 1, 0.5)), { head: null, set: [{ row: 2, col: 1, value: '가 온' }], add: [], merge: false });
+  const p3 = A.peopleEditPlan(tab, { old: '다온', name: '다온빛', roles: ['셀원'] }, 1700000000000, 0.5);
+  sc.eq('(55) 성도 탭에 줄이 없는 분 — 새 줄 하나(새 이름 · 구분 · 예전 이름)', J([p3.head, p3.set, p3.add.map(r => r.slice(1))]), [{ col: 5, cells: ['예전 이름'] }, [], [['다온빛', '', '셀원', '', '다온']]]);
+  sc.eq('(55) 새 줄 성도ID', /^P/.test(p3.add[0][0]), true);
+  const T2 = [H.concat('예전 이름'), ['P1', '가온누리', '', '', '', '가온'], ['P2', '나래', '', '', '', '']];
+  sc.eq('(55) 되돌리기 — 지금 이름이 된 옛 이름은 예전 이름에서 빠지고 바꾸기 전 이름이 들어간다', J(A.peopleEditPlan(T2, { old: '가온누리', name: '가온', roles: null }, 1, 0.5).set), [{ row: 2, col: 1, value: '가온' }, { row: 2, col: 5, value: '가온누리' }]);
+  const pm = A.peopleEditPlan(T2, { old: '나래', name: '가온누리', roles: ['셀원'] }, 1, 0.5);
+  sc.eq('(55) 이미 있는 이름으로 — 합치기(옛 줄도 새 이름 · 예전 이름 · 구분은 두 줄 다)', J(pm), { head: null, set: [{ row: 3, col: 1, value: '가온누리' }, { row: 3, col: 5, value: '나래' }, { row: 3, col: 3, value: '셀원' }, { row: 2, col: 3, value: '셀원' }], add: [], merge: true });
+  const pm2 = A.peopleEditPlan(T2, { old: '라온', name: '가온누리', roles: null }, 1, 0.5);
+  sc.eq('(55) 줄 없는 분을 있는 분으로 합치기 — 있는 줄 예전 이름에 더함 · 새 줄 없음', J(pm2), { head: null, set: [{ row: 2, col: 5, value: '가온, 라온' }], add: [], merge: true });
+  sc.eq('(55) 지우는 칸 없음 — 모든 쓰기는 값 넣기 · 줄 더하기뿐', [p1, p2, p3, pm, pm2].every(p => p.set.every(c => c.value !== undefined) && !('del' in p)), true);
+  let err = ''; try { A.peopleEditPlan(tab, { old: '가온', name: '  ', roles: null }); } catch (e) { err = e.message; }
+  sc.eq('(55) 빈 이름은 쓰지 않는다', /비었습니다/.test(err), true);
+  sc.eq('(55) 빈 탭이면 머리글부터(예전 이름 포함)', J(A.peopleEditPlan([], { old: '가온', name: '가온누리', roles: null }, 1, 0.5).head), { col: 0, cells: ['성도ID', '이름', '부르는 이름', '구분', '메모', '기도노트', 'BLOCK7 연락처', '상태', '예전 이름'] });
+
+  // 읽기 — 옛 이름 → 새 이름
+  const T3 = [H.concat('예전 이름'), ['P1', '가온누리', '', '', '', '가온, 가 온 '], ['P2', '나래', '', '', '', '나래'], ['P3', '하늘', '', '', '', '나래, 바다'], ['P4', '바다', '', '', '', '']];
+  sc.eq('(55) 예전 이름 읽기 — 띄어쓰기 무시 · 자기 이름 · 지금 다른 줄 이름(그분이 따로 있음)은 잇지 않는다', J(A.peopleAliases(T3)), { '가온': '가온누리' });
+  sc.eq("(55) '예전 이름' 머리글이 없으면 아무것도 잇지 않는다", J(A.peopleAliases(tab)), {});
+  const AL = A.peopleAliases(T3);
+  sc.eq('(55) 이름 바꿔 읽기 · 같은 분은 한 번', [A.aliasOf(AL, '가 온'), A.aliasOf(AL, '나래'), J(A.aliasNames(AL, ['가온', '가온누리', '나래']))], ['가온누리', '나래', ['가온누리', '나래']]);
+  const HEAD = ['Timestamp', '심방 날짜', '성도 이름', '구분', '전화 / 만남', '내용', '태그', '액션', '대화 깊이'];
+  const vals = [HEAD, ['11/2/2026 10:00:00', '11/1', '가온', '', '식사', '혼자 나눈 이야기', '', '', '중간'],
+    ['11/5/2026 10:00:00', '11/4', '가온누리, 나래', '', '식사', '함께 나눈 이야기\n◆ 가온\n그분 몫', '', '', '얕음'],
+    ['11/6/2026 10:00:00', '11/5', '나무 셀, 가온', '', '식사', '셀 모임', '', '', '얕음']];
+  const m0 = A.buildModel(vals, { cutoff: '' }), m1 = A.buildModel(vals, { cutoff: '', alias: AL });
+  const byRow = m => m.visits.slice().sort((a, b) => a.row - b.row);
+  sc.eq('(55) 잇기 없이는 예전과 같다', J([Object.keys(m0.people).sort(), byRow(m0).map(v => v.who)]), [['가온', '가온누리', '나래'], [['가온'], ['가온누리', '나래'], ['가온']]]);
+  sc.eq('(55) 옛 이름 기록이 새 이름에 — 성도 하나 · 기록 셋', J([Object.keys(m1.people).sort(), m1.people['가온누리'].keys.length]), [['가온누리', '나래'], 3]);
+  sc.eq('(55) 시트 글(name)은 그대로 · 사람 목록만 새 이름 · 셀 표시는 그대로', J(byRow(m1).map(v => [v.name, v.names, v.groups])), [['가온', ['가온누리'], []], ['가온누리, 나래', ['가온누리', '나래'], []], ['나무 셀, 가온', ['가온누리'], ['나무 셀']]]);
+  sc.eq("(55) 사람별 내용 '◆ 옛 이름' 도 새 이름에", byRow(m1)[1].notes.map(x => x.name), ['가온누리']);
+  const at = A.attAlias([{ name: '가온', date: '2026-11-01' }, { name: '나래', date: '2026-11-01' }], AL);
+  sc.eq('(55) 출석도 새 이름 · 옛 글은 name0 에', J(at), [{ name: '가온누리', date: '2026-11-01', name0: '가온' }, { name: '나래', date: '2026-11-01' }]);
+  const pr = A.personRoleMap(m1.visits, at, A.parsePeopleTab(T3));
+  sc.eq('(55) 구분 모음도 한 분으로', pr[A.aliasOf(AL, '가온')] ? Object.keys(pr).filter(k => k.startsWith('가온')) : null, ['가온누리']);
+}
+
+// ── (56) 1122-F 이름 칸 빈칸으로도 여럿 ──
+{
+  const K = ['가온', '나래', '다온', '김하늘', '케이트 최', '케이트', '최', '라온', '라', '온'];
+  sc.eq('(56) 모두 아는 이름이면 빈칸으로 나눈다', J(A.spaceSplit('가온 나래  다온', K)), ['가온', '나래', '다온']);
+  sc.eq("(56) 셀 표시('가온 셀')는 나누지 않는다", J(A.spaceSplit('가온 셀', K)), ['가온 셀']);
+  sc.eq('(56) 모르는 낱말이 끼면 그대로(처음 적는 분일 수 있다)', J(A.spaceSplit('가온 새사람', K)), ['가온 새사람']);
+  sc.eq("(56) 아는 한 이름('케이트 최')이 두 이름으로도 나뉘면 애매 — 그대로", J(A.spaceSplit('케이트 최', K)), ['케이트 최']);
+  sc.eq('(56) 나누는 길이 둘이면 그대로(라 온 · 라온 …)', J(A.spaceSplit('가온 라 온', K)), ['가온 라 온']);
+  sc.eq('(56) 빈칸 없는 한 이름 · 빈 칸', J([A.spaceSplit('가온', K), A.spaceSplit('  ', K)]), [['가온'], []]);
+  sc.eq('(56) 쉼표는 예전 그대로 · 쉼표 조각마다 빈칸 나누기 · 같은 이름은 한 번', J(A.splitNamesBy('가온 나래, 다온，김하늘 가온', K)), ['가온', '나래', '다온', '김하늘']);
+  sc.eq('(56) 셀 표시와 섞여도', J(A.splitNamesBy('나무 셀, 가온 나래', K)), ['나무 셀', '가온', '나래']);
+  sc.eq('(56) 명단이 비면 쉼표만(splitNames 와 같다)', J(A.splitNamesBy('가온 나래, 다온', [])), J(A.splitNames('가온 나래, 다온')));
+  sc.eq('(56) 칸 글 고치기 — 나눈 곳만 쉼표로', J([A.spaceNames('가온 나래', K), A.spaceNames('가온 셀, 다온', K), A.spaceNames('가온 새사람', K)]),
+    [{ text: '가온, 나래', changed: true }, { text: '가온 셀, 다온', changed: false }, { text: '가온 새사람', changed: false }]);
+  sc.eq('(56) 못 나눈 빈칸 조각 — 알림용(셀 표시 · 아는 한 이름은 빼고)', J(A.spaceStuck('가온 새사람, 나무 셀, 케이트 최, 다온', K)), ['가온 새사람']);
+  // 다른 앱이 읽는 꼴은 그대로 — 나눈 뒤 칸에 적는 글은 쉼표
+  sc.eq('(56) 나눈 이름을 칸에 적으면 쉼표 글(셀 inside · 기도노트가 읽는 꼴)', A.whoMerge('', A.splitNamesBy('나무 셀, 가온 나래', K)), '나무 셀, 가온, 나래');
 }
 
 sc.done();

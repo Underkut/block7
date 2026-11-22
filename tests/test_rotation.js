@@ -39,6 +39,7 @@
 //  ㊵ 숙소 금액 · 취소 기한은 HB 전용(1117-Z 1): 교역자 화면 책에서 걷어 냄 · 교역자 칸의 값은 안 받음(이미 든 값은 그대로) · 교역자는 못 고침 · HB 화면은 그대로
 //  (60) 구글 자료 계정에 두기(1121-G G2): 지문(칸 차례 무관) · 다듬기 · 올릴지(같음 · 비면 · 절반 넘게 줄면 멈춤 · 그래도) · 고른 파일 · 한 시간
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
+//  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (59) 구글 자료(1121-G G1): 탭 이름 · 맨 뒤 판 · 합친 칸 펴기 · 날짜(해 넘김 · 특별예배 글) · 예배팀 / 예배위원 시트 읽기(글자로 찾기 · 판교중계 = 중계 · 옆 표 안 읽음) · 두 달 합치기 · 읽기만
 //  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
@@ -72,7 +73,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   normBul, bulId, bulOf, bulOrder, monthDiff,
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
-  gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES };`, ctx);
+  gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1931,6 +1933,107 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(61) 사람별은 HB 만(교역자에게 알약이 없음) · 교역자도 예배 순서 · 알약은 누름', [/const gsCntOk = \(\) => !isStaff\(\);/.test(ui), /ms\.length && gsCntOk\(\) \? \['cnt'\]/.test(ui), /'gsweek', 'gsback'\]\);/.test(HTML), /d\.gsv \|\| d\.gsm/.test(HTML), /\(d\.act === 'ads' \|\| d\.act === 'gsweek'\) && !S\.pane\.edit/.test(HTML)], [true, true, true, true, true]);
   sc.eq('(61) 카드 · 부산 일정 판 · 내 일정 · 주 머리에서 예배 순서 판으로', [/row\('예배 순서', gsSumSpan\(v\), true\)/.test(HTML), /\$\{gsSumLine\(v\)\}/.test(HTML), /\$\{gsVisitSec\(v\)\}/.test(HTML), /gsMine\(gsData\('bteam'\), gsData\('bserve'\), gsKeys\(S\.book, me\.id\), from, to\)/.test(HTML), /data-act="gsweek" data-sun="\$\{sun\}"><b>\$\{label\}/.test(ui), /gsweek: paneGsWeek/.test(HTML)], [true, true, true, true, true, true]);
   sc.eq('(61) 미리보기는 gsDemo 표 · 실제는 계정 표(S.gs)만', [/if \(!DEMO\) return \(S\.gs && S\.gs\[k\]\) \|\| null;/.test(ui), /gsDemo\(x\.k, m\)/.test(ui)], [true, true]);
+}
+
+
+// (62) 1121-G G4 — 시트와 맞춰 보기 (HB 결정 ③ 가). 이름은 모두 지어낸 것. 오늘 = 2026-11-16(월)
+{
+  const TD = '2026-11-16', R = (k, label) => ({ k, label });
+  const mkb = () => A.normBook({ people: [
+      { id: 'pA', name: '나가람', roles: ['busan'] }, { id: 'pB', name: '오다온', alias: ['오목사'], roles: ['busan'] }, { id: 'pC', name: '한별', kind: 'lay', roles: ['lead'] },
+      { id: 'pD', name: '정마루' }, { id: 'pE', name: '정 마루' }, { id: 'pF', name: '서하늘', roles: ['busan'] }],
+    visits: [
+      { id: 'v|2026-11-15', who: ['pA'], days: '토일', at: 1 },
+      { id: 'v|2026-11-22', who: ['pA'], days: '금토일', lead: { fri: { m: 'staff' }, sun: { m: 'staff' }, ll: { m: 'relay' } }, at: 1 },
+      { id: 'v|2026-11-29', who: ['pA'], days: '토일', lead: { sun: { m: 'staff' } }, at: 1 }] });
+  const team = { sun: [
+      { date: '2026-11-15', svc: '2', relay: false, cells: { 교역자: ['서하늘'] } },   // 지난 주 — 견주지 않음
+      { date: '2026-11-22', svc: '2', relay: false, cells: { 예배인도: ['한별'], 교역자: ['나가람'] } },
+      { date: '2026-11-22', svc: '1', relay: true, cells: {} },
+      { date: '2026-11-22', svc: 'LL', relay: false, cells: { 싱어1: ['이나래'] } },
+      { date: '2026-11-29', svc: '2', relay: true, cells: { 교역자: ['오목사'] } },
+      { date: '2026-12-06', svc: '2', relay: false, cells: { 교역자: ['서하늘', '목사'] } },
+      { date: '2026-12-13', svc: '2', relay: false, cells: { 교역자: ['정마루'] } },
+      { date: '2026-12-20', svc: '2', relay: false, cells: { 교역자: ['서하늘'] } }],
+    fri: [
+      { date: '2026-11-20', name: '인카운터', relay: false, cells: { 예배인도: ['나가람'] } },
+      { date: '2026-11-27', name: '워십나잇', relay: true, cells: {} },   // 넷째 금요일 — 앱에 금요 인도 칸이 없음
+      { date: '2026-12-04', name: '어웨이크', relay: true, cells: {} }],
+    roles: { sun: [R('예배인도', '예배 인도'), R('싱어1', '싱어1'), R('교역자', '교역자')], fri: [R('예배인도', '예배 인도')] } };
+  const serve = { sun: [
+      { date: '2026-11-22', svc: '2', relay: false, cells: { 광고: ['나가람'] } },
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 광고: ['오다온'] } },
+      { date: '2026-11-29', svc: '1', relay: false, cells: { 광고: ['오다온'] } },
+      { date: '2026-12-06', svc: '2', relay: false, cells: { 광고: ['서하늘'] } },
+      { date: '2026-12-20', svc: '2', relay: false, cells: { 광고: ['나가람'] } }], fri: [], roles: { sun: [R('광고', '광고')], fri: [] } };
+
+  // ── 이름 맞추기 (gsKeys 와 같은 규칙)
+  const b0 = mkb(), map = A.gsWhoMap(b0);
+  sc.eq('(62) 이름 맞추기: 이름 · 다른 이름(띄어쓰기 없이) · 같은 이름 둘(정마루)은 안 이음 · 호칭이 붙어도(나가람목사) · 짧은 것(박목사)은 못 찾음',
+    [A.gsPid(map, '나 가람'), A.gsPid(map, '오목사'), A.gsPid(map, '정마루'), A.gsPid(map, '나가람목사'), A.gsPid(map, '박목사'), A.gsPid(map, '')], ['pA', 'pB', '', 'pA', '', '']);
+
+  // ── 어긋난 곳
+  const before = JSON.stringify(b0), D = A.gsDiff(b0, team, serve, TD, '2026-12-31');
+  sc.eq('(62) 어긋난 곳: 날짜순 · 지난 주 · 같은 곳 · 넷째 금요일 · 부산 일정 없는 금요일은 없음',
+    D.map(x => x.id), ['lead|ll|2026-11-22', 'lead|sun|2026-11-29', 'who|2026-11-29', 'who|2026-12-06', 'who|2026-12-13', 'who|2026-12-20']);
+  const by = id => D.find(x => x.id === id);
+  sc.eq('(62) 교역자: 두 시트(오목사 = 오다온의 다른 이름)가 같고 앱과 다름 → 반영 = 그 부산 일정의 교역자를 바꿈',
+    J([by('who|2026-11-29').app, by('who|2026-11-29').sheet, by('who|2026-11-29').want, by('who|2026-11-29').fix, by('who|2026-11-29').label]),
+    ['나가람', [{ label: '예배팀 교역자', text: '오목사' }, { label: '예배위원 광고', text: '오다온' }], '오다온', { visit: 'v|2026-11-29', who: ['pB'] }, '부산 교역자']);
+  sc.eq('(62) 교역자: 부산 일정이 없는 주 → 반영 = 새 부산 일정 · 홀로 적힌 호칭(목사)은 이름이 아님',
+    J([by('who|2026-12-06').app, by('who|2026-12-06').sheet[0].text, by('who|2026-12-06').want, by('who|2026-12-06').fix]), ['부산 일정 없음', '서하늘', '새 부산 일정 · 서하늘', { visit: 'v|2026-12-06', make: true, who: ['pF'] }]);
+  sc.eq('(62) 못 이은 이름 · 두 시트가 다름 → 반영 없이 까닭만', [by('who|2026-12-13').fix, /'정마루'.*다른 이름/s.test(by('who|2026-12-13').why), by('who|2026-12-20').fix, /두 시트/.test(by('who|2026-12-20').why)], [null, true, null, true]);
+  sc.eq('(62) 주일 2부 판교중계 ↔ 앱 교역자 인도 → 반영 = 중계', J([by('lead|sun|2026-11-29').app, by('lead|sun|2026-11-29').sheet, by('lead|sun|2026-11-29').fix, by('lead|sun|2026-11-29').want]),
+    ['교역자 인도(나가람)', [{ label: '예배팀 2부', text: '판교중계' }], { visit: 'v|2026-11-29', svc: 'sun', lead: { m: 'relay' } }, '중계']);
+  sc.eq('(62) LL: 앱은 중계 · 시트는 사람이 적힘 → 반영 = 비움(이름은 주일에 견주지 않음) · 까닭 한 줄', J([by('lead|ll|2026-11-22').app, by('lead|ll|2026-11-22').fix, by('lead|ll|2026-11-22').want, /중계가 아니어서/.test(by('lead|ll|2026-11-22').why)]),
+    ['중계', { visit: 'v|2026-11-22', svc: 'll', lead: null }, '비움', true]);
+  sc.eq('(62) 읽기만: 견주기는 책도 표도 고치지 않음', [JSON.stringify(b0), A.gsDiff(b0, null, null, TD, '2026-12-31').length], [before, 0]);
+
+  // ── 금요 인도 갈래
+  const fri = (cells, relay, lead, days) => { const b = mkb(); const v = b.visits.find(x => x.id === 'v|2026-11-22'); A.put(b, 'visits', Object.assign({}, v, { lead: Object.assign({}, v.lead, { fri: lead }), days: days || v.days }), 'u', 2);
+    return [b, A.gsDiff(b, { sun: [], fri: [{ date: '2026-11-20', name: '인카운터', relay, cells }], roles: {} }, null, TD, '2026-12-31')]; };
+  sc.eq('(62) 금요: 성도 인도자(한별)면 같음 · 앱 비움이면 반영 = 그분 · 이름 = ENCOUNTER 예배 인도',
+    [fri({ 예배인도: ['한별'] }, false, { m: 'lay', p: 'pC' })[1].length, J(fri({ 예배인도: ['한별'] }, false, null)[1].map(x => [x.label, x.app, x.fix.lead, x.want]))], [0, [['ENCOUNTER 예배 인도', '비움', { m: 'lay', p: 'pC' }, '한별 인도']]]);
+  sc.eq('(62) 금요: 판교중계 ↔ 교역자 인도 → 반영 = 중계 · 못 이은 이름은 까닭만(앱이 중계면 비움으로)',
+    J([fri({}, true, { m: 'staff' })[1].map(x => x.fix.lead), fri({ 예배인도: ['도담'] }, false, { m: 'staff' })[1].map(x => [x.fix, /'도담'/.test(x.why)]), fri({ 예배인도: ['도담'] }, false, { m: 'relay' })[1].map(x => x.fix.lead)]),
+    [[{ m: 'relay' }], [[null, true]], [null]]);
+  sc.eq('(62) 금요: 그 부산 일정 교역자가 아닌 분 · 인도자 여럿은 까닭만', fri({ 예배인도: ['서하늘'] }, false, null)[1].map(x => [x.fix, /교역자도 성도 인도자도 아닙니다/.test(x.why)]), [[null, true]]);
+  const [bf, df] = fri({ 예배인도: ['나가람'] }, false, null, '토일');
+  sc.eq('(62) 금요: 교역자 인도인데 금요일에 안 머묾 → 반영이 금요일을 머무는 날에 더함', J([df[0].fix, df[0].want]), [{ visit: 'v|2026-11-22', svc: 'fri', lead: { m: 'staff' }, addDay: '금' }, '교역자 인도(나가람) · 머무는 날에 금 더함']);
+  sc.eq('(62) 반영: 그 칸 + 요일만 바뀜 · 다시 견주면 사라짐', (() => { A.gsFix(bf, df[0].fix, 'u', 9); const v = bf.visits.find(x => x.id === 'v|2026-11-22');
+    return J([v.days, v.lead, v.who, A.gsDiff(bf, { sun: [], fri: [{ date: '2026-11-20', name: '', relay: false, cells: { 예배인도: ['나가람'] } }], roles: {} }, null, TD, '2026-12-31').length]); })(),
+    ['금토일', { fri: { m: 'staff' }, sun: { m: 'staff' }, ll: { m: 'relay' } }, ['pA'], 0]);
+
+  // ── 앱에 반영 (누를 때만)
+  const b1 = mkb();
+  sc.eq('(62) 반영: 교역자 · 중계 · 비움 · 새 부산 일정 — 한 칸씩 · 다른 칸(숙소 · 다른 인도)은 그대로',
+    (() => { const ok = ['who|2026-11-29', 'lead|sun|2026-11-29', 'lead|ll|2026-11-22', 'who|2026-12-06'].map(id => A.gsFix(b1, by(id).fix, 'u', 10));
+      const v = id => J(b1.visits.find(x => x.id === id));
+      return [ok, v('v|2026-11-29').who, v('v|2026-11-29').lead, v('v|2026-11-22').lead, v('v|2026-11-22').who, J([v('v|2026-12-06').who, v('v|2026-12-06').days, v('v|2026-12-06').at])]; })(),
+    [[true, true, true, true], ['pB'], { sun: { m: 'relay' } }, { fri: { m: 'staff' }, sun: { m: 'staff' } }, ['pA'], [['pF'], '', 10]]);
+  const D1 = A.gsDiff(b1, team, serve, TD, '2026-12-31');
+  sc.eq('(62) 반영 뒤 다시 견주면 그 줄은 사라짐 · 새 부산 일정의 금요(어웨이크 판교중계)가 새로 견줘짐', D1.map(x => x.id), ['lead|fri|2026-12-04', 'who|2026-12-13', 'who|2026-12-20']);
+  sc.eq('(62) 같은 반영을 또 누르면 안 바뀜 · 반영할 것 없는 줄(null) · 모르는 일정은 false', [A.gsFix(b1, by('who|2026-11-29').fix, 'u', 11), A.gsFix(b1, by('lead|ll|2026-11-22').fix, 'u', 11), A.gsFix(b1, null, 'u', 11), A.gsFix(b1, { visit: 'v|2027-01-03', svc: 'sun', lead: { m: 'relay' } }, 'u', 11), A.gsFix(b1, { visit: 'v|2027-01-03', who: ['pA'] }, 'u', 11)], [false, false, false, false, false]);
+
+  // ── 넘기기 열쇠 · 알림 판
+  const k1 = by('who|2026-12-13').key, k2 = A.gsDiff(b0, Object.assign({}, team, { sun: team.sun.map(e => e.date === '2026-12-13' ? Object.assign({}, e, { cells: { 교역자: ['정 마루', '나가람'] } }) : e) }), serve, TD, '2026-12-31').find(x => x.id === 'who|2026-12-13').key;
+  sc.eq('(62) 넘기기 열쇠: 자리 + 지문(이름이 안 듦) · 시트 값이 바뀌면 다른 열쇠', [/^who\|2026-12-13\|[0-9a-f]{8}-[0-9a-z]+$/.test(k1), k1 !== k2, /정마루|서하늘/.test(D.map(x => x.key).join())], [true, true, false]);
+  const al = (o) => A.alertsOf(b0, TD, o).items.filter(x => x.kind === 'gs');
+  sc.eq('(62) 알림 판: 확인 갈래에 한 줄씩 · 넘긴 줄은 빠짐 · 표가 없으면 없음',
+    [al({ gs: { team, serve } }).length, J(al({ gs: { team, serve } })[0]), al({ gs: { team, serve, skip: [k1] } }).map(x => x.to.gs).includes('who|2026-12-13'), al({ gs: { team: null, serve: null } }).length, al({}).length],
+    [6, { cat: 'chk', kind: 'gs', date: '2026-11-22', t: '', main: '시트와 다름 · 라이프라인 중계', sub: '앱 중계 · 시트 중계 아님', go: '시트와 맞춰 보기', to: { gs: 'lead|ll|2026-11-22' }, dd: 6 }, false, 0, 0]);
+  sc.eq('(62) 알림 판: 교역자 화면에는 없음 · 부산 기간(endB) 밖은 없음', [al({ gs: { team, serve }, staff: 'pA' }).length, al({ gs: { team, serve }, endB: '2026-11-30' }).length], [0, 3]);
+  sc.eq('(62) 넘긴 줄(ui.gsk): HB 만 · 꼴이 맞는 것만 · 겹치면 한 번 · 없으면 칸도 없음 · 나중 것 60개',
+    [J(A.normUi({ gsk: ['who|2026-12-13|0a1b2c3d-1x', 'bad key!', 'who|2026-12-13|0a1b2c3d-1x'] }).gsk), 'gsk' in A.normUi({ gsk: ['a|b'] }, true), 'gsk' in A.normUi({}), A.gsSkipNorm(Array.from({ length: 70 }, (_, i) => 'k' + i)).length, A.gsSkipNorm(Array.from({ length: 70 }, (_, i) => 'k' + i))[0]],
+    [['who|2026-12-13|0a1b2c3d-1x'], false, false, 60, 'k10']);
+
+  // ── 화면 · 지킬 것 (코드에서)
+  const ui = HTML.slice(HTML.indexOf('/* ---------- 시트와 맞춰 보기 (1121-G G4'), HTML.indexOf('/* ---------- 구글 자료 보이기 (1121-G G3'));
+  sc.eq('(62) 화면 구역: 반영은 누른 줄 하나만(gsFix → saveBook) · 시트(fetch · gsApi)에 안 씀 · 계정은 ui(saveUi)로만',
+    [ui.length > 1000, (HTML.match(/gsFix\(/g) || []).length /* 정의 · 화면 설명 한 줄 · 부르는 곳 하나 */, /gsFix\(S\.book, x\.fix, byNow\(\), Date\.now\(\)\)/.test(ui), /fetch\(|gsApi|gsStore|\.set\(|\.update\(/.test(ui), /saveUi\(\{ gsk/.test(ui)], [true, 3, true, false, true]);
+  sc.eq('(62) HB 만: 판은 gsCan · 교역자 누름(staffOk)에 반영 · 넘기기 없음 · 알림 판에 표를 넘김',
+    [/function gsChkOk\(\) \{ return gsCan\(\) && !isStaff\(\); \}/.test(ui), /'gsfix'|'gsskip'|d\.gsfix|d\.gsskip/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('function staffNoMsg'))), /gs: isStaff\(\) \? null : \{ team: gsData\('bteam'\), serve: gsData\('bserve'\), skip: UIS\.ui\.gsk \|\| \[\] \}/.test(HTML), /if \(t\.gs\) return gsChkOpen\(t\.gs\);/.test(HTML)],
+    [true, false, true, true]);
 }
 
 sc.done();
