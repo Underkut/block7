@@ -107,7 +107,7 @@ BLOCK7 은 여러 대화창(클로드 코드 여럿 · GPT Codex)이 번갈아 �
   - 고치기(이미 적은 출석)에서는 그 출석 자신은 '앉았던 자리' 셈에서 뺀다.
 - **하지 말 것**: 배치 저장 모양(`seats`) · 시트 쓰기 규칙을 바꾸지 말 것. 배치도 칸에 끌기를 넣지 말 것(알약 차례 끌기와 헷갈림).
 
-## 1122-P — PLAUD 심방 녹음 → 전사 → 초안 → 심방 노트 완전 자동화 (HB 2026-11-22, Opus high) — **P0 조사 ✅ · 길 2(Mac 전사) 확정 · 두 Mac 나눠 하기 설계 · P1 거의 ✅ (집 Mac CLI 로그인 · 목록 됨, 11/23) · ⏳ 음성 받기 시험 뒤 P2**
+## 1122-P — PLAUD 심방 녹음 → 전사 → 초안 → 심방 노트 완전 자동화 (HB 2026-11-22, Opus high) — **P0 조사 ✅ · 길 2(Mac 전사) 확정 · 두 Mac 나눠 하기 설계 · P1 ✅ 집 Mac (CLI 로그인 · 목록 · 음성 받기 됨, 11/23) · 다음 P2 (사무실 Mac · GPT 드라이브 시험은 P2 와 함께)**
 
 GPT 가 준 'Mac mini + whisper.cpp + launchd' 안내를 HB 가 "무엇이 깔리는지 모르겠다" 해서, 웹앱 계기판 + Mac 도우미로 바꾸고
 빠져 있던 **PLAUD → Mac** 까지 잇는 길을 찾았다. 앞선 대화의 '웹앱(계기판) + Mac 도우미' 설계 제안이 바탕이다.
@@ -117,7 +117,7 @@ GPT 가 준 'Mac mini + whisper.cpp + launchd' 안내를 HB 가 "무엇이 깔�
 | 단계 | 무엇을 | 상태 |
 |---|---|---|
 | P0 | 조사: PLAUD 공식 길 · 무료 도구 조합 · 개인정보 경계 | ✅ 11/22 (아래 ②) |
-| P1 | HB: 두 Mac 메모리 · 공식 CLI 시험 · 드라이브 앱 · 잠자기 / GPT: 드라이브 읽기 시험 | 집 Mac ✅ (아래 'P1 확인') · ⏳ 음성 받기 · 사무실 Mac · GPT |
+| P1 | HB: 두 Mac 메모리 · 공식 CLI 시험 · 드라이브 앱 · 잠자기 / GPT: 드라이브 읽기 시험 | 집 Mac ✅ (아래 'P1 확인') · ⏳ 사무실 Mac · GPT |
 | P2 | Mac 도우미(설치 한 줄) + 계기판(준비 상태 · 녹음 목록, 읽기만) — 독립 앱 폴더 | 대기 |
 | P3 | 받기 → 전사(whisper.cpp) → 드라이브 폴더 (자동, 녹음 ID 를 파일 이름에) + **두 Mac 일감 맡기(아래 ③)** | 대기 |
 | P4 | 초안: ChatGPT(프로젝트 지침 `docs/care/gpt-project-guide.md`)가 드라이브 폴더를 읽어 ①~⑧ → 승인 → 'AI 입력대기' | 대기 |
@@ -137,6 +137,9 @@ GPT 가 준 'Mac mini + whisper.cpp + launchd' 안내를 HB 가 "무엇이 깔�
   - 제목: 이름 없이 시각만인 녹음이 많고, 심방은 '… 전화심방' · '… 심방' · '… 상담' 꼴. → '심방' 글자만으로 고르면 제목 없는 녹음 · 상담이 빠진다 — 계기판에서 **목록 보고 눌러 고르기**를 함께 둔다(제목 고르기는 기본값).
   - PLAUD 설정: Private Cloud Sync 켜짐(아이폰 둘) = 녹음이 저절로 클라우드에 감 · 자동 전사 꺼짐(전사 시간 아낌, 그대로) · 'Help improve Plaud' 꺼짐(그대로).
   - 'Authorized apps' 의 Plaud-MCP(11/11)는 ChatGPT 연결 — 건드리지 않는다.
+  - **음성 받기 됨**: `plaud audio <id>` 가 'Audio Download URL:' 다음 줄에 24시간 주소를 준다 → `curl -L` 로 받으면 **Ogg Opus · 모노 · 16kHz**(1분 42초 = 428KB). whisper.cpp 앞에 ffmpeg 로 16kHz WAV 로 바꾼다. 주소는 열쇠라 기록 · 화면 · 로그에 남기지 않는다.
+  - `plaud file <id>` = id · name · created_at · start_at(**세계 표준시**, 한국 시각 −9시간) · duration · serial_number · audio/transcript/summary(available …).
+  - `plaud files` 옵션 = `--page` · `--page-size`(기본 20) · `--date-from` · `--date-to`(YYYY-MM-DD, 서버에서 거름). **JSON 출력 없음** → 도우미는 글 표를 읽는다. CLI 판이 바뀌면 깨질 수 있으니 읽는 규칙을 한 곳(core)에 두고 시험을 붙이고, 못 읽으면 멈추고 알린다(짐작해 계속하지 않는다).
 - **Zapier(PLAUD 커넥터 화면에 있음)**: PLAUD 는 **트리거만** — '전사 · 요약 완료' 때 **글만** 넘긴다(음성 파일은 못 찾음). Zapier 무료 = 월 100번 · 15분마다 확인.
   v4 이후 PLAUD 웹은 '커넥터' 메뉴에서 연다. → Whisper 를 쓰려면 소용없고, PLAUD 자체 전사를 쓸 때만 쓸모.
 - n8n 의 PLAUD 노드(공동체 것)는 PLAUD **개발자 포털(기업용 API)** 웹훅을 쓴다 — 개인 계정에 맞지 않을 수 있다.
