@@ -1688,7 +1688,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
     eq('1122-L H 정렬 탭 = ㄱㄴㄷ순 · 오래 못 만난 순 · 최근 순(소속 · 역할별 탭 없음) · 구분 알약은 이 탭에도', [await page.$$eval('.seg button', x => x.map(e => e.textContent)), rt[0], rt.length > 1, await page.$$eval('.rhead', x => x.length)], [['ㄱㄴㄷ순', '오래 못 만난 순', '최근 순'], '', true, 0]);
     eq('1122-L D 처음 기본은 오래 못 만난 순', await page.$$eval('.seg button[aria-pressed="true"]', x => x.map(e => e.textContent)), ['오래 못 만난 순']);
     await page.click('.seg button[data-v="name"]'); await page.waitForTimeout(200);
-    eq('1122-L D ㄱㄴㄷ순 — 이름 가나다 · 구분 알약 그대로', [await page.$$eval('#results .prow .nm', x => x.map(e => e.textContent.trim())).then(a => JSON.stringify(a) === JSON.stringify(a.slice().sort((p, q) => p.localeCompare(q, 'ko')))), (await page.$$eval('.rtabs button', x => x.length)) === rt.length], [true, true]);
+    eq('1122-L D ㄱㄴㄷ순 — 이름 가나다 · 구분 알약 그대로', [await page.evaluate(() => { const r = []; for (const e of document.querySelectorAll('#results .prow, #results .h-sec')) { if (e.classList.contains('h-sec')) break; r.push(e.querySelector('.nm').textContent.trim()); } return r; }).then(a => JSON.stringify(a) === JSON.stringify(a.slice().sort((p, q) => p.localeCompare(q, 'ko')))), (await page.$$eval('.rtabs button', x => x.length)) === rt.length], [true, true]);
     const all = await nRow();
     await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
     eq('㊸ 5 구분 알약 → 그 구분만(세 탭 공통)', [await nRow() < all, await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v))], [true, [rt[1]]]);

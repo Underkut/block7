@@ -1041,10 +1041,10 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
 .imp-sub{font-size:13px;margin-top:6px}.imp-sub span{display:block;font-size:11px;color:var(--tx3)}
 .imp-unk{font-size:12px;margin-top:8px;color:var(--tx2)}
 .imp-fold button{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);padding:6px 0}.imp-fold small{color:var(--tx3)}
-.imp-acts{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
-.imp-act{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:7px 0;font-size:13px}
-.imp-act .ck{flex:none;width:18px;height:18px;border:1.5px solid var(--line2);border-radius:5px;margin-top:1px}
-.imp-act .ck.on{background:var(--deep);border-color:var(--deep)}
+.imp-acts,.imp-qs{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.imp-act,.imp-q{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:7px 0;font-size:13px}
+.imp-act .ck,.imp-q .ck{flex:none;width:18px;height:18px;border:1.5px solid var(--line2);border-radius:5px;margin-top:1px}
+.imp-act .ck.on,.imp-q .ck.on{background:var(--deep);border-color:var(--deep)}
 .imp-act small{display:block;color:var(--tx3);font-size:11px}
 .imp-auth{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--s2);color:var(--tx2)}.imp-auth.a0,.imp-auth.a1{background:var(--warn-soft);color:var(--warn)}
 .imp-attr{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:13px}.imp-attr .opts{margin:8px 0 0}.imp-attr .row{display:flex;gap:12px;margin-top:8px}
@@ -6253,8 +6253,8 @@ function lImp(L) {
         (f.core ? '<div class="imp-core">' + esc(f.core) + '</div>' : '') + (f.text ? '<div class="imp-t">' + esc(f.text) + '</div>' : '') + impFold(L, 'd' + i, '상세 기록', f.detail) +
         (f.longObs ? '<div class="imp-sub"><span>장기 관찰</span>' + esc(f.longObs) + '</div>' : '') +
         (f.tags.length || f.roles.length ? '<div class="imp-sub"><span>소속 · 역할 · 태그</span>' + esc(f.roles.join(' · ')) + (f.roles.length && f.tags.length ? ' · ' : '') + f.tags.map(t => '#' + esc(t)).join(' ') + '</div>' : '') +
-        (norm(f.qn) ? '<div class="imp-acts"><div class="imp-k">다음 질문 — 체크한 것만 \'다음 질문\' 탭에</div>' + qnParse(f.qn).map((q, j) => { const on = !(r.qoff || []).includes(j);
-          return '<button class="imp-act' + (on ? ' on' : '') + '" data-act="impq" data-v="' + i + ':' + j + '" aria-pressed="' + on + '"><span class="ck' + (on ? ' on' : '') + '"></span><span>' + esc(q) + '</span></button>'; }).join('') + '</div>' : '');
+        (norm(f.qn) ? '<div class="imp-qs"><div class="imp-k">다음 질문 — 체크한 것만 \'다음 질문\' 탭에</div>' + qnParse(f.qn).map((q, j) => { const on = !(r.qoff || []).includes(j);
+          return '<button class="imp-q' + (on ? ' on' : '') + '" data-act="impq" data-v="' + i + ':' + j + '" aria-pressed="' + on + '"><span class="ck' + (on ? ' on' : '') + '"></span><span>' + esc(q) + '</span></button>'; }).join('') + '</div>' : '');
       if (r.acts.length) h += '<div class="imp-acts"><div class="imp-k">할 일 — 체크한 것만 \'액션\' 탭에. 나머지는 상세 기록 끝에 글로만</div>' + r.acts.map((a, j) =>
         '<button class="imp-act' + (a.on ? ' on' : '') + '" data-act="impact" data-v="' + i + ':' + j + '" aria-pressed="' + a.on + '"><span class="ck' + (a.on ? ' on' : '') + '"></span><span><span class="imp-auth a' + PK_AUTH.indexOf(a.auth) + '">' + esc(a.auth) + '</span> ' + esc(a.text) +
         '<small>' + [a.kind, a.due ? '기한 ' + md(a.due) : '', a.owner ? '담당 ' + a.owner : '', a.prio && a.prio !== '일반' ? a.prio : ''].filter(Boolean).map(esc).join(' · ') + '</small></span></button>').join('') + '</div>';
