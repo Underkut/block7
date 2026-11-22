@@ -967,6 +967,8 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const res = A.pkResolve(d1, rows1)[0], out = A.pkRecordOut(d1, d1.recs[0], res, '', Date.parse('2026-11-12T08:00:00Z'));
   sc.eq('㊲ 기록 하나 — AI 제안 둘 안 체크 → 할 일 없음 · 상세 기록 끝에 글로만 · 출처 AI · 확인 시각 · 원본ID · 해시 · 언급', [out.acts, out.form.acts, out.form.detail.split('\n').slice(-3), out.extra['@출처'], !!out.extra['@확인'], out.extra['@원본ID'], out.extra['@가져오기 해시'] === res.hash, out.extra['@언급된 성도'], out.extra['@모임ID']],
     [[], [], ['### AI 제안(미채택)', '- 가미정 성도에게 감사 인사, 짧게 · 연락 · 담당 목회자', '- 다음 봉사 안내 보완'], 'AI', true, 'f_test_call', true, '박윤정, 차형만', '']);
+  { const r0 = JSON.parse(JSON.stringify(d1.recs[0])); r0.qoff = [0]; const o0 = A.pkRecordOut(d1, r0, res, '', 0);
+    sc.eq('1122-L E 질문 체크를 끄면 그 질문은 저장하지 않는다(안 끈 것은 그대로)', [J(o0.qn), J(out.qn).length], [[{ t: '안내 방식을 보완할 수 있나?', done: false }], 2]); }
   sc.eq('㊲ 다음 질문은 탭 항목으로', J(out.qn), [{ t: '마음이 어떻게 정리되었나?', done: false }, { t: '안내 방식을 보완할 수 있나?', done: false }]);
   const r2 = A.pkResolve(d2, A.pkLinkRows(d2, C)), o2 = A.pkRecordOut(d2, d2.recs[2], r2[2], 'G9', 0);
   sc.eq('㊲ 셀모임 라요한 — 실제 약속은 할 일(연락)로 · 모임ID', [o2.form.acts, J(o2.acts), o2.extra['@모임ID']], [['연락'], [{ t: '연락', x: '라요한 성도가 연주할 쉬운 코드 찬양곡 찾아주기', det: '', due: '', why: '실제 약속' }], 'G9']);
