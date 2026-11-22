@@ -60,7 +60,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
   INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, actLineText, actLinesOf, actLinesPlan, actLineRow, ACT_HINT, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N,
-  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan, roleMerge, roleState, roleTogAll, roleTogOne, rolePerChanges };`, ctx);
+  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan, roleMerge, roleState, roleTogAll, roleTogOne, rolePerChanges, attrOrderPlan, attrOrderCells, attWithAuto, attPerRows };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -1406,6 +1406,28 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
     J(A.rolePerChanges(['하늘 셀', '하늘', '도윤', '서준', '하 늘'], per2, map)), [{ name: '도윤', roles: ['장년부'] }, { name: '서준', roles: ['셀원'] }]);
   sc.eq('(51) 저장 — 섞이지 않는다(한 분에게 더한 것이 다른 분에게 가지 않음)',
     J(A.rolePerChanges(['하늘', '도윤'], A.roleTogOne({ '하늘': ['셀리더', '장년부'], '도윤': ['장년부', '셀원'] }, '하늘', '예배팀'), map)), [{ name: '하늘', roles: ['셀리더', '장년부', '예배팀'] }]);
+}
+
+// ── (52) 1122-K K2 알약 끌어 순서 바꾸기 → 폼 선택지 차례 ──
+{
+  const O = ['예배인도자', '예배팀', '셀리더', '셀원', '장년부'];
+  sc.eq('(52) 끌어 놓은 차례 그대로', A.attrOrderPlan(O, ['셀원', '예배인도자', '예배팀', '셀리더', '장년부']), ['셀원', '예배인도자', '예배팀', '셀리더', '장년부']);
+  sc.eq('(52) 화면에 없던 선택지는 제자리 · 직접 적은 값은 버린다', A.attrOrderPlan(O, ['셀리더', '예배인도자', '새값', '장년부']), ['셀리더', '예배팀', '예배인도자', '셀원', '장년부']);
+  sc.eq('(52) 같은 차례면 null(폼을 고치지 않는다)', [A.attrOrderPlan(O, O.slice()), A.attrOrderPlan(O, ['셀원']), A.attrOrderPlan([], ['a', 'b'])], [null, null, null]);
+  const rows = [{ row: 2, attr: '구분', val: '셀원', parent: '', order: 4 }, { row: 3, attr: '구분', val: '예배팀', parent: '', order: 2 }, { row: 4, attr: '태그', val: '셀원', parent: '', order: 9 }, { row: 5, attr: '구분', val: '셀원', parent: '예배팀', order: 1 }];
+  sc.eq("(52) 속성 탭 '순서' — 그 속성 · 상위 값 없는 줄 · 바뀐 칸만", J(A.attrOrderCells(rows, '구분', ['셀원', '예배팀'])), [{ row: 2, v: 1 }]);
+}
+
+// ── (53) 1122-K K3 여럿 출석 — 함께 온 분 · 섬김 사람마다 ──
+{
+  const N = ['하늘', '도윤', '서준'];
+  sc.eq('(53) 함께 — 같이 적은 분들로 저절로 · 본인은 빼고', [A.attWithAuto(N, '하늘', ''), A.attWithAuto(N, '서준', '')], ['도윤, 서준', '하늘, 도윤']);
+  sc.eq('(53) 함께 — 모두 값(아내 등)은 뒤에 더한다 · 본인 이름이 모두 값에 있어도 뺀다', A.attWithAuto(N, '도윤', '아내, 도윤'), '하늘, 서준, 아내');
+  sc.eq("(53) 함께 — '모두' 가 혼자면 모두 혼자(따로 온 분들)", A.attWithAuto(N, '하늘', '혼자'), '혼자');
+  sc.eq('(53) 셀 표시는 함께에 넣지 않는다', A.attWithAuto(['하늘 셀', '하늘', '도윤'], '하늘', ''), '도윤');
+  const R = A.attPerRows(N, { with: '', serve: '안내' }, { '도윤': { serve: '' }, '서준': { with: '하늘, 서준, 아내' } });
+  sc.eq('(53) 줄마다 — 그분만 고른 것 우선 · 없으면 모두 값', J(R), [{ name: '하늘', with: '도윤, 서준', serve: '안내' }, { name: '도윤', with: '하늘, 서준', serve: '' }, { name: '서준', with: '하늘, 아내', serve: '안내' }]);
+  sc.eq('(53) 그분이 고른 혼자는 그대로', A.attPerRows(['하늘', '도윤'], {}, { '하늘': { with: '혼자' } })[0].with, '혼자');
 }
 
 sc.done();

@@ -761,7 +761,7 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
   const LY = '.layer:last-child';
   eq('⑳ 직접 적기 칸은 처음엔 접혀 있다 · 날짜 단추 그제 · 어제 · 오늘 + 달력', [await page.$$eval(LY + ' [data-etc]', x => x.length), await page.$$eval(LY + ' [data-act="adate"]', x => x.map(e => e.textContent)), await page.$$eval(LY + ' .calbtn input[type=date]', x => x.length)], [0, ['그제', '어제', '오늘'], 1]);
   await page.fill(LY + ' [data-f="name"]', '가가, 나나');
-  eq('⑳ 이름 여럿 안내', await page.$eval('#nameHint', e => e.textContent), '2분 — 같은 내용으로 한 분씩 한 줄씩 적힙니다.');
+  eq('⑳ 이름 여럿 안내', await page.$eval('#nameHint', e => e.textContent), '2분 — 한 분씩 한 줄로 적힙니다. 구분 · 함께 · 섬김은 아래 \'사람마다\' 에서 따로 고를 수 있습니다.');
   await page.click(LY + ' [data-act="adate"]:has-text("어제")');
   await page.click(LY + ' [data-act="aoptadd"][data-k="svc"]'); await page.waitForTimeout(200);
   await page.fill(LY + ' [data-optadd="svc"]', '새벽기도'); await page.press(LY + ' [data-optadd="svc"]', 'Enter'); await page.waitForTimeout(1200);
