@@ -107,7 +107,7 @@ BLOCK7 은 여러 대화창(클로드 코드 여럿 · GPT Codex)이 번갈아 �
   - 고치기(이미 적은 출석)에서는 그 출석 자신은 '앉았던 자리' 셈에서 뺀다.
 - **하지 말 것**: 배치 저장 모양(`seats`) · 시트 쓰기 규칙을 바꾸지 말 것. 배치도 칸에 끌기를 넣지 말 것(알약 차례 끌기와 헷갈림).
 
-## 1122-P — PLAUD 심방 녹음 → 전사 → 초안 → 심방 노트 완전 자동화 (HB 2026-11-22, Opus high) — **P0 조사 ✅ · 길 2(Mac 전사) 확정 · 두 Mac 나눠 하기 설계 · ⏳ HB 확인(P1) 뒤 P2**
+## 1122-P — PLAUD 심방 녹음 → 전사 → 초안 → 심방 노트 완전 자동화 (HB 2026-11-22, Opus high) — **P0 조사 ✅ · 길 2(Mac 전사) 확정 · 두 Mac 나눠 하기 설계 · P1 거의 ✅ (집 Mac CLI 로그인 · 목록 됨, 11/23) · ⏳ 음성 받기 시험 뒤 P2**
 
 GPT 가 준 'Mac mini + whisper.cpp + launchd' 안내를 HB 가 "무엇이 깔리는지 모르겠다" 해서, 웹앱 계기판 + Mac 도우미로 바꾸고
 빠져 있던 **PLAUD → Mac** 까지 잇는 길을 찾았다. 앞선 대화의 '웹앱(계기판) + Mac 도우미' 설계 제안이 바탕이다.
@@ -117,7 +117,7 @@ GPT 가 준 'Mac mini + whisper.cpp + launchd' 안내를 HB 가 "무엇이 깔�
 | 단계 | 무엇을 | 상태 |
 |---|---|---|
 | P0 | 조사: PLAUD 공식 길 · 무료 도구 조합 · 개인정보 경계 | ✅ 11/22 (아래 ②) |
-| P1 | HB: 두 Mac 메모리 · 공식 CLI 시험 사진 · 드라이브 앱 · 잠자기 / GPT: PLAUD 요금제 · CLI 조사, 드라이브 읽기 시험 | ⏳ HB |
+| P1 | HB: 두 Mac 메모리 · 공식 CLI 시험 · 드라이브 앱 · 잠자기 / GPT: 드라이브 읽기 시험 | 집 Mac ✅ (아래 'P1 확인') · ⏳ 음성 받기 · 사무실 Mac · GPT |
 | P2 | Mac 도우미(설치 한 줄) + 계기판(준비 상태 · 녹음 목록, 읽기만) — 독립 앱 폴더 | 대기 |
 | P3 | 받기 → 전사(whisper.cpp) → 드라이브 폴더 (자동, 녹음 ID 를 파일 이름에) + **두 Mac 일감 맡기(아래 ③)** | 대기 |
 | P4 | 초안: ChatGPT(프로젝트 지침 `docs/care/gpt-project-guide.md`)가 드라이브 폴더를 읽어 ①~⑧ → 승인 → 'AI 입력대기' | 대기 |
@@ -128,6 +128,15 @@ GPT 가 준 'Mac mini + whisper.cpp + launchd' 안내를 HB 가 "무엇이 깔�
   `plaud files` · `plaud recent --days N` · `plaud today` 로 목록, **`plaud audio <id>` 가 24시간짜리 음성 내려받기 주소**를 준다. 같은 것을 MCP 로도 연다.
   → GPT 안내의 "PLAUD → Mac 미구축" 과 "recording_id 가 null" 이 **둘 다 공식 길로 풀린다.** 비공식(역설계) 도구는 쓰지 않는다.
   미확인: 무료 요금제로 되는지 · JSON 출력 옵션 · 전사문 · 요약 명령 이름 · 녹음이 폰 앱을 열어야 클라우드에 올라가는지.
+- **P1 확인 (HB 집 Mac, 11/23)**:
+  - 메모리 **8GB** → whisper.cpp 는 양자화한 중간 크기 모델부터 시험(속도 · 한국어 보고 정함). 구글 드라이브 앱 설치됨.
+  - CLI 설치: 시스템 폴더 권한 오류(EACCES) → `npm config set prefix ~/.npm-global` + PATH(셸은 bash, `~/.bash_profile` · `~/.zshrc` 둘 다)로 풂. **sudo 쓰지 않는다.**
+  - 로그인: 기본 브라우저가 **어사이드(Aside)** 일 때는 구글 로그인 뒤 홈으로 가 버려 시간 초과. **크롬(이미 PLAUD 로그인됨)** 을 기본으로 두니 'Authorization successful!'. → 사무실 Mac 도 크롬으로.
+  - **무료 요금제(Starter, 남은 전사 0분)로도 CLI 가 된다.** 명령: `me · files · file <id> · audio <id> · transcript · summary · search <글자>(최근 500개) · recent --days N · today · update · version`.
+  - 녹음 번호는 `f_` + 32자 16진수. `recent` 는 한 줄에 '번호 · 제목 · 날짜 · 길이'(글 표, JSON 옵션은 아직 못 봄 — `files --help` 확인할 것).
+  - 제목: 이름 없이 시각만인 녹음이 많고, 심방은 '… 전화심방' · '… 심방' · '… 상담' 꼴. → '심방' 글자만으로 고르면 제목 없는 녹음 · 상담이 빠진다 — 계기판에서 **목록 보고 눌러 고르기**를 함께 둔다(제목 고르기는 기본값).
+  - PLAUD 설정: Private Cloud Sync 켜짐(아이폰 둘) = 녹음이 저절로 클라우드에 감 · 자동 전사 꺼짐(전사 시간 아낌, 그대로) · 'Help improve Plaud' 꺼짐(그대로).
+  - 'Authorized apps' 의 Plaud-MCP(11/11)는 ChatGPT 연결 — 건드리지 않는다.
 - **Zapier(PLAUD 커넥터 화면에 있음)**: PLAUD 는 **트리거만** — '전사 · 요약 완료' 때 **글만** 넘긴다(음성 파일은 못 찾음). Zapier 무료 = 월 100번 · 15분마다 확인.
   v4 이후 PLAUD 웹은 '커넥터' 메뉴에서 연다. → Whisper 를 쓰려면 소용없고, PLAUD 자체 전사를 쓸 때만 쓸모.
 - n8n 의 PLAUD 노드(공동체 것)는 PLAUD **개발자 포털(기업용 API)** 웹훅을 쓴다 — 개인 계정에 맞지 않을 수 있다.
