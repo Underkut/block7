@@ -60,7 +60,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   NX_COLS, NX_TABS, ACT_NX, NX_PRIO, NX_BASIS, CELL_MAX, NX_LIVE, nxReady, nxPlan, qnMerge, qnText, cfgView, nameCands, newRowValues, editPatch, recordCells, qnEncode,
   PK_VER, PK_AI_HEAD, pkValidate, pkJsonText, pkParse, mdToPacket, pkDate, pkCleanName, pkNormText, pkHash, pkDraft, pkAttrIssues, pkApplyAttrs, pkLinkCands, pkBodyNames, pkLinkRows, pkLinkOpen, pkResolve, pkNewPeople, pkDups, pkMeetDup, parseMeetTab, parseRosterTab, pkEtcText, pkActRows, pkUnadopted, pkRecordOut, pkMeetRow, pkActTabRow, importRowValues,
   INBOX_TAB, INBOX_ST, parseInbox, inboxCheck, inboxFind, inboxDoneCells, chatgptGuide, pkContext, prayNote, mdSafe, personSummary, planForRecord, actLineText, actLinesOf, actLinesPlan, actLineRow, ACT_HINT, kstOf, inboxRecAt, clockOf, cellGroups, rosterClean, rosterCount, rosterSig, rosterCheck, rosterUse, ROSTER_MAX_G, ROSTER_MAX_N,
-  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan };`, ctx);
+  PROLE_NONE, PROLE_MAX, proleSplit, proleCell, parsePeopleTab, roleUnion, personRoleMap, applyPersonRoles, roleDiff, roleApply, roleCarry, personRoleChanges, peopleRolePlan, roleMerge, roleState, roleTogAll, roleTogOne, rolePerChanges };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -1386,6 +1386,26 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const pl = { name: '가나다', place: '카페', method: '전화', why: '1. 근황\n2. 직장 이야기' };
   const n = A.b7Note(A.qnB7Text(pl), '2026-11-18', 1, 'B1', A.qnParse(pl.why));
   sc.eq('미정 → BLOCK7 — 이름 심방 + 물어볼 것만, 장소 · 방식은 안 감', J([n.text, n.subs, Object.keys(n).sort()]), ['가나다 심방', ['근황', '직장 이야기'], ['at', 'date', 'from', 'id', 'sec', 'subs', 'text']]);
+}
+
+// ── (51) 1122-K 여럿을 한꺼번에 적을 때 구분을 사람마다 (시안 1 '사람 탭') — 이름은 지어낸 것 ──
+{
+  const per = { '하늘': ['장년부', '셀리더'], '도윤': ['장년부', '셀원'], '서준': ['셀원'] };
+  sc.eq('(51) 알약 모양 — 모두 · 일부 · 아무도', [A.roleState(per, '장년부'), A.roleState(per, '셀원'), A.roleState(per, '셀리더'), A.roleState(per, '청년부'), A.roleState({}, '셀원')], ['part', 'part', 'part', '', '']);
+  const t1 = A.roleTogAll(per, '셀원');
+  sc.eq('(51) 모두 — 일부만 가진 구분을 누르면 모두에게 더함(가진 분은 그대로)', J(t1.per), { '하늘': ['장년부', '셀리더', '셀원'], '도윤': ['장년부', '셀원'], '서준': ['셀원'] });
+  sc.eq('(51) 모두 — 더한 것을 기억(나중에 들어온 이름도 받게)', J(t1.d), { added: ['셀원'], removed: [] });
+  const t2 = A.roleTogAll(t1.per, '셀원');
+  sc.eq('(51) 모두 — 모두 가진 구분을 누르면 모두에게서 뺌', J([t2.per, t2.d]), [{ '하늘': ['장년부', '셀리더'], '도윤': ['장년부'], '서준': [] }, { added: [], removed: ['셀원'] }]);
+  sc.eq('(51) 이름 탭 — 그분만 켜고 끈다', J(A.roleTogOne(A.roleTogOne(per, '서준', '예배팀'), '하늘', '셀리더')), { '하늘': ['장년부'], '도윤': ['장년부', '셀원'], '서준': ['셀원', '예배팀'] });
+  sc.eq('(51) 원래 per 는 건드리지 않는다', J(per['하늘']), ['장년부', '셀리더']);
+  sc.eq('(51) 누적 — 더했다 빼면 뺀 것만', J(A.roleMerge(A.roleMerge(null, { added: ['셀원'], removed: [] }), { added: [], removed: ['셀원'] })), { added: [], removed: ['셀원'] });
+  const map = { '하늘': { roles: ['셀리더', '장년부'] }, '도윤': { roles: ['장년부', '셀원'] } };
+  const per2 = { '하늘': ['장년부', '셀리더'], '도윤': ['장년부'], '서준': ['셀원'] };
+  sc.eq('(51) 저장 — 바뀐 분만 · 차례만 다른 분은 안 바뀐 것 · 처음 적는 분은 그 값 · 셀 표시는 빼고',
+    J(A.rolePerChanges(['하늘 셀', '하늘', '도윤', '서준', '하 늘'], per2, map)), [{ name: '도윤', roles: ['장년부'] }, { name: '서준', roles: ['셀원'] }]);
+  sc.eq('(51) 저장 — 섞이지 않는다(한 분에게 더한 것이 다른 분에게 가지 않음)',
+    J(A.rolePerChanges(['하늘', '도윤'], A.roleTogOne({ '하늘': ['셀리더', '장년부'], '도윤': ['장년부', '셀원'] }, '하늘', '예배팀'), map)), [{ name: '하늘', roles: ['셀리더', '장년부', '예배팀'] }]);
 }
 
 sc.done();
