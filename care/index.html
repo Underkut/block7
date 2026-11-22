@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1122-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1122-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -1041,10 +1041,10 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
 .imp-sub{font-size:13px;margin-top:6px}.imp-sub span{display:block;font-size:11px;color:var(--tx3)}
 .imp-unk{font-size:12px;margin-top:8px;color:var(--tx2)}
 .imp-fold button{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);padding:6px 0}.imp-fold small{color:var(--tx3)}
-.imp-acts{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
-.imp-act{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:7px 0;font-size:13px}
-.imp-act .ck{flex:none;width:18px;height:18px;border:1.5px solid var(--line2);border-radius:5px;margin-top:1px}
-.imp-act .ck.on{background:var(--deep);border-color:var(--deep)}
+.imp-acts,.imp-qs{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.imp-act,.imp-q{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:7px 0;font-size:13px}
+.imp-act .ck,.imp-q .ck{flex:none;width:18px;height:18px;border:1.5px solid var(--line2);border-radius:5px;margin-top:1px}
+.imp-act .ck.on,.imp-q .ck.on{background:var(--deep);border-color:var(--deep)}
 .imp-act small{display:block;color:var(--tx3);font-size:11px}
 .imp-auth{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--s2);color:var(--tx2)}.imp-auth.a0,.imp-auth.a1{background:var(--warn-soft);color:var(--warn)}
 .imp-attr{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:13px}.imp-attr .opts{margin:8px 0 0}.imp-attr .row{display:flex;gap:12px;margin-top:8px}
@@ -1089,7 +1089,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1122-4';
+const APP_VERSION = 'v. 26-1122-5';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2159,6 +2159,7 @@ function pkUnadopted(acts) {
 function pkRecordOut(d, r, res, meetId, nowMs) {
   const f = JSON.parse(JSON.stringify(r.form)), rows = pkActRows(r.acts), un = pkUnadopted(r.acts);
   f.name = res.person;
+  if ((r.qoff || []).length) f.qn = qnParse(f.qn).filter((q, i) => !r.qoff.includes(i)).join('\n');   // 1122-L E 체크를 끈 질문은 저장하지 않는다(기본은 모두 켬)
   rows.forEach(a => { if (a.t === '기타') { const e = splitEtc(f.actsEtc); if (!e.includes(a.x)) e.push(a.x); f.actsEtc = e.join(', '); } else if (!f.acts.includes(a.t)) f.acts.push(a.t); });
   if (un) f.detail = longText(f.detail) ? longText(f.detail) + '\n\n' + un : un;
   return { form: f, acts: rows, qn: qnMerge([], f.qn),
@@ -4646,29 +4647,24 @@ function vPeople() {
   let P = peopleList(M(), V(), t, pf.stale);
   let h = head('성도', ['layer', '설정', 'gear', 'settings'], ['search', '찾기', 'search']) + '<div class="ph-body">';
   if (S.searching) h += '<div class="srch"><span>' + IC.search + '</span><input id="q" placeholder="이름 찾기" value="' + esc(S.q) + '" autocomplete="off"></div>';
-  h += '<div id="results"><div class="seg" role="group"><button data-act="psort" data-v="old" aria-pressed="' + (S.pSort === 'old') + '">오래 못 만난 순</button><button data-act="psort" data-v="recent" aria-pressed="' + (S.pSort === 'recent') + '">최근 순</button><button data-act="psort" data-v="role" aria-pressed="' + (S.pSort === 'role') + '">소속 · 역할별</button></div>' + fline();
-  const RO = (DATA.opts && DATA.opts.roles) || [];
-  if (S.pSort === 'old') P.sort((a, b) => (a.last || '').localeCompare(b.last || ''));
+  // 1122-L D · H — 정렬 탭 = ㄱㄴㄷ순 · 오래 못 만난 순 · 최근 순(기본 '오래 못 만난 순' · 이 기기에 저장하지 않으니 정해 둔 기기는 그대로) · 구분 알약은 세 탭 공통
+  h += '<div id="results"><div class="seg" role="group">' + [['name', 'ㄱㄴㄷ순'], ['old', '오래 못 만난 순'], ['recent', '최근 순']].map(x => '<button data-act="psort" data-v="' + x[0] + '" aria-pressed="' + (S.pSort === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' + fline();
+  if (S.pSort === 'name') P.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   else if (S.pSort === 'recent') P.sort((a, b) => (b.last || '').localeCompare(a.last || ''));
-  else { const rkOf = p => p.roles[0] || '', rank = r => (!r ? 1e4 : RO.indexOf(r) >= 0 ? RO.indexOf(r) : 500);   // 1113-E 5 같은 구분은 한데 · 폼 차례 → 그 밖 가나다 → 구분 없음
-    P.sort((a, b) => rank(rkOf(a)) - rank(rkOf(b)) || rkOf(a).localeCompare(rkOf(b)) || a.name.localeCompare(b.name)); }
-  // 1113-E 5 구분별 — 위에 구분 알약(누르면 그 구분만) · 머리는 알약 + 몇 분 + 가는 줄 · 사람 줄의 구분 글자는 뺀다(머리와 겹침)
+  else P.sort((a, b) => (a.last || '').localeCompare(b.last || ''));
   const rk = p => p.roles[0] || '소속 · 역할 없음';
-  if (S.pSort === 'role') {
-    const cnt = {}; P.forEach(p => { cnt[rk(p)] = (cnt[rk(p)] || 0) + 1; }); const ks = Object.keys(cnt);
-    const sel = [].concat(S.pRole || []).filter(k => cnt[k]); S.pRole = sel;   // 1114 구분 알약 복수 선택 — 배열 · 비면 전체
+  { const RO = (DATA.opts && DATA.opts.roles) || [], rank = r => (r === '소속 · 역할 없음' ? 1e4 : RO.indexOf(r) >= 0 ? RO.indexOf(r) : 500);
+    const cnt = {}; P.forEach(p => { cnt[rk(p)] = (cnt[rk(p)] || 0) + 1; }); const ks = Object.keys(cnt).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'ko'));
+    const sel = [].concat(S.pRole || []).filter(k => cnt[k]); S.pRole = sel;   // 구분 알약 복수 선택 — 배열 · 비면 전체
     h += '<div class="rtabs">' + [['', '전체', P.length]].concat(ks.map(k => [k, k, cnt[k]])).map(x => '<button data-act="prole" data-v="' + esc(x[0]) + '" aria-pressed="' + (x[0] === '' ? !sel.length : sel.indexOf(x[0]) >= 0) + '">' + esc(x[1]) + ' <small>' + x[2] + '</small></button>').join('') + '</div>';
-    if (sel.length) P = P.filter(p => sel.indexOf(rk(p)) >= 0);
-  }
+    if (sel.length) P = P.filter(p => sel.indexOf(rk(p)) >= 0); }
   h += '<div class="muted" style="display:flex;justify-content:space-between;gap:8px;margin:6px 0 0"><span>막대: 최근 10주 (진할수록 깊은 대화)</span><span>점: 최근 4주 할 일</span></div>';
   if (!P.length) h += '<p class="empty">이 조건에 맞는 분이 없습니다.</p>';
-  let lastR = null;
   const c4 = ymdAdd(weekStartOf(t), -21);
   P.forEach(p => {
-    if (S.pSort === 'role' && rk(p) !== lastR) { lastR = rk(p); const n = P.filter(x => rk(x) === lastR).length; h += '<div class="rhead' + (p.roles[0] ? '' : ' none') + '"><b>' + esc(lastR) + '</b><span>' + n + '명</span><i></i></div>'; }
     const strip = strip10(p.visits, t).map(lv => '<i class="v' + lv + '"></i>').join('');
     const dots = [].concat(...p.visits.filter(v => v.ymd >= c4).map(v => v.actions)).map(a => '<i style="--k:var(--' + a.k + ')"></i>').join('');
-    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(S.pSort === 'role' ? p.roles.slice(1).join(' · ') : p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div>' + (S.show.length ? (it => it.length ? '<div class="pitems">' + itemsHtml(it, 2) + '</div>' : '')([].concat(...p.visits.map(onlyItems))) : '') + '</button>';   // 1113-E 4-4 A 이름 아래 바로 — 두 줄까지 · 외 N
+    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div>' + (S.show.length ? (it => it.length ? '<div class="pitems">' + itemsHtml(it, 2) + '</div>' : '')([].concat(...p.visits.map(onlyItems))) : '') + '</button>';   // 1113-E 4-4 A 이름 아래 바로 — 두 줄까지 · 외 N
   });
   // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
   //   1108-C 고침: 심방 기록이 모두 보관(보관 기준 이전)된 분도 위 목록에선 빠지므로, 출석이 있으면 여기에 — 예전엔 어느 쪽에도 안 나왔다
@@ -4755,7 +4751,16 @@ function vAttend() {
 function attSvcGroups(items) {
   const by = new Map();
   items.slice().sort((x, y) => x.row - y.row).forEach(a => { const k = nameKey(a.svc); if (!by.has(k)) by.set(k, { svc: a.svc, items: [] }); by.get(k).items.push(a); });
-  return [...by.values()];
+  return [...by.values()].sort((x, y) => svcRank(y.svc) - svcRank(x.svc));   // 1122-L 한 날 안에서 최신이 위 = 때 순서 거꾸로 · 같은 때(rank)는 적은 차례 그대로
+}
+// 1122-L A·B 같은 날 예배 · 모임의 때 순서(이른 것 → 늦은 것): 수요(오전) → 주일 1 · 2 · 3부 → 라이프라인(저녁 5시) → 그 밖(개인 기도 · 모임) → 금요(저녁 7시). 화면은 이 거꾸로
+function svcRank(svc) {
+  const t = String(svc || '').replace(/\s+/g, '');
+  if (/^수요/.test(t)) return 0;
+  const m = t.match(/^주일(\d)부/); if (m) return +m[1];
+  if (t === '라이프라인') return 4;
+  if (/^금요/.test(t)) return 6;
+  return 5;
 }
 // 1115-4 ② 이름을 누르면 — 그 출석의 보조 정보를 정리한 팝업. 좌상단 연필 = 고치기, 우상단 × · 바깥 누르기 · ESC = 닫기
 function attPopHtml() {
@@ -6248,7 +6253,8 @@ function lImp(L) {
         (f.core ? '<div class="imp-core">' + esc(f.core) + '</div>' : '') + (f.text ? '<div class="imp-t">' + esc(f.text) + '</div>' : '') + impFold(L, 'd' + i, '상세 기록', f.detail) +
         (f.longObs ? '<div class="imp-sub"><span>장기 관찰</span>' + esc(f.longObs) + '</div>' : '') +
         (f.tags.length || f.roles.length ? '<div class="imp-sub"><span>소속 · 역할 · 태그</span>' + esc(f.roles.join(' · ')) + (f.roles.length && f.tags.length ? ' · ' : '') + f.tags.map(t => '#' + esc(t)).join(' ') + '</div>' : '') +
-        (norm(f.qn) ? '<div class="imp-sub"><span>다음 질문</span>' + qnParse(f.qn).map(esc).join('<br>') + '</div>' : '');
+        (norm(f.qn) ? '<div class="imp-qs"><div class="imp-k">다음 질문 — 체크한 것만 \'다음 질문\' 탭에</div>' + qnParse(f.qn).map((q, j) => { const on = !(r.qoff || []).includes(j);
+          return '<button class="imp-q' + (on ? ' on' : '') + '" data-act="impq" data-v="' + i + ':' + j + '" aria-pressed="' + on + '"><span class="ck' + (on ? ' on' : '') + '"></span><span>' + esc(q) + '</span></button>'; }).join('') + '</div>' : '');
       if (r.acts.length) h += '<div class="imp-acts"><div class="imp-k">할 일 — 체크한 것만 \'액션\' 탭에. 나머지는 상세 기록 끝에 글로만</div>' + r.acts.map((a, j) =>
         '<button class="imp-act' + (a.on ? ' on' : '') + '" data-act="impact" data-v="' + i + ':' + j + '" aria-pressed="' + a.on + '"><span class="ck' + (a.on ? ' on' : '') + '"></span><span><span class="imp-auth a' + PK_AUTH.indexOf(a.auth) + '">' + esc(a.auth) + '</span> ' + esc(a.text) +
         '<small>' + [a.kind, a.due ? '기한 ' + md(a.due) : '', a.owner ? '담당 ' + a.owner : '', a.prio && a.prio !== '일반' ? a.prio : ''].filter(Boolean).map(esc).join(' · ') + '</small></span></button>').join('') + '</div>';
@@ -6469,6 +6475,7 @@ function impClick(a, v) {
   if (a === 'impback') { if (L.step === 'link') L.step = 'review'; else if (L.step === 'review' && !L.inbox) L.step = 'paste'; render(); return true; }
   if (a === 'impinfo') { L.info = !L.info; render(); return true; }
   if (a === 'impfold') { L.open[v] = !L.open[v]; render(); return true; }
+  if (a === 'impq') { const [i, j] = v.split(':').map(Number), r = L.d.recs[i]; if (r) { const o = r.qoff = r.qoff || [], k = o.indexOf(j); if (k >= 0) o.splice(k, 1); else o.push(j); render(); } return true; }
   if (a === 'impact') { const [i, j] = v.split(':').map(Number), x = L.d.recs[i] && L.d.recs[i].acts[j]; if (x) { x.on = !x.on; render(); } return true; }
   if (a === 'impattr') {
     const [ix, mode, val] = v.split('|'), is = L.issues[+ix]; if (!is) return true;

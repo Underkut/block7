@@ -1683,21 +1683,25 @@ eq('⑲-2 (1115-X) 읽는 중에 누른 입력 단추는 창을 바로 연다 �
     await page.click(LN + ' [data-act="saverec"]'); await page.waitForTimeout(2500);
     eq('㊸ 고치기 — 뺀 줄은 취소(지우지 않음) · 치다 만 줄도 더해짐', tab('액션').rows.filter(r => r[1] === rid).map(r => [r[5], r[7]]), [['이사 날짜', '취소'], ['어머님 수술', '할 일'], ['새 기도 제목', '할 일']]);
     eq('㊸ 기록 할 일 — 취소 빠짐', await page.evaluate(k => byKey(k).actions.map(a => a.x), kz), ['어머님 수술', '새 기도 제목']);
-    await page.evaluate(() => { S.layers.length = 0; S.view = 'people'; S.pSort = 'role'; S.pRole = ''; render(); }); await page.waitForTimeout(300);
-    const rt = await page.$$eval('.rtabs button', x => x.map(e => e.dataset.v));
-    eq('㊸ 5 구분별 — 위에 전체 + 구분 알약 · 머리는 알약 + 몇 분 + 줄', [rt[0], rt.length > 1, await page.$$eval('.rhead', x => x.length) === rt.length - 1], ['', true, true]);
+    await page.evaluate(() => { S.layers.length = 0; S.view = 'people'; S.pSort = 'old'; S.pRole = ''; render(); }); await page.waitForTimeout(300);
+    const nRow = () => page.$$eval('#results .prow', x => x.length), rt = await page.$$eval('.rtabs button', x => x.map(e => e.dataset.v));
+    eq('1122-L H 정렬 탭 = ㄱㄴㄷ순 · 오래 못 만난 순 · 최근 순(소속 · 역할별 탭 없음) · 구분 알약은 이 탭에도', [await page.$$eval('.seg button', x => x.map(e => e.textContent)), rt[0], rt.length > 1, await page.$$eval('.rhead', x => x.length)], [['ㄱㄴㄷ순', '오래 못 만난 순', '최근 순'], '', true, 0]);
+    eq('1122-L D 처음 기본은 오래 못 만난 순', await page.$$eval('.seg button[aria-pressed="true"]', x => x.map(e => e.textContent)), ['오래 못 만난 순']);
+    await page.click('.seg button[data-v="name"]'); await page.waitForTimeout(200);
+    eq('1122-L D ㄱㄴㄷ순 — 이름 가나다 · 구분 알약 그대로', [await page.evaluate(() => { const r = []; for (const e of document.querySelectorAll('#results .prow, #results .h-sec')) { if (e.classList.contains('h-sec')) break; r.push(e.querySelector('.nm').textContent.trim()); } return r; }).then(a => JSON.stringify(a) === JSON.stringify(a.slice().sort((p, q) => p.localeCompare(q, 'ko')))), (await page.$$eval('.rtabs button', x => x.length)) === rt.length], [true, true]);
+    const all = await nRow();
     await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
-    eq('㊸ 5 구분 알약 → 그 구분만', await page.$$eval('.rhead b', x => x.map(e => e.textContent)), [rt[1]]);
-    eq('㊻ 구분 머리 옆 인원은 N명(분 아님)', await page.$$eval('.rhead span', x => x.length > 0 && x.every(e => /^\d+명$/.test(e.textContent))), true);
+    eq('㊸ 5 구분 알약 → 그 구분만(세 탭 공통)', [await nRow() < all, await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v))], [true, [rt[1]]]);
     if (rt.length > 2) {
       await page.click('.rtabs button[data-v="' + rt[2] + '"]'); await page.waitForTimeout(200);
-      eq('㊻ 구분 알약 복수 선택 — 둘 다 눌림 · 두 구분이 함께', [await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), await page.$$eval('.rhead b', x => x.map(e => e.textContent))], [[rt[1], rt[2]], [rt[1], rt[2]]]);
+      eq('㊻ 구분 알약 복수 선택 — 둘 다 눌림', await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), [rt[1], rt[2]]);
       await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
-      eq('㊻ 눌린 알약 다시 누르면 빠짐', await page.$$eval('.rhead b', x => x.map(e => e.textContent)), [rt[2]]);
+      eq('㊻ 눌린 알약 다시 누르면 빠짐', await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), [rt[2]]);
       await page.click('.rtabs button[data-v="' + rt[2] + '"]'); await page.waitForTimeout(200);
-      eq('㊻ 다 빼면 전체', [await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), await page.$$eval('.rhead', x => x.length) === rt.length - 1], [[''], true]);
+      eq('㊻ 다 빼면 전체', [await page.$$eval('.rtabs button[aria-pressed="true"]', x => x.map(e => e.dataset.v)), await nRow()], [[''], all]);
       await page.click('.rtabs button[data-v="' + rt[1] + '"]'); await page.waitForTimeout(200);
     }
+    eq('1122-L A·B 같은 날 예배 차례(화면은 최신이 위) — 라이프라인 · 3부 · 2부 · 1부, 금요 · 개인 기도 · 수요', await page.evaluate(() => attSvcGroups(['금요예배', '주일 1부', '개인 기도', '수요예배', '라이프라인', '주일 3부', '주일 2부'].map((svc, row) => ({ svc, row }))).map(g => g.svc)), ['금요예배', '개인 기도', '라이프라인', '주일 3부', '주일 2부', '주일 1부', '수요예배']);
     if (process.env.SHOT) { await page.setViewportSize({ width: 390, height: 844 }); await page.click('.rtabs button[data-v=""]'); await page.waitForTimeout(400); await page.screenshot({ path: process.env.SHOT + '/roles.png' }); await page.setViewportSize({ width: 760, height: 900 }); await page.waitForTimeout(300); }
     await page.evaluate(() => { S.view = 'list'; S.pSort = 'old'; render(); });
 
