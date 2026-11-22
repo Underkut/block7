@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1113-1  [production]  -->
+<!-- BLOCK7  v. 26-1122-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7194,7 +7194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1113-1";
+const APP_VERSION = "v. 26-1122-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -12988,6 +12988,21 @@ function _syncCollSheets(c,list){
   const isList=x=>_isSermonListSheet((x.rows&&x.rows[0])||[]);
   const ord=list.filter(x=>!isList(x)).concat(list.filter(isList));
   const lastBy=new Map();   // 구절 → 그것을 마지막으로 고친 내역(groups 의 자리)
+  // ⚠️ 명제 날짜는 **어느 한 탭이라도 적었으면 그것을 쓴다** (v26-1122, HB 신고).
+  //    시트 날짜 칸 몇 개가 '날짜 값' 이 아니라 글자로 적혀 있으면, 앱이 받는 길(gviz)은
+  //    한 열에 자료형이 섞일 때 적은 쪽을 **빈칸으로** 내려준다. 그러면 뒤에 반영되는
+  //    '성도 공유용' 탭이 명제 DB 가 준 멀쩡한 날짜를 빈칸으로 덮어 지웠다
+  //    (2026-11-22 실제 시트: 성도 공유용 101줄 · 명제 DB 6줄이 글자 날짜).
+  //    모든 탭이 비웠을 때만 예전처럼 비운다. (tests/test_sermon_sheet.js 시나리오 9-2)
+  const itemsOf=new Map(),pidD=new Map();
+  ord.forEach(x=>{
+    if(isList(x))return;
+    const items=_rowsToItems(x.rows);itemsOf.set(x,items);
+    items.forEach(it=>{if(it.pid&&it.d&&!pidD.has(it.pid))pidD.set(it.pid,it.d);});
+  });
+  itemsOf.forEach(items=>items.forEach(it=>{
+    if(it.pid&&!it.d&&pidD.has(it.pid))it.d=pidD.get(it.pid);
+  }));
   ord.forEach(x=>{
     const g=x.g;
     let r,src=g.name||'구글 시트';
@@ -12995,7 +13010,7 @@ function _syncCollSheets(c,list){
       r=_applySermonListSheet(c,x.rows);
       src+=' · 설교 목록';
     }else{
-      const items=_rowsToItems(x.rows);
+      const items=itemsOf.get(x)||[];
       if(!items.length){out.fails++;return;}
       r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
     }
