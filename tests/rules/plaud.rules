@@ -9,8 +9,10 @@ service cloud.firestore {
       // 맡은 시각(at)은 파이어베이스 시계로만 찍는다(두 Mac 시계가 달라도 맡김 판단이 같게) — 안 바꾸면 그대로 둬도 된다
       function atOk() { return !('at' in d()) || d().at == request.time || (resource != null && 'at' in resource.data && resource.data.at == d().at); }
       allow read, delete: if own();
-      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model'])
-        && (!('kw' in d()) || (d().kw is list && d().kw.size() <= 20));
+      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf'])
+        && (!('kw' in d()) || (d().kw is list && d().kw.size() <= 20))
+        && (!('auto' in d()) || (d().auto is map && d().auto.size() <= 12))
+        && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
         allow read, delete: if own();
         allow create, update: if own() && idOk(id) && d().keys().hasOnly(['n', 't', 'c', 'd'])
@@ -27,16 +29,23 @@ service cloud.firestore {
       }
       match /mac/{name} {
         allow read, delete: if own();
-        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test'])
+        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk'])
           && d().at == request.time
           && (!('models' in d()) || (d().models is list && d().models.size() <= 10))
-          && (!('test' in d()) || d().test is map);
+          && (!('test' in d()) || d().test is map)
+          && (!('disk' in d()) || d().disk is map);
       }
       match /cmd/{id} {
         allow read, delete: if own();
         allow create, update: if own() && d().keys().hasOnly(['mac', 'what', 'st', 'at', 'arg', 'log'])
-          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest']
+          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest', 'rmmodel', 'clean']
           && d().st in ['new', 'run', 'ok', 'fail'];
+      }
+      // 잠근 사본(P3b) — HB 암호 문구로 잠근 전사 글만(c · iv). 평문 칸은 없다
+      match /txt/{id} {
+        allow read, delete: if own();
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['c', 'iv', 'v'])
+          && d().c is string && d().c.size() <= 900000 && d().iv is string && d().iv.size() <= 40;
       }
     }
     // ── PLAUD 도우미 — 여기까지 ──

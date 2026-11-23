@@ -11,7 +11,9 @@
 //        · 머리말 · 주소가 기록 · 계정에 없음 · 받은 소리 · WAV 지움 · 계기판 '드라이브' 단계
 // ⑫ (P3) 모델 시험: 계기판 '모델 시험' 판(깔린 것 · 설치 단추) → 깔린 두 모델 시간 · 빠르기 → Mac 카드 · 시험 글은 그 Mac 의 test 폴더에만
 // ⑬ (P3) 꺼진 Mac 일감 이어받기: 전사 중 5분마다 renew(시험은 2초) → 그 Mac 을 죽이고 31분 전으로 → 다른 Mac 이 이어 해 txt 하나
-// ⑭ (P3) 맡김을 잃으면 바로 멈춤: 전사 중 다른 Mac 이 맡은 것으로 바꾸면 whisper 를 멈추고 txt 를 쓰지 않음 → 풀린 뒤 이어 함 · txt 하나. 이름은 모두 지어낸 것.
+// ⑭ (P3) 맡김을 잃으면 바로 멈춤: 전사 중 다른 Mac 이 맡은 것으로 바꾸면 whisper 를 멈추고 txt 를 쓰지 않음 → 풀린 뒤 이어 함 · txt 하나.
+// (P3b) 파일 이름 = PLAUD 제목('YY-MMDD HH;MM 글') · 옛 f_….txt 를 새 이름으로 · PLAUD 에서 제목을 고치면 이름도 따라감 · Mac 마다 자동 전사(계기판 스위치)
+//   · 잠근 사본(계기판에서 암호 정하기 → 이 Mac 도우미에 저절로 · 틀린 키 거절 → 복사 · 받기 = 드라이브 본문) · 안 쓰는 모델 지우기 · ⑮ 임시 파일 크기(줄 · 합계) → 비우기. 이름은 모두 지어낸 것.
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -36,7 +38,7 @@ const UID = hb.localId;
 // 관리자(규칙 없이) 읽기
 const DOCS = FS + '/v1/projects/' + PROJECT + '/databases/(default)/documents';
 const PH = (() => { const html = fs.readFileSync(path.join(ROOT, 'plaudhub', 'index.html'), 'utf8'), code = /<script id="plaudhub-core">([\s\S]*?)<\/script>/.exec(html)[1];
-  const c = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, RegExp, Promise, Error }; vm.createContext(c); vm.runInContext(code + ';this.__PH=PH', c); return c.__PH; })();
+  const c = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, RegExp, Promise, Error, crypto: globalThis.crypto, TextEncoder, TextDecoder, btoa, atob }; vm.createContext(c); vm.runInContext(code + ';this.__PH=PH', c); return c.__PH; })();
 const admin = async p => { const r = await fetch(DOCS + '/' + p, { headers: { authorization: 'Bearer owner' } }); if (r.status === 404) return null; const j = await r.json(); return j.documents ? Object.fromEntries(j.documents.map(d => { const o = PH.fsDoc(d); return [o.id, o]; })) : (j.fields || j.name ? PH.fsDoc(j) : {}); };
 const adminSet = (p, v) => { const f = {}; for (const k of Object.keys(v)) f[k] = PH.fsEnc(v[k]); return fetch(DOCS + '/' + p, { method: 'PATCH', headers: { authorization: 'Bearer owner', 'content-type': 'application/json' }, body: JSON.stringify({ fields: f }) }); };
 // 몇 칸만 고침(at 은 파이어베이스 시각 값으로)
@@ -55,11 +57,14 @@ const AUDIO_URL = 'http://127.0.0.1:' + SITE_PORT + '/fake/sound.ogg?X-Amz-Signa
 // 가짜 PLAUD CLI — 공식 CLI 0.3.15 가 터미널이 아닐 때 내놓는 글과 같은 꼴
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'plaud-e2e-')), bin = path.join(tmp, 'bin'), tools = path.join(tmp, 'tools'); fs.mkdirSync(bin); fs.mkdirSync(tools);
 const ID = c => 'f_' + String(c).repeat(32).slice(0, 32);
-const REC = [[ID('a'), '김하늘 집사 심방', '2026-11-22T06:05:00', '48m00s'], [ID('b'), '박소망 성도 전화심방', '2026-11-21T01:00:00', '12m03s'], [ID('c'), '', '2026-11-20T23:30:00', '6s'],
-  [ID('e'), '', '2026-11-19T02:00:00', '30m00s'], [ID('f'), '', '2026-11-18T02:00:00', '20m00s']];
+const A_TITLE = '2026-11-22 15:05:00 김하늘 집사 심방';   // PLAUD 기본 제목(날짜 · 시각) 뒤에 HB 가 덧붙인 글
+const REC = [[ID('a'), A_TITLE, '2026-11-22T06:05:00', '48m00s'], [ID('b'), '박소망 성도 전화심방', '2026-11-21T01:00:00', '12m03s'], [ID('c'), '', '2026-11-20T23:30:00', '6s'],
+  [ID('e'), '', '2026-11-19T02:00:00', '30m00s'], [ID('f'), '', '2026-11-18T02:00:00', '20m00s'], [ID('g'), '', '2026-11-17T02:00:00', '15m00s']];
+const NAME = { a: '26-1122 15;05 김하늘 집사 심방.txt', b: '26-1121 10;00 박소망 성도 전화심방.txt', c: '26-1121 08;30.txt', e: '26-1119 11;00.txt', f: '26-1118 11;00.txt' };
+const RECF = path.join(tmp, 'rec.json'); fs.writeFileSync(RECF, JSON.stringify(REC));
 fs.writeFileSync(path.join(tmp, 'mode'), 'ok'); fs.writeFileSync(path.join(tmp, 'wmode'), '300');
 fs.writeFileSync(path.join(bin, 'plaud'), `#!/usr/bin/env node
-const fs = require('fs'), mode = fs.readFileSync(${JSON.stringify(path.join(tmp, 'mode'))}, 'utf8').trim(), REC = ${JSON.stringify(REC)}, a = process.argv.slice(2);
+const fs = require('fs'), mode = fs.readFileSync(${JSON.stringify(path.join(tmp, 'mode'))}, 'utf8').trim(), REC = JSON.parse(fs.readFileSync(${JSON.stringify(RECF)}, 'utf8')), a = process.argv.slice(2);
 fs.appendFileSync(${JSON.stringify(path.join(tmp, 'calls'))}, a.join(' ') + ' TELEMETRY=' + (process.env.PLAUD_TELEMETRY_DISABLED || '') + '\\n');
 if (a[0] === 'me') { console.log('\\nUser Info:\\n\\n  email: hb@example.com\\n'); process.exit(0); }
 if (a[0] === 'version') { console.log('plaud 0.3.15'); process.exit(0); }
@@ -119,7 +124,7 @@ const killGroup = ch => { try { process.kill(-ch.pid, 'SIGKILL'); } catch (_) { 
 const pairAt = (port, body, origin = 'http://127.0.0.1:8765') => fetch('http://127.0.0.1:' + port + '/pair', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(async r => ({ code: r.status, j: await r.json().catch(() => ({})) }));
 const lines = f => { try { return fs.readFileSync(path.join(tmp, f), 'utf8').split('\n').filter(Boolean); } catch (_) { return []; } };
 const wStarts = id => lines('wcalls').filter(l => l.includes(' ' + id + '.wav ') && / start /.test(l));
-const driveTxts = () => { try { return fs.readdirSync(DRIVE).sort(); } catch (_) { return []; } };
+const driveTxts = () => { try { return fs.readdirSync(DRIVE).filter(f => f !== '메모.txt').sort(); } catch (_) { return []; } };
 
 try {
   await adminSet('plaud/' + UID, { kw: ['심방'], days: 14 });
@@ -139,10 +144,10 @@ try {
   ok('② 소식 시각은 파이어베이스 시계(몇 초 안)', mac && Math.abs(mac.at - Date.now()) < 60e3, mac && mac.at);
   ok('② (P3) 준비 상태: ffmpeg · whisper · 모델 ✓, 드라이브 폴더 ✗(아직 없음) · 깔린 모델 둘', mac && mac.ready.ffmpeg && mac.ready.whisper && mac.ready.model && mac.ready.drive === false
     && JSON.stringify(mac.models) === JSON.stringify(['medium-q5_0', 'large-v3-turbo-q5_0']), mac && [mac.ready, mac.models]);
-  const recs = await until(async () => { const d = await admin('plaud/' + UID + '/rec'); return d && Object.keys(d).length === 5 && d; });
-  ok('③ 녹음 줄 다섯', !!recs, recs || home.log().slice(-1500));
+  const recs = await until(async () => { const d = await admin('plaud/' + UID + '/rec'); return d && Object.keys(d).length === 6 && d; });
+  ok('③ 녹음 줄 여섯', !!recs, recs || home.log().slice(-1500));
   if (recs) {
-    ok('③ 제목 · 시작(세계 표준시) · 길이', recs[ID('a')].n === '김하늘 집사 심방' && recs[ID('a')].t === Date.UTC(2026, 10, 22, 6, 5) && recs[ID('a')].d === 2880, recs[ID('a')]);
+    ok('③ 제목 · 시작(세계 표준시) · 길이', recs[ID('a')].n === A_TITLE && recs[ID('a')].t === Date.UTC(2026, 10, 22, 6, 5) && recs[ID('a')].d === 2880, recs[ID('a')]);
     ok('③ 빈 제목도 줄로', recs[ID('c')].n === '' && recs[ID('c')].d === 6);
     ok('③ 쓰는 칸은 n · t · c · d 뿐', Object.keys(recs[ID('a')]).filter(k => !['id', '_ut'].includes(k)).sort().join() === 'c,d,n,t');
   }
@@ -177,7 +182,7 @@ try {
   const fail = await until(async () => { const d = await admin('plaud/' + UID + '/cmd/' + cid2); return d && (d.st === 'fail' || d.st === 'ok') && d; }, 40000);
   const macErr = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && d.err && d; }, 70000), recs3 = await admin('plaud/' + UID + '/rec');
   ok('⑥ 모양이 바뀌면 멈추고 알림(요청 실패 · Mac 카드에 까닭)', fail && fail.st === 'fail' && /멈춤/.test(macErr.err || '') && /모양/.test(macErr.err || ''), [fail, macErr && macErr.err]);
-  ok('⑥ 멈춘 동안 녹음 줄을 지우지 않음', recs3 && Object.keys(recs3).length === 5);
+  ok('⑥ 멈춘 동안 녹음 줄을 지우지 않음', recs3 && Object.keys(recs3).length === 6);
   ok('⑥ 까닭에 제목이 없음', !/김하늘|박소망/.test((macErr && macErr.err) || '') && !/김하늘|박소망/.test((fail && fail.log) || ''));
   fs.writeFileSync(path.join(tmp, 'mode'), 'ok');
   // ⑦ 일감 맡기 REST — 도우미 코드(jobIO)를 그대로 불러 같은 계정 두 Mac 으로 (목록에 없는 번호 z — 실제 도우미들은 건드리지 않음)
@@ -202,9 +207,11 @@ try {
   // ⑨ 계기판
   const req = createRequire(import.meta.url); let pw; try { pw = req('playwright'); } catch (_) { pw = req('/opt/node-tools/node_modules/playwright'); }
   const third = startHelper('study', 47211);   // 계기판은 늘 47211 을 부른다 — 이 Mac 엔 ffmpeg · whisper 가 없다
-  const browser = await pw.chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessRespectPreflightResults'] });
+  // 한글 받기 파일 이름은 UTF-8 로캘이 있어야 그대로 나온다(이 시험 기계는 로캘이 비어 'download' 가 됨 — Mac · 아이폰은 해당 없음)
+  const browser = await pw.chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessRespectPreflightResults'], env: Object.assign({}, process.env, { LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' }) });
   try {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'https://block7.my' });
     const NM = path.join(HERE, 'node_modules', 'firebase');
     await ctx.route('https://www.gstatic.com/firebasejs/**', r => r.fulfill({ path: path.join(NM, r.request().url().split('/').pop()), contentType: 'text/javascript' }));
     await ctx.route('https://block7.my/plaudhub/**', r => { const f = path.join(ROOT, 'plaudhub', new URL(r.request().url()).pathname.replace('/plaudhub/', '') || 'index.html');
@@ -257,27 +264,48 @@ try {
 
     // ⑩ (P3) 공간이 모자라면 맡지 않음 — 드라이브 폴더(이미 있던 c.txt 하나)를 만들고 두 Mac 모두 남은 공간 0.1GB
     home.free(1e8); office.free(1e8);
-    fs.mkdirSync(DRIVE); fs.writeFileSync(path.join(DRIVE, ID('c') + '.txt'), '이미 있던 파일 (다른 Mac 이 먼저 씀)\n');
+    // P3 때 만든 꼴(이름 = 녹음 번호 · 머리말 있음) — 새 이름으로 바뀌어야 함. 머리말 없는 옛 파일(z)은 어느 녹음인지 잃지 않게 그대로 둬야 함
+    fs.mkdirSync(DRIVE); fs.writeFileSync(path.join(DRIVE, ID('c') + '.txt'), 'PLAUD 녹음 ID: ' + ID('c') + '\n제목: (제목 없음)\n---\n\n이미 있던 파일 (P3 때 이름 · 다른 Mac 이 먼저 씀)\n');
+    fs.writeFileSync(path.join(DRIVE, '메모.txt'), 'HB 메모 — 도우미가 건드리면 안 됨\n');
     const warn = await until(async () => { const d = await admin('plaud/' + UID + '/mac'); return d && /공간이 모자라/.test(d['집'].err || '') && /공간이 모자라/.test(d['사무실'].err || '') && d; }, 70000);
     ok('⑩ 공간이 모자라면 두 Mac 모두 Mac 카드에 알림(남음 · 필요)', warn && /남음 0\.1GB/.test(warn['집'].err) && /필요/.test(warn['집'].err), warn && [warn['집'].err, warn['사무실'].err]);
     const jobs0 = await admin('plaud/' + UID + '/job');
     ok('⑩ … 그리고 아무 일감도 맡지 않음', !Object.values(jobs0 || {}).some(j => j.st), jobs0);
     ok('⑩ 계기판 Mac 카드에도 보임', await until(async () => (await pg.textContent('#main')).includes('공간이 모자라'), 10000));
 
+    // (P3b) 잠금 암호: 계기판에서 정하기 → 이 Mac(서재) 도우미에 저절로 · 집 도우미에도 넘김(틀린 키는 거절)
+    await pg.mouse.click(5, 300); await sleep(300);
+    await pg.click('[data-act="menu"]'); await pg.click('[data-act="lockpane"]'); await pg.waitForSelector('#pw1');
+    await pg.fill('#pw1', '지어낸 암호 문구'); await pg.fill('#pw2', '지어낸 암호 문구'); await pg.click('[data-act="locksubmit"]');
+    const kdfDoc = await until(async () => { const d = await admin('plaud/' + UID); return d && d.kdf && d.kdf.s && d; }, 15000);
+    ok('(P3b) 계기판에서 정한 암호 → 계정엔 표지(소금 · 반복 수 · 잠근 표지)만', kdfDoc && Object.keys(kdfDoc.kdf).sort().join() === 'c,it,iv,s' && !JSON.stringify(kdfDoc).includes('지어낸 암호'), kdfDoc && kdfDoc.kdf);
+    const KEY = kdfDoc && await PH.unlockKey('지어낸 암호 문구', kdfDoc.kdf);
+    const lsKey = await pg.evaluate(() => JSON.parse(localStorage.getItem('plaudhub_key_v1') || 'null'));
+    ok('(P3b) 키는 이 기기(브라우저)에 · 같은 암호면 같은 키', !!KEY && lsKey && lsKey.k === KEY, lsKey);
+    const studyKey = await until(() => fetch('http://127.0.0.1:47211/hello', { headers: { origin: 'https://block7.my' } }).then(r => r.json()).then(j => j.hasKey), 10000);
+    ok('(P3b) 이 Mac(서재) 크롬에서 정하면 그 Mac 도우미에 저절로 넘어감 · 키 파일 600', !!studyKey && (fs.statSync(path.join(third.dir, 'key.json')).mode & 0o777) === 0o600);
+    const wrong = await fetch('http://127.0.0.1:47931/key', { method: 'POST', headers: { origin: 'http://127.0.0.1:8765', 'content-type': 'application/json' }, body: JSON.stringify({ k: (await PH.newKdf('다른 암호 문구')).key }) });
+    ok('(P3b) 틀린 키는 도우미가 받지 않음', wrong.status === 400 && !fs.existsSync(path.join(home.dir, 'key.json')), wrong.status);
+    const right = await fetch('http://127.0.0.1:47931/key', { method: 'POST', headers: { origin: 'http://127.0.0.1:8765', 'content-type': 'application/json' }, body: JSON.stringify({ k: KEY }) });
+    ok('(P3b) 맞는 키는 받음(집)', right.status === 200, right.status);
+    await pg.mouse.click(5, 300); await sleep(300);
+
     // ⑪ (P3) 공간을 비우면 두 Mac 이 나눠 전사
     home.free(50e9); office.free(50e9);
     const allDone = await until(async () => { const d = await admin('plaud/' + UID + '/job'); return d && [ID('a'), ID('b'), ID('c')].every(id => d[id] && d[id].st === 'done') && d; }, 90000);
     ok('⑪ 고른 셋(키워드 둘 · 직접 고른 하나)이 모두 끝남', !!allDone, allDone || (home.log() + office.log()).slice(-1500));
-    ok('⑪ 드라이브에 녹음마다 txt 하나뿐(임시 파일 없음)', JSON.stringify(driveTxts()) === JSON.stringify([ID('a'), ID('b'), ID('c')].map(x => x + '.txt').sort()), driveTxts());
+    const named = await until(async () => JSON.stringify(driveTxts()) === JSON.stringify([NAME.a, NAME.b, NAME.c].sort()) && driveTxts(), 15000);
+    ok('⑪ 드라이브에 녹음마다 txt 하나뿐 · 이름 = PLAUD 제목(YY-MMDD HH;MM 글 · 날짜 없으면 녹음 시각) · 옛 f_….txt 도 새 이름으로', !!named, driveTxts());
     ok('⑪ 같은 녹음을 두 Mac 이 겹쳐 전사하지 않음(whisper 가 녹음마다 한 번)', wStarts(ID('a')).length === 1 && wStarts(ID('b')).length === 1, lines('wcalls'));
-    ok('⑪ 이미 있던 c.txt 는 그대로 · 받지도 전사하지도 않음(겹 둘)', fs.readFileSync(path.join(DRIVE, ID('c') + '.txt'), 'utf8').startsWith('이미 있던 파일') && wStarts(ID('c')).length === 0
+    ok('⑪ 이미 있던 c 파일은 내용 그대로(이름만 새로) · 받지도 전사하지도 않음(겹 둘)', /\n이미 있던 파일/.test(fs.readFileSync(path.join(DRIVE, NAME.c), 'utf8')) && wStarts(ID('c')).length === 0
       && !lines('calls').includes('audio ' + ID('c') + ' TELEMETRY=1'), lines('calls').filter(l => /^audio/.test(l)));
+    ok('⑪ 도우미가 모르는 txt(HB 메모)는 그대로', fs.readFileSync(path.join(DRIVE, '메모.txt'), 'utf8') === 'HB 메모 — 도우미가 건드리면 안 됨\n');
     ok('⑪ 음성 주소는 녹음마다 한 번만 물음', ['a', 'b'].every(k => lines('calls').filter(l => l.startsWith('audio ' + ID(k))).length === 1), lines('calls').filter(l => /^audio/.test(l)));
     const per = {}; for (const l of lines('wcalls')) { const [who, , , what, t] = l.split(' '); (per[who] = per[who] || []).push([what, +t]); }
     ok('⑪ 한 Mac 은 한 번에 하나씩(전사가 겹치지 않음)', Object.values(per).every(xs => xs.every((x, i) => i === 0 || (x[0] === 'start') === (xs[i - 1][0] !== 'start'))), per);
     ok('⑪ 일감 칸: 끝 · 드라이브 단계 · 맡은 Mac · 제목 없음', [ID('a'), ID('b'), ID('c')].every(id => allDone && allDone[id].step === 'drive' && ['집', '사무실'].includes(allDone[id].mac) && !('n' in allDone[id])), allDone);
-    const ta = fs.readFileSync(path.join(DRIVE, ID('a') + '.txt'), 'utf8');
-    ok('⑪ txt 머리말: 녹음 ID · 제목 · 한국 시각(+09:00) · 길이 · 모델(계정 설정 = 터보)', ta.startsWith('PLAUD 녹음 ID: ' + ID('a') + '\n제목: 김하늘 집사 심방\n녹음 시각: 2026-11-22T15:05:00+09:00\n길이: 48분\n전사: whisper.cpp large-v3-turbo-q5_0 · ')
+    const ta = fs.readFileSync(path.join(DRIVE, NAME.a), 'utf8');
+    ok('⑪ txt 머리말: 녹음 ID · 제목 · 한국 시각(+09:00) · 길이 · 모델(계정 설정 = 터보)', ta.startsWith('PLAUD 녹음 ID: ' + ID('a') + '\n제목: ' + A_TITLE + '\n녹음 시각: 2026-11-22T15:05:00+09:00\n길이: 48분\n전사: whisper.cpp large-v3-turbo-q5_0 · ')
       && /\n---\n\n안녕하세요 목사님\.\n지어낸 전사 글입니다 /.test(ta), ta.slice(0, 300));
     ok('⑪ whisper 는 한국어(-l ko)로 · ffmpeg 는 16kHz 모노 WAV 로 불림', lines('ffcalls').some(l => /-ar 16000 -ac 1 -c:a pcm_s16le \S+\.wav$/.test(l)), lines('ffcalls'));
     const everything = home.log() + office.log() + JSON.stringify(await admin('plaud/' + UID + '/mac')) + JSON.stringify(await admin('plaud/' + UID + '/job')) + JSON.stringify(await admin('plaud/' + UID + '/cmd'));
@@ -287,6 +315,25 @@ try {
     ok('⑪ 받은 소리 · WAV · 중간 글은 지움', left.length === 0, left);
     const shown = await until(async () => { const t = await pg.textContent('[data-id="' + ID('a') + '"]'); return /드라이브에 있음/.test(t) && t; }, 10000);
     ok('⑪ 계기판 줄: \'… Mac 전사 · 드라이브에 있음\' · 단계 셋 초록', !!shown && await pg.$$eval('[data-id="' + ID('a') + '"] .steps span.on', xs => xs.length) === 3, shown);
+    // (P3b) 잠근 사본 — 키가 있는 집이 자기 것 · 사무실이 한 것까지 올림
+    const txts = await until(async () => { const d = await admin('plaud/' + UID + '/txt'); return d && [ID('a'), ID('b'), ID('c')].every(id => d[id]) && d; }, 20000);
+    ok('(P3b) 잠근 사본 셋(사무실이 전사한 것은 키가 있는 집이 올림) · 칸은 c · iv · v 뿐', txts && Object.keys(txts[ID('a')]).filter(k => !['id', '_ut'].includes(k)).sort().join() === 'c,iv,v', txts && Object.keys(txts));
+    ok('(P3b) 잠근 사본에는 평문이 없음 · 맞는 키로 풀면 드라이브 본문과 같음', txts && !JSON.stringify(txts).includes('지어낸 전사') && await PH.decText(KEY, txts[ID('a')]) === PH.txtBody(ta), txts && txts[ID('a')].c.slice(0, 40));
+    // 계기판: 복사 · 받기
+    await until(() => pg.$('[data-act="copy"][data-id="' + ID('a') + '"]'), 10000);
+    await pg.click('[data-act="copy"][data-id="' + ID('a') + '"]');
+    const clip = await until(async () => { const t = await pg.evaluate(() => navigator.clipboard.readText()); return t && t.includes('지어낸 전사 글') && t; }, 10000);
+    ok('(P3b) 계기판 \'복사\' → 클립보드 = 드라이브 본문', clip === PH.txtBody(ta), clip);
+    await sleep(3500); await pg.mouse.click(5, 300);
+    const [dl] = await Promise.all([pg.waitForEvent('download', { timeout: 15000 }), pg.click('[data-act="save"][data-id="' + ID('a') + '"]')]);
+    const dlTxt = fs.readFileSync(await dl.path(), 'utf8');
+    ok('(P3b) 계기판 \'받기\' → 파일 이름 = 드라이브 이름 · 내용 = 본문', dl.suggestedFilename() === NAME.a && dlTxt === PH.txtBody(ta), [dl.suggestedFilename(), dlTxt.slice(0, 60)]);
+    // PLAUD 에서 제목을 고치면 드라이브 이름도 따라감
+    const R2 = JSON.parse(fs.readFileSync(RECF, 'utf8')); R2[1][1] = '2026-11-21 10:00:00 박소망 성도 전화심방 고침'; fs.writeFileSync(RECF, JSON.stringify(R2));
+    await userAdd(hb.idToken, 'plaud/' + UID + '/cmd', { mac: '집', what: 'refresh', st: 'new', at: Date.now() });
+    const ren = await until(async () => driveTxts().includes('26-1121 10;00 박소망 성도 전화심방 고침.txt') && !driveTxts().includes(NAME.b) && driveTxts(), 30000);
+    ok('(P3b) PLAUD 에서 제목을 고치면 드라이브 파일 이름도 따라감(내용 그대로 · 하나뿐)', !!ren && driveTxts().length === 3 && fs.readFileSync(path.join(DRIVE, '26-1121 10;00 박소망 성도 전화심방 고침.txt'), 'utf8').startsWith('PLAUD 녹음 ID: ' + ID('b')), driveTxts());
+    NAME.b = '26-1121 10;00 박소망 성도 전화심방 고침.txt';
 
     // ⑫ (P3) 모델 시험 — 계기판에서
     await pg.mouse.click(5, 300); await sleep(300);
@@ -304,12 +351,28 @@ try {
     ok('⑫ 시험 글은 그 Mac 의 test 폴더에만(모델마다 하나) · 드라이브는 그대로', JSON.stringify(tf) === JSON.stringify(['large-v3-turbo-q5_0.txt', 'medium-q5_0.txt']) && driveTxts().length === 3, [tf, driveTxts()]);
     ok('⑫ 시험 글 머리말', /^모델 시험 — 터보 · 양자화 \(large-v3-turbo-q5_0\)\n녹음 f_a+ 앞 3초 · /.test(fs.readFileSync(path.join(home.dir, 'test', 'large-v3-turbo-q5_0.txt'), 'utf8')));
     ok('⑫ 계기판 Mac 카드에 시험 결과', await until(async () => /모델 시험 \(앞 3초\)/.test(await pg.textContent('#main')) && /녹음 1분에/.test(await pg.textContent('#main')), 10000));
+    // (P3b) 저장 공간 → 안 쓰는 모델 지우기(쓰는 터보는 단추 없음)
+    await sleep(3500); await pg.mouse.click(5, 300); await sleep(300);
+    await pg.click('[data-act="diskpane"][data-mac="집"]'); await pg.waitForSelector('#pane');
+    const dp = await pg.textContent('#pane');
+    ok('(P3b) 저장 공간 판: 남은 공간 · 모델 · 지금 쓰는 터보엔 지우기 없음 · 안 쓰는 중간엔 있음', /남은 공간/.test(dp) && !(await pg.$('[data-act="rmmodel"][data-m="large-v3-turbo-q5_0"]')) && !!(await pg.$('[data-act="rmmodel"][data-m="medium-q5_0"]')), dp);
+    await pg.click('[data-act="rmmodel"][data-m="medium-q5_0"]');
+    const rm = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && JSON.stringify(d.models) === JSON.stringify(['large-v3-turbo-q5_0']) && d; }, 30000);
+    ok('(P3b) 지우기 → 집 Mac 에서 중간 모델 파일이 지워짐 · 터보는 그대로', !!rm && !fs.existsSync(path.join(home.dir, 'models', 'ggml-medium-q5_0.bin')) && fs.existsSync(path.join(home.dir, 'models', 'ggml-large-v3-turbo-q5_0.bin')), rm && rm.models);
+    const rmBad = await userAdd(hb.idToken, 'plaud/' + UID + '/cmd', { mac: '집', what: 'rmmodel', arg: 'large-v3-turbo-q5_0', st: 'new', at: Date.now() });
+    const rmId = (await rmBad.json()).name.split('/').pop();
+    const rmFail = await until(async () => { const d = await admin('plaud/' + UID + '/cmd/' + rmId); return d && d.st === 'fail' && d; }, 20000);
+    ok('(P3b) 쓰는 모델을 지우라는 요청은 도우미가 거절 · 파일 그대로', !!rmFail && fs.existsSync(path.join(home.dir, 'models', 'ggml-large-v3-turbo-q5_0.bin')), rmFail);
+    await pg.keyboard.press('Escape'); await sleep(300);
 
-    // ⑬ (P3) 꺼진 Mac 일감 이어받기 — 전사를 15초 걸리게 하고 녹음 e 를 고름
+    // ⑬ (P3) 꺼진 Mac 일감 이어받기 — 전사를 15초 걸리게 하고 녹음 e 를 고름. (P3b) 집은 계기판 스위치로 자동 전사를 꺼 둠 → 사무실만 맡음
+    await pg.click('[data-act="auto"][data-mac="집"]');
+    const autoDoc = await until(async () => { const d = await admin('plaud/' + UID); return d && d.auto && d.auto['집'] === false && d; }, 10000);
+    ok('(P3b) 계기판 스위치 → 계정 설정 auto.집 = false (사무실은 그대로)', autoDoc && !('사무실' in autoDoc.auto), autoDoc && autoDoc.auto);
     fs.writeFileSync(path.join(tmp, 'wmode'), '15000');
     await adminPatch('plaud/' + UID + '/job/' + ID('e'), { pick: 'in' });
     const ew = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('e')); return d && d.st === 'work' && d.step === 'stt' && wStarts(ID('e')).length === 1 && d; }, 30000);
-    ok('⑬ 한 Mac 이 녹음 e 를 맡아 전사 중', !!ew, ew);
+    ok('⑬ 녹음 e 를 맡아 전사 중 — 자동이 꺼진 집이 아니라 사무실이', !!ew && ew.mac === '사무실', ew);
     const doing = ew && await until(async () => { const d = await admin('plaud/' + UID + '/mac/' + ew.mac); return /^전사 중 1분째/.test(d.doing || '') && d.doing; }, 10000);
     ok('⑬ 전사 중에도 소식은 계속(\'전사 중 1분째\')', !!doing, doing);
     await sleep(4500);
@@ -317,11 +380,14 @@ try {
     ok('⑬ 일하는 동안 맡은 시각을 새로 찍음(renew)', ew && ew2 && ew2.at > ew.at && ew2.mac === ew.mac, [ew && ew.at, ew2 && ew2.at]);
     const dead = ew && (ew.mac === '집' ? home : office), live = dead === home ? office : home;
     if (dead) killGroup(dead.ch);
+    await adminPatch('plaud/' + UID + '/mac/' + ew.mac, { at: Date.now() - 10 * 60e3 });   // 죽은 Mac 의 마지막 소식이 10분 전인 것처럼(계기판은 6분 넘으면 '꺼짐')
+    await pg.click('[data-act="auto"][data-mac="집"]');   // 집을 다시 켬 → 꺼진 사무실 일감을 이어받음
+    await until(async () => { const d = await admin('plaud/' + UID); return d && d.auto && d.auto['집'] === true; }, 10000);
     await adminPatch('plaud/' + UID + '/job/' + ID('e'), { at: Date.now() - 31 * 60e3 });   // 31분 동안 소식이 없던 것처럼
     fs.writeFileSync(path.join(tmp, 'wmode'), '400');
     const eDone = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('e')); return d && d.st === 'done' && d; }, 40000);
     ok('⑬ 꺼진 Mac 의 일감을 다른 Mac 이 이어받아 끝냄', eDone && dead && eDone.mac !== ew.mac, [eDone, live && live.log().slice(-500)]);
-    ok('⑬ txt 는 하나뿐', driveTxts().filter(x => x.startsWith(ID('e'))).length === 1 && driveTxts().length === 4, driveTxts());
+    ok('⑬ txt 는 하나뿐', driveTxts().includes(NAME.e) && driveTxts().length === 4, driveTxts());
     ok('⑬ 이어받은 Mac 기록에 \'이어받음\'', live && /이어받음/.test(live.log()));
 
     // ⑭ (P3) 맡김을 잃으면 바로 멈춤 — 남은 한 Mac 이 f 를 전사하는 중에 다른 Mac('서재')이 맡은 것으로 바꿈
@@ -333,11 +399,24 @@ try {
     const killed = await until(async () => lines('wcalls').some(l => l.includes(' ' + ID('f') + '.wav ') && / killed /.test(l)), 10000);
     ok('⑭ 다음 renew(2초) 에서 잃은 것을 보고 whisper 를 멈춤', !!killed && /맡김을 잃어 멈춤/.test(live.log()), lines('wcalls').slice(-3));
     await sleep(1000);
-    ok('⑭ … txt 를 쓰지 않음 · 일감은 서재 몫 그대로', !driveTxts().includes(ID('f') + '.txt') && (await admin('plaud/' + UID + '/job/' + ID('f'))).mac === '서재', driveTxts());
+    ok('⑭ … txt 를 쓰지 않음 · 일감은 서재 몫 그대로', !driveTxts().includes(NAME.f) && (await admin('plaud/' + UID + '/job/' + ID('f'))).mac === '서재', driveTxts());
     fs.writeFileSync(path.join(tmp, 'wmode'), '400');
     await adminPatch('plaud/' + UID + '/job/' + ID('f'), { at: Date.now() - 31 * 60e3 });
     const fDone = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('f')); return d && d.st === 'done' && d; }, 40000);
-    ok('⑭ 서재가 소식이 없자 남은 Mac 이 다시 맡아 끝냄 · txt 하나', fDone && driveTxts().filter(x => x.startsWith(ID('f'))).length === 1 && driveTxts().length === 5, [fDone, driveTxts()]);
+    ok('⑭ 서재가 소식이 없자 남은 Mac 이 다시 맡아 끝냄 · txt 하나', fDone && driveTxts().includes(NAME.f) && driveTxts().length === 5, [fDone, driveTxts()]);
+    // ⑮ (P3b) 임시 소리 파일 — 전사 중인 g 의 크기가 줄 · 맨 위 합계에 → 비우기 → 그 전사를 멈추고 지움
+    fs.writeFileSync(path.join(tmp, 'wmode'), '20000');
+    await adminPatch('plaud/' + UID + '/job/' + ID('g'), { pick: 'in' });
+    const gw = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && d.disk && d.disk.work && d.disk.work[ID('g')] > 0 && d; }, 40000);
+    ok('⑮ 전사 중인 녹음의 임시 파일 크기가 Mac 소식에(녹음별)', !!gw, gw && gw.disk);
+    const rowTmp = await until(async () => { const t = await pg.textContent('[data-id="' + ID('g') + '"]'); return /임시 파일 \d+KB/.test(t) && t; }, 15000);
+    const topTmp = await pg.textContent('.tmpline');
+    ok('⑮ 계기판: 그 줄에 \'임시 파일 …KB\' · 맨 위 합계 · 비우기 단추', !!rowTmp && /임시 소리 파일 합계 \d+KB · 집 Mac/.test(topTmp) && !/사무실/.test(topTmp) && !!(await pg.$('[data-act="cleanask"]')), [rowTmp, topTmp]);
+    await pg.click('[data-act="cleanask"]'); await pg.waitForSelector('[data-act="cleanall"]'); await pg.click('[data-act="cleanall"]');
+    const gFail = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('g')); return d && d.st === 'fail' && d; }, 30000);
+    ok('⑮ 비우기 → 하던 전사를 멈추고 실패 \'임시 파일을 비움\'(한 시간 뒤 다시)', gFail && gFail.err === '임시 파일을 비움' && lines('wcalls').some(l => l.includes(' ' + ID('g') + '.wav ') && / killed /.test(l)), gFail);
+    const emptied = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && d.disk && Object.keys(d.disk.work || {}).length === 0 && !fs.existsSync(path.join(home.dir, 'work', ID('g') + '.wav')) && d; }, 30000);
+    ok('⑮ 일 폴더가 비고 · 합계 0 · txt 는 안 생김', !!emptied && !driveTxts().some(x => x.startsWith('26-1117')) && await until(async () => /합계 0KB/.test(await pg.textContent('.tmpline')), 15000), emptied && emptied.disk);
     ok('⑨ 계기판 화면 오류 없음', errs.length === 0, errs);
   } finally { await browser.close(); }
 } catch (e) { bad++; console.log('  ✗ 도중에 멈춤', e && e.stack); }
