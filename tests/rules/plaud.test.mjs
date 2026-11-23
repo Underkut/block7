@@ -67,12 +67,19 @@ await t('남은 일감을 못 집는다', out.doc('plaud/hb/job/' + ID).set({ st
 await t('도우미는 소식을 파이어베이스 시계로 쓴다', hb.doc('plaud/hb/mac/집').set({ at: ST, doing: '쉼', ready: { brew: true }, v: 'h. 26-1123-1', err: '', cli: 'plaud 0.3.15' }), true);
 await t('소식 시각을 Mac 시계로는 못 쓴다', hb.doc('plaud/hb/mac/집').set({ at: 1, doing: '쉼' }), false);
 await t('소식에 모르는 칸(path)은 못 넣는다', hb.doc('plaud/hb/mac/집').set({ at: ST, path: '/Users/…' }), false);
+await t('(P3) 소식에 깔린 모델 목록 · 모델 시험 결과(시간 · 빠르기)', hb.doc('plaud/hb/mac/집').set({ at: ST, doing: '전사 중 3분째', models: ['large-v3-turbo-q5_0'],
+  test: { at: 1, len: 600, r: { 'large-v3-turbo-q5_0': { s: 130, x: 4.6 } } } }, { merge: true }), true);
+await t('(P3) 모델 목록은 목록 꼴 · 10개까지', hb.doc('plaud/hb/mac/집').set({ at: ST, models: Array.from({ length: 11 }, (_, i) => 'm' + i) }, { merge: true }), false);
+await t('(P3) 모델 시험 결과는 묶음(map) 꼴만', hb.doc('plaud/hb/mac/집').set({ at: ST, test: '시험 전사 글' }, { merge: true }), false);
+await t('(P3) 소식에 전사 글 칸(text)은 못 넣는다', hb.doc('plaud/hb/mac/집').set({ at: ST, text: '…' }, { merge: true }), false);
 await t('Mac 이름이 너무 길면 못 쓴다', hb.doc('plaud/hb/mac/' + '가'.repeat(25)).set({ at: ST }), false);
 await t('계기판은 Mac 카드를 지운다', hb.doc('plaud/hb/mac/집').delete(), true);
 await t('남은 소식을 못 읽는다', out.collection('plaud/hb/mac').get(), false);
 // 요청
 await t('설치 요청(정해 둔 이름)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new', at: ST }), true);
 await t('모델 요청은 고른 모델 이름을 싣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'model', arg: 'medium-q5_0', st: 'new', at: ST }), true);
+await t('(P3) 모델 시험 요청(mtest + 녹음 번호)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'mtest', arg: ID, st: 'new', at: ST }), true);
+await t('(P3) 전사 · 드라이브는 요청 이름이 아니다(저절로 함)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'transcribe', st: 'new' }), false);
 await t('정해 두지 않은 요청(sh)은 못 넣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'sh', st: 'new' }), false);
 await t('요청에 명령 글(argv)은 못 싣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new', argv: ['rm', '-rf', '/'] }), false);
 await t('모르는 요청 상태는 못 쓴다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'check', st: 'maybe' }), false);

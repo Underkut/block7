@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 // 심방 녹음 Mac 도우미 (plaudhub) — Mac 을 켜면 launchd 가 저절로 돌린다(설치는 install.sh 한 줄).
 //
-// 하는 일 (P2):
-//  · 2분마다 계정의 mac/{이 Mac 이름} 에 소식(켜짐 · 하는 일 · 준비 상태 ✓✗ · 도우미 판)을 남긴다
+// 하는 일:
+//  · 2분마다 계정의 mac/{이 Mac 이름} 에 소식(켜짐 · 하는 일 · 준비 상태 ✓✗ · 깔린 모델 · 도우미 판)을 남긴다 — 전사 중에도 계속
 //  · 10분마다 공식 PLAUD CLI 로 최근 녹음 목록을 읽어 rec/{녹음번호} 에 제목 · 시각 · 길이를 둔다(바뀐 줄만)
-//  · 계정의 cmd 칸에서 이 Mac 몫 요청(설치 · 새로 받기 · 다시 읽기)을 받아 **정해 둔 명령만** 돌린다(INSTALLS 표)
+//  · 계정의 cmd 칸에서 이 Mac 몫 요청(설치 · 새로 받기 · 다시 읽기 · 모델 시험)을 받아 **정해 둔 명령만** 돌린다(INSTALLS · PIPE 표)
+//  · (P3) 고른 녹음을 한 번에 하나씩 맡아(tryClaim · 5분마다 renew) 받기 → ffmpeg → whisper.cpp → 드라이브 'HB-심방-전사/녹음번호.txt'
 //  · 127.0.0.1:47211 에서 block7.my 계기판의 '이 Mac 연결' 만 받는다(로그인 열쇠를 건네받음)
-// 하지 않는 것: 음성 받기 · 전사 · 드라이브(P3) · sudo · 비공식 PLAUD 도구 · 음성 주소(24시간 열쇠)를 기록에 남기기.
+// 하지 않는 것: sudo · 비공식 PLAUD 도구 · 음성 주소(24시간 열쇠)를 명령 줄 · 기록 · 계정에 남기기 · 전사 글을 계정 · 기록에 두기.
 //
-// 판단(CLI 글 읽기 · 고르기 · 맡기 · 값 바꾸기)은 계기판 index.html 의 <script id="plaudhub-core"> 한 곳 —
+// 판단(CLI 글 읽기 · 고르기 · 맡기 · 명령 표 · 값 바꾸기)은 계기판 index.html 의 <script id="plaudhub-core"> 한 곳 —
 // 여기서는 그 파일을 받아 그 덩어리만 떼어(core.js) 쓴다. 두 벌로 두지 않는다.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,7 +19,7 @@ import vm from 'node:vm';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const HELPER_VERSION = 'h. 26-1123-1';
+export const HELPER_VERSION = 'h. 26-1123-2';
 const HOME = os.homedir();
 const DIR = process.env.PLAUDHUB_DIR || path.join(HOME, 'Library', 'Application Support', 'plaudhub');
 const SITE = process.env.PLAUDHUB_SITE || 'https://block7.my/plaudhub/';
@@ -28,14 +29,21 @@ const ORIGINS = ['https://block7.my'].concat(process.env.PLAUDHUB_DEV_ORIGIN ? [
 const API_KEY = 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE';   // 공개 웹 설정값(앱들에 이미 있는 것) — 비밀 열쇠가 아니다
 const TOKEN_URL = process.env.PLAUDHUB_TOKEN_URL || 'https://securetoken.googleapis.com/v1/token';
 const FS_HOST = process.env.PLAUDHUB_FS_HOST || 'https://firestore.googleapis.com';
-const BEAT_MS = 2 * 60e3, LIST_MS = 10 * 60e3, READY_MS = 10 * 60e3, TICK_MS = 30e3, FILE_CALLS = 40;
+const BEAT_MS = 2 * 60e3, LIST_MS = 10 * 60e3, READY_MS = 10 * 60e3, FILE_CALLS = 40;
+// 시험(plaud.e2e)만 줄여 쓴다 — 실제 Mac 은 기본값
+const envMs = (k, d) => { const v = +process.env[k]; return v > 0 ? v : d; };
+const TICK_MS = envMs('PLAUDHUB_TICK_MS', 30e3);       // 요청 · 소식 차례
+const JOB_MS = envMs('PLAUDHUB_JOB_MS', 3 * 60e3);     // 쉬는 동안 맡을 일감을 보는 간격(읽기 횟수를 아끼려 3분)
+const WORK = () => path.join(DIR, 'work'), TESTDIR = () => path.join(DIR, 'test');
 
 // launchd 는 PATH 가 짧다 — Homebrew · 내 npm 폴더를 앞에. PLAUD CLI 의 사용 통계 · 새 판 알림은 끈다
-process.env.PATH = ['/opt/homebrew/bin', '/usr/local/bin', path.join(HOME, '.npm-global', 'bin'), '/usr/bin', '/bin', '/usr/sbin', '/sbin', process.env.PATH || ''].join(':');
+// (시스템 폴더는 맨 뒤 — 물려받은 PATH 가 먼저. 시험의 가짜 ffmpeg · whisper-cli 가 시험 기계의 진짜에 가리지 않게)
+process.env.PATH = [...new Set(['/opt/homebrew/bin', '/usr/local/bin', path.join(HOME, '.npm-global', 'bin')].concat(String(process.env.PATH || '').split(':').filter(Boolean), ['/usr/bin', '/bin', '/usr/sbin', '/sbin']))].join(':');
 process.env.PLAUD_TELEMETRY_DISABLED = '1'; process.env.DO_NOT_TRACK = '1'; process.env.PLAUD_NO_UPDATE_NOTIFIER = '1';
 
 let PH = null;   // 판단 덩어리
-const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, err: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, busy: false, needPair: false, sentKey: '' };
+const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, models: [], err: '', warn: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, lastJob: 0,
+  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set() };
 
 function log(...a) { const s = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '); console.log(new Date().toISOString(), PH ? PH.clean(s, 2000) : s.replace(/https?:\/\/\S+/g, '[주소]')); }
 function readJson(f, d) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch (_) { return d; } }
@@ -67,17 +75,25 @@ async function loadCore() {
 }
 
 /* ---------- 명령 돌리기 ---------- */
-function run(cmd, args, ms) {
+// o.input = 표준 입력으로 넘길 글(음성 주소 — 명령 줄에 안 보이게) · o.job = 멈출 때 죽일 일감 · o.onErr = 오류 글 조각마다(전사 진행)
+function run(cmd, args, ms, o) {
+  o = o || {};
   return new Promise(res => {
     let out = '', err = '', done = false;
     let ch; try { ch = spawn(cmd, args, { env: process.env, cwd: HOME }); } catch (e) { return res({ code: -1, out: '', err: String(e.message || e) }); }
+    if (o.job) o.job.child = ch;
     const tm = setTimeout(() => { if (!done) { try { ch.kill('SIGTERM'); } catch (_) { } } }, ms || 120e3);
     ch.stdout.on('data', d => { out += d; if (out.length > 4e6) out = out.slice(-4e6); });
-    ch.stderr.on('data', d => { err += d; if (err.length > 2e5) err = err.slice(-2e5); });
-    ch.on('error', e => { if (done) return; done = true; clearTimeout(tm); res({ code: -1, out, err: String(e.message || e) }); });
-    ch.on('close', code => { if (done) return; done = true; clearTimeout(tm); res({ code: code == null ? -1 : code, out, err }); });
+    ch.stderr.on('data', d => { err += d; if (err.length > 2e5) err = err.slice(-2e5); if (o.onErr) try { o.onErr(String(d)); } catch (_) { } });
+    ch.stdin.on('error', () => { });
+    if (o.input != null) ch.stdin.end(o.input); else ch.stdin.end();
+    const fin = r => { if (done) return; done = true; clearTimeout(tm); if (o.job && o.job.child === ch) o.job.child = null; res(r); };
+    ch.on('error', e => fin({ code: -1, out, err: String(e.message || e) }));
+    ch.on('close', code => fin({ code: code == null ? -1 : code, out, err }));
   });
 }
+// 전사 길의 명령은 core 의 PIPE 표로만 만든다(여기서 명령 글을 따로 쓰지 않는다)
+const runP = (key, v, ms, o) => { const a = PH.pipeArgv(key, v); return run(a[0], a.slice(1), ms, o); };
 const has = name => spawnSync('/usr/bin/which', [name], { env: process.env }).status === 0;
 const home = s => String(s).replace(/^~(?=\/|$)/, HOME);
 
@@ -85,18 +101,28 @@ const home = s => String(s).replace(/^~(?=\/|$)/, HOME);
 function driveFolder() {
   const cs = path.join(HOME, 'Library', 'CloudStorage');
   let ds = []; try { ds = fs.readdirSync(cs).filter(n => n.startsWith('GoogleDrive-')); } catch (_) { }
-  for (const d of ds) for (const my of ['My Drive', '내 드라이브']) { const p = path.join(cs, d, my, 'HB-심방-전사'); try { if (fs.statSync(p).isDirectory()) return p; } catch (_) { } }
+  for (const d of ds) for (const my of ['My Drive', '내 드라이브']) { const p = path.join(cs, d, my, PH.DRIVE_DIR); try { if (fs.statSync(p).isDirectory()) return p; } catch (_) { } }
   return '';
 }
 function modelPath(m) { return path.join(DIR, 'models', m.file); }
+function modelOk(m) { try { return fs.statSync(modelPath(m)).size > m.mb * 1e6 * 0.9; } catch (_) { return false; } }
+const installedModels = () => PH.MODELS.filter(modelOk);
+const whisperBin = () => PH.WHISPER_BINS.find(has) || '';
+// 남은 공간(바이트). 시험은 PLAUDHUB_FAKE_FREE_FILE 의 숫자로 흉내 낸다
+function freeBytes() {
+  const f = process.env.PLAUDHUB_FAKE_FREE_FILE;
+  if (f) { try { const v = +fs.readFileSync(f, 'utf8'); if (Number.isFinite(v)) return v; } catch (_) { } }
+  try { const s = fs.statfsSync(DIR); return s.bavail * s.bsize; } catch (_) { return Infinity; }
+}
+function rmQuiet(...ps) { for (const p of ps) { try { fs.rmSync(p, { force: true, recursive: true }); } catch (_) { } } }
 async function checkReady(settings) {
   const r = {};
   r.brew = fs.existsSync('/opt/homebrew/bin/brew') || fs.existsSync('/usr/local/bin/brew');
   r.node = +process.versions.node.split('.')[0] >= 20;
   r.ffmpeg = has('ffmpeg');
-  r.whisper = has('whisper-cli') || has('whisper-cpp');
-  const m = PH.modelOf(settings && settings.model); let sz = 0; try { sz = fs.statSync(modelPath(m)).size; } catch (_) { }
-  r.model = sz > m.mb * 1e6 * 0.9;
+  r.whisper = !!whisperBin();
+  r.model = modelOk(PH.modelOf(settings && settings.model));
+  st.models = installedModels().map(m => m.id);
   r.plaud = has('plaud');
   if (r.plaud) {
     const me = await run('plaud', ['me'], 60e3);   // 결과(계정 정보)는 버리고 됐는지만 본다
@@ -128,6 +154,23 @@ async function fsCall(method, urlPath, body) {
   return { ok: r.ok, status: r.status, j };
 }
 async function getDoc(...seg) { const r = await fsCall('GET', docName(...seg)); if (r.status === 404) return null; if (!r.ok) throw new Error('읽기 ' + r.status); return PH.fsDoc(r.j); }
+// 칸 안에서 조건 하나(field op value)로 찾기 — 읽기 횟수를 아끼려고(통째 목록 대신)
+async function queryColl(coll, field, op, value) {
+  const r = await fsCall('POST', docName() + ':runQuery', { structuredQuery: { from: [{ collectionId: coll }], where: { fieldFilter: { field: { fieldPath: field }, op, value: PH.fsEnc(value) } } } });
+  if (!r.ok) throw new Error(coll + ' 찾기 ' + r.status);
+  const out = {}; for (const x of Array.isArray(r.j) ? r.j : []) if (x && x.document) { const o = PH.fsDoc(x.document); out[o.id] = o; }
+  return out;
+}
+// 문서 여럿을 한 번에(없는 것은 빠짐)
+async function getMany(coll, ids) {
+  const out = {};
+  for (let i = 0; i < ids.length; i += 100) {
+    const r = await fsCall('POST', DB() + ':batchGet', { documents: ids.slice(i, i + 100).map(id => docName(coll, id)) });
+    if (!r.ok) throw new Error(coll + ' 읽기 ' + r.status);
+    for (const x of Array.isArray(r.j) ? r.j : []) if (x && x.found) { const o = PH.fsDoc(x.found); out[o.id] = o; }
+  }
+  return out;
+}
 async function listColl(coll) {
   const out = {}; let tok = '';
   for (let i = 0; i < 20; i++) {
@@ -165,10 +208,13 @@ export const jobIO = {
 };
 
 /* ---------- 소식 · 목록 · 요청 ---------- */
+const doingNow = () => st.job ? PH.workLabel(st.job, Date.now()) : st.doing;
 async function beat(force) {
-  const key = JSON.stringify([st.doing, st.ready, st.err, st.cli]);
+  const doing = doingNow(), err = [st.err, st.warn].filter(Boolean).join('\n');
+  const key = JSON.stringify([doing, st.ready, err, st.cli, st.models]);
   if (!force && key === st.sentKey && Date.now() - st.lastBeat < BEAT_MS) return;
-  const r = await commit([upd(['mac', st.mac], { doing: st.doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(st.err, 300), cli: st.cli }, { serverAt: true })]);
+  if (!force && key !== st.sentKey && Date.now() - st.lastBeat < 50e3) return;   // 전사 중 'n분째' 는 1분에 한 번만
+  const r = await commit([upd(['mac', st.mac], { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models }, { serverAt: true })]);
   if (!r.ok) throw new Error('소식 쓰기 ' + r.status + (r.status === 403 ? ' (보안 규칙을 붙였는지 확인)' : ''));
   st.lastBeat = Date.now(); st.sentKey = key;
 }
@@ -194,19 +240,26 @@ async function refreshList(settings) {
     rows.push({ id: r.id, name: r.name, t: c.t, c: c.c, d: r.d });
   }
   writeJson('cache.json', cache);
-  const old = await listColl('rec'), plan = PH.recPlan(old, rows, serverNow() - s.days * 86400e3);
+  // 계정의 녹음 줄은 기간 안(+하루)만 읽는다 — 통째로 읽으면 쌓인 옛 줄까지 10분마다 읽게 된다
+  const from = serverNow() - s.days * 86400e3, old = await queryColl('rec', 'c', 'GREATER_THAN_OR_EQUAL', Math.floor(from - 86400e3)), plan = PH.recPlan(old, rows, from);
   const writes = plan.put.map(x => upd(['rec', x.id], x.v)).concat(plan.del.map(id => ({ delete: docName('rec', id) })));
   for (let i = 0; i < writes.length; i += 400) { const r = await commit(writes.slice(i, i + 400)); if (!r.ok) throw new Error('녹음 줄 쓰기 ' + r.status); }
+  const now = {}; for (const id of Object.keys(old)) if (!plan.del.includes(id)) now[id] = old[id];
+  for (const x of plan.put) now[x.id] = Object.assign({ id: x.id }, x.v);
+  st.recs = now;   // 맡을 일감을 고를 때 쓴다(다시 읽지 않게)
   st.err = plan.held ? 'PLAUD 에서 녹음 ' + plan.held + '개가 한꺼번에 사라져 계정에서 지우지 않았습니다 — 확인해 주세요' : '';
   st.lastList = Date.now();
   log('목록', rows.length + '개 · 새로 씀 ' + plan.put.length + ' · 지움 ' + plan.del.length);
 }
 async function doCmds(settings) {
-  const cmds = Object.values(await listColl('cmd')).filter(c => PH.cmdFor(c, st.mac, serverNow())).sort((a, b) => (a.at || 0) - (b.at || 0));
+  // 새 요청만 찾는다(대개 0개 — 읽기 한 번)
+  const cmds = Object.values(await queryColl('cmd', 'st', 'EQUAL', 'new')).filter(c => PH.cmdFor(c, st.mac, serverNow())).sort((a, b) => (a.at || 0) - (b.at || 0));
   for (const c of cmds) {
     const I = PH.INSTALLS[c.what];
+    if (st.job && !PH.CMD_WHILE_BUSY.includes(c.what)) continue;   // 전사 · 시험 중에는 미룬다('기다림' 으로 남음)
     // 먼저 '하는 중' 으로 — 그 사이 같은 요청을 두 번 집지 않게(읽은 판 그대로일 때만)
     const took = await commit([upd(['cmd', c.id], { st: 'run' }, { pre: { updateTime: c._ut } })]); if (!took.ok) continue;
+    if (c.what === 'mtest') { startTest(c, settings); continue; }   // 오래 걸린다 — 뒤에서 돌고, 끝나면 요청 칸에 적는다
     st.doing = I.title + ' 하는 중'; await beat(true).catch(() => { });
     let res;
     try { res = await runCmd(c, I, settings); } catch (e) { res = { ok: false, log: String(e.message || e) }; }
@@ -219,7 +272,7 @@ async function doCmds(settings) {
 }
 async function runCmd(c, I, settings) {
   if (c.what === 'check') { await checkReady(settings); return { ok: true, log: '' }; }
-  if (c.what === 'refresh') { st.lastList = 0; await refreshList(settings); return { ok: !st.err, log: st.err }; }
+  if (c.what === 'refresh') { st.lastList = 0; await refreshList(settings); st.lastJob = 0; return { ok: !st.err, log: st.err }; }
   if (c.what === 'update') {
     const r = await fetch(SITE + 'helper.mjs', { cache: 'no-store' }); const t = await r.text();
     if (!r.ok || !/export const HELPER_VERSION = 'h\. /.test(t)) return { ok: false, log: '새 도우미 파일을 받지 못했습니다' };
@@ -231,13 +284,154 @@ async function runCmd(c, I, settings) {
     const m = PH.MODELS.find(x => x.id === c.arg); if (!m) return { ok: false, log: '모르는 모델' };
     fs.mkdirSync(path.join(DIR, 'models'), { recursive: true });
     const dst = modelPath(m), part = dst + '.part';
-    const r = await run('curl', ['-fL', '--retry', '2', '-sS', '-o', part, PH.modelUrl(m)], 60 * 60e3);
+    const r = await runP('model', { part, url: PH.modelUrl(m) }, 60 * 60e3);
     let sz = 0; try { sz = fs.statSync(part).size; } catch (_) { }
     if (r.code !== 0 || sz < m.mb * 1e6 * 0.9) { try { fs.unlinkSync(part); } catch (_) { } return { ok: false, log: '받지 못했습니다 (' + r.code + ')\n' + r.err }; }
     fs.renameSync(part, dst); return { ok: true, log: '' };
   }
   const argv = I.argv.map(home), r = await run(argv[0], argv.slice(1), (I.mins || 5) * 4 * 60e3);
   return { ok: r.code === 0, log: (r.err || '') + '\n' + (r.out || '').slice(-300) };
+}
+
+/* ---------- 받기 → 전사 → 드라이브 (P3) ----------
+   한 Mac 은 한 번에 하나(st.job). 맡기(tryClaim)는 차례(tick) 안에서 짧게, 긴 일은 뒤에서 돌고 차례는 그대로 2분 소식 · 요청을 이어 간다.
+   ⚠️ 기록(log)에는 녹음 번호 · 걸린 시간 · 짧은 까닭만 — 제목 · 전사 글 · 음성 주소는 남기지 않는다. */
+class Fail extends Error { }
+const RENEW_MS = () => envMs('PLAUDHUB_RENEW_MS', PH.RENEW_MS);
+
+// 맡은 시각을 새로 찍는다 — 잃었거나(다른 Mac 이 이어받음) HB 가 뺐으면 곧바로 멈춘다. 새로 찍지 못한 채 맡김이 풀릴 때가 다가오면 스스로 멈춘다
+async function keep(J) {
+  for (let i = 0; i < 3 && !J.stop; i++) {
+    try {
+      const r = await PH.renew(jobIO, J.id, st.mac, J.step);
+      if (r.ok) { J.okAt = Date.now(); return true; }
+      if (r.why) { stopJob(J, r.why); return false; }
+    } catch (e) { log('맡김 새로 찍기 실패', J.id, String(e.message || e)); break; }
+  }
+  if (!J.stop && Date.now() - J.okAt > PH.LEASE_MS - 2 * RENEW_MS()) stopJob(J, 'lost');
+  return false;
+}
+function stopJob(J, why) { if (J.stop) return; J.stop = why; if (J.child) { try { J.child.kill('SIGTERM'); } catch (_) { } } }
+const alive = J => { if (J.stop) throw new Error('멈춤'); };
+async function setStep(J, step) { J.step = step; J.pct = null; if (!(await keep(J))) { if (!J.stop) stopJob(J, 'lost'); } alive(J); beat(true).catch(() => { }); }
+
+// 음성 받기: plaud audio → 24시간 주소(글에서만 읽고 버림) → curl 이 표준 입력으로 받아 ogg 로
+async function fetchAudio(J, ogg, durSec) {
+  const a = await runP('audio', { id: J.id }, 90e3, { job: J }); alive(J);
+  if (a.code === 2) throw new Fail('PLAUD 로그인이 풀림');
+  if (a.code !== 0) throw new Fail('음성 주소를 받지 못함 (끝 번호 ' + a.code + ')');
+  const u = PH.parseAudioUrl(a.out); if (!u.ok) throw new Fail(u.err);
+  const c = await runP('get', { ogg }, Math.max(30 * 60e3, (+durSec || 0) * 1000), { job: J, input: PH.curlConf(u.url) }); alive(J);
+  if (c.code !== 0) throw new Fail('소리를 받지 못함 (curl ' + c.code + ')');
+  let sz = 0; try { sz = fs.statSync(ogg).size; } catch (_) { }
+  if (sz < 1000) throw new Fail('받은 소리 파일이 비었음');
+}
+async function toWav(J, key, v) {
+  const r = await runP(key, v, 60 * 60e3, { job: J }); alive(J);
+  if (r.code !== 0) throw new Fail('소리 바꾸기 실패 (ffmpeg ' + r.code + ')');
+  let sz = 0; try { sz = fs.statSync(v.wav).size; } catch (_) { }
+  if (sz < 1000) throw new Fail('바꾼 소리 파일이 비었음');
+  return Math.max(1, Math.round((sz - 44) / 32000));   // 16kHz 모노 16비트 = 1초 32000바이트
+}
+async function stt(J, m, wav, outBase, secs) {
+  const bin = whisperBin(); if (!bin) throw new Fail('whisper.cpp 가 없음');
+  J.pct = null;
+  const r = await runP('stt', { bin, model: modelPath(m), wav, out: outBase }, Math.max(60 * 60e3, secs * 2000 + 30 * 60e3),
+    { job: J, onErr: s => { const p = PH.parseProgress(s); if (p != null) J.pct = p; } }); alive(J);
+  if (r.code !== 0) throw new Fail('전사 실패 (whisper ' + r.code + ')');
+  let text = ''; try { text = fs.readFileSync(outBase + '.txt', 'utf8'); } catch (_) { }
+  text = PH.cleanText(text); if (!text) throw new Fail('전사 글이 비었음');
+  return text;
+}
+
+// 맡을 일감 찾기 — 쉬는 동안 JOB_MS 마다. 고른 녹음 중 오래된 것부터, 맡으면 뒤에서 돌린다
+async function pickWork(settings) {
+  st.lastJob = Date.now();
+  const drive = driveFolder(); st.ready.drive = !!drive;
+  if (PH.workBlock(st.ready).length || !st.recs) return;
+  const s = PH.settingsOf(settings), m = PH.modelOf(s.model); if (!modelOk(m)) { st.ready.model = false; return; }
+  const ids = Object.keys(st.recs).filter(id => !st.done.has(id));
+  if (!ids.length) return;
+  const jobs = await getMany('job', ids);
+  for (const id of Object.keys(jobs)) if (jobs[id].st === 'done') st.done.add(id);
+  const want = PH.wantedJobs(st.recs, jobs, s, st.mac, serverNow());
+  if (!want.length) { if (st.warn) { st.warn = ''; await beat(true).catch(() => { }); } return; }
+  for (const id of want) {
+    const rec = st.recs[id] || {}, sp = PH.spaceCheck(freeBytes(), rec.d);
+    if (!sp.ok) { const w = PH.spaceMsg(sp); if (w !== st.warn) { st.warn = w; log('공간 모자람 — 맡지 않음', id); await beat(true).catch(() => { }); } return; }
+    if (st.warn) st.warn = '';
+    const c = await PH.tryClaim(jobIO, id, st.mac);
+    if (!c.ok) { if (c.why === 'done') st.done.add(id); continue; }
+    const J = st.job = { kind: 'job', id, step: 'get', t0: Date.now(), okAt: Date.now(), pct: null, child: null, stop: '' };
+    log('맡음', id, c.how === 'expired' ? '(꺼진 ' + (c.from || '다른') + ' Mac 에게서 이어받음)' : '');
+    await beat(true).catch(() => { });
+    workOne(J, rec, m, drive).catch(e => log('일감 오류', id, String(e.message || e))).finally(() => { st.job = null; st.lastJob = 0; beat(true).catch(() => { }); });
+    return;
+  }
+}
+async function workOne(J, rec, m, drive) {
+  const w = WORK(), ogg = path.join(w, J.id + '.ogg'), wav = path.join(w, J.id + '.wav'), out = path.join(w, J.id + '.whisper'), part = path.join(w, J.id + '.txt.part');
+  const final = path.join(drive, PH.txtName(J.id));
+  const timer = setInterval(() => { keep(J); }, RENEW_MS());
+  try {
+    fs.mkdirSync(w, { recursive: true });
+    // 겹 둘: 드라이브에 이미 있으면 만들지 않는다(다른 Mac 이 먼저 했음)
+    if (fs.existsSync(final)) { await PH.finish(jobIO, J.id, st.mac, true); st.done.add(J.id); log('이미 드라이브에 있음 — 만들지 않음', J.id); return; }
+    await fetchAudio(J, ogg, rec.d);
+    await setStep(J, 'stt');
+    const secs = await toWav(J, 'wav', { ogg, wav }); rmQuiet(ogg);
+    const text = await stt(J, m, wav, out, secs); rmQuiet(wav);
+    await setStep(J, 'drive');   // 쓰기 바로 앞에 맡김을 새로 확인(잃었으면 여기서 멈춤)
+    if (fs.existsSync(final)) { await PH.finish(jobIO, J.id, st.mac, true); st.done.add(J.id); log('이미 드라이브에 있음 — 만들지 않음', J.id); return; }
+    // 임시 이름 → 이름 바꾸기: 드라이브 앱이 반쯤 쓴 파일을 올리지 않게(일 폴더에서 다 쓴 뒤 한 번에 옮김)
+    fs.writeFileSync(part, PH.txtOf({ id: J.id, n: rec.n, t: rec.t, d: rec.d, model: m.id, mac: st.mac, at: serverNow() }, text));
+    try { fs.renameSync(part, final); }
+    catch (e) { if (e.code !== 'EXDEV') throw e; const tmp = path.join(drive, '.' + J.id + '.txt.part'); fs.copyFileSync(part, tmp); fs.renameSync(tmp, final); }
+    const f = await PH.finish(jobIO, J.id, st.mac, true); st.done.add(J.id);
+    log('전사 끝', J.id, Math.round((Date.now() - J.t0) / 60e3) + '분 걸림', f.ok ? '' : '(끝 표시는 못 함 — 드라이브 파일이 있어 다시 하지 않음)');
+  } catch (e) {
+    if (J.stop === 'lost') { log('맡김을 잃어 멈춤 — 다른 Mac 이 이어 함', J.id); return; }
+    const why = J.stop === 'out' ? '목록에서 뺌' : e instanceof Fail ? e.message : '도우미 오류';
+    if (!(e instanceof Fail) && !J.stop) log('도우미 오류', J.id, String(e && e.message || e));
+    await PH.finish(jobIO, J.id, st.mac, false, PH.clean(why, 120)).catch(() => { });
+    log('전사 실패', J.id, PH.clean(why, 120));
+  } finally {
+    clearInterval(timer); stopJob(J, J.stop || 'end');
+    rmQuiet(ogg, wav, out + '.txt', part);   // 받은 소리 · WAV · 중간 글은 끝나면 지운다(디스크)
+  }
+}
+
+// 모델 시험: 앞 10분을 깔린 모델마다. 글은 이 Mac 의 test 폴더에만, 계정에는 걸린 시간 · 빠르기만(mac.test)
+function startTest(c, settings) {
+  const J = st.job = { kind: 'test', id: c.arg, step: 'get', t0: Date.now(), pct: null, child: null, stop: '', k: 0, of: 0, model: '' };
+  beat(true).catch(() => { });
+  (async () => {
+    let res;
+    try { res = await modelTest(J); } catch (e) { res = { ok: false, log: e instanceof Fail ? e.message : '도우미 오류' }; if (!(e instanceof Fail)) log('모델 시험 오류', String(e && e.message || e)); }
+    await commit([upd(['cmd', c.id], { st: res.ok ? 'ok' : 'fail', log: PH.clean(res.log, 600) })]).catch(() => { });
+    log('모델 시험', res.ok ? '됨' : '실패 ' + PH.clean(res.log, 120));
+  })().finally(() => { st.job = null; st.lastJob = Date.now(); beat(true).catch(() => { }); });
+}
+async function modelTest(J) {
+  const w = WORK(), ogg = path.join(w, 'test.ogg'), wav = path.join(w, 'test.wav'), out = path.join(w, 'test.whisper');
+  try {
+    fs.mkdirSync(w, { recursive: true }); fs.mkdirSync(TESTDIR(), { recursive: true });
+    const ms = installedModels(); if (!ms.length) throw new Fail('깔린 모델이 없음 — 먼저 설치해 주세요');
+    const sp = PH.spaceCheck(freeBytes(), PH.TEST_SEC); if (!sp.ok) throw new Fail(PH.spaceMsg(sp).split('\n')[0]);
+    await fetchAudio(J, ogg, PH.TEST_SEC);
+    const len = await toWav(J, 'cut', { ogg, wav, sec: PH.TEST_SEC }); rmQuiet(ogg);
+    const r = {}; J.of = ms.length;
+    for (const m of ms) {
+      J.k++; J.model = m.label; J.step = 'stt';
+      const t0 = Date.now(), text = await stt(J, m, wav, out, len), s = Math.max(1, Math.round((Date.now() - t0) / 1000));
+      r[m.id] = { s, x: Math.round(len / s * 10) / 10 };
+      fs.writeFileSync(path.join(TESTDIR(), m.id + '.txt'), '모델 시험 — ' + m.label + ' (' + m.id + ')\n녹음 ' + J.id + ' 앞 ' + PH.durLabel(len) + ' · ' + PH.durLabel(s) + ' 걸림 · ' + PH.perMinLabel(r[m.id].x) + '\n---\n\n' + text + '\n');
+      rmQuiet(out + '.txt');
+    }
+    const w2 = await commit([upd(['mac', st.mac], { test: { at: serverNow(), len, r } }, { serverAt: true })]);
+    if (!w2.ok) throw new Fail('결과를 계정에 적지 못함 ' + w2.status);
+    return { ok: true, log: '' };
+  } finally { rmQuiet(ogg, wav, out + '.txt'); }
 }
 
 async function tick() {
@@ -249,6 +443,7 @@ async function tick() {
     await beat(false);
     await doCmds(settings);
     if (Date.now() - st.lastList > LIST_MS) { await refreshList(settings); if (st.err) log('알림', st.err); st.doing = '쉼'; await beat(true); }
+    if (!st.job && Date.now() - st.lastJob > JOB_MS) await pickWork(settings);
   } catch (e) { log('차례 실패', String(e.message || e)); }
   finally { st.busy = false; }
 }
@@ -291,6 +486,7 @@ async function pair(j) {
 async function main() {
   fs.mkdirSync(DIR, { recursive: true, mode: 0o700 });
   try { const lp = path.join(DIR, 'helper.log'); if (fs.statSync(lp).size > 2e6) fs.truncateSync(lp, 0); } catch (_) { }
+  rmQuiet(WORK());   // 지난번에 멈춘 일의 소리 · WAV 가 남았으면 치운다(맡은 일감은 다시 집으면 처음부터)
   for (let i = 0; ; i++) { try { await loadCore(); break; } catch (e) { log('판단 덩어리를 못 받음', String(e.message || e)); await new Promise(r => setTimeout(r, Math.min(300e3, 15e3 * (i + 1)))); } }
   const tok = readJson('token.json', null), conf = readJson('conf.json', {});
   if (tok && tok.rt && tok.uid && PH.normMac(conf.mac)) { st.tok = tok; st.mac = PH.normMac(conf.mac); }

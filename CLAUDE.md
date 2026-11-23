@@ -257,14 +257,20 @@ PLAUD 심방 녹음 → (집 · 사무실 Mac 중 켜진 쪽이) 받기 → whis
 도우미 판 `HELPER_VERSION` 을 올리면 core 의 `HELPER_LATEST` 도 같게(⑫). 설치 한 줄은 `plaudhub/install.sh`(launchd `my.block7.plaudhub`).
 
 - 저장은 HB 파이어베이스 `plaud/{uid}` — 설정(`kw` · `days` · `model`) · `rec`(제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계 · 파이어베이스 시계 `at`) · `mac`(소식 · 준비 ✓✗) · `cmd`(설치 요청 열쇠 이름).
-  규칙 붙이기 `docs/plaudhub/firestore-rules.md`, 시험 `tests/rules/plaud.test.mjs` · `plaud.e2e.mjs`(실제 도우미 + 가짜 CLI + 계기판). `users/{uid}` 는 건드리지 않는다.
-- ⚠️ **녹음 제목은 `rec` 칸에만**(HB 결정 11/23 — 폰에서도 보려고). **일감 칸(`job`)에 제목 · 이름을, 어느 칸에도 전사문 · 심방 내용을 두지 말 것** — 규칙이 칸 이름을 못 박았다(`hasOnly`). 전사문은 HB 구글에만.
+  규칙 붙이기 `docs/plaudhub/firestore-rules.md`, 시험 `tests/rules/plaud.test.mjs` · `plaud.e2e.mjs`(실제 도우미 + 가짜 CLI · 음성 주소 · ffmpeg · whisper-cli · 함께 보는 드라이브 폴더 + 계기판 — 두 Mac 겹침 · 이어받기 · txt 하나를 실제로 돌림). `users/{uid}` 는 건드리지 않는다.
+- ⚠️ **녹음 제목은 `rec` 칸에만**(HB 결정 11/23 — 폰에서도 보려고). **일감 칸(`job`)에 제목 · 이름을, 어느 칸에도 전사문 · 심방 내용을 두지 말 것** — 규칙이 칸 이름을 못 박았다(`hasOnly`). 전사문은 HB 구글에만(도우미 기록 `helper.log` 에도 두지 말 것 — 녹음 번호 · 걸린 시간 · 짧은 까닭만).
 - ⚠️ **공식 PLAUD CLI(`@plaud-ai/cli`)만** — 비공식 도구 금지. CLI 는 JSON 이 없어 **글 표를 읽는다**: 모르는 줄 · 건수 다름이면 **멈추고 알린다**(짐작해 계속하지 말 것, `parseRecent` · `parseFileDetail`).
   CLI 판이 바뀌면 npm 원본(`dist/index.js`)을 열어 꼴을 확인하고 시험 글을 함께 고친다. CLI 는 통계를 PostHog 로 보낸다 → 도우미는 `PLAUD_TELEMETRY_DISABLED=1` 로 부른다.
 - ⚠️ **음성 내려받기 주소(`plaud audio`, 24시간 열쇠)를 기록 · 화면 · 계정 · 저장소에 남기지 말 것** — 도우미 기록은 `clean()` 으로 주소를 지운다.
 - **두 Mac 겹침 막기**: 일감은 `tryClaim`(읽은 판 그대로일 때만 쓰는 조건부 쓰기) — 한 대만. 맡은 시각이 30분(`LEASE_MS`) 넘게 안 새로워지면 풀린다 → 긴 전사(3 ~ 5시간)는 **5분마다 `renew`** 할 것(안 하면 다른 Mac 이 이어받아 겹친다).
   드라이브의 `녹음번호.txt` · 시트 대기함 7항 4 는 뒤의 두 겹이다(ROADMAP 1122-P ③).
-- **도우미가 돌리는 명령은 core 의 `INSTALLS` 표뿐** — 계정 `cmd` 는 열쇠 이름만 싣고 규칙이 이름 여덟만 받는다(⑪). 표에 sudo 를 넣지 말 것. Homebrew 는 공식 설치기가 암호를 물어 터미널 몫(화면에 줄만 보임).
+- **도우미가 돌리는 명령은 core 의 두 표뿐** — 요청은 `INSTALLS`(계정 `cmd` 는 열쇠 이름만 싣고 규칙이 이름 아홉만 받는다, ⑪), 전사 길은 `PIPE`(`plaud audio` · curl · ffmpeg · whisper-cli · 모델 받기, `pipeArgv` 로만 만든다 — 도우미에 명령 글을 따로 쓰지 말 것, ⑫).
+  표에 sudo 를 넣지 말 것. Homebrew 는 공식 설치기가 암호를 물어 터미널 몫(화면에 줄만 보임).
+- **P3 받기 → 전사 → 드라이브(11/23)**: 고른 녹음을 **한 Mac 에 하나씩** `tryClaim` → 일하는 동안 `renew`(5분) — 잃거나(`lost`) HB 가 빼면(`out`) 곧바로 whisper 를 죽이고 멈춘다. 실패는 짧은 까닭(`err`, 제목 · 글 없음)과 함께 `fail`, 한 시간(`FAIL_WAIT_MS`) 뒤 다시 집는다.
+  음성 주소는 curl 에 **표준 입력(`-K -`)으로만** 넘긴다(명령 줄 · `ps` 에도 안 보이게). 맡기 전에 남은 공간(`spaceCheck` — 소리 + WAV + 여유 2GB)을 보고 모자라면 맡지 않고 Mac 카드에 알린다.
+  드라이브 `녹음번호.txt` 는 **맡은 뒤 · 쓰기 바로 앞 두 번** 있는지 보고, 일 폴더(`~/Library/Application Support/plaudhub/work`)에서 다 쓴 뒤 이름 바꾸기로만 넣는다. 받은 소리 · WAV 는 끝나면 지운다. 머리말 꼴(`txtOf` — 녹음 ID · 제목 · `+09:00` 시각 · 길이 · 모델)은 P4 ChatGPT 가 읽는다 — 바꾸면 P4 와 함께.
+  쉬는 동안 일감 확인은 3분(`JOB_MS`)마다, 기간 안 녹음 줄만 묶어 읽는다(`queryColl` · `getMany`) — 칸 통째 읽기를 잦게 만들지 말 것(파이어베이스 읽기 한도).
+- **모델 시험(`mtest`)**: 같은 녹음 앞 10분을 깔린 모델마다 → 계정엔 `mac.test`(걸린 초 · 빠르기)만, 시험 글은 그 Mac 의 `test/` 폴더에만. 잰 빠르기(`speedsOf`)가 전사 어림을 고친다. 기본 모델은 터보(`large-v3-turbo-q5_0`, HB 11/23).
   설치 · 삭제는 화면에 무엇 · 어디 · 크기 · 명령을 보이고 HB 가 누를 때만.
 - **도우미 로그인 = 계기판 '이 Mac 연결'**: 그 Mac 크롬이 127.0.0.1:47211 로 HB 갱신 열쇠를 건넨다 → `~/Library/Application Support/plaudhub/token.json`(600). 연결 자리는 **`https://block7.my` 출처 + 127.0.0.1 주소만** 받는다(⑫ · e2e ⑧) — 넓히지 말 것.
   서비스 열쇠 파일(프로젝트 전체 권한)은 쓰지 않는다. 열쇠는 저장소에 두지 않는다.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1123-1 -->
+<!-- PLAUDHUB v. 26-1123-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -54,6 +54,9 @@ h2 small{font-weight:400;color:var(--dim)}
 .ready .why{color:var(--dim);font-size:12px;display:block;line-height:1.35}
 .ready .act{margin-left:auto;color:var(--ac);font-size:13px;white-space:nowrap}
 .ready .run{margin-left:auto;color:var(--warn);font-size:13px}
+.mtest{border-top:1px solid var(--line);margin-top:2px;padding-top:6px}
+.mtest .msg{font-size:12.5px}
+.mtest .act,.doing .act{font-size:13px}
 .recs{background:var(--card);border-radius:14px;overflow:hidden}
 .rec{display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
 .rec:last-child{border-bottom:0}
@@ -110,9 +113,9 @@ h2 small{font-weight:400;color:var(--dim)}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1123-1";
+const APP_VERSION = "v. 26-1123-2";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
-const HELPER_LATEST = 'h. 26-1123-1';
+const HELPER_LATEST = 'h. 26-1123-2';
 const PROJECT = 'block7-8f24e';
 const SITE = 'https://block7.my/plaudhub/';
 const PAIR_PORT = 47211;
@@ -124,13 +127,13 @@ const DEFAULT_KW = ['심방'];
 const KW_MAX = 20, KW_LEN = 20;
 const DAY_CHOICES = [7, 14, 30], DEFAULT_DAYS = 14;
 const MAC_MAX = 12;
-// 전사 모델 후보(8GB Mac). speed = 녹음 1분을 몇 배 빠르게 하나 — P3 시험 전이라 어림이다
+// 전사 모델 후보(8GB Mac). speed = 녹음 1분을 몇 배 빠르게 하나 — 어림값. 그 Mac 에서 '모델 시험' 으로 잰 값(mac.test)이 있으면 그것을 쓴다(speedsOf)
 const MODELS = [
-  { id: 'medium-q5_0', file: 'ggml-medium-q5_0.bin', mb: 514, label: '중간 · 양자화', note: '기본 — 여기서 시작', speed: 4 },
-  { id: 'large-v3-turbo-q5_0', file: 'ggml-large-v3-turbo-q5_0.bin', mb: 547, label: '터보 · 양자화', note: '크기는 비슷, 한국어 · 속도가 더 나을 수 있음', speed: 6 },
+  { id: 'medium-q5_0', file: 'ggml-medium-q5_0.bin', mb: 514, label: '중간 · 양자화', note: '비교용 — 처음 생각한 기본', speed: 4 },
+  { id: 'large-v3-turbo-q5_0', file: 'ggml-large-v3-turbo-q5_0.bin', mb: 547, label: '터보 · 양자화', note: '기본 — 여기서 시작 (HB 11/23)', speed: 6 },
   { id: 'large-v3-q5_0', file: 'ggml-large-v3-q5_0.bin', mb: 1080, label: '큰 것 · 양자화', note: '비교용 — 느림', speed: 1.5 },
 ];
-const DEFAULT_MODEL = 'medium-q5_0';
+const DEFAULT_MODEL = 'large-v3-turbo-q5_0';
 function modelOf(id) { return MODELS.find(m => m.id === id) || MODELS.find(m => m.id === DEFAULT_MODEL); }
 function modelUrl(m) { return 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/' + m.file; }
 
@@ -156,8 +159,84 @@ const INSTALLS = {
   update: { title: '도우미 새로 받기', argv: ['curl', SITE + 'helper.mjs'], where: '~/Library/Application Support/plaudhub', size: '약 40KB', mins: 1 },
   refresh: { title: '녹음 목록 다시 읽기', argv: ['plaud', 'recent'], where: '-', size: '-', mins: 2 },
   check: { title: '준비 상태 다시 보기', argv: [], where: '-', size: '-', mins: 1 },
+  // 모델 시험(arg = 녹음 번호): 앞 10분을 깔린 모델마다 돌려 시간을 잰다. 글은 그 Mac 의 test 폴더에만 — 명령은 아래 PIPE 표
+  mtest: { title: '모델 시험', argv: ['whisper-cli', '-m', '(모델)', '-l', 'ko', '-f', '(앞 10분)'], where: '~/Library/Application Support/plaudhub/test', size: '-', mins: 30 },
 };
 const CMD_WHAT = Object.keys(INSTALLS);
+// 계정 요청이 와도 전사 · 시험 중에는 미뤄 두는 것(도우미를 다시 켜거나 같은 Mac 을 바쁘게 하는 것). 미룬 요청은 '기다림' 으로 남는다
+const CMD_WHILE_BUSY = ['check', 'refresh'];
+
+/* ---------- 받기 → 전사 → 드라이브 (P3) ----------
+   도우미가 그 Mac 에서 돌리는 명령은 이 표(PIPE)와 위 INSTALLS 가 전부다. {칸} 은 pipeArgv 가 채운다.
+   ⚠️ 음성 내려받기 주소(24시간 열쇠)는 명령 줄에 넣지 않는다 — curl 이 표준 입력(-K -)으로 받는다(ps · 기록 · 계정에 안 남게).
+   ⚠️ 전사 글은 그 Mac 의 일 폴더 → 드라이브 'HB-심방-전사' 로만 간다. 계정 · 저장소 · 도우미 기록(helper.log)에 두지 않는다. */
+const DRIVE_DIR = 'HB-심방-전사';
+const WHISPER_BINS = ['whisper-cli', 'whisper-cpp'];   // brew 의 whisper-cpp 는 지금 whisper-cli 를 준다(옛 판은 whisper-cpp)
+const PIPE = {
+  audio: ['plaud', 'audio', '{id}'],
+  get: ['curl', '-fL', '--retry', '2', '-sS', '-K', '-', '-o', '{ogg}'],
+  wav: ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-i', '{ogg}', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '{wav}'],
+  cut: ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-i', '{ogg}', '-t', '{sec}', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '{wav}'],
+  stt: ['{bin}', '-m', '{model}', '-l', 'ko', '-f', '{wav}', '-otxt', '-of', '{out}', '-pp'],
+  model: ['curl', '-fL', '--retry', '2', '-sS', '-o', '{part}', '{url}'],   // INSTALLS.model (전사 모델 설치 — 공개 주소)
+};
+function pipeArgv(key, v) {
+  const t = PIPE[key]; if (!t) throw new Error('표에 없는 명령');
+  if (key === 'stt' && !WHISPER_BINS.includes(v && v.bin)) throw new Error('모르는 전사 도구');
+  return t.map(a => a.replace(/\{(\w+)\}/g, (_, k) => { if (!v || v[k] == null || v[k] === '') throw new Error('빈 칸 ' + k); return String(v[k]); }));
+}
+// plaud audio 글: 'Audio Download URL:' 다음 줄(또는 같은 줄)에 주소 하나. 모르는 꼴이면 멈춘다. 까닭에 주소를 싣지 않는다
+function parseAudioUrl(text) {
+  const ls = stripAnsi(text).split('\n').map(l => l.trim());
+  const i = ls.findIndex(l => /^Audio Download URL:/i.test(l)); if (i < 0) return { ok: false, err: '음성 주소 글 모양이 바뀌었습니다' };
+  const same = ls[i].replace(/^Audio Download URL:\s*/i, ''), u = same || (ls.slice(i + 1).find(l => l) || '');
+  return /^https?:\/\/[^\s"\\]+$/.test(u) ? { ok: true, url: u } : { ok: false, err: '음성 주소 글 모양이 바뀌었습니다' };
+}
+function curlConf(url) { if (!/^https?:\/\/[^\s"\\]+$/.test(String(url || ''))) throw new Error('주소 꼴이 아닙니다'); return 'url = "' + url + '"\n'; }
+// whisper-cli -pp 의 'progress = 42%' 중 마지막 값
+function parseProgress(text) { const all = String(text || '').match(/progress\s*=\s*(\d{1,3})%/g); if (!all) return null; const n = +/(\d{1,3})%/.exec(all[all.length - 1])[1]; return n >= 0 && n <= 100 ? n : null; }
+// 남은 공간: 받은 소리(Ogg Opus ≈ 6KB/초) + WAV(16kHz 모노 = 32KB/초) + 여유 2GB(8GB Mac 의 스왑 · 전사 중 쓰는 몫). 모자라면 맡지 않는다(집 Mac 이 꽉 찼던 일)
+const SPACE_SPARE = 2e9;
+function needBytes(sec) { return Math.ceil(Math.max(0, +sec || 0) * (6e3 + 32e3)) + SPACE_SPARE; }
+function gbLabel(b) { return (Math.max(0, +b || 0) / 1e9).toFixed(1) + 'GB'; }
+function spaceCheck(free, sec) { const need = needBytes(sec); return { ok: !(Number.isFinite(free) && free < need), need, free }; }
+function spaceMsg(sp) { return '남은 공간이 모자라 전사를 맡지 않았습니다 — 남음 ' + gbLabel(sp.free) + ' · 필요 ' + gbLabel(sp.need) + '\n이 Mac 의 공간을 비우면 저절로 이어 합니다 (다른 Mac 이 켜져 있으면 그쪽이 합니다)'; }
+// 전사를 맡을 수 있나 — 모자란 준비 상태 이름들(빈 목록이면 됨)
+const WORK_NEEDS = ['ffmpeg', 'whisper', 'model', 'plaud', 'login', 'drive'];
+function workBlock(ready) { const r = ready || {}; return WORK_NEEDS.filter(k => r[k] !== true); }
+function txtName(id) { if (!ID_RE.test(String(id || ''))) throw new Error('녹음 번호 꼴이 아닙니다'); return id + '.txt'; }
+function kstIso(ms) { if (!Number.isFinite(ms)) return ''; const a = kst(ms), p = n => String(n).padStart(2, '0'), s = new Date(ms + 9 * 3600e3).getUTCSeconds();
+  return a.y + '-' + p(a.mo) + '-' + p(a.d) + 'T' + p(a.h) + ':' + p(a.mi) + ':' + p(s) + '+09:00'; }
+// whisper 글(-otxt): 줄마다 앞뒤 빈칸을 걷고 빈 줄을 뺀다
+function cleanText(raw) { return String(raw == null ? '' : raw).replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean).join('\n'); }
+// 드라이브 '녹음번호.txt' — 머리말(P4 ChatGPT 가 읽음: 녹음 ID = source.source_id · 녹음 시각 = +09:00 꼴) + 전사 글
+function txtOf(meta, text) {
+  const m = meta || {};
+  return ['PLAUD 녹음 ID: ' + m.id, '제목: ' + (m.n || '(제목 없음)'), '녹음 시각: ' + (kstIso(m.t) || '모름'), '길이: ' + durLabel(m.d),
+    '전사: whisper.cpp ' + (m.model || '') + ' · ' + (m.mac || '') + ' Mac · ' + (kstIso(m.at) || ''), '---', '', cleanText(text), ''].join('\n');
+}
+// Mac 카드 '하는 일' 글
+function workLabel(J, nowMs) {
+  if (!J) return '쉼';
+  const min = Math.max(0, Math.floor((nowMs - (J.t0 || nowMs)) / 60e3)), pct = Number.isFinite(J.pct) ? ' (' + J.pct + '%)' : '';
+  if (J.kind === 'test') return '모델 시험 — ' + (J.step === 'stt' ? (J.model || '') + ' 전사 중' + pct + (J.of ? ' · ' + J.k + '/' + J.of : '') : '소리 받는 중');
+  return J.step === 'get' ? '녹음 받는 중' : J.step === 'stt' ? '전사 중 ' + (min + 1) + '분째' + pct : '드라이브에 쓰는 중';
+}
+// 모델 시험 결과(mac.test = { at, len(초), r: { 모델: { s: 걸린 초, x: 녹음 1분을 몇 배 빠르게 } } }) → 모델별 잰 빠르기(가장 새 시험)
+const TEST_SEC = 600;
+function speedsOf(macs) {
+  const out = {}, seen = {};
+  for (const m of macs || []) { const t = m && m.test; if (!t || !t.r || typeof t.r !== 'object') continue;
+    for (const k of Object.keys(t.r)) { const x = +(t.r[k] && t.r[k].x); if (!(x > 0) || !MODELS.some(o => o.id === k)) continue;
+      if (!(k in seen) || (+t.at || 0) > seen[k]) { seen[k] = +t.at || 0; out[k] = x; } } }
+  return out;
+}
+function perMinLabel(x) { if (!(x > 0)) return ''; const s = Math.round(60 / x); return '녹음 1분에 ' + (s >= 60 ? durLabel(s) : s + '초'); }
+function testView(t) {
+  if (!t || !t.r || typeof t.r !== 'object') return null;
+  const rows = MODELS.filter(m => t.r[m.id]).map(m => ({ id: m.id, label: m.label, took: durLabel(t.r[m.id].s), per: perMinLabel(t.r[m.id].x), x: t.r[m.id].x }));
+  return rows.length ? { len: durLabel(t.len), rows } : null;
+}
 
 /* ---------- PLAUD CLI 글 읽기 ----------
    공식 CLI(@plaud-ai/cli 0.3.x)는 JSON 을 주지 않는다 — 글 표를 읽는다. 원본(dist/index.js)에서 본 꼴:
@@ -262,15 +341,16 @@ function settingsOf(doc) {
   const d = doc && typeof doc === 'object' ? doc : {};
   return { kw: normKw(d.kw), days: DAY_CHOICES.includes(d.days) ? d.days : DEFAULT_DAYS, model: modelOf(d.model).id };
 }
-function estMin(sec, modelId) { const m = modelOf(modelId); return Math.max(1, Math.ceil((+sec || 0) / 60 / m.speed) + 1); }
+// 전사 어림(분) — 그 모델을 잰 빠르기(speeds, 모델 시험)가 있으면 그것, 없으면 어림값
+function estMin(sec, modelId, speeds) { const m = modelOf(modelId), x = speeds && +speeds[m.id] > 0 ? +speeds[m.id] : m.speed; return Math.max(1, Math.ceil((+sec || 0) / 60 / x) + 1); }
 
 /* ---------- 계기판 목록 ---------- */
-function listView(recs, jobs, settings, nowMs) {
+function listView(recs, jobs, settings, nowMs, speeds) {
   const s = settingsOf(settings), from = nowMs - s.days * 86400e3, J = jobs || {};
   return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && Number.isFinite(r.c) && r.c >= from)
     .map(r => { const j = J[r.id] || null, st = pickState(r, j, s.kw);
       return { id: r.id, name: r.n || '', when: kstLabel(r.t, nowMs), t: r.t, dur: durLabel(r.d), d: r.d || 0, st, picked: isPicked(st), hit: kwHit(r.n, s.kw),
-        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', est: estMin(r.d, s.model) }; })
+        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', err: j && j.st === 'fail' && j.err ? j.err : '', est: estMin(r.d, s.model, speeds) }; })
     .sort((a, b) => (b.t || 0) - (a.t || 0) || (a.id < b.id ? -1 : 1));
 }
 function macView(doc, nowMs) {
@@ -301,6 +381,8 @@ function recPlan(old, rows, fromMs) {
 /* ---------- 두 Mac 일감 맡기 (job/{번호}) ----------
    한 번에 한 Mac 만: 읽은 판(ver)이 그대로일 때만 쓰는 '조건부 쓰기'(파이어베이스 트랜잭션과 같은 뜻). 맡은 시각(at)은 파이어베이스 시계.
    맡은 Mac 이 LEASE_MS 동안 시각을 새로 찍지 않으면 풀린다. 일하는 동안 RENEW_MS 마다 renew 한다(3 ~ 5시간 녹음). */
+// 실패한 일감은 한 시간 뒤에 다시 집는다(곧바로 또 집으면 같은 까닭으로 계속 실패하며 Mac 을 붙잡는다)
+const FAIL_WAIT_MS = 60 * 60 * 1000;
 function claimCheck(job, mac, now) {
   if (!job) return { ok: true, how: 'new' };
   if (job.pick === 'out') return { ok: false, why: 'out' };
@@ -310,6 +392,7 @@ function claimCheck(job, mac, now) {
     if (Number.isFinite(job.at) && now - job.at < LEASE_MS) return { ok: false, why: 'busy', mac: job.mac };
     return { ok: true, how: 'expired', from: job.mac || '' };
   }
+  if (job.st === 'fail' && Number.isFinite(job.at) && now - job.at < FAIL_WAIT_MS) return { ok: false, why: 'wait' };
   return { ok: true, how: 'open' };
 }
 // io.read(id) → { job, ver, now } · io.write(id, patch, ver) → true(씀) | false(그 사이 남이 바꿈). patch 의 at 은 io 가 파이어베이스 시계로 찍는다
@@ -325,6 +408,7 @@ async function tryClaim(io, id, mac) {
 async function renew(io, id, mac, step) {
   const { job, ver } = await io.read(id);
   if (!job || job.st !== 'work' || job.mac !== mac) return { ok: false, why: 'lost' };   // 그 사이 다른 Mac 이 이어받음 → 일을 멈춘다
+  if (job.pick === 'out') return { ok: false, why: 'out' };   // 하는 동안 HB 가 목록에서 뺌 → 멈춘다
   return { ok: await io.write(id, { st: 'work', step: step || job.step || 'get', mac }, ver) };
 }
 async function finish(io, id, mac, ok, err) {
@@ -343,7 +427,7 @@ function wantedJobs(recs, jobs, settings, mac, now) {
 const CMD_STALE_MS = 24 * 3600e3;
 function cmdFor(cmd, mac, now) {
   return !!(cmd && cmd.mac === mac && cmd.st === 'new' && CMD_WHAT.includes(cmd.what) && !(Number.isFinite(cmd.at) && now - cmd.at > CMD_STALE_MS)
-    && (cmd.what !== 'model' || MODELS.some(m => m.id === cmd.arg)));
+    && (cmd.what !== 'model' || MODELS.some(m => m.id === cmd.arg)) && (cmd.what !== 'mtest' || ID_RE.test(String(cmd.arg || ''))));
 }
 // 화면 · 기록에 남기기 전에: 주소(내려받기 열쇠가 들 수 있음)를 지운다
 function clean(s, max) { return String(s == null ? '' : s).replace(/https?:\/\/\S+/g, '[주소]').slice(-(max || 600)); }
@@ -377,13 +461,15 @@ function fsDoc(doc) {
 var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS, RENEW_MS, ALIVE_MS, DEFAULT_KW, KW_MAX, KW_LEN, DAY_CHOICES, DEFAULT_DAYS,
   MODELS, DEFAULT_MODEL, modelOf, modelUrl, READY, INSTALLS, CMD_WHAT, stripAnsi, durSec, parseRecent, parseFileDetail, apiMs, kst, kstLabel, durLabel, agoLabel,
   cleanKw, normKw, addKw, removeKw, kwHit, pickState, isPicked, tapPick, settingsOf, estMin, listView, macView, normMac, DEL_CAP, recPlan,
-  claimCheck, tryClaim, renew, finish, wantedJobs, CMD_STALE_MS, cmdFor, clean, fsEnc, fsDec, fsDoc };
+  claimCheck, tryClaim, renew, finish, wantedJobs, CMD_STALE_MS, cmdFor, clean, fsEnc, fsDec, fsDoc,
+  CMD_WHILE_BUSY, DRIVE_DIR, WHISPER_BINS, PIPE, pipeArgv, parseAudioUrl, curlConf, parseProgress, SPACE_SPARE, needBytes, gbLabel, spaceCheck, spaceMsg,
+  WORK_NEEDS, workBlock, txtName, kstIso, cleanText, txtOf, workLabel, TEST_SEC, speedsOf, perMinLabel, testView, FAIL_WAIT_MS };
 </script>
 
 <header class="top">
   <button class="ico" data-act="menu" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <h1>심방 녹음</h1>
-  <button class="ico" data-act="reload" aria-label="다시 읽기"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
+  <button class="ico" data-act="reload" title="녹음 목록 지금 다시 읽기" aria-label="녹음 목록 지금 다시 읽기"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
 </header>
 <main id="main"></main>
 
@@ -421,9 +507,11 @@ function demoData() {
   const R = [rec('a', '김하늘 집사 심방', 3, 48), rec('b', '박소망 성도 전화심방', 27, 12), rec('c', '', 30, 6), rec('d', '이은혜 권사 상담', 50, 64),
     rec('e', '교역자 회의', 75, 245), rec('f', '최기쁨 가정 심방', 120, 95), rec('1', '', 160, 2)];
   S.recs = Object.fromEntries(R.map(r => [r.id, r]));
-  S.jobs = { [id('d')]: { id: id('d'), pick: 'in' }, [id('f')]: { id: id('f'), pick: 'out' } };
-  S.macs = { '집': { id: '집', at: n - 50e3, doing: '쉼', v: HELPER_LATEST, cli: 'plaud 0.3.15',
-    ready: { brew: true, node: true, ffmpeg: true, whisper: false, model: false, plaud: true, login: true, drive: true } },
+  S.jobs = { [id('a')]: { id: id('a'), st: 'work', step: 'stt', mac: '집', at: n - 60e3 }, [id('b')]: { id: id('b'), st: 'done', step: 'drive', mac: '집', at: n - 20 * H },
+    [id('d')]: { id: id('d'), pick: 'in', st: 'fail', step: 'get', mac: '집', at: n - 10 * 60e3, err: '소리를 받지 못함 (curl 22)' }, [id('f')]: { id: id('f'), pick: 'out' } };
+  S.macs = { '집': { id: '집', at: n - 50e3, doing: '전사 중 6분째 (42%)', v: HELPER_LATEST, cli: 'plaud 0.3.15', models: ['large-v3-turbo-q5_0', 'medium-q5_0'],
+    test: { at: n - 2 * H, len: 600, r: { 'large-v3-turbo-q5_0': { s: 130, x: 4.6 }, 'medium-q5_0': { s: 205, x: 2.9 } } },
+    ready: { brew: true, node: true, ffmpeg: true, whisper: true, model: true, plaud: true, login: true, drive: true } },
     '사무실': { id: '사무실', at: n - 5 * H, doing: '쉼', v: 'h. 26-1120-1', ready: { brew: false, node: false } } };
   S.settings = { kw: ['심방'], days: 14, model: DEFAULT_MODEL };
   FB.user = { email: '미리보기 (저장 안 됨)', uid: 'demo' }; FB.ready = true;
@@ -445,7 +533,8 @@ function base() { return FB.db.collection('plaud').doc(FB.user.uid); }
 function stopListen() { FB.unsubs.forEach(f => { try { f(); } catch (_) { } }); FB.unsubs = []; S.recs = {}; S.jobs = {}; S.macs = {}; S.cmds = {}; S.settings = null; }
 function listen(uid) {
   const b = FB.db.collection('plaud').doc(uid), err = e => { FB.err = /permission/i.test(e.code || e.message) ? '계정 칸이 잠겨 있습니다.\n파이어베이스 콘솔에 보안 규칙을 붙였는지 확인해 주세요 (docs/plaudhub/firestore-rules.md).' : '자료를 읽지 못했습니다.\n' + (e.message || ''); render(); };
-  const coll = (name, key, conv) => FB.unsubs.push(b.collection(name).onSnapshot(q => { const o = {}; q.forEach(d => { o[d.id] = conv(Object.assign({ id: d.id }, d.data())); }); S[key] = o; FB.err = ''; render(); }, err));
+  const coll = (name, key, conv) => FB.unsubs.push(b.collection(name).onSnapshot(q => { const o = {}; q.forEach(d => { o[d.id] = conv(Object.assign({ id: d.id }, d.data())); }); S[key] = o; FB.err = ''; render();
+    if (S.pane && S.pane.kind === 'mtest') renderPane(); }, err));
   const ts = v => v && typeof v.toMillis === 'function' ? v.toMillis() : (Number.isFinite(v) ? v : null);
   FB.unsubs.push(b.onSnapshot(d => { S.settings = d.exists ? d.data() : {}; render(); }, err));
   coll('rec', 'recs', x => x);
@@ -478,11 +567,11 @@ async function setPick(id, st) {
   try { await base().collection('job').doc(id).set({ pick }, { merge: true }); }
   catch (e) { toast('고르지 못했습니다\n' + (e.message || '')); }
 }
-async function sendCmd(mac, what, arg) {
-  if (DEMO) { toast('미리보기에서는 보내지 않습니다'); return; }
+async function sendCmd(mac, what, arg, quietOk) {
+  if (DEMO) { toast('미리보기에서는 보내지 않습니다'); return false; }
   const doc = { mac, what, st: 'new', at: firebase.firestore.FieldValue.serverTimestamp() }; if (arg) doc.arg = arg;
-  try { await base().collection('cmd').add(doc); toast(mac + ' Mac 에 보냈습니다\n도우미가 30초 안에 시작합니다'); }
-  catch (e) { toast('보내지 못했습니다\n' + (e.message || '')); }
+  try { await base().collection('cmd').add(doc); if (!quietOk) toast(mac + ' Mac 에 보냈습니다\n도우미가 30초 안에 시작합니다'); return true; }
+  catch (e) { toast('보내지 못했습니다\n' + (e.message || '')); return false; }
 }
 // 끝난 요청은 하루 지나면 치운다(한 번에 20개까지)
 function sweepCmds() {
@@ -524,14 +613,14 @@ function render() {
   if (!FB.ready) { m.innerHTML = '<div class="empty">불러오는 중…</div>'; return; }
   if (!FB.user) { m.innerHTML = loginHtml(); return; }
   const t = now(), macs = Object.values(S.macs).map(d => macView(d, t)).sort((a, b) => (b.alive - a.alive) || a.name.localeCompare(b.name, 'ko'));   // 켜진 Mac 먼저
-  const rows = listView(S.recs, S.jobs, settings(), t), picked = rows.filter(r => r.picked && r.job !== 'done');
+  const rows = listView(S.recs, S.jobs, settings(), t, speedsOf(Object.values(S.macs))), picked = rows.filter(r => r.picked && r.job !== 'done');
   let h = FB.err ? '<div class="card msg bad">' + esc(FB.err) + '</div>' : '';
   h += '<h2>Mac <small>' + (macs.filter(x => x.alive).length) + ' / ' + macs.length + ' 켜짐</small></h2>';
   h += macs.length ? '<div class="macs">' + macs.map(macHtml).join('') + '</div>' : '<div class="card msg">아직 연결된 Mac 이 없습니다.\nMac 크롬에서 이 화면을 열고 메뉴 › \'이 Mac 연결\' 을 눌러 주세요.</div>';
   h += hereHtml();
   h += '<h2>녹음 <small>' + settings().days + '일 · 고른 것 ' + picked.length + (picked.length ? ' · 전사 어림 ' + durLabel(picked.reduce((s, r) => s + r.est, 0) * 60) : '') + '</small></h2>';
   h += rows.length ? '<div class="recs">' + rows.map(recHtml).join('') + '</div>' : '<div class="card empty">' + (macs.length ? '이 기간에 녹음이 없거나 아직 도우미가 목록을 읽지 않았습니다.' : 'Mac 도우미가 목록을 읽으면 여기에 나옵니다.') + '</div>';
-  h += '<div class="ver">고른 녹음은 P3 부터 받기 → 전사 → 드라이브로 이어집니다</div>';
+  h += '<div class="ver">고른 녹음은 켜진 Mac 이 하나씩 받아 전사해 드라이브 \'' + esc(DRIVE_DIR) + '\' 에 녹음번호.txt 로 둡니다</div>';
   m.innerHTML = h;
 }
 function loginHtml() {
@@ -558,7 +647,17 @@ function macHtml(v) {
     + ((v.alive || v.old) ? '<div class="doing">' + (v.alive ? esc('하는 일: ' + v.doing) : '') + (v.old ? (v.alive ? ' · ' : '') + '<button class="act" style="color:var(--ac)" data-act="cmd" data-mac="' + esc(v.name) + '" data-w="update">도우미 새로 받기</button>' : '') + '</div>' : '')
     + (v.err ? '<div class="err">' + esc(v.err) + '</div>' : '')
     + (last && now() - (last.at || 0) < 86400e3 ? '<div class="err">' + esc((INSTALLS[last.what] || {}).title || last.what) + ' 실패: ' + esc(String(last.log || '').split('\n').filter(Boolean).slice(-2).join('\n')) + '</div>' : '')
-    + '<ul class="ready">' + v.ready.map(li).join('') + '</ul></div>';
+    + '<ul class="ready">' + v.ready.map(li).join('') + '</ul>' + testHtml(v) + '</div>';
+}
+// 모델 시험 — 잰 결과 · 단추 (켜진 Mac 만 시작)
+function testHtml(v) {
+  const doc = S.macs[v.name] || {}, tv = testView(doc.test), c = cmdOf(v.name, 'mtest'), on = c && (c.st === 'new' || c.st === 'run');
+  if (!tv && !on && !v.alive) return '';
+  let h = '<div class="mtest">';
+  if (tv) h += '<div class="msg">모델 시험 (앞 ' + esc(tv.len) + '):</div>' + tv.rows.map(r => '<div class="msg">· ' + esc(r.label) + ' — ' + esc(r.took) + ' 걸림 · ' + esc(r.per) + '</div>').join('');
+  h += '<div class="pairbox">' + (on ? '<span class="msg" style="color:var(--warn)">모델 시험 ' + (c.st === 'new' ? '기다림' : '하는 중') + '</span>'
+    : v.alive ? '<button class="act" style="color:var(--ac)" data-act="mtestpane" data-mac="' + esc(v.name) + '">모델 시험</button>' : '') + '</div>';
+  return h + '</div>';
 }
 function hereHtml() {
   if (S.here) return '<div class="card msg" style="margin-top:10px">이 Mac: ' + (S.here.paired ? '\'' + esc(S.here.mac) + '\' 로 연결됨 ✓' : '도우미가 있습니다 · <button class="act" style="color:var(--ac)" data-act="pairpane">연결하기</button>') + '</div>';
@@ -570,7 +669,9 @@ function recHtml(r) {
   const steps = r.picked ? stepsHtml(r) : '';
   return '<div class="rec' + (r.picked ? ' pick' : '') + '" data-act="pick" data-id="' + esc(r.id) + '" data-st="' + r.st + '">'
     + '<span class="chk"></span><div class="body"><div class="ttl' + (r.name ? '' : ' none') + '">' + esc(r.name || '제목 없음') + '</div>'
-    + '<div class="meta"><span>' + esc(r.when) + '</span><span>' + esc(r.dur) + '</span>' + (r.picked && r.job !== 'done' ? '<span>전사 어림 ' + durLabel(r.est * 60) + '</span>' : '') + why + '</div></div>' + steps + '</div>';
+    + '<div class="meta"><span>' + esc(r.when) + '</span><span>' + esc(r.dur) + '</span>' + (r.picked && r.job !== 'done' ? '<span>전사 어림 ' + durLabel(r.est * 60) + '</span>' : '') + why
+    + (r.job === 'work' && r.mac ? '<span>' + esc(r.mac) + ' Mac 이 하는 중</span>' : '') + (r.job === 'done' && r.mac ? '<span>' + esc(r.mac) + ' Mac 전사 · 드라이브에 있음</span>' : '')
+    + '</div>' + (r.err ? '<div class="meta" style="color:var(--bad)">실패: ' + esc(r.err) + ' — 한 시간 뒤 다시 합니다</div>' : '') + '</div>' + steps + '</div>';
 }
 function stepsHtml(r) {
   const order = ['get', 'stt', 'drive'], name = { get: '받음', stt: '전사', drive: '드라이브' }, cur = order.indexOf(r.step);
@@ -611,8 +712,9 @@ function renderPane() {
       + '<div class="chips">' + (s.kw.length ? s.kw.map(w => '<button class="chip" data-act="kwdel" data-w="' + esc(w) + '">' + esc(w) + '<span class="x">×</span></button>').join('') : '<span class="msg">키워드 없음 — 직접 고른 것만 합니다</span>') + '</div>'
       + '<div style="display:flex;gap:8px"><input class="field" id="kw-in" maxlength="' + KW_LEN + '" placeholder="예: 상담" style="margin:0"><button class="btn ghost" data-act="kwadd">더하기</button></div>'
       + '<h3>목록 기간</h3><div class="chips">' + DAY_CHOICES.map(d => '<button class="chip' + (d === s.days ? ' sel' : '') + '" data-act="days" data-d="' + d + '">' + d + '일</button>').join('') + '</div>'
-      + '<h3>전사 모델</h3>' + MODELS.map(m => '<div class="opt' + (m.id === s.model ? ' sel' : '') + '" data-act="model" data-m="' + m.id + '"><span class="r"></span><span>' + esc(m.label) + ' · ' + m.mb + 'MB<small>' + esc(m.note) + '</small></span></div>').join('')
-      + '<div class="msg" style="margin-top:6px">바꾸면 각 Mac 의 준비 상태에서 새 모델을 설치합니다. 전사 어림 시간은 P3 시험 뒤 고칩니다.</div>'
+      + '<h3>전사 모델</h3>' + MODELS.map(m => { const x = speedsOf(Object.values(S.macs))[m.id];
+        return '<div class="opt' + (m.id === s.model ? ' sel' : '') + '" data-act="model" data-m="' + m.id + '"><span class="r"></span><span>' + esc(m.label) + ' · ' + m.mb + 'MB<small>' + esc(m.note) + (x ? ' · 잰 빠르기: ' + esc(perMinLabel(x)) : '') + '</small></span></div>'; }).join('')
+      + '<div class="msg" style="margin-top:6px">바꾸면 각 Mac 의 준비 상태에서 새 모델을 설치합니다. Mac 카드의 \'모델 시험\' 으로 잰 빠르기가 전사 어림에 쓰입니다.</div>'
       + '<h3>이 Mac</h3><div class="msg">Mac 크롬에서 눌러 주세요. 크롬이 \'다른 앱 · 기기 접근\' 을 물으면 허용합니다.</div>'
       + '<div class="pairbox"><button class="btn ghost" data-act="pairpane">이 Mac 연결</button></div>'
       + '<h3>설치 · 지우기</h3>' + installHelp()
@@ -624,6 +726,20 @@ function renderPane() {
     else body = '<div class="msg">도우미가 이 Mac 에서 돌고 있습니다' + (S.here.paired ? ' (지금 \'' + esc(S.here.mac) + '\' 로 연결됨 — 다시 연결하면 바뀝니다)' : '') + '.\n이 Mac 의 이름을 골라 주세요. 지금 로그인한 계정의 열쇠를 이 Mac 안(내 계정만 읽는 파일)에 둡니다.</div>'
       + '<div class="chips">' + ['집', '사무실'].map(n => '<button class="chip" data-act="pairname" data-n="' + n + '">' + n + '</button>').join('') + '</div>'
       + '<div style="display:flex;gap:8px"><input class="field" id="mac-in" maxlength="' + MAC_MAX + '" placeholder="직접 적기" style="margin:0"><button class="btn ghost" data-act="pairtyped"' + (S.pairBusy ? ' disabled' : '') + '>연결</button></div>';
+  } else if (P.kind === 'mtest') {
+    const doc = S.macs[P.mac] || {}, have = Array.isArray(doc.models) ? doc.models : [], rows = listView(S.recs, S.jobs, settings(), now());
+    const pend = id => Object.values(S.cmds).some(c => c.mac === P.mac && c.what === 'model' && c.arg === id && (c.st === 'new' || c.st === 'run'));
+    if (!P.rec || !rows.some(r => r.id === P.rec)) P.rec = (rows.find(r => r.d >= TEST_SEC) || rows[0] || {}).id || '';
+    title = '모델 시험 — ' + P.mac;
+    body = '<div class="msg">같은 녹음의 앞 ' + durLabel(TEST_SEC) + '을 이 Mac 에 깔린 모델마다 돌려 걸린 시간을 잽니다. 잰 빠르기로 전사 어림을 고칩니다.\n'
+      + '전사 글은 그 Mac 의 ~/Library/Application Support/plaudhub/test 폴더에만 둡니다 (계정 · 드라이브에 올리지 않음). 모델별 앞 2분을 눈으로 견줘 보세요.</div>'
+      + '<h3>모델</h3>' + MODELS.map(m => '<div class="opt' + (have.includes(m.id) ? ' sel' : '') + '"><span class="r"></span><span>' + esc(m.label) + ' · ' + m.mb + 'MB<small>'
+        + (have.includes(m.id) ? '깔림 — 시험함' : '아직 안 깔림 — 시험에서 빠짐') + '</small></span>'
+        + (have.includes(m.id) ? '' : pend(m.id) ? '<span class="msg" style="margin-left:auto;color:var(--warn)">설치 중</span>'
+          : '<button class="act" style="margin-left:auto;color:var(--ac)" data-act="mtinstall" data-m="' + m.id + '">설치</button>') + '</div>').join('')
+      + '<h3>시험할 녹음</h3>' + (rows.length ? rows.slice(0, 12).map(r => '<div class="opt' + (r.id === P.rec ? ' sel' : '') + '" data-act="mtrec" data-id="' + esc(r.id) + '"><span class="r"></span><span>'
+        + esc(r.name || '제목 없음') + '<small>' + esc(r.when) + ' · ' + esc(r.dur) + (r.d < TEST_SEC ? ' — ' + durLabel(TEST_SEC) + '보다 짧아 전체로' : '') + '</small></span></div>').join('') : '<div class="msg">녹음 목록이 비었습니다.</div>');
+    foot = '<button class="btn" data-act="mtrun"' + (have.length && P.rec ? '' : ' disabled') + '>시험 시작</button>';
   } else if (P.kind === 'fix') {
     const r = READY.find(x => x.k === P.k) || {}, I = INSTALLS[r.how];
     title = r.label || '';
@@ -705,8 +821,14 @@ document.addEventListener('click', e => {
     case 'reload': {
       const on = Object.values(S.macs).map(x => macView(x, now())).filter(x => x.alive);
       if (!on.length) return toast('켜진 Mac 이 없습니다\n켜지면 저절로 목록을 읽습니다');
-      on.forEach(x => sendCmd(x.name, 'refresh')); return;
+      Promise.all(on.map(x => sendCmd(x.name, 'refresh', undefined, true))).then(r => { if (r.some(Boolean)) toast('녹음 목록을 다시 읽어 오라고 보냈습니다\n1분 안에 새 녹음이 나타납니다'); });
+      return;
     }
+    case 'mtestpane': return openPane({ kind: 'mtest', mac: d.mac, rec: '' });
+    case 'mtrec': if (S.pane) { S.pane.rec = d.id; renderPane(); } return;
+    case 'mtinstall': if (S.pane) { sendCmd(S.pane.mac, 'model', d.m).then(() => renderPane()); } return;
+    case 'mtrun': { const P = S.pane; if (!P || !P.rec) return; closePane();
+      return sendCmd(P.mac, 'mtest', P.rec, true).then(ok => { if (ok) toast(P.mac + ' Mac 에 모델 시험을 보냈습니다\n모델마다 몇 분씩 걸립니다 — 결과는 Mac 카드에'); }); }
     case 'closepane': return closePane();
     case 'pick': return setPick(d.id, d.st);
     case 'kwadd': { const inp = $('#kw-in'), r = addKw(settings().kw, inp && inp.value); if (r.err) return toast(r.err); saveSettings({ kw: r.list }); toast('\'' + cleanKw(inp.value) + '\' 을 더했습니다\n제목에 있으면 저절로 고릅니다'); return; }
