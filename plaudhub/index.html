@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<!-- PLAUDHUB v. 26-1123-1 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="심방 녹음">
+<title>심방 녹음</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#f6f5f2; --card:#fff; --ink:#1d1d1f; --sub:#6e6e73; --dim:#a1a1a6; --line:#e6e4df;
+  --ok:#2f8f5b; --bad:#c2453b; --warn:#b7791f; --ac:#2d5bd7; --chip:#eef1f8; --chip-ink:#2d4ea8;
+  --f:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;
+  --ease-in:cubic-bezier(.22,.8,.24,1);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121212; --card:#1c1c1e; --ink:#ececee; --sub:#9a9aa0; --dim:#636366; --line:#2c2c2e;
+  --ok:#57c38a; --bad:#ef6a5e; --warn:#e0a84a; --ac:#7aa2ff; --chip:#222838; --chip-ink:#a9c0ff;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f);font-weight:400}
+html.plock body{position:fixed;left:0;right:0;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input{font:inherit;color:inherit}
+header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(var(--safe-t) + 10px) 16px 10px;background:var(--bg)}
+header.top h1{font-size:17px;font-weight:600;margin:0;text-align:center;flex:1}
+.ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+main{max-width:720px;margin:0 auto;padding:0 16px calc(var(--safe-b) + 40px)}
+h2{font-size:13px;font-weight:600;color:var(--sub);margin:22px 4px 8px;display:flex;justify-content:space-between;align-items:baseline}
+h2 small{font-weight:400;color:var(--dim)}
+.card{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.macs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.mac .row1{display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:none}
+.dot.on{background:var(--ok)}
+.mac .name{font-weight:600}
+.mac .state{color:var(--sub);font-size:13px;margin-left:auto}
+.mac .doing{font-size:13px;color:var(--sub);margin-top:2px}
+.mac .err{font-size:13px;color:var(--bad);margin-top:4px;white-space:pre-line}
+.ready{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--line)}
+.ready li{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.ready li:last-child{border-bottom:0}
+.ready .mk{width:18px;text-align:center;flex:none}
+.ready .ok{color:var(--ok)} .ready .no{color:var(--bad)} .ready .un{color:var(--dim)}
+.ready .why{color:var(--dim);font-size:12px;display:block;line-height:1.35}
+.ready .act{margin-left:auto;color:var(--ac);font-size:13px;white-space:nowrap}
+.ready .run{margin-left:auto;color:var(--warn);font-size:13px}
+.recs{background:var(--card);border-radius:14px;overflow:hidden}
+.rec{display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.rec:last-child{border-bottom:0}
+.rec .chk{width:22px;height:22px;border-radius:50%;border:1.6px solid var(--dim);flex:none;display:flex;align-items:center;justify-content:center}
+.rec.pick .chk{background:var(--ac);border-color:var(--ac)}
+.rec.pick .chk::after{content:'';width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.rec .body{flex:1;min-width:0}
+.rec .ttl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .ttl.none{color:var(--dim)}
+.rec .meta{font-size:12px;color:var(--sub);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:1px}
+.rec .why{font-size:11px;padding:1px 7px;border-radius:9px;background:var(--chip);color:var(--chip-ink)}
+.rec .why.out{background:transparent;color:var(--dim);padding:0}
+.steps{display:flex;gap:4px;font-size:11px;color:var(--dim);flex:none}
+.steps span.on{color:var(--ok)} .steps span.cur{color:var(--warn)}
+.empty{color:var(--sub);text-align:center;padding:26px 10px;font-size:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border-radius:10px;background:var(--ac);color:#fff;font-weight:600;white-space:nowrap;flex:none}
+.btn.ghost{background:var(--chip);color:var(--chip-ink)}
+.btn[disabled]{opacity:.45}
+.field{display:block;width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;background:var(--bg);margin:6px 0}
+.msg{font-size:13px;color:var(--sub);white-space:pre-line}
+.msg.bad{color:var(--bad)}
+.code{font:12.5px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  word-break:break-all;user-select:all;-webkit-user-select:all;margin:8px 0}
+.pairbox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:16px;background:var(--chip);color:var(--chip-ink);font-size:14px}
+.chip.sel{background:var(--ac);color:#fff}
+.chip .x{opacity:.7;font-size:16px;line-height:1}
+/* 아래에서 올라오는 판 */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:20}
+.pane{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:88dvh;display:flex;flex-direction:column;background:var(--card);
+  border-radius:16px 16px 0 0;padding-bottom:var(--safe-b);max-width:720px;margin:0 auto}
+.phead{position:relative;padding:14px 48px 10px;text-align:center;font-weight:600;touch-action:none;cursor:grab;flex:none}
+.phead::before{content:'';position:absolute;top:6px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line)}
+.modal-x{position:absolute;right:8px;top:6px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.modal-x svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round}
+.pbody{overflow:auto;padding:4px 16px 18px;-webkit-overflow-scrolling:touch}
+.pbody h3{font-size:13px;color:var(--sub);font-weight:600;margin:16px 0 4px}
+.pfoot{padding:10px 16px 14px;display:flex;justify-content:flex-end;flex:none}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.opt:last-child{border-bottom:0}
+.opt .r{width:18px;height:18px;border-radius:50%;border:1.6px solid var(--dim);flex:none}
+.opt.sel .r{border:5px solid var(--ac)}
+.opt small{display:block;color:var(--dim);font-size:12px}
+.kv{display:grid;grid-template-columns:76px 1fr;gap:4px 10px;font-size:14px;margin:6px 0}
+.kv b{font-weight:500;color:var(--sub)}
+.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;max-width:min(86vw,420px);background:rgba(28,28,30,.92);
+  color:#fff;padding:14px 20px;border-radius:14px;text-align:center;white-space:pre-line;font-size:15px}
+.ver{font-size:12px;color:var(--dim);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+
+<!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
+     tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
+<script id="plaudhub-core">
+const APP_VERSION = "v. 26-1123-1";
+// 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
+const HELPER_LATEST = 'h. 26-1123-1';
+const PROJECT = 'block7-8f24e';
+const SITE = 'https://block7.my/plaudhub/';
+const PAIR_PORT = 47211;
+const ID_RE = /^[A-Za-z0-9_]{8,64}$/;   // 녹음 번호(지금은 f_ + 16진수 32자). 보안 규칙도 같은 꼴만 받는다
+const LEASE_MS = 30 * 60 * 1000;          // 맡은 Mac 이 이만큼 소식이 없으면 다른 Mac 이 이어받는다
+const RENEW_MS = 5 * 60 * 1000;           // 일하는 동안 맡은 시각을 새로 찍는 간격(긴 녹음 — HB 결정 ④)
+const ALIVE_MS = 6 * 60 * 1000;           // 도우미는 2분마다 소식을 남긴다 — 6분 넘게 없으면 '꺼짐'
+const DEFAULT_KW = ['심방'];
+const KW_MAX = 20, KW_LEN = 20;
+const DAY_CHOICES = [7, 14, 30], DEFAULT_DAYS = 14;
+const MAC_MAX = 12;
+// 전사 모델 후보(8GB Mac). speed = 녹음 1분을 몇 배 빠르게 하나 — P3 시험 전이라 어림이다
+const MODELS = [
+  { id: 'medium-q5_0', file: 'ggml-medium-q5_0.bin', mb: 514, label: '중간 · 양자화', note: '기본 — 여기서 시작', speed: 4 },
+  { id: 'large-v3-turbo-q5_0', file: 'ggml-large-v3-turbo-q5_0.bin', mb: 547, label: '터보 · 양자화', note: '크기는 비슷, 한국어 · 속도가 더 나을 수 있음', speed: 6 },
+  { id: 'large-v3-q5_0', file: 'ggml-large-v3-q5_0.bin', mb: 1080, label: '큰 것 · 양자화', note: '비교용 — 느림', speed: 1.5 },
+];
+const DEFAULT_MODEL = 'medium-q5_0';
+function modelOf(id) { return MODELS.find(m => m.id === id) || MODELS.find(m => m.id === DEFAULT_MODEL); }
+function modelUrl(m) { return 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/' + m.file; }
+
+// 준비 상태 — 도우미가 Mac 마다 ✓ ✗ 를 적는다. how = 고치는 길(INSTALLS 의 열쇠 · term = 터미널 · note = 안내만)
+const READY = [
+  { k: 'brew', label: 'Homebrew', why: '설치 도구 (처음 한 번, 터미널)', how: 'term' },
+  { k: 'node', label: 'Node', why: '도우미와 PLAUD CLI 가 도는 바탕 (설치 한 줄이 깜)', how: 'term' },
+  { k: 'ffmpeg', label: 'ffmpeg', why: '녹음을 전사용 소리 파일로 바꿈', how: 'ffmpeg' },
+  { k: 'whisper', label: 'whisper.cpp', why: 'Mac 안에서 글로 받아 적음', how: 'whisper' },
+  { k: 'model', label: '전사 모델', why: 'whisper.cpp 가 쓰는 말 모델', how: 'model' },
+  { k: 'plaud', label: 'PLAUD CLI', why: 'PLAUD 공식 명령 도구', how: 'plaud' },
+  { k: 'login', label: 'PLAUD 로그인', why: '내 녹음 목록을 읽는 허락', how: 'login' },
+  { k: 'drive', label: '드라이브 폴더', why: "구글 드라이브 앱의 'HB-심방-전사' 폴더 (전사 파일 자리)", how: 'note' },
+];
+// 도우미가 돌리는 명령은 이 표가 전부다(계정의 cmd 칸은 열쇠 이름만 싣는다). 보안 규칙의 what 목록과 같아야 한다(test_plaudhub ⑪).
+// argv 의 '~' 는 도우미가 내 폴더로 바꾼다. sudo 는 쓰지 않는다.
+const INSTALLS = {
+  ffmpeg: { title: 'ffmpeg', argv: ['brew', 'install', 'ffmpeg'], where: 'Homebrew 폴더 (/opt/homebrew)', size: '수백 MB (딸린 것 포함)', mins: 10 },
+  whisper: { title: 'whisper.cpp', argv: ['brew', 'install', 'whisper-cpp'], where: 'Homebrew 폴더 (/opt/homebrew)', size: '약 20MB', mins: 5 },
+  plaud: { title: 'PLAUD CLI', argv: ['npm', 'install', '-g', '@plaud-ai/cli', '--prefix', '~/.npm-global'], where: '내 폴더의 .npm-global (sudo 없이)', size: '약 30MB', mins: 3 },
+  model: { title: '전사 모델', argv: ['curl', '-fL', '--retry', '2', '-o', '~/Library/Application Support/plaudhub/models/(파일)', '(모델 주소)'], where: '~/Library/Application Support/plaudhub/models', size: '(고른 모델)', mins: 15 },
+  login: { title: 'PLAUD 로그인', argv: ['plaud', 'login'], where: '그 Mac 의 기본 브라우저(크롬)에 PLAUD 로그인 창이 열립니다', size: '-', mins: 5 },
+  update: { title: '도우미 새로 받기', argv: ['curl', SITE + 'helper.mjs'], where: '~/Library/Application Support/plaudhub', size: '약 40KB', mins: 1 },
+  refresh: { title: '녹음 목록 다시 읽기', argv: ['plaud', 'recent'], where: '-', size: '-', mins: 2 },
+  check: { title: '준비 상태 다시 보기', argv: [], where: '-', size: '-', mins: 1 },
+};
+const CMD_WHAT = Object.keys(INSTALLS);
+
+/* ---------- PLAUD CLI 글 읽기 ----------
+   공식 CLI(@plaud-ai/cli 0.3.x)는 JSON 을 주지 않는다 — 글 표를 읽는다. 원본(dist/index.js)에서 본 꼴:
+   recent : 빈 줄 · 'Recordings in the last N days: K' · 빈 줄 · '  번호  제목  YYYY-MM-DD  길이' × K · 빈 줄   (없으면 'No recordings in the last N days.')
+   file   : 'File Details:' · '  키:   값' 줄들 (id · name · created_at · start_at · duration …)
+   ⚠️ 모르는 줄이 하나라도 있거나 건수가 안 맞으면 **멈춘다**(ok:false). 짐작해 계속하지 않는다 — CLI 판이 바뀐 것이다.
+   ⚠️ 까닭(err)에 줄 내용(제목)을 넣지 않는다. */
+function stripAnsi(s) { return String(s == null ? '' : s).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r/g, ''); }
+function durSec(t) {
+  t = String(t == null ? '' : t).trim(); let m;
+  if ((m = /^(\d+)h(\d{2})m$/.exec(t))) return +m[1] * 3600 + +m[2] * 60;
+  if ((m = /^(\d+)m(\d{2})s$/.exec(t))) return +m[1] * 60 + +m[2];
+  if ((m = /^(\d+)s$/.exec(t))) return +m[1];
+  if (t === '-') return 0;
+  return null;
+}
+function parseRecent(text) {
+  const rows = [], seen = new Set(); let declared = null, none = false, odd = 0;
+  for (const raw of stripAnsi(text).split('\n')) {
+    const ln = raw.replace(/\s+$/, ''); if (!ln.trim()) continue;
+    let m;
+    if ((m = /^Recordings in the last (\d+) days: (\d+)$/.exec(ln.trim()))) { declared = +m[2]; continue; }
+    if (/^No recordings in the last \d+ days\.$/.test(ln.trim())) { none = true; continue; }
+    if ((m = /^ {2}(\S+) {2}(.*) {2}(\S+) {2}(\S+)$/.exec(ln)) && ID_RE.test(m[1]) && durSec(m[4]) != null && !seen.has(m[1])) {
+      seen.add(m[1]); rows.push({ id: m[1], name: m[2].trim(), date: m[3], d: durSec(m[4]) }); continue;
+    }
+    odd++;
+  }
+  if (odd) return { ok: false, err: '목록 글 모양이 바뀌었습니다 (모르는 줄 ' + odd + '개)' };
+  if (none) return rows.length ? { ok: false, err: '목록 글 모양이 바뀌었습니다 (없다면서 줄이 있음)' } : { ok: true, rows };
+  if (declared == null) return { ok: false, err: '목록 글 모양이 바뀌었습니다 (첫 줄이 없음)' };
+  if (declared !== rows.length) return { ok: false, err: '목록 글 모양이 바뀌었습니다 (건수 ' + declared + ' ≠ 읽은 줄 ' + rows.length + ')' };
+  return { ok: true, rows };
+}
+function parseFileDetail(text) {
+  const kv = {}; let odd = 0;
+  for (const raw of stripAnsi(text).split('\n')) {
+    const ln = raw.replace(/\s+$/, ''); if (!ln.trim() || ln.trim() === 'File Details:') continue;
+    const m = /^ {2}([a-z_]+):(?:\s+(.*))?$/.exec(ln);   // 빈 제목이면 'name:' 뒤가 비어 있다(제목 없는 녹음이 많다)
+    if (m) kv[m[1]] = m[2] || ''; else odd++;
+  }
+  if (odd || !kv.id || !ID_RE.test(kv.id) || !('name' in kv) || !kv.created_at || durSec(kv.duration) == null)
+    return { ok: false, err: '녹음 정보 글 모양이 바뀌었습니다' };
+  const c = apiMs(kv.created_at), s = kv.start_at && kv.start_at !== '-' ? apiMs(kv.start_at) : null;
+  if (c == null) return { ok: false, err: '녹음 시각을 읽지 못했습니다' };
+  return { ok: true, id: kv.id, name: kv.name.trim(), c, t: s == null ? c : s, d: durSec(kv.duration) };
+}
+// CLI 와 같은 규칙: 시각이 있는데 시간대가 없으면 세계 표준시(Z)로 읽는다
+function apiMs(v) {
+  if (v == null) return null; const s = String(v).trim(); if (!s) return null;
+  if (/^\d{10}$/.test(s)) return +s * 1000; if (/^\d{13}$/.test(s)) return +s;   // 숫자 꼴(초 · 천분의 1초)로 올 때도
+  const n = /\d{2}:\d{2}/.test(s) && !/(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$/.test(s) ? s + 'Z' : s;
+  const ms = new Date(n).getTime(); return Number.isNaN(ms) ? null : ms;
+}
+
+/* ---------- 한국 시각 (기기 시간대와 상관없이 +9시간) ---------- */
+const WD = '일월화수목금토';
+function kst(ms) { const d = new Date(ms + 9 * 3600e3); return { y: d.getUTCFullYear(), mo: d.getUTCMonth() + 1, d: d.getUTCDate(), wd: d.getUTCDay(), h: d.getUTCHours(), mi: d.getUTCMinutes() }; }
+function kstLabel(ms, nowMs) {
+  if (!Number.isFinite(ms)) return '시각 모름';
+  const a = kst(ms), n = kst(Number.isFinite(nowMs) ? nowMs : ms);
+  const h12 = a.h % 12 === 0 ? 12 : a.h % 12;
+  return (a.y !== n.y ? a.y + '. ' : '') + a.mo + '. ' + a.d + '. (' + WD[a.wd] + ') ' + (a.h < 12 ? '오전 ' : '오후 ') + h12 + ':' + String(a.mi).padStart(2, '0');
+}
+function durLabel(sec) {
+  sec = Math.max(0, Math.round(+sec || 0)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+  if (h) return h + '시간' + (m ? ' ' + m + '분' : ''); if (m) return m + '분'; return sec + '초';
+}
+function agoLabel(ms, nowMs) {
+  if (!Number.isFinite(ms)) return '소식 없음'; const s = Math.max(0, (nowMs - ms) / 1000);
+  if (s < 90) return '방금'; if (s < 3600) return Math.round(s / 60) + '분 전'; if (s < 86400) return Math.round(s / 3600) + '시간 전';
+  return kstLabel(ms, nowMs);
+}
+
+/* ---------- 키워드 · 고르기 (HB 결정 ④ — 길이로는 빼지 않는다) ---------- */
+function cleanKw(w) { return String(w == null ? '' : w).replace(/\s+/g, ' ').trim().slice(0, KW_LEN); }
+function normKw(list) {
+  if (!Array.isArray(list)) return DEFAULT_KW.slice();
+  const out = [], seen = new Set();
+  for (const x of list) { const w = cleanKw(x), k = w.toLowerCase(); if (!w || seen.has(k)) continue; seen.add(k); out.push(w); if (out.length >= KW_MAX) break; }
+  return out;
+}
+function addKw(list, w) {
+  const cur = normKw(list), c = cleanKw(w);
+  if (!c) return { list: cur, err: '빈 글자는 넣을 수 없습니다' };
+  if (cur.some(x => x.toLowerCase() === c.toLowerCase())) return { list: cur, err: '이미 있습니다' };
+  if (cur.length >= KW_MAX) return { list: cur, err: '키워드는 ' + KW_MAX + '개까지입니다' };
+  return { list: cur.concat([c]), err: '' };
+}
+function removeKw(list, w) { const k = cleanKw(w).toLowerCase(); return normKw(list).filter(x => x.toLowerCase() !== k); }
+function kwHit(name, kw) { const n = String(name || '').toLowerCase(); return normKw(kw).find(w => n.includes(w.toLowerCase())) || ''; }
+// 'in' = HB 가 넣음 · 'out' = HB 가 뺌 · 'auto' = 키워드로 저절로 · 'none' = 안 고름
+function pickState(rec, job, kw) {
+  if (job && job.pick === 'in') return 'in';
+  if (job && job.pick === 'out') return 'out';
+  return kwHit(rec && rec.n, kw) ? 'auto' : 'none';
+}
+function isPicked(st) { return st === 'in' || st === 'auto'; }
+// 줄을 누르면: 골라져 있으면 빼고, 아니면 넣는다
+function tapPick(st) { return isPicked(st) ? 'out' : 'in'; }
+function settingsOf(doc) {
+  const d = doc && typeof doc === 'object' ? doc : {};
+  return { kw: normKw(d.kw), days: DAY_CHOICES.includes(d.days) ? d.days : DEFAULT_DAYS, model: modelOf(d.model).id };
+}
+function estMin(sec, modelId) { const m = modelOf(modelId); return Math.max(1, Math.ceil((+sec || 0) / 60 / m.speed) + 1); }
+
+/* ---------- 계기판 목록 ---------- */
+function listView(recs, jobs, settings, nowMs) {
+  const s = settingsOf(settings), from = nowMs - s.days * 86400e3, J = jobs || {};
+  return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && Number.isFinite(r.c) && r.c >= from)
+    .map(r => { const j = J[r.id] || null, st = pickState(r, j, s.kw);
+      return { id: r.id, name: r.n || '', when: kstLabel(r.t, nowMs), t: r.t, dur: durLabel(r.d), d: r.d || 0, st, picked: isPicked(st), hit: kwHit(r.n, s.kw),
+        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', est: estMin(r.d, s.model) }; })
+    .sort((a, b) => (b.t || 0) - (a.t || 0) || (a.id < b.id ? -1 : 1));
+}
+function macView(doc, nowMs) {
+  const at = doc && Number.isFinite(doc.at) ? doc.at : null, alive = at != null && nowMs - at < ALIVE_MS, r = (doc && doc.ready) || {};
+  return { name: doc && doc.id || '', alive, ago: agoLabel(at, nowMs), doing: alive ? (doc.doing || '쉼') : '꺼짐', err: doc && doc.err || '', v: doc && doc.v || '',
+    old: !!(doc && doc.v && doc.v !== HELPER_LATEST), cli: doc && doc.cli || '',
+    ready: READY.map(x => ({ k: x.k, label: x.label, why: x.why, how: x.how, ok: r[x.k] === true ? true : r[x.k] === false ? false : null })) };
+}
+function normMac(s) {
+  const n = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  if (!n || n.length > MAC_MAX || /[\/\\]/.test(n) || n === '.' || n === '..' || /^__.*__$/.test(n)) return '';
+  return n;
+}
+
+/* ---------- 도우미가 계정에 둘 녹음 줄 (rec/{번호}) ----------
+   바뀐 줄만 쓴다. 목록 기간 안에 있던 줄이 PLAUD 에서 사라지면 지운다(사본은 원본을 따른다) — 단 한 번에 많이 사라지면 지우지 않고 알린다(규모 상한). */
+const DEL_CAP = 5;
+function recPlan(old, rows, fromMs) {
+  const O = old || {}, put = [], want = new Set();
+  for (const r of rows || []) { want.add(r.id); const o = O[r.id], v = { n: r.name || '', t: r.t, c: r.c, d: r.d };
+    if (!o || o.n !== v.n || o.t !== v.t || o.c !== v.c || o.d !== v.d) put.push({ id: r.id, v }); }
+  const gone = Object.values(O).filter(o => o && Number.isFinite(o.c) && o.c >= fromMs && !want.has(o.id)).map(o => o.id);
+  const inWin = Object.values(O).filter(o => o && Number.isFinite(o.c) && o.c >= fromMs).length;
+  if (gone.length > Math.max(DEL_CAP, Math.floor(inWin * 0.3))) return { put, del: [], held: gone.length };
+  return { put, del: gone, held: 0 };
+}
+
+/* ---------- 두 Mac 일감 맡기 (job/{번호}) ----------
+   한 번에 한 Mac 만: 읽은 판(ver)이 그대로일 때만 쓰는 '조건부 쓰기'(파이어베이스 트랜잭션과 같은 뜻). 맡은 시각(at)은 파이어베이스 시계.
+   맡은 Mac 이 LEASE_MS 동안 시각을 새로 찍지 않으면 풀린다. 일하는 동안 RENEW_MS 마다 renew 한다(3 ~ 5시간 녹음). */
+function claimCheck(job, mac, now) {
+  if (!job) return { ok: true, how: 'new' };
+  if (job.pick === 'out') return { ok: false, why: 'out' };
+  if (job.st === 'done') return { ok: false, why: 'done' };
+  if (job.st === 'work') {
+    if (job.mac === mac) return { ok: true, how: 'mine' };
+    if (Number.isFinite(job.at) && now - job.at < LEASE_MS) return { ok: false, why: 'busy', mac: job.mac };
+    return { ok: true, how: 'expired', from: job.mac || '' };
+  }
+  return { ok: true, how: 'open' };
+}
+// io.read(id) → { job, ver, now } · io.write(id, patch, ver) → true(씀) | false(그 사이 남이 바꿈). patch 의 at 은 io 가 파이어베이스 시계로 찍는다
+async function tryClaim(io, id, mac) {
+  for (let i = 0; i < 3; i++) {
+    const { job, ver, now } = await io.read(id);
+    const c = claimCheck(job, mac, now); if (!c.ok) return c;
+    const step = job && job.st === 'work' && job.mac === mac && job.step ? job.step : 'get';
+    if (await io.write(id, { st: 'work', step, mac }, ver)) return Object.assign({}, c, { step });
+  }
+  return { ok: false, why: 'race' };
+}
+async function renew(io, id, mac, step) {
+  const { job, ver } = await io.read(id);
+  if (!job || job.st !== 'work' || job.mac !== mac) return { ok: false, why: 'lost' };   // 그 사이 다른 Mac 이 이어받음 → 일을 멈춘다
+  return { ok: await io.write(id, { st: 'work', step: step || job.step || 'get', mac }, ver) };
+}
+async function finish(io, id, mac, ok, err) {
+  const { job, ver } = await io.read(id);
+  if (!job || job.st !== 'work' || job.mac !== mac) return { ok: false, why: 'lost' };
+  return { ok: await io.write(id, ok ? { st: 'done', step: 'drive', mac } : { st: 'fail', step: job.step || 'get', mac, err: String(err || '').slice(0, 120) }, ver) };
+}
+// 맡을 차례: 골랐고 · 끝나지 않았고 · 지금 맡을 수 있는 것, 오래된 녹음부터
+function wantedJobs(recs, jobs, settings, mac, now) {
+  const s = settingsOf(settings), J = jobs || {};
+  return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && isPicked(pickState(r, J[r.id], s.kw)) && claimCheck(J[r.id] || null, mac, now).ok)
+    .sort((a, b) => (a.t || 0) - (b.t || 0)).map(r => r.id);
+}
+
+/* ---------- 계정 쪽 요청 (cmd/{id}) ---------- */
+const CMD_STALE_MS = 24 * 3600e3;
+function cmdFor(cmd, mac, now) {
+  return !!(cmd && cmd.mac === mac && cmd.st === 'new' && CMD_WHAT.includes(cmd.what) && !(Number.isFinite(cmd.at) && now - cmd.at > CMD_STALE_MS)
+    && (cmd.what !== 'model' || MODELS.some(m => m.id === cmd.arg)));
+}
+// 화면 · 기록에 남기기 전에: 주소(내려받기 열쇠가 들 수 있음)를 지운다
+function clean(s, max) { return String(s == null ? '' : s).replace(/https?:\/\/\S+/g, '[주소]').slice(-(max || 600)); }
+
+/* ---------- 파이어베이스 REST 값 바꾸기 (도우미) ---------- */
+function fsEnc(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'string') return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(fsEnc) } };
+  if (typeof v === 'object') { const f = {}; for (const k of Object.keys(v)) f[k] = fsEnc(v[k]); return { mapValue: { fields: f } }; }
+  return { nullValue: null };
+}
+function fsDec(x) {
+  if (!x || typeof x !== 'object') return null;
+  if ('stringValue' in x) return x.stringValue;
+  if ('integerValue' in x) return Number(x.integerValue);
+  if ('doubleValue' in x) return Number(x.doubleValue);
+  if ('booleanValue' in x) return !!x.booleanValue;
+  if ('timestampValue' in x) { const t = Date.parse(x.timestampValue); return Number.isNaN(t) ? null : t; }
+  if ('arrayValue' in x) return ((x.arrayValue && x.arrayValue.values) || []).map(fsDec);
+  if ('mapValue' in x) { const o = {}, f = (x.mapValue && x.mapValue.fields) || {}; for (const k of Object.keys(f)) o[k] = fsDec(f[k]); return o; }
+  return null;
+}
+function fsDoc(doc) {
+  const o = {}, f = (doc && doc.fields) || {}; for (const k of Object.keys(f)) o[k] = fsDec(f[k]);
+  o.id = String(doc && doc.name || '').split('/').pop(); o._ut = doc && doc.updateTime || null; return o;
+}
+
+var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS, RENEW_MS, ALIVE_MS, DEFAULT_KW, KW_MAX, KW_LEN, DAY_CHOICES, DEFAULT_DAYS,
+  MODELS, DEFAULT_MODEL, modelOf, modelUrl, READY, INSTALLS, CMD_WHAT, stripAnsi, durSec, parseRecent, parseFileDetail, apiMs, kst, kstLabel, durLabel, agoLabel,
+  cleanKw, normKw, addKw, removeKw, kwHit, pickState, isPicked, tapPick, settingsOf, estMin, listView, macView, normMac, DEL_CAP, recPlan,
+  claimCheck, tryClaim, renew, finish, wantedJobs, CMD_STALE_MS, cmdFor, clean, fsEnc, fsDec, fsDoc };
+</script>
+
+<header class="top">
+  <button class="ico" data-act="menu" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <h1>심방 녹음</h1>
+  <button class="ico" data-act="reload" aria-label="다시 읽기"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
+</header>
+<main id="main"></main>
+
+<script>
+/* ---------- 화면 ----------
+   자료: 계정 plaud/{uid} (설정) · rec(녹음 줄 — 도우미가 씀) · job(고름 · 단계) · mac(두 Mac 소식) · cmd(설치 요청).
+   ⚠️ users/{uid} 는 건드리지 않는다. 전사문 · 심방 내용은 여기 오지 않는다(구글에만). */
+const DEMO = /[?&]demo=1/.test(location.search);
+const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
+  storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsubs: [] };
+const S = { settings: null, recs: {}, jobs: {}, macs: {}, cmds: {}, pane: null, here: null, hereErr: '', pairBusy: false };
+const PROBE_KEY = 'plaudhub_probe_v1';
+const $ = q => document.querySelector(q);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const quiet = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const now = () => Date.now();
+const INSTALL_LINE = 'curl -fsSL ' + SITE + 'install.sh | bash';
+const UNINSTALL_LINE = 'curl -fsSL ' + SITE + 'install.sh | bash -s uninstall';
+const BREW_LINE = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"';
+
+function toast(msg) {
+  const old = $('.toast'); if (old) old.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  const ms = Math.min(9000, Math.max(3000, msg.length * 200));
+  const off = () => { t.remove(); removeEventListener('pointerdown', off, true); };
+  setTimeout(off, ms); setTimeout(() => addEventListener('pointerdown', off, true), 50);
+}
+
+/* ---------- 미리보기 (?demo=1) — 지어낸 이름만 ---------- */
+function demoData() {
+  const n = now(), H = 3600e3, id = k => 'f_' + String(k).repeat(32).slice(0, 32);
+  const rec = (k, name, agoH, min) => ({ id: id(k), n: name, t: n - agoH * H, c: n - agoH * H + min * 60e3, d: min * 60 });
+  const R = [rec('a', '김하늘 집사 심방', 3, 48), rec('b', '박소망 성도 전화심방', 27, 12), rec('c', '', 30, 6), rec('d', '이은혜 권사 상담', 50, 64),
+    rec('e', '교역자 회의', 75, 245), rec('f', '최기쁨 가정 심방', 120, 95), rec('1', '', 160, 2)];
+  S.recs = Object.fromEntries(R.map(r => [r.id, r]));
+  S.jobs = { [id('d')]: { id: id('d'), pick: 'in' }, [id('f')]: { id: id('f'), pick: 'out' } };
+  S.macs = { '집': { id: '집', at: n - 50e3, doing: '쉼', v: HELPER_LATEST, cli: 'plaud 0.3.15',
+    ready: { brew: true, node: true, ffmpeg: true, whisper: false, model: false, plaud: true, login: true, drive: true } },
+    '사무실': { id: '사무실', at: n - 5 * H, doing: '쉼', v: 'h. 26-1120-1', ready: { brew: false, node: false } } };
+  S.settings = { kw: ['심방'], days: 14, model: DEFAULT_MODEL };
+  FB.user = { email: '미리보기 (저장 안 됨)', uid: 'demo' }; FB.ready = true;
+}
+
+/* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호, 칸 이름 plaud) ---------- */
+function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); setTimeout(() => rej(new Error('시간 초과')), 20000); document.head.appendChild(el); }); }
+async function fbInit() {
+  if (DEMO) return;
+  if (FB.app) return;
+  try {
+    for (const s of FB_JS) await loadJs(s);
+    FB.app = firebase.apps.find(a => a.name === 'plaud') || firebase.initializeApp(FB_CFG, 'plaud');
+    FB.auth = FB.app.auth(); FB.db = FB.app.firestore();
+    FB.auth.onAuthStateChanged(u => { FB.user = u; FB.ready = true; stopListen(); if (u) listen(u.uid); render(); });
+  } catch (e) { FB.ready = true; FB.err = '로그인 도구를 불러오지 못했습니다.\n인터넷 연결을 확인해 주세요.'; render(); }
+}
+function base() { return FB.db.collection('plaud').doc(FB.user.uid); }
+function stopListen() { FB.unsubs.forEach(f => { try { f(); } catch (_) { } }); FB.unsubs = []; S.recs = {}; S.jobs = {}; S.macs = {}; S.cmds = {}; S.settings = null; }
+function listen(uid) {
+  const b = FB.db.collection('plaud').doc(uid), err = e => { FB.err = /permission/i.test(e.code || e.message) ? '계정 칸이 잠겨 있습니다.\n파이어베이스 콘솔에 보안 규칙을 붙였는지 확인해 주세요 (docs/plaudhub/firestore-rules.md).' : '자료를 읽지 못했습니다.\n' + (e.message || ''); render(); };
+  const coll = (name, key, conv) => FB.unsubs.push(b.collection(name).onSnapshot(q => { const o = {}; q.forEach(d => { o[d.id] = conv(Object.assign({ id: d.id }, d.data())); }); S[key] = o; FB.err = ''; render(); }, err));
+  const ts = v => v && typeof v.toMillis === 'function' ? v.toMillis() : (Number.isFinite(v) ? v : null);
+  FB.unsubs.push(b.onSnapshot(d => { S.settings = d.exists ? d.data() : {}; render(); }, err));
+  coll('rec', 'recs', x => x);
+  coll('job', 'jobs', x => Object.assign(x, { at: ts(x.at) }));
+  coll('mac', 'macs', x => Object.assign(x, { at: ts(x.at) }));
+  coll('cmd', 'cmds', x => Object.assign(x, { at: ts(x.at) }));
+}
+async function fbLogin() {
+  const em = ($('#fb-em') || {}).value, pw = ($('#fb-pw') || {}).value;
+  if (!em || !pw) { FB.err = '이메일과 비밀번호를 넣어 주세요.'; return render(); }
+  FB.busy = true; FB.err = ''; render();
+  try { await fbInit(); await FB.auth.signInWithEmailAndPassword(em.trim(), pw); toast('로그인했습니다'); }
+  catch (e) { FB.err = /wrong-password|invalid-credential|user-not-found|invalid-login/i.test(e.code || e.message) ? '이메일이나 비밀번호가 맞지 않습니다.' : '로그인하지 못했습니다.\n' + (e.message || ''); }
+  FB.busy = false; render();
+}
+async function fbLogout() { closePane(); try { await FB.auth.signOut(); } catch (_) { } toast('로그아웃했습니다'); render(); }
+
+/* ---------- 계정에 쓰기 ---------- */
+function settings() { return settingsOf(S.settings); }
+async function saveSettings(patch) {
+  const next = Object.assign({}, settings(), patch); S.settings = next; render(); renderPane();
+  if (DEMO) return;
+  try { await base().set({ kw: next.kw, days: next.days, model: next.model }, { merge: true }); }
+  catch (e) { toast('저장하지 못했습니다\n' + (e.message || '')); }
+}
+async function setPick(id, st) {
+  const pick = tapPick(st);
+  S.jobs[id] = Object.assign({}, S.jobs[id] || { id }, { pick }); render();
+  if (DEMO) return;
+  try { await base().collection('job').doc(id).set({ pick }, { merge: true }); }
+  catch (e) { toast('고르지 못했습니다\n' + (e.message || '')); }
+}
+async function sendCmd(mac, what, arg) {
+  if (DEMO) { toast('미리보기에서는 보내지 않습니다'); return; }
+  const doc = { mac, what, st: 'new', at: firebase.firestore.FieldValue.serverTimestamp() }; if (arg) doc.arg = arg;
+  try { await base().collection('cmd').add(doc); toast(mac + ' Mac 에 보냈습니다\n도우미가 30초 안에 시작합니다'); }
+  catch (e) { toast('보내지 못했습니다\n' + (e.message || '')); }
+}
+// 끝난 요청은 하루 지나면 치운다(한 번에 20개까지)
+function sweepCmds() {
+  if (DEMO || !FB.user) return; let n = 0;
+  for (const c of Object.values(S.cmds)) if (c.st !== 'new' && c.st !== 'run' && Number.isFinite(c.at) && now() - c.at > 86400e3 && n++ < 20) base().collection('cmd').doc(c.id).delete().catch(() => { });
+}
+function cmdOf(mac, what) { return Object.values(S.cmds).filter(c => c.mac === mac && c.what === what).sort((a, b) => (b.at || 0) - (a.at || 0))[0] || null; }
+
+/* ---------- 이 Mac 의 도우미 (127.0.0.1 — 같은 Mac 크롬에서만) ----------
+   처음 한 번은 HB 가 눌러야 묻는다(크롬이 '이 기기의 다른 앱' 허락을 묻기 때문 — 아무 설명 없이 뜨지 않게). 한 번 되면 다음부터 저절로. */
+async function helperCall(path, body) {
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 2500);
+  try {
+    const r = await fetch('http://127.0.0.1:' + PAIR_PORT + path, { method: body ? 'POST' : 'GET', signal: ctl.signal, targetAddressSpace: 'loopback',
+      headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.err || ('응답 ' + r.status)); return j;
+  } finally { clearTimeout(tm); }
+}
+async function probeHere(byHand) {
+  if (DEMO) { S.here = { mac: '', paired: false, v: HELPER_LATEST }; S.hereErr = ''; return render(); }
+  try { S.here = await helperCall('/hello'); S.hereErr = ''; try { localStorage.setItem(PROBE_KEY, '1'); } catch (_) { } }
+  catch (e) { S.here = null; if (byHand) S.hereErr = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent) ? '사파리에서는 이 Mac 의 도우미에 닿지 못합니다.\n크롬에서 열어 주세요.' : '이 Mac 에서 도우미를 찾지 못했습니다.\n아직 안 깔았으면 아래 설치 한 줄을 터미널에 붙여 넣으세요.\n크롬이 \'다른 앱 · 기기 접근\' 을 물으면 허용을 눌러 주세요.'; }
+  render(); renderPane();
+}
+async function pairHere(name) {
+  const mac = normMac(name); if (!mac) return toast('이름은 1 ~ ' + MAC_MAX + '자로\n(빗금 없이) 적어 주세요');
+  if (!FB.user || DEMO) return toast('먼저 로그인해 주세요');
+  S.pairBusy = true; renderPane();
+  try {
+    await helperCall('/pair', { rt: FB.auth.currentUser.refreshToken, uid: FB.user.uid, mac });
+    toast('이 Mac 을 \'' + mac + '\' 로 연결했습니다\n1분 안에 위 카드에 나타납니다'); closePane(); probeHere(false);
+  } catch (e) { toast('연결하지 못했습니다\n' + (e.message || '')); }
+  S.pairBusy = false; renderPane();
+}
+
+/* ---------- 그리기 ---------- */
+function render() {
+  const m = $('#main'); if (!m) return;
+  if (!FB.ready) { m.innerHTML = '<div class="empty">불러오는 중…</div>'; return; }
+  if (!FB.user) { m.innerHTML = loginHtml(); return; }
+  const t = now(), macs = Object.values(S.macs).map(d => macView(d, t)).sort((a, b) => (b.alive - a.alive) || a.name.localeCompare(b.name, 'ko'));   // 켜진 Mac 먼저
+  const rows = listView(S.recs, S.jobs, settings(), t), picked = rows.filter(r => r.picked && r.job !== 'done');
+  let h = FB.err ? '<div class="card msg bad">' + esc(FB.err) + '</div>' : '';
+  h += '<h2>Mac <small>' + (macs.filter(x => x.alive).length) + ' / ' + macs.length + ' 켜짐</small></h2>';
+  h += macs.length ? '<div class="macs">' + macs.map(macHtml).join('') + '</div>' : '<div class="card msg">아직 연결된 Mac 이 없습니다.\nMac 크롬에서 이 화면을 열고 메뉴 › \'이 Mac 연결\' 을 눌러 주세요.</div>';
+  h += hereHtml();
+  h += '<h2>녹음 <small>' + settings().days + '일 · 고른 것 ' + picked.length + (picked.length ? ' · 전사 어림 ' + durLabel(picked.reduce((s, r) => s + r.est, 0) * 60) : '') + '</small></h2>';
+  h += rows.length ? '<div class="recs">' + rows.map(recHtml).join('') + '</div>' : '<div class="card empty">' + (macs.length ? '이 기간에 녹음이 없거나 아직 도우미가 목록을 읽지 않았습니다.' : 'Mac 도우미가 목록을 읽으면 여기에 나옵니다.') + '</div>';
+  h += '<div class="ver">고른 녹음은 P3 부터 받기 → 전사 → 드라이브로 이어집니다</div>';
+  m.innerHTML = h;
+}
+function loginHtml() {
+  return '<div class="card" style="margin-top:20px"><div style="font-weight:600;margin-bottom:6px">BLOCK7 계정으로 로그인</div>'
+    + '<input class="field" id="fb-em" type="email" autocomplete="username" placeholder="이메일">'
+    + '<input class="field" id="fb-pw" type="password" autocomplete="current-password" placeholder="비밀번호">'
+    + (FB.err ? '<div class="msg bad">' + esc(FB.err) + '</div>' : '')
+    + '<div style="margin-top:10px"><button class="btn" data-act="login"' + (FB.busy ? ' disabled' : '') + '>로그인</button></div></div>';
+}
+function macHtml(v) {
+  const run = w => { const c = cmdOf(v.name, w); return c && (c.st === 'new' || c.st === 'run') ? c : null; };
+  const li = r => {
+    const mk = r.ok === true ? '<span class="mk ok">✓</span>' : r.ok === false ? '<span class="mk no">✕</span>' : '<span class="mk un">·</span>';
+    let act = '';
+    const c = INSTALLS[r.how] ? run(r.how) : null;
+    if (c) act = '<span class="run">' + (c.st === 'new' ? '기다림' : '하는 중') + '</span>';
+    else if (r.ok === false && r.how !== 'note') act = '<button class="act" data-act="fix" data-mac="' + esc(v.name) + '" data-k="' + r.k + '">' + (r.how === 'term' ? '방법' : r.k === 'login' ? '로그인' : '설치') + '</button>';
+    else if (r.ok === false) act = '<button class="act" data-act="fix" data-mac="' + esc(v.name) + '" data-k="' + r.k + '">안내</button>';
+    return '<li>' + mk + '<span>' + esc(r.label) + '<span class="why">' + esc(r.why) + '</span></span>' + act + '</li>';
+  };
+  const last = Object.values(S.cmds).filter(c => c.mac === v.name && c.st === 'fail').sort((a, b) => (b.at || 0) - (a.at || 0))[0];
+  return '<div class="card mac"><div class="row1"><span class="dot' + (v.alive ? ' on' : '') + '"></span><span class="name">' + esc(v.name) + '</span>'
+    + '<span class="state">' + (v.alive ? '켜짐' : '꺼짐') + ' · ' + esc(v.ago) + '</span></div>'
+    + ((v.alive || v.old) ? '<div class="doing">' + (v.alive ? esc('하는 일: ' + v.doing) : '') + (v.old ? (v.alive ? ' · ' : '') + '<button class="act" style="color:var(--ac)" data-act="cmd" data-mac="' + esc(v.name) + '" data-w="update">도우미 새로 받기</button>' : '') + '</div>' : '')
+    + (v.err ? '<div class="err">' + esc(v.err) + '</div>' : '')
+    + (last && now() - (last.at || 0) < 86400e3 ? '<div class="err">' + esc((INSTALLS[last.what] || {}).title || last.what) + ' 실패: ' + esc(String(last.log || '').split('\n').filter(Boolean).slice(-2).join('\n')) + '</div>' : '')
+    + '<ul class="ready">' + v.ready.map(li).join('') + '</ul></div>';
+}
+function hereHtml() {
+  if (S.here) return '<div class="card msg" style="margin-top:10px">이 Mac: ' + (S.here.paired ? '\'' + esc(S.here.mac) + '\' 로 연결됨 ✓' : '도우미가 있습니다 · <button class="act" style="color:var(--ac)" data-act="pairpane">연결하기</button>') + '</div>';
+  if (S.hereErr) return '<div class="card msg bad" style="margin-top:10px">' + esc(S.hereErr) + '</div>';
+  return '';
+}
+function recHtml(r) {
+  const why = r.st === 'auto' ? '<span class="why">키워드 \'' + esc(r.hit) + '\'</span>' : r.st === 'in' ? '<span class="why">직접 고름</span>' : r.st === 'out' ? '<span class="why out">뺌</span>' : '';
+  const steps = r.picked ? stepsHtml(r) : '';
+  return '<div class="rec' + (r.picked ? ' pick' : '') + '" data-act="pick" data-id="' + esc(r.id) + '" data-st="' + r.st + '">'
+    + '<span class="chk"></span><div class="body"><div class="ttl' + (r.name ? '' : ' none') + '">' + esc(r.name || '제목 없음') + '</div>'
+    + '<div class="meta"><span>' + esc(r.when) + '</span><span>' + esc(r.dur) + '</span>' + (r.picked && r.job !== 'done' ? '<span>전사 어림 ' + durLabel(r.est * 60) + '</span>' : '') + why + '</div></div>' + steps + '</div>';
+}
+function stepsHtml(r) {
+  const order = ['get', 'stt', 'drive'], name = { get: '받음', stt: '전사', drive: '드라이브' }, cur = order.indexOf(r.step);
+  return '<div class="steps">' + order.map((k, i) => {
+    const cls = r.job === 'done' || (r.job === 'work' && i < cur) ? 'on' : r.job === 'work' && i === cur ? 'cur' : '';
+    return '<span class="' + cls + '">' + name[k] + '</span>';
+  }).join('<span>›</span>') + (r.job === 'fail' ? '<span style="color:var(--bad)"> 실패</span>' : '') + '</div>';
+}
+
+/* ---------- 아래에서 올라오는 판 (메뉴 · 설치 · 연결) ---------- */
+const XSVG = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function openPane(p) {
+  S.pane = p; let bg = $('#pane-bg'), el = $('#pane'); const fresh = !el;
+  if (el && el.dataset.closing) { delete el.dataset.closing; for (const n of [el, bg]) if (n && n.getAnimations) n.getAnimations().forEach(a => a.cancel()); }
+  pageLock(true);
+  if (!bg) { bg = document.createElement('div'); bg.className = 'sheet-bg'; bg.id = 'pane-bg'; bg.dataset.act = 'closepane'; document.body.appendChild(bg); }
+  if (!el) { el = document.createElement('div'); el.className = 'pane'; el.id = 'pane'; el.setAttribute('role', 'dialog'); document.body.appendChild(el); paneGest(el); }
+  renderPane();
+  if (fresh && !quiet() && el.animate) { el.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); bg.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); }
+}
+function closePane(o) {
+  const el = $('#pane'), bg = $('#pane-bg'); S.pane = null; if (!el) return pageLock(false);
+  el.dataset.closing = '1';
+  const done = () => { el.remove(); if (bg) bg.remove(); if (!$('#pane')) pageLock(false); };
+  if (quiet() || !el.animate) return done();
+  const k = o || {}, ms = k.from ? 200 : 160;
+  el.animate([{ transform: k.from || 'none' }, { transform: k.to || 'translateY(100%)' }], { duration: ms, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
+  if (bg) bg.animate([{ opacity: k.bg != null && k.bg !== '' ? +k.bg : 1 }, { opacity: 0 }], { duration: ms, fill: 'forwards' });
+}
+function renderPane() {
+  const el = $('#pane'), P = S.pane; if (!el || !P) return;
+  const sc = el.querySelector('.pbody'), top = sc ? sc.scrollTop : 0;
+  let title = '', body = '', foot = '';
+  if (P.kind === 'menu') {
+    const s = settings();
+    title = '설정';
+    body = '<h3>자동으로 고를 키워드</h3><div class="msg">제목에 이 글자가 있으면 저절로 고릅니다. 긴 회의도 빼지 않습니다 — 목록에서 눌러 넣고 뺍니다.</div>'
+      + '<div class="chips">' + (s.kw.length ? s.kw.map(w => '<button class="chip" data-act="kwdel" data-w="' + esc(w) + '">' + esc(w) + '<span class="x">×</span></button>').join('') : '<span class="msg">키워드 없음 — 직접 고른 것만 합니다</span>') + '</div>'
+      + '<div style="display:flex;gap:8px"><input class="field" id="kw-in" maxlength="' + KW_LEN + '" placeholder="예: 상담" style="margin:0"><button class="btn ghost" data-act="kwadd">더하기</button></div>'
+      + '<h3>목록 기간</h3><div class="chips">' + DAY_CHOICES.map(d => '<button class="chip' + (d === s.days ? ' sel' : '') + '" data-act="days" data-d="' + d + '">' + d + '일</button>').join('') + '</div>'
+      + '<h3>전사 모델</h3>' + MODELS.map(m => '<div class="opt' + (m.id === s.model ? ' sel' : '') + '" data-act="model" data-m="' + m.id + '"><span class="r"></span><span>' + esc(m.label) + ' · ' + m.mb + 'MB<small>' + esc(m.note) + '</small></span></div>').join('')
+      + '<div class="msg" style="margin-top:6px">바꾸면 각 Mac 의 준비 상태에서 새 모델을 설치합니다. 전사 어림 시간은 P3 시험 뒤 고칩니다.</div>'
+      + '<h3>이 Mac</h3><div class="msg">Mac 크롬에서 눌러 주세요. 크롬이 \'다른 앱 · 기기 접근\' 을 물으면 허용합니다.</div>'
+      + '<div class="pairbox"><button class="btn ghost" data-act="pairpane">이 Mac 연결</button></div>'
+      + '<h3>설치 · 지우기</h3>' + installHelp()
+      + '<h3>계정</h3><div class="msg">' + esc(FB.user ? FB.user.email : '') + '</div>' + (DEMO ? '' : '<div style="margin-top:8px"><button class="btn ghost" data-act="logout">로그아웃</button></div>')
+      + '<div class="ver">' + esc(APP_VERSION) + ' · 도우미 ' + esc(HELPER_LATEST) + '</div>';
+  } else if (P.kind === 'pair') {
+    title = '이 Mac 연결';
+    if (!S.here) body = '<div class="msg">이 Mac 의 도우미를 찾는 중…</div>' + (S.hereErr ? '<div class="msg bad" style="margin-top:8px">' + esc(S.hereErr) + '</div>' + installHelp() : '');
+    else body = '<div class="msg">도우미가 이 Mac 에서 돌고 있습니다' + (S.here.paired ? ' (지금 \'' + esc(S.here.mac) + '\' 로 연결됨 — 다시 연결하면 바뀝니다)' : '') + '.\n이 Mac 의 이름을 골라 주세요. 지금 로그인한 계정의 열쇠를 이 Mac 안(내 계정만 읽는 파일)에 둡니다.</div>'
+      + '<div class="chips">' + ['집', '사무실'].map(n => '<button class="chip" data-act="pairname" data-n="' + n + '">' + n + '</button>').join('') + '</div>'
+      + '<div style="display:flex;gap:8px"><input class="field" id="mac-in" maxlength="' + MAC_MAX + '" placeholder="직접 적기" style="margin:0"><button class="btn ghost" data-act="pairtyped"' + (S.pairBusy ? ' disabled' : '') + '>연결</button></div>';
+  } else if (P.kind === 'fix') {
+    const r = READY.find(x => x.k === P.k) || {}, I = INSTALLS[r.how];
+    title = r.label || '';
+    if (r.how === 'term') body = r.k === 'brew'
+      ? '<div class="msg">Homebrew 는 Mac 에 프로그램을 까는 공식 도구입니다. 공식 설치기가 Mac 관리자 암호를 한 번 묻기 때문에 이것만 터미널에서 합니다.\n\'' + esc(P.mac) + '\' Mac 의 터미널에 아래 한 줄을 붙여 넣으세요. 다 깔리면 설치 한 줄을 다시 붙여 넣습니다.</div><div class="code">' + esc(BREW_LINE) + '</div>'
+      : '<div class="msg">도우미 설치 한 줄이 Node 를 물어보고 깝니다(brew install node). \'' + esc(P.mac) + '\' Mac 터미널에서:</div><div class="code">' + esc(INSTALL_LINE) + '</div>';
+    else if (r.how === 'note') body = '<div class="msg">\'' + esc(P.mac) + '\' Mac 에 구글 드라이브 앱을 켜고, 내 드라이브에 \'HB-심방-전사\' 폴더를 만들어 주세요.\n전사 파일(녹음번호.txt)이 여기에 쌓입니다(P3). 폴더가 보이면 몇 분 안에 ✓ 로 바뀝니다.</div>';
+    else if (I) {
+      const m = modelOf(settings().model), argv = r.how === 'model' ? ['curl', '-fL', '--retry', '2', '-o', '~/Library/Application Support/plaudhub/models/' + m.file, modelUrl(m)] : I.argv;
+      body = '<div class="kv"><b>무엇을</b><span>' + esc(I.title) + (r.how === 'model' ? ' — ' + esc(m.label) + ' (' + esc(m.file) + ')' : '') + '</span>'
+        + '<b>어느 Mac</b><span>' + esc(P.mac) + '</span><b>어디에</b><span>' + esc(I.where) + '</span><b>크기</b><span>' + esc(r.how === 'model' ? m.mb + 'MB' : I.size) + '</span>'
+        + '<b>걸림</b><span>' + I.mins + '분 남짓</span></div><div class="msg">도우미가 그 Mac 에서 아래 명령 하나만 돌립니다(sudo 없음):</div><div class="code">' + esc(argv.join(' ')) + '</div>'
+        + (r.k === 'login' ? '<div class="msg">그 Mac 의 기본 브라우저가 크롬이어야 합니다(어사이드는 실패). 창이 뜨면 PLAUD 계정을 고르세요.</div>' : '');
+      foot = '<button class="btn" data-act="runfix">' + (r.k === 'login' ? '로그인 창 열기' : '설치') + '</button>';
+    }
+  }
+  el.innerHTML = '<div class="phead">' + esc(title) + '<button class="modal-x" data-act="closepane" aria-label="닫기">' + XSVG + '</button></div><div class="pbody">' + body + '</div>' + (foot ? '<div class="pfoot">' + foot + '</div>' : '');
+  const nb = el.querySelector('.pbody'); if (nb) nb.scrollTop = top;
+}
+function installHelp() {
+  return '<div class="msg">설치 한 줄 — Mac 터미널에 붙여 넣습니다. 하는 일: Homebrew 확인 → Node 가 없으면 묻고 깜 → 도우미 파일 하나를 ~/Library/Application Support/plaudhub 에 둠 → Mac 을 켜면 저절로 돌게 함(LaunchAgents 에 표 한 장). sudo 는 쓰지 않습니다.</div>'
+    + '<div class="code">' + esc(INSTALL_LINE) + '</div><div class="msg">지우기 한 줄 (도우미 · 표 · 열쇠 파일을 지움, Homebrew 로 깐 것은 그대로):</div><div class="code">' + esc(UNINSTALL_LINE) + '</div>';
+}
+
+/* 판이 열린 동안 뒤 화면 잠그기 — 닫으면 보던 자리로 (rotation 의 pageLock 과 같은 결) */
+var PL = { on: false, y: 0 };
+function pageLock(on) {
+  const de = document.documentElement, b = document.body; if (!b || on === PL.on) return; PL.on = on;
+  if (on) { PL.y = window.scrollY || 0; b.style.top = -PL.y + 'px'; de.classList.add('plock'); return; }
+  de.classList.remove('plock'); b.style.top = ''; window.scrollTo(0, PL.y);
+}
+/* 판 손짓 닫기 (CLAUDE.md UI 원칙): 제목줄 끌어내리기 · 왼쪽 가장자리에서 오른쪽으로 밀기. 4분의 1(빠른 튕김 40px) 넘으면 닫힘 */
+const PG_EDGE = 24; var PG = { eat: 0 };
+function paneGest(el) {
+  let g = null;
+  const start = (x, y, tg, mouse) => { g = null; if (!S.pane || !tg.closest || tg.closest('input,textarea,select')) return;
+    const head = !!tg.closest('.phead'), edge = !mouse && x <= PG_EDGE; if (!head && !edge) return; g = { x0: x, y0: y, t0: Date.now(), head, edge, axis: '', d: 0 }; };
+  const move = (x, y) => {
+    if (!g) return false; const mx = x - g.x0, my = y - g.y0;
+    if (!g.axis) {
+      if (Math.abs(mx) + Math.abs(my) < 8) return g.head || (g.edge && mx > Math.abs(my));
+      if (g.edge && mx > 0 && mx > Math.abs(my) * 1.2) g.axis = 'x'; else if (g.head && Math.abs(my) >= Math.abs(mx)) g.axis = 'y'; else { const h = g.head; g = null; return h; }
+      if (el.getAnimations) el.getAnimations().forEach(a => a.cancel());
+    }
+    const v = g.axis === 'x' ? mx : my, big = (g.axis === 'x' ? el.offsetWidth : el.offsetHeight) || 1;
+    g.d = v > 0 ? v : Math.max(v * 0.2, -16);
+    el.style.transform = g.axis === 'x' ? 'translateX(' + g.d + 'px)' : 'translateY(' + g.d + 'px)';
+    const bg = $('#pane-bg'); if (bg) bg.style.opacity = String(1 - Math.min(Math.max(g.d, 0) / big, 1) * 0.8);
+    return true;
+  };
+  const snap = () => { const k = g; g = null; if (!k || !k.axis) return; const from = el.style.transform, bg = $('#pane-bg'), bo = bg ? bg.style.opacity : '';
+    el.style.transform = ''; if (bg) bg.style.opacity = ''; if (quiet() || !el.animate) return;
+    el.animate([{ transform: from }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,.8,.24,1)' });
+    if (bg && bo !== '') bg.animate([{ opacity: +bo }, { opacity: 1 }], { duration: 220 }); };
+  const end = cancel => {
+    if (!g) return; if (!g.axis) { g = null; return; } PG.eat = Date.now();
+    const x = g.axis === 'x', big = (x ? el.offsetWidth : el.offsetHeight) || 1, fast = Date.now() - g.t0 < 250 && g.d > 40;
+    if (cancel || !(g.d > big / 4 || fast)) return snap();
+    g = null; const from = el.style.transform, bg = $('#pane-bg'), bo = bg ? bg.style.opacity : ''; el.style.transform = ''; if (bg) bg.style.opacity = '';
+    closePane({ from, to: x ? 'translateX(100%)' : 'translateY(100%)', bg: bo });
+  };
+  el.addEventListener('touchstart', e => { if (e.touches.length !== 1) { g = null; return; } const t = e.touches[0]; start(t.clientX, t.clientY, e.target, false); }, { passive: true });
+  el.addEventListener('touchmove', e => { if (e.touches.length !== 1) return end(true); const t = e.touches[0]; if (move(t.clientX, t.clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+  el.addEventListener('touchend', () => end(false)); el.addEventListener('touchcancel', () => end(true));
+  el.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0 || !e.target.closest || !e.target.closest('.phead')) return;
+    start(e.clientX, e.clientY, e.target, true); if (!g) return; e.preventDefault();
+    const mv = ev => move(ev.clientX, ev.clientY), up = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); end(ev.type === 'pointercancel'); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up); });
+}
+
+/* ---------- 누르기 ---------- */
+document.addEventListener('click', e => {
+  if (Date.now() - PG.eat < 350) return;
+  const a = e.target.closest('[data-act]'); if (!a) return; const d = a.dataset;
+  switch (d.act) {
+    case 'login': return fbLogin();
+    case 'logout': return fbLogout();
+    case 'menu': return openPane({ kind: 'menu' });
+    case 'reload': {
+      const on = Object.values(S.macs).map(x => macView(x, now())).filter(x => x.alive);
+      if (!on.length) return toast('켜진 Mac 이 없습니다\n켜지면 저절로 목록을 읽습니다');
+      on.forEach(x => sendCmd(x.name, 'refresh')); return;
+    }
+    case 'closepane': return closePane();
+    case 'pick': return setPick(d.id, d.st);
+    case 'kwadd': { const inp = $('#kw-in'), r = addKw(settings().kw, inp && inp.value); if (r.err) return toast(r.err); saveSettings({ kw: r.list }); toast('\'' + cleanKw(inp.value) + '\' 을 더했습니다\n제목에 있으면 저절로 고릅니다'); return; }
+    case 'kwdel': saveSettings({ kw: removeKw(settings().kw, d.w) }); return toast('\'' + d.w + '\' 을 뺐습니다');
+    case 'days': return saveSettings({ days: +d.d });
+    case 'model': return saveSettings({ model: d.m });
+    case 'pairpane': openPane({ kind: 'pair' }); return probeHere(true);
+    case 'pairname': return pairHere(d.n);
+    case 'pairtyped': return pairHere(($('#mac-in') || {}).value);
+    case 'fix': return openPane({ kind: 'fix', mac: d.mac, k: d.k });
+    case 'cmd': return sendCmd(d.mac, d.w);
+    case 'runfix': { const P = S.pane, r = READY.find(x => x.k === P.k); closePane(); return sendCmd(P.mac, r.how, r.how === 'model' ? settings().model : undefined); }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.pane) { e.preventDefault(); closePane(); }
+  if (e.key === 'Enter' && e.target && e.target.id === 'fb-pw') fbLogin();
+  if (e.key === 'Enter' && e.target && e.target.id === 'kw-in') { e.preventDefault(); $('[data-act="kwadd"]').click(); }
+});
+setInterval(() => { if (!S.pane) render(); sweepCmds(); }, 30000);   // 켜짐 · 'n분 전' 을 새로
+if (DEMO) { demoData(); render(); }
+else { render(); fbInit(); let p = ''; try { p = localStorage.getItem(PROBE_KEY); } catch (_) { } if (p) probeHere(false); }
+if ('serviceWorker' in navigator && !DEMO) navigator.serviceWorker.register('sw.js').catch(() => { });
+</script>
+</body>
+</html>
