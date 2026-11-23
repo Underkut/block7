@@ -1,0 +1,14 @@
+{
+  "id": "/plaudhub/",
+  "name": "심방 녹음",
+  "short_name": "심방 녹음",
+  "description": "PLAUD 심방 녹음 → Mac 전사 계기판 · 두 Mac 상태 · 준비 상태 · 녹음 고르기",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f2",
+  "theme_color": "#f6f5f2",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}

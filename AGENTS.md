@@ -270,6 +270,28 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 - ⚠️ 교회 보고서 · 셀 케어 · 예배인도 시스템 구조를 **바깥에서 들여다보지 말 것.** 구조는 만든 분들께 받는다(R7, 세 분이 각각 다른 개발자).
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r rotation`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
+### 심방 녹음(`plaudhub/`)도 따로 돈다 — 주소는 `block7.my/plaudhub/` + Mac 도우미
+
+타이머와 같은 사정이다: `plaudhub/index.html`(계기판)은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다. 개발본 두 파일 · `version.txt` 는 해당하지 않는다. BLOCK7 · Sweeter 작업과 **동시에 해도 된다.**
+PLAUD 심방 녹음 → (집 · 사무실 Mac 중 켜진 쪽이) 받기 → whisper.cpp 전사 → 구글 드라이브 'HB-심방-전사'. 계획과 까닭은 `docs/ROADMAP.md` '1122-P'(④ P2 설계).
+판단(CLI 글 읽기 · 고르기 · 일감 맡기 · 한국 시각 · 파이어베이스 값)은 `<script id="plaudhub-core">` 한 곳 — `tests/test_plaudhub.js` 가 떼어 시험한다. 고치면 시험부터.
+**Mac 도우미(`plaudhub/helper.mjs`)는 이 덩어리를 계기판 파일에서 떼어 쓴다**(설치 · 새로 받기 때 `core.js`) — 도우미 안에 판단을 두 벌 만들지 말 것(⑫ 가 지킨다).
+도우미 판 `HELPER_VERSION` 을 올리면 core 의 `HELPER_LATEST` 도 같게(⑫). 설치 한 줄은 `plaudhub/install.sh`(launchd `my.block7.plaudhub`).
+
+- 저장은 HB 파이어베이스 `plaud/{uid}` — 설정(`kw` · `days` · `model`) · `rec`(제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계 · 파이어베이스 시계 `at`) · `mac`(소식 · 준비 ✓✗) · `cmd`(설치 요청 열쇠 이름).
+  규칙 붙이기 `docs/plaudhub/firestore-rules.md`, 시험 `tests/rules/plaud.test.mjs` · `plaud.e2e.mjs`(실제 도우미 + 가짜 CLI + 계기판). `users/{uid}` 는 건드리지 않는다.
+- ⚠️ **녹음 제목은 `rec` 칸에만**(HB 결정 11/23 — 폰에서도 보려고). **일감 칸(`job`)에 제목 · 이름을, 어느 칸에도 전사문 · 심방 내용을 두지 말 것** — 규칙이 칸 이름을 못 박았다(`hasOnly`). 전사문은 HB 구글에만.
+- ⚠️ **공식 PLAUD CLI(`@plaud-ai/cli`)만** — 비공식 도구 금지. CLI 는 JSON 이 없어 **글 표를 읽는다**: 모르는 줄 · 건수 다름이면 **멈추고 알린다**(짐작해 계속하지 말 것, `parseRecent` · `parseFileDetail`).
+  CLI 판이 바뀌면 npm 원본(`dist/index.js`)을 열어 꼴을 확인하고 시험 글을 함께 고친다. CLI 는 통계를 PostHog 로 보낸다 → 도우미는 `PLAUD_TELEMETRY_DISABLED=1` 로 부른다.
+- ⚠️ **음성 내려받기 주소(`plaud audio`, 24시간 열쇠)를 기록 · 화면 · 계정 · 저장소에 남기지 말 것** — 도우미 기록은 `clean()` 으로 주소를 지운다.
+- **두 Mac 겹침 막기**: 일감은 `tryClaim`(읽은 판 그대로일 때만 쓰는 조건부 쓰기) — 한 대만. 맡은 시각이 30분(`LEASE_MS`) 넘게 안 새로워지면 풀린다 → 긴 전사(3 ~ 5시간)는 **5분마다 `renew`** 할 것(안 하면 다른 Mac 이 이어받아 겹친다).
+  드라이브의 `녹음번호.txt` · 시트 대기함 7항 4 는 뒤의 두 겹이다(ROADMAP 1122-P ③).
+- **도우미가 돌리는 명령은 core 의 `INSTALLS` 표뿐** — 계정 `cmd` 는 열쇠 이름만 싣고 규칙이 이름 여덟만 받는다(⑪). 표에 sudo 를 넣지 말 것. Homebrew 는 공식 설치기가 암호를 물어 터미널 몫(화면에 줄만 보임).
+  설치 · 삭제는 화면에 무엇 · 어디 · 크기 · 명령을 보이고 HB 가 누를 때만.
+- **도우미 로그인 = 계기판 '이 Mac 연결'**: 그 Mac 크롬이 127.0.0.1:47211 로 HB 갱신 열쇠를 건넨다 → `~/Library/Application Support/plaudhub/token.json`(600). 연결 자리는 **`https://block7.my` 출처 + 127.0.0.1 주소만** 받는다(⑫ · e2e ⑧) — 넓히지 말 것.
+  서비스 열쇠 파일(프로젝트 전체 권한)은 쓰지 않는다. 열쇠는 저장소에 두지 않는다.
+- Make · Zapier · 제미나이 무료에 심방 내용을 보내지 않는다. 승인 전 시트 쓰기 금지(ChatGPT 지침 v2.2). 시험 · 미리보기(`?demo=1`) · 커밋 메시지는 지어낸 이름만.
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).
