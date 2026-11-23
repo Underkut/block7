@@ -41,6 +41,7 @@
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
+//  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
 //  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
 //  (66) 연락처(1123-T): vcf 읽기(자모 · QP · 접힌 줄 · +82) · 이름 맞추기(꼭 같은 이름 · 번호 하나만 · 띄어 적은 직분 뗌) · 셀 inside 번호 · 계정 문서 다듬기 · 더하기(지우지 않음) · 화면 자리
@@ -80,7 +81,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll };`, ctx);
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phSpans, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -2206,6 +2207,20 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(68) 후보 · 찾기도 N 칸 이름으로(표시 이름이 딴 글이어도)', [A.phCands('최라온', A.phPrepAll(C)).map(x => x.name), A.phSearch('라온', A.phPrepAll(C)).map(x => x.name)], [['부산교회 청년부'], ['부산교회 청년부']]);
   const P = A.phPrepAll([{ name: '미선이', tels: ['010-3000-0009'] }]);
   sc.eq('(68) 끝 글자 돌리기는 꼭 같을 때만 — 비슷한 후보에는 안 씀(미선이 → 김미선 후보 ✗)', A.phCands('김미선', P).length, 0);
+}
+
+
+// (69) 1123-T T3 — 앱 어디서든 이름을 누르면 전화 · 문자 · 바깥을 누르면 닫힘 · 다른 자료도 같은 길 (HB 11/23). 이름은 지어낸 것.
+{
+  sc.eq('(69) 글 속 이름 자리: 긴 이름 먼저 · 겹치지 않게 · 앞뒤가 한글이면 다른 낱말(김하늘이 ✗)',
+    [A.phSpans('설교 김하늘 · 헌금 김하늘이 · 인도 남궁하늘', ['김하늘', '남궁하늘', '궁하늘']), A.phSpans('없음', ['김하늘'])],
+    [[[3, 6, '김하늘'], [22, 26, '남궁하늘']], []]);
+  sc.eq('(69) 다른 자료(판교 예배위원 · 조명팀 …)의 이름도 같은 맞추기 길로(more)', A.phNames(null, null, { people: [] }, [['조명가람', '사진나래'], ['조명가람']]), ['조명가람', '사진나래']);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  sc.eq('(69) 화면: 바깥 누르면 닫힘(pointerdown — 아이폰은 글 · 빈 곳에 click 을 안 보냄) · 입힌 이름은 줄 누름보다 먼저 잡음 · 본 화면 · 보는 판에 입힘 · 고르는 자리 건너뜀 · 내 이름 뺌',
+    [/addEventListener\('pointerdown', e => \{ if \(\$\('#phmenu'\)/.test(ui), /addEventListener\('click', e => \{ if \(\$\('#phmenu'\) && !e\.target\.closest/.test(ui), /closest\('span\.phn\[data-ph\]'\); if \(!t\) return; e\.preventDefault\(\); e\.stopPropagation\(\); phMenu\(t\); \}, true\)/.test(ui),
+      /paintSure\(p\); phPaint\(p\);/.test(ui), /paintSure\(el\); phPaintPane\(el\);/.test(ui), /\[data-me\],\[data-pid\],\[data-who\]/.test(ui) && /\[aria-pressed\]/.test(ui), /filter\(k => k !== myK\)/.test(ui)],
+    [true, false, true, true, true, true, true]);
 }
 
 sc.done();
