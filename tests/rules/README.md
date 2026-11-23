@@ -8,6 +8,8 @@ npm init -y && npm i firebase-tools@13 @firebase/rules-unit-testing@3 firebase@1
 npx firebase emulators:exec --only firestore --project demo-rota "node rota.test.mjs"
 # 실제 앱 화면까지(R6): 저장소 맨 위에서 python3 -m http.server 8765 를 띄운 뒤
 npx firebase emulators:exec --only firestore,auth --project demo-rota "node rota.e2e.mjs"
+# 처음 열기 시간 재기(1123-B B3d) — 지어낸 책 크기별 · 느린 망 흉내로 '맞추는 중…' 까지 무엇이 몇 초인지 찍는다(통과 · 실패 없음, 숫자만)
+npx firebase emulators:exec --only firestore,auth --project demo-rota "node rota.perf.mjs"
 # 심방 녹음(plaudhub) — 규칙 · 도우미 + 계기판 실제 흐름(서버 띄울 필요 없음)
 npx firebase emulators:exec --only firestore --project demo-plaud "node plaud.test.mjs"
 npx firebase emulators:exec --only firestore,auth --project demo-plaud "node plaud.e2e.mjs"

@@ -43,6 +43,7 @@
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
 //  (70) 카톡 글 프리셋(1123-B B3): 틀 채우기(예배 역할 · 갈래 · 시트 칸 이름 · 금요 이름) · 빈 칸 든 줄 빼기 · {날} 복사하는 날 기준 · 모르는 칸 그대로 · 칸 단추 · 프리셋 다듬기 · 합치기(HB · 함께 쓰기 · 교역자 것) · 쓸 것 · 저장 칸 · 화면
 //  (71) 카톡 글 B3c(HB 사진 11/23): 예배 순서 판 높이 고정(알약 바꿔도) · 말풍선 아이콘 오른쪽 위(첫 줄 빈 듯 안 보이게, 광고 판도) · 생략 문구
+//  (72) 처음 열기 B3d(HB 11/23 '맞추는 중…' 오래): 한 주 모으기(weekPlan)는 책을 한 번만 훑고 예전과 같은 답 · 열 때 요청 먼저 · 그리기는 덜 · 개발자만 맞춘 시간 · 책 크기
 //  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
 //  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
@@ -2310,6 +2311,42 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [/\.adtxi\{float:right;/.test(HTML), /\.adtxbub\{[^}]*display:flow-root/.test(HTML), /class="adtxbub ktbub/.test(ui) && /class="adtxbub\$\{cur\.edited/.test(ui)], [true, true, true]);
   sc.eq('(71) 문구: 정보가 아직 채워지지 않은 줄은 생략했습니다(HB 글) · 숫자 · \'빈 칸이 든 줄\' 없음',
     [/'정보가 아직 채워지지 않은 줄은 생략했습니다\.'/.test(ui), /빈 칸이 든 줄 \$\{/.test(ui)], [true, false]);
+}
+
+
+// (72) 1123-B B3d — 처음 열 때 '맞추는 중…' 이 오래 남음. 잰 숫자는 ROADMAP B3d · tests/rules/rota.perf.mjs
+{
+  // 예전 weekPlan 의 자리 고르기(칸마다 책 전체를 훑음) — 새 것(한 번 훑음)과 답이 같아야 한다: 같은 id 중 지우지 않은 첫 줄
+  const oldSlots = (book, sun) => { const o = {}; for (const [svc, role] of A.GRID) { const s = book.slots.find(x => x.id === A.slotId(A.svcDate(sun, svc), svc, role) && !x.del); if (s) o[svc + '|' + role] = s; } return o; };
+  const b = A.normBook(null); const suns = ['2026-11-01', '2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29'];
+  for (const sun of suns) for (const [svc, role] of A.GRID) A.put(b, 'slots', { id: A.slotId(A.svcDate(sun, svc), svc, role), who: [], txt: sun + svc + role }, 'hb', 5);
+  A.drop(b, 'slots', A.slotId('2026-11-15', 'sun1', 'preach'), 'hb', 6);
+  // 다듬기를 거치지 않은 책(같은 id 두 줄 · 지운 줄이 앞) — 그래도 예전과 같은 줄을 고른다
+  const raw = { slots: [{ id: A.slotId('2026-11-22', 'sun2', 'offer'), del: true }, { id: A.slotId('2026-11-22', 'sun2', 'offer'), who: ['a'] }, { id: A.slotId('2026-11-22', 'sun2', 'offer'), who: ['b'] }].concat(b.slots), visits: [], marks: [{ id: A.markId('2026-11-22'), del: true }, { id: A.markId('2026-11-22'), tags: ['성찬주'] }] };
+  sc.eq('(72) 한 주 모으기: 책을 한 번만 훑어도 고르는 자리는 예전과 같다(지운 줄 빼고 · 같은 id 는 첫 줄)',
+    suns.concat(['2026-12-06']).map(sun => JSON.stringify(A.weekPlan(b, sun).slots) === JSON.stringify(oldSlots(b, sun))).concat([JSON.stringify(A.weekPlan(raw, '2026-11-22').slots) === JSON.stringify(oldSlots(raw, '2026-11-22')), A.weekPlan(raw, '2026-11-22').slots['sun2|offer'].who[0], A.weekPlan(raw, '2026-11-22').mark.tags[0]]),
+    [true, true, true, true, true, true, true, 'a', '성찬주']);
+  const core = HTML.slice(HTML.indexOf('<script id="rotation-core">'), HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const wp = core.slice(core.indexOf('function weekPlan('), core.indexOf('\n}', core.indexOf('function weekPlan(')));
+  sc.eq('(72) 한 주 모으기는 자리마다 책을 다시 훑지 않는다(find 안에서 날짜 · 열쇠 다시 세기 ✗)', [/book\.slots\.find\(/.test(wp), /for \(const x of book\.slots\)/.test(wp)], [false, true]);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const fn = (name) => ui.slice(ui.indexOf('function ' + name + '('), ui.indexOf('\n}', ui.indexOf('function ' + name + '(')));
+  const own = fn('startOwner'), stf = fn('startStaff'), auth = ui.slice(ui.indexOf('FB.auth.onAuthStateChanged'), ui.indexOf('});', ui.indexOf('FB.auth.onAuthStateChanged')));
+  sc.eq('(72) 열 때 순서: 팀 찾기 요청을 그리기보다 먼저 · 책 듣기를 탭 그리기보다 먼저(주인 · 교역자) · 그리기는 끝에 한 번(drawRole)',
+    [auth.indexOf('findTeam(u)') > 0 && auth.indexOf('findTeam(u)') < auth.indexOf('rerender();', auth.indexOf('if (!u)') + 40),
+      own.indexOf('onSnapshot') > 0 && !/refreshTabs\(\)/.test(own.slice(0, own.indexOf('onSnapshot'))) && /drawRole\(\);\s*$/.test(own), stf.indexOf('onSnapshot') > 0 && !/refreshTabs\(\)/.test(stf.slice(0, stf.indexOf('onSnapshot'))) && /drawRole\(\);\s*$/.test(stf),
+      /function drawRole\(\) \{ refreshTabs\(\); if \(S\.pane && !editing\(\)\) renderPane\(\); \}/.test(ui)],
+    [true, true, true, true]);
+  const tail = ui.slice(ui.lastIndexOf('/* ---------- 시작 ---------- */'));
+  sc.eq('(72) 로그인 도구 받기는 첫 그리기보다 먼저 띄우고 · 다 받은 뒤 또 그리지 않음 · app 다음 auth · firestore 는 함께 받기',
+    [tail.indexOf('fbInit()') > 0 && tail.indexOf('fbInit()') < tail.indexOf('renderShell()'), /fbInit\(\)\.then\(rerender\)/.test(ui), /await loadJs\(FB_JS\[0\]\); await Promise\.all\(FB_JS\.slice\(1\)\.map\(loadJs\)\)/.test(ui)],
+    [true, false, true]);
+  sc.eq('(72) 곁 자료(예배팀 일정 · 연락처)가 와서 다시 그리는 것은 모아 한 번(laterRender) · 책은 바로(맞추는 중… 을 곧장 지움)',
+    [/S\.worship = d\.exists \? d\.data\(\) : null; laterRender\(\);/.test(ui), /if \(k === 'phones'\) laterRender\(\);/.test(ui), /function laterRender\(\) \{ if \(laterRender\.t\) return;/.test(ui), /bsMigrate\(\);\s*if \(!editing\(\)\) rerender\(\);/.test(own)],
+    [true, true, true, true]);
+  sc.eq('(72) 맞춘 시간 · 책 크기는 개발자(HB)만 메뉴 → 계정에 · 처음 한 번만 잼 · 저장하지 않음',
+    [/function syncLine\(\) \{ return isDev\(\) && FB\.syncMs/.test(ui), /'계정과 맞춰져 있습니다' \+ syncLine\(\)/.test(ui), /function syncTimed\(book\) \{ if \(FB\.synced \|\| FB\.syncMs\) return;/.test(ui), /syncMs[^\n]*lsSet|lsSet[^\n]*syncMs/.test(ui)],
+    [true, true, true, false]);
 }
 
 sc.done();
