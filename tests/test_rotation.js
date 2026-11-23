@@ -41,6 +41,7 @@
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
+//  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
 //  (66) 연락처(1123-T): vcf 읽기(자모 · QP · 접힌 줄 · +82) · 이름 맞추기(꼭 같은 이름 · 번호 하나만 · 띄어 적은 직분 뗌) · 셀 inside 번호 · 계정 문서 다듬기 · 더하기(지우지 않음) · 화면 자리
 //  (65) 예배 순서 판 한 장 표 · 내 일정 명단 역할/이름 나눔(1123-B B2b, HB 시안 A2 · B1): 열 = 예배 · 묶음 둘 · 빈 줄 숨김 · 중계 접기 · 처음은 예배별(마지막 알약 기억)
 //  (64) 이번 주 부산 띠 · 내 일정 명단(1123-B B2): 예배마다 한 줄(여덟 갈래 · 싱어 하나로 · 중계 · 교역자 뺌) · 띠(표 있을 때만 · 내 주) · 카드 주 고르기(두 번 안 보임) · 화면 자리
@@ -78,7 +79,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX };`, ctx);
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -2165,6 +2166,26 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(66) 화면: 계정 gs/phones(HB 만 씀 · 팀은 듣기) · 파일 내용은 안 둠 · 예배 순서 판 이름 누르면 전화 · 문자 · 셀 inside 는 읽기만',
     [/gsRef\('phones'\)\.set\(/.test(ui), /keys = GS_SRC\.map\(x => x\.k\)\.concat\(\['phones'\]/.test(ui), /data-ph="/.test(ui) && /href="tel:/.test(ui) && /href="sms:/.test(ui), /collection\('cellbook'\)[^;]*\.(set|update|delete)\(/.test(ui), /phParseVcf\(/.test(ui)],
     [true, true, true, false, true]);
+}
+
+
+// (67) 1123-T T2 — 못 찾은 분은 후보에서 · 내 연락처에서 찾아 고르기 · 한 연락처 안의 여러 번호 중 고르기 (HB 11/23). 이름 · 번호는 지어낸 것.
+{
+  const C = [{ name: '김미선 권사님', tels: ['010-2000-0001', '051-200-0001'] }, { name: '김미선', tels: ['010-2000-0002'] }, { name: '김미성', tels: ['010-2000-0003'] },
+    { name: '미선이', tels: ['010-2000-0004'] }, { name: '박하나', tels: ['010-2000-0005'] }, { name: '번호없음', tels: [] }];
+  const P = A.phPrepAll(C), cand = A.phCands('김미선A', P, 6);
+  sc.eq('(67) 후보: 꼭 같음(1) 먼저 · 한 글자 다름(0.6) · 번호 없는 연락처는 빼고 · 연락처 안의 번호를 모두(집 · 휴대폰 중 고름) · 시트 끝 A 는 떼고 봄',
+    cand.map(c => [c.name, c.tels, c.score]), [['김미선', ['010-2000-0002'], 1], ['김미선 권사님', ['010-2000-0001', '051-200-0001'], 1], ['김미성', ['010-2000-0003'], 0.6]]);
+  sc.eq('(67) 후보 수 상한 · 이름이 비면 빈 목록 · 다듬은 목록은 한 번만(같은 것을 다시 주면 그대로)', [A.phCands('김미선', P, 1).length, A.phCands('', P).length, A.phPrepAll(P) === P, P.length], [1, 0, true, 5]);
+  sc.eq('(67) 내 연락처에서 찾기: 이름 속 어디든(직분 떼고) · 번호 숫자 세 자리 넘게 · 빈 글은 없음',
+    [A.phSearch('미선', P).map(c => c.name), A.phSearch('0005', P).map(c => c.name), A.phSearch('', P).length, A.phSearch('김미선 권사', P).map(c => c.name)],
+    [['김미선 권사님', '김미선', '미선이'], ['박하나'], 0, ['김미선 권사님', '김미선']]);
+  const m = A.phMerge(null, Object.assign({}, { 김미선A: { n: '김미선A', p: '010-2000-0002', src: '김미선', how: 'same' } }, { 김미선A: { n: '김미선A', p: '051-200-0001', src: '김미선 권사님', how: 'pick' } }), 1);
+  sc.eq('(67) 손으로 고른 것이 저절로 맞춘 것을 이김 · 시트 이름 그대로(김미선A) 저장', [A.phOf(m.doc, '김미선A'), A.phOf(m.doc, '김미선B')], ['051-200-0001', '']);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  sc.eq('(67) 화면: 메뉴 개발 탭 구글 자료 아래 \'연락처 가져오기\' · 구글 자료 판에서는 뺌 · 고르기 칸 · 찾기는 결과만 다시 그림 · 저장은 맞춘 것 + 고른 것',
+    [/data-act="gsopen">구글 자료[^\n]*\n\s*\$\{phCan\(\) \? '<button class="btn ghost" data-act="phones">연락처 가져오기/.test(ui), /class="gsline" data-act="phones"/.test(ui), /data-phopen="/.test(ui) && /data-phpick="/.test(ui), /r\.innerHTML = t\.value\.trim\(\) \? phCandHtml\(/.test(ui), /function phAll\(\) \{ return Object\.assign\(\{\}, PH\.res \? PH\.res\.hit : \{\}, PH\.pick\); \}/.test(ui)],
+    [true, false, true, true, true]);
 }
 
 sc.done();
