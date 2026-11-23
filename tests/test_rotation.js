@@ -41,6 +41,7 @@
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
+//  (64) 이번 주 부산 띠 · 내 일정 명단(1123-B B2): 예배마다 한 줄(여덟 갈래 · 싱어 하나로 · 중계 · 교역자 뺌) · 띠(표 있을 때만 · 내 주) · 카드 주 고르기(두 번 안 보임) · 화면 자리
 //  (59) 구글 자료(1121-G G1): 탭 이름 · 맨 뒤 판 · 합친 칸 펴기 · 날짜(해 넘김 · 특별예배 글) · 예배팀 / 예배위원 시트 읽기(글자로 찾기 · 판교중계 = 중계 · 옆 표 안 읽음) · 두 달 합치기 · 읽기만
 //  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
@@ -75,7 +76,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText };`, ctx);
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1407,7 +1408,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   // 화면 코드 — 판은 HB 만 · 네 탭 같은 판 · 옛 알림 자리 걷음 · 접기는 이 기기에만 · 표 · 숙소 판 기한도 같은 기준
   sc.eq('㊶ (1117-Z 2c 에서 바뀜) 교역자 판은 따로 거른 판 — ㊷', /function alertData\(over\) \{[^\n]*\n\s*return alertsOf\(/.test(HTML), true);
   sc.eq('㊶ 네 탭이 같은 판(topBanner) — 탭마다 그리던 alertList · choreList · 취소 기한 줄 · 그다음 줄은 없다',
-    [(HTML.match(/\$\{topBanner\(\)\}/g) || []).length, /function alertList\(|function choreList\(|class="wafter"|\$\{alertList\(/.test(HTML)], [4, false]);
+    [(HTML.match(/\$\{topBanner\((?:gsBandHtml\([^`]*?\))?\)\}/g) || []).length, /function alertList\(|function choreList\(|class="wafter"|\$\{alertList\(/.test(HTML)], [4, false]);
   sc.eq('㊶ 접기는 이 기기(PREF — localStorage)에만, 책 · 계정에 넣지 않음', [/PREF\.afold = !PREF\.afold; savePref\(\);/.test(HTML), /afold/.test(HTML.slice(HTML.indexOf('function cloudSave('), HTML.indexOf('function cloudSave(') + 1500))], [true, false]);
   sc.eq('㊶ 알림 줄은 줄어들지 않는다(flex:none) — 폰에서 목록 높이를 막으면 줄이 눌려 글자가 겹쳤다(v. 26-1118-2)', /\.arow\{flex:none;/.test(HTML), true);
   sc.eq('㊶ 부산 요약 표 · 숙소 판의 취소 기한도 같은 기준(cancelSoon)', (HTML.match(/cancelSoon\(/g) || []).length >= 5, true);
@@ -2059,6 +2060,38 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(63) 한 줄 글: 예배 묶음은 / · 한 예배의 여러 역할은 쉼표(어느 예배 역할인지 안 헷갈리게)', A.gsPartsText([{ whats: ['어웨이크', '1부'], roles: ['헌금'] }, { whats: ['2부'], roles: ['싱어2', '봉독'] }]), '어웨이크 · 1부 헌금 / 2부 싱어2, 봉독');
   sc.eq('(63) 표가 없으면 빈 목록 · 읽기만(표를 고치지 않음)', [A.gsWeekPeople(null, null, '2026-11-29').length, JSON.stringify([team, serve])], [0, before]);
   sc.eq('(63) 판: 예배별 · 사람별 알약(교역자도 누름)', [/data-gsview="\$\{k\}"/.test(HTML) && /\['ppl', '사람별'/.test(HTML), /d\.gsv \|\| d\.gsm \|\| d\.gsview/.test(HTML), /gsWeekPeople\(T, V, P\.sun\)/.test(HTML)], [true, true, true]);
+}
+
+
+// (64) 1123-B B2 — 주간 맨 위 '이번 주 부산' 띠 · 내 일정 '부산 준비' 아래 명단 (HB 11/23). 이름은 모두 지어낸 것.
+{
+  const R = (k, label) => ({ k, label });
+  const team = { sun: [
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 예배인도: ['한별'], 싱어1: ['나래'], 싱어2: ['다 온'], 메인건반: ['차소율'], '음향&중계': ['문이든'], 봉독: ['고은결'], 교역자: ['이목사'], 토요모임: ['기도회'], 드럼: ['진우람'] } },
+      { date: '2026-11-29', svc: '1', relay: true, cells: {} }],
+    fri: [{ date: '2026-11-27', name: '인카운터', relay: false, cells: { 예배인도: ['이목사'], '음향&중계': ['문이든'] } }],
+    roles: { sun: [], fri: [] } };
+  const serve = { sun: [
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 안내: ['전하람'], 헌금: ['박새봄', '김라온'], 봉독: ['고은결'], 광고: ['이목사'] } },
+      { date: '2026-11-29', svc: '1', relay: false, cells: { 헌금: ['김마루'] } }],
+    fri: [], roles: { sun: [], fri: [] } };
+  const before = JSON.stringify([team, serve]), B = A.gsWeekBrief(team, serve, '2026-11-29');
+  sc.eq('(64) 예배마다 한 줄 · 차례(금요 → 2부 → 1부)', B.map(x => x.label), ['인카운터', '2부', '1부']);
+  sc.eq('(64) 여덟 갈래 차례 · 싱어1 · 싱어2 는 싱어 하나 · 음향 & 중계 = 음향 · 봉독 한 번 · 교역자 · 토요모임 · 드럼은 뺌', B[1].text, '예배 인도 한별 · 싱어 나래, 다 온 · 건반 차소율 · 음향 문이든 · 봉독 고은결 · 안내 전하람 · 헌금 박새봄, 김라온 · 광고 이목사');
+  sc.eq('(64) 중계 예배는 분당 중계를 앞에(예배위원은 그대로)', B[2].text, '분당 중계 · 헌금 김마루');
+  sc.eq('(64) 표가 없거나 다른 주면 빈 목록 · 읽기만', [A.gsWeekBrief(null, null, '2026-11-29').length, A.gsWeekBrief(team, serve, '2026-12-06').length, JSON.stringify([team, serve])], [0, 0, before]);
+  const book = { visits: [{ id: 'v1', date: '2026-11-27', who: ['p1'] }, { id: 'v2', date: '2026-12-04', who: ['p2'], del: true }] };
+  sc.eq('(64) 띠: 표 있을 때만 · 섬기는 분 수 = 사람별 수 · 내 부산 주면 mine(금요만 머물러도 그 주)',
+    [A.gsBand(book, team, serve, '2026-11-29', 'p1'), A.gsBand(book, team, serve, '2026-11-29', 'p2').mine, A.gsBand(book, team, serve, '2026-11-29', '').mine, A.gsBand(book, team, serve, '2026-12-06', 'p1')],
+    [{ sun: '2026-11-29', n: A.gsWeekPeople(team, serve, '2026-11-29').length, mine: true }, false, false, null]);
+  sc.eq('(64) 지운 부산 일정은 내 주가 아님', A.gsInWeek(book, 'p2', '2026-12-06'), false);
+  sc.eq('(64) 카드 주: 준비 카드의 주 · 이번 주가 그 주면 이번 주 카드 없음 · 내가 이번 주에 들었어도 없음 · 아니면 이번 주(월요일도 그 주일)',
+    [A.gsMyWeeks(book, 'p1', '2026-11-24', book.visits[0]), A.gsMyWeeks(book, 'p1', '2026-11-24', null), A.gsMyWeeks(book, 'p2', '2026-11-23', null), A.gsMyWeeks(book, 'p2', '2026-11-30', { date: '2026-12-11' })],
+    [{ trip: '2026-11-29', week: '' }, { trip: '', week: '' }, { trip: '', week: '2026-11-29' }, { trip: '2026-12-13', week: '2026-12-06' }]);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  sc.eq('(64) 화면: 주간 맨 위 띠(알림 판 위) · 누르면 사람별 · 내 일정 명단 + 모두 보기 · 판단은 core',
+    [/topBanner\(gsBandHtml\(/.test(ui), /data-view="ppl"/.test(ui), /gsWeekBrief\(/.test(ui) && /모두 보기/.test(ui), /gsMyWeeks\(S\.book/.test(ui), /function gsBrief\(|function gsBand\(|function gsMyWeeks\(/.test(ui)],
+    [true, true, true, true, false]);
 }
 
 sc.done();
