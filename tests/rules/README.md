@@ -10,6 +10,8 @@ npx firebase emulators:exec --only firestore --project demo-rota "node rota.test
 npx firebase emulators:exec --only firestore,auth --project demo-rota "node rota.e2e.mjs"
 # 처음 열기 시간 재기(1123-B B3d) — 지어낸 책 크기별 · 느린 망 흉내로 '맞추는 중…' 까지 무엇이 몇 초인지 찍는다(통과 · 실패 없음, 숫자만)
 npx firebase emulators:exec --only firestore,auth --project demo-rota "node rota.perf.mjs"
+#   크롬 · 아이패드 사파리(구글 쪽 준비를 늦게 실패시켜 흉내) 두 갈래. ROTA_ONLY=chrome|safari 로 하나만,
+#   고치기 전 판과 견주려면 옛 rotation/index.html 을 다른 자리(예: 8766)에 띄우고 ROTA_ROOT=http://localhost:8766/rotation/
 # 심방 녹음(plaudhub) — 규칙 · 도우미 + 계기판 실제 흐름(서버 띄울 필요 없음)
 npx firebase emulators:exec --only firestore --project demo-plaud "node plaud.test.mjs"
 npx firebase emulators:exec --only firestore,auth --project demo-plaud "node plaud.e2e.mjs"

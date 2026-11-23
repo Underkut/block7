@@ -44,6 +44,7 @@
 //  (70) 카톡 글 프리셋(1123-B B3): 틀 채우기(예배 역할 · 갈래 · 시트 칸 이름 · 금요 이름) · 빈 칸 든 줄 빼기 · {날} 복사하는 날 기준 · 모르는 칸 그대로 · 칸 단추 · 프리셋 다듬기 · 합치기(HB · 함께 쓰기 · 교역자 것) · 쓸 것 · 저장 칸 · 화면
 //  (71) 카톡 글 B3c(HB 사진 11/23): 예배 순서 판 높이 고정(알약 바꿔도) · 말풍선 아이콘 오른쪽 위(첫 줄 빈 듯 안 보이게, 광고 판도) · 생략 문구
 //  (72) 처음 열기 B3d(HB 11/23 '맞추는 중…' 오래): 한 주 모으기(weekPlan)는 책을 한 번만 훑고 예전과 같은 답 · 열 때 요청 먼저 · 그리기는 덜 · 개발자만 맞춘 시간 · 책 크기
+//  (73) 처음 열기 B3d-2(HB 아이패드 11/23 '오히려 오래' · 측정 줄 안 보임): 같은 이름 함수 없음(뒤의 것이 덮음) · 사파리 로그인이 구글 준비를 안 기다림(구글 로그인 복귀 중만) · 단계별 시각은 개발자만 · 이 기기에만
 //  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
 //  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
@@ -2331,9 +2332,9 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(72) 한 주 모으기는 자리마다 책을 다시 훑지 않는다(find 안에서 날짜 · 열쇠 다시 세기 ✗)', [/book\.slots\.find\(/.test(wp), /for \(const x of book\.slots\)/.test(wp)], [false, true]);
   const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
   const fn = (name) => ui.slice(ui.indexOf('function ' + name + '('), ui.indexOf('\n}', ui.indexOf('function ' + name + '(')));
-  const own = fn('startOwner'), stf = fn('startStaff'), auth = ui.slice(ui.indexOf('FB.auth.onAuthStateChanged'), ui.indexOf('});', ui.indexOf('FB.auth.onAuthStateChanged')));
+  const own = fn('startOwner'), stf = fn('startStaff'), auth = ui.slice(ui.indexOf('FB.auth.onAuthStateChanged'), ui.indexOf('\n    });', ui.indexOf('FB.auth.onAuthStateChanged')));
   sc.eq('(72) 열 때 순서: 팀 찾기 요청을 그리기보다 먼저 · 책 듣기를 탭 그리기보다 먼저(주인 · 교역자) · 그리기는 끝에 한 번(drawRole)',
-    [auth.indexOf('findTeam(u)') > 0 && auth.indexOf('findTeam(u)') < auth.indexOf('rerender();', auth.indexOf('if (!u)') + 40),
+    [((x) => x.indexOf('findTeam(u)') >= 0 && x.indexOf('findTeam(u)') < x.indexOf('rerender();'))(auth.slice(auth.indexOf('return rerender(); }') + 20)),
       own.indexOf('onSnapshot') > 0 && !/refreshTabs\(\)/.test(own.slice(0, own.indexOf('onSnapshot'))) && /drawRole\(\);\s*$/.test(own), stf.indexOf('onSnapshot') > 0 && !/refreshTabs\(\)/.test(stf.slice(0, stf.indexOf('onSnapshot'))) && /drawRole\(\);\s*$/.test(stf),
       /function drawRole\(\) \{ refreshTabs\(\); if \(S\.pane && !editing\(\)\) renderPane\(\); \}/.test(ui)],
     [true, true, true, true]);
@@ -2344,9 +2345,27 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(72) 곁 자료(예배팀 일정 · 연락처)가 와서 다시 그리는 것은 모아 한 번(laterRender) · 책은 바로(맞추는 중… 을 곧장 지움)',
     [/S\.worship = d\.exists \? d\.data\(\) : null; laterRender\(\);/.test(ui), /if \(k === 'phones'\) laterRender\(\);/.test(ui), /function laterRender\(\) \{ if \(laterRender\.t\) return;/.test(ui), /bsMigrate\(\);\s*if \(!editing\(\)\) rerender\(\);/.test(own)],
     [true, true, true, true]);
-  sc.eq('(72) 맞춘 시간 · 책 크기는 개발자(HB)만 메뉴 → 계정에 · 처음 한 번만 잼 · 저장하지 않음',
-    [/function syncLine\(\) \{ return isDev\(\) && FB\.syncMs/.test(ui), /'계정과 맞춰져 있습니다' \+ syncLine\(\)/.test(ui), /function syncTimed\(book\) \{ if \(FB\.synced \|\| FB\.syncMs\) return;/.test(ui), /syncMs[^\n]*lsSet|lsSet[^\n]*syncMs/.test(ui)],
+  sc.eq('(72) 맞춘 시간 · 책 크기는 개발자(HB)만 메뉴 → 계정에 · 처음 한 번만 잼 · 저장하지 않음 (B3d-2: 이름 syncInfo — syncLine 은 맨 위 안내 줄이 써서 덮였다)',
+    [/function syncInfo\(\) \{ if \(!isDev\(\) \|\| !FB\.syncMs\) return '';/.test(ui), /'계정과 맞춰져 있습니다' \+ syncInfo\(\)/.test(ui), /function syncTimed\(book\) \{ if \(FB\.synced \|\| FB\.syncMs\) return;/.test(ui), /syncMs[^\n]*lsSet|lsSet[^\n]*syncMs/.test(ui)],
     [true, true, true, false]);
+}
+
+
+// (73) 1123-B B3d-2 — 아이패드에서 '오히려 오래' · 측정 줄이 안 보임. 잰 숫자는 ROADMAP B3d-2 · rota.perf.mjs(사파리 줄)
+{
+  // 같은 이름 함수가 둘이면 뒤의 것이 앞의 것을 소리 없이 덮는다(core 와 화면 덩어리는 같은 전역) — syncLine(측정 줄) · svSet(분당 예배위원 칸 넣기)이 그랬다
+  const names = (HTML.match(/^(?:async )?function [A-Za-z0-9_$]+/gm) || []).map(x => x.replace(/^(?:async )?function /, ''));
+  sc.eq('(73) 이 앱 안에 같은 이름 함수가 둘인 곳 없음', names.filter((x, i) => names.indexOf(x) !== i), []);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const init = ui.slice(ui.indexOf('async function fbInit('), ui.indexOf('async function fbLogin('));
+  sc.eq('(73) 사파리: 구글 로그인에서 돌아오는 중이 아니면 로그인 도구가 구글 스크립트 · 숨은 창을 기다리지 않음(quickAuth) · 돌아오는 중이면 예전 그대로 · 로그인 전 기기는 상태가 온 뒤 미리 준비',
+    [/FB\.auth = FB\.app\.auth\(\); quickAuth\(\);/.test(init), /function quickAuth\(\) \{\s*if \(gRedirPending\(\)\) return;[^]*?'_shouldInitProactively', \{ configurable: true, get: \(\) => false \}/.test(init),
+      /if \(redir\) FB\.auth\.getRedirectResult\(\)/.test(init), /if \(!u\) \{ leaveTeam\(\); if \(!redir\) FB\.auth\.getRedirectResult\(\)/.test(init),
+      /firebase:pendingRedirect/.test(init), (ui.match(/lsSet\(GREDIR_KEY, Date\.now\(\)\); return await FB\.auth\.signInWithRedirect\(pr\)/g) || []).length],
+    [true, true, true, true, true, 2]);
+  sc.eq('(73) 단계별 시각(도구 · 로그인 · 팀 · 책 받음 · 그림)은 개발자만 · 이 기기에만(지난 다섯 번) · 계정에 안 올림',
+    [/if \(isDev\(\)\) lsSet\(PERF_KEY,/.test(ui), /PERF[^\n]*\.set\(|collection\([^\n]*PERF/.test(ui), ['tool', 'auth', 'team', 'book'].every(k => ui.includes(`perfMark('${k}')`)), (ui.match(/perfDone\(\);?/g) || []).length >= 2],
+    [true, false, true, true]);
 }
 
 sc.done();
