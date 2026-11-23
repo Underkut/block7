@@ -42,6 +42,7 @@
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
 //  (70) 카톡 글 프리셋(1123-B B3): 틀 채우기(예배 역할 · 갈래 · 시트 칸 이름 · 금요 이름) · 빈 칸 든 줄 빼기 · {날} 복사하는 날 기준 · 모르는 칸 그대로 · 칸 단추 · 프리셋 다듬기 · 합치기(HB · 함께 쓰기 · 교역자 것) · 쓸 것 · 저장 칸 · 화면
+//  (71) 카톡 글 B3c(HB 사진 11/23): 예배 순서 판 높이 고정(알약 바꿔도) · 말풍선 아이콘 오른쪽 위(첫 줄 빈 듯 안 보이게, 광고 판도) · 생략 문구
 //  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
 //  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
@@ -2297,6 +2298,18 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [/\['kt', '카톡 글'\]/.test(ui), /function ktCopy\(\) \{[^]*?navigator\.clipboard\.writeText\(/.test(ui) && !/function ktCopy\(\) \{[^}]*await/.test(ui), /function ktFill\(|function ktList\(/.test(ui),
       /'ktcopy'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('function staffOk'))), /function ktShare\([^)]*\) \{ if \(isStaff\(\)\) return/.test(ui)],
     [true, true, false, true, true]);
+}
+
+
+// (71) 1123-B B3c — HB 사진 넷(11/23 오후): 판 높이 · 말풍선 첫 줄 · 문구
+{
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  sc.eq('(71) 예배 순서 판은 알약(예배별 · 사람별 · 카톡 글)을 바꿔도 같은 높이(fixh) · 다른 판은 그대로(내용만큼)',
+    [/el\.classList\.toggle\('fixh', S\.pane\.kind === 'gsweek'\);/.test(ui), /\.pane\.fixh\{height:min\(88vh,/.test(HTML)], [true, true]);
+  sc.eq('(71) 말풍선 아이콘은 오른쪽 위에 띄움(글이 첫 줄부터 — 위에 아이콘만 든 빈 줄 없음) · 카톡 글 · 광고 판 같은 모양',
+    [/\.adtxi\{float:right;/.test(HTML), /\.adtxbub\{[^}]*display:flow-root/.test(HTML), /class="adtxbub ktbub/.test(ui) && /class="adtxbub\$\{cur\.edited/.test(ui)], [true, true, true]);
+  sc.eq('(71) 문구: 정보가 아직 채워지지 않은 줄은 생략했습니다(HB 글) · 숫자 · \'빈 칸이 든 줄\' 없음',
+    [/'정보가 아직 채워지지 않은 줄은 생략했습니다\.'/.test(ui), /빈 칸이 든 줄 \$\{/.test(ui)], [true, false]);
 }
 
 sc.done();
