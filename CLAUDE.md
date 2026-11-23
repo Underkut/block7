@@ -205,7 +205,7 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   **분당 특별예배(1116-2 E)**: 정해진 예배(주일 · 수 · 금) 밖의 분당 예배는 책의 `specs`(`x|날짜|k` · 이름 `n` · 때 `t` · 자리 `roles` · 그 날 수 · 금요예배 쉼 `rest`), 자리 사람은 보통 자리와 같은 `slots`(`날짜|xk|역할`) — 그래서 고르기 판 · 겹침 · 내 일정이 그대로 따른다. `SVC[svc]` 를 바로 찾지 말고 `svcI` · 이름은 `slotLabelB`. 예배를 지우면 자리도(`dropSpec`). HB 만.
   목록 셋(`opts`: 숙소 · 교통편 · 특이사항 갈래)은 기본값을 정해진 id(`optId`)로 적는다 — 이름을 고치면 방문 기록도 함께 바뀐다(`optEdit`). 특이사항(`issues`)은 메모와 따로. 부산 방문 판은 '저장' 을 눌러야 들어간다(× 는 버림).
   금1 · 금2 · 금3 은 화면 · 자료 어디서나 **AWAKE · REVIVED · ENCOUNTER**(`friName`, HB 11/14). 매월 마지막 금요일에만 'WN 광고' 칸(`fri|notice`).
-  `users/{uid}` 는 건드리지 않는다. `cellbook/{uid}` 는 **AI 열쇠(`ai.key`) 읽기 한 곳뿐**(R9 — 셀 inside 에 넣은 제미나이 열쇠를 함께 씀, 쓰지 말 것 · `test_rotation` ⑧).
+  `users/{uid}` 는 건드리지 않는다. `cellbook/{uid}` 는 **읽기 한 곳뿐**(`cbRead` — AI 열쇠 `ai.key`(R9, 셀 inside 에 넣은 제미나이 열쇠를 함께 씀) · 셀원 번호 `phones`(1123-T), 쓰지 말 것 · `test_rotation` ⑧).
   **예약 읽기(R9)**: 숙소 예약 화면 사진 · 예약 메일을 AI 가 읽은 것은 **숙소 초안에만** 채운다(`fillStay`) — 책에 바로 넣지 말 것(HB 가 '저장').
   메일(R9b)은 구글 열쇠 서버(`gcal-functions/`)의 **메일 전용 열쇠**(`gmailTokens/{uid}`, 권한 `gmail.readonly` 하나)로 읽기만 — 캘린더 · 심방 열쇠(`gcalTokens`)와 섞지 말 것(섞으면 그 앱들이 메일을 읽게 된다). 메일 글은 저장하지 않고 이 기기에 메일 id 별 뽑은 예약만(`rota_mail_v1`). 서버를 고치면 HB 가 다시 올린다(`docs/rotation/mail-setup.md`).
 - **Monday 주일 광고(R12 C, HB 11/16)**: 부산 영상 광고 · 구두 광고를 Monday('주일 영상 소식' · 'TLCB 주보')에서 **읽기만** — 구글 열쇠 서버 묶음의 함수 `monday`(`gcal-functions/src/monday.js` · 판단은 `monday-core.js`).
@@ -228,6 +228,8 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   읽은 표는 `rota/{uid}/gs/bteam` · `gs/bserve`(HB 쓰기 · 팀 읽기), 고른 파일은 `gs/src`(HB 만). 책에 넣지 말 것 · 시트에 쓰지 말 것 · 지문(`h`)이 다를 때만 쓴다(`gsSaveCheck`, `test_rotation` (60)).
   ⚠️ 여기서 '구글 연결 끊기'(`/off`)를 만들지 말 것 — 한 벌이라 BLOCK7 캘린더 · 심방 노트까지 끊긴다.
   **맞춰 보기(G4)**: 어긋남 판단은 `gsDiff`, 반영은 `gsFix` — HB 가 '앱에 반영' 을 누른 그 줄 하나만(저절로 바꾸지 말 것). 넘긴 줄은 HB `ui.gsk`(자리 + 지문, 이름 없음). 교역자 화면에는 없다(`test_rotation` (62) · e2e ㉗).
+- **연락처(1123-T, HB 11/23)**: 이름을 누르면 전화 · 문자. 번호는 `rota/{HB}/gs/phones`(구글 자료 표와 같은 읽는 사람 — HB 쓰기 · 팀 교역자 읽기, 규칙 그대로) — **맞춘 이름 · 번호만**, 연락처 파일 내용은 두지 말 것.
+  넣는 것은 이름이 꼭 같고 번호가 하나뿐일 때만(`phMatch` — 번호 여럿 = 동명이인일 수 있어 넣지 않음), 계정 것은 지우지 않고 더한다(`phMerge`) · `test_rotation` (66). 저장소 · 시험에는 지어낸 이름 · `010-0000-…` 번호만.
 - **부산 교역자는 `visits` 한 곳에만** 적는다. 예배 구성의 '부산 교역자' 줄은 거기서 읽어 보여 준다(두 시트가 어긋나던 까닭).
 - **예배팀 일정(R13)**: 서버 `gcal-functions/src/worship.js`(+ `worship-core.js` · `test_worship`)가 2시간마다 예배팀 API 를 **읽기만** 해 `rota/{HB}/ext/worship` 에 기간 통째로 바꿔 끼운다(쓰기 규칙 없음 = 서버만). 열쇠는 Secret Manager `SCHEDULE_API_KEY` — 값을 코드 · 저장소 · 로그 · 화면에 두지 말 것, 앱이 예배팀 API 를 직접 부르지 말 것.
   저장하는 사람은 **인도자 전원 + 우리 명단 분만**(나머지 팀원은 버림 — 예배팀 개발자께 한 약속). 이름 맞추기 명단은 HB 앱이 문서 맨 위 `wkeys`(+ `wpull`)에 적는다 — 책(`b10`)에 넣지 말 것. 겹침은 `worshipClash` (미정 = 노랑). 순서는 `docs/rotation/worship-setup.md`.
