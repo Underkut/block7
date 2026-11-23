@@ -40,6 +40,7 @@
 //  (60) 구글 자료 계정에 두기(1121-G G2): 지문(칸 차례 무관) · 다듬기 · 올릴지(같음 · 비면 · 절반 넘게 줄면 멈춤 · 그래도) · 고른 파일 · 한 시간
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
+//  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
 //  (59) 구글 자료(1121-G G1): 탭 이름 · 맨 뒤 판 · 합친 칸 펴기 · 날짜(해 넘김 · 특별예배 글) · 예배팀 / 예배위원 시트 읽기(글자로 찾기 · 판교중계 = 중계 · 옆 표 안 읽음) · 두 달 합치기 · 읽기만
 //  ㊶ 알림 판(1117-Z 2): 두 달 안의 미정을 갈래(급함 · 부산 · 분당 · 확인)로 · 취소 기한 7일(오늘 포함) · 예약 완료 호텔만(댁 · 취소 · 예약 전 빼고) ·
 //     두 달 경계 · 숙소 미정 기준 하나 · 부산 일정 없는 주일 · 상영은 받은 주일만 · 빈 자리 묶기 · 줄마다 갈 곳 · 교역자에게 판 없음
@@ -74,7 +75,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX };`, ctx);
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -2034,6 +2035,30 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(62) HB 만: 판은 gsCan · 교역자 누름(staffOk)에 반영 · 넘기기 없음 · 알림 판에 표를 넘김',
     [/function gsChkOk\(\) \{ return gsCan\(\) && !isStaff\(\); \}/.test(ui), /'gsfix'|'gsskip'|d\.gsfix|d\.gsskip/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('function staffNoMsg'))), /gs: isStaff\(\) \? null : \{ team: gsData\('bteam'\), serve: gsData\('bserve'\), skip: UIS\.ui\.gsk \|\| \[\] \}/.test(HTML), /if \(t\.gs\) return gsChkOpen\(t\.gs\);/.test(HTML)],
     [true, false, true, true]);
+}
+
+
+// (63) 1123-B B1 — 예배 순서 판 '사람별' (HB 11/23). 이름은 모두 지어낸 것.
+{
+  const R = (k, label) => ({ k, label });
+  const team = { sun: [
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 예배인도: ['한별'], 드럼: ['정 마루'], 봉독: ['고은결'], 토요모임: ['기도회'] } },
+      { date: '2026-11-29', svc: '1', relay: true, cells: {} },
+      { date: '2026-11-22', svc: '2', relay: false, cells: { 예배인도: ['다른주'] } }],
+    fri: [{ date: '2026-11-27', name: '인카운터', relay: false, cells: { 예배인도: ['이목사'], 드럼: ['정마루'] } }],
+    roles: { sun: [R('예배인도', '예배 인도'), R('드럼', '드럼'), R('봉독', '봉독'), R('토요모임', '토요모임')], fri: [R('예배인도', '예배 인도'), R('드럼', '드럼')] } };
+  const serve = { sun: [
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 헌금: ['박새봄', '김라온'], 봉독: ['고은결'], 광고: ['이목사'] } },
+      { date: '2026-11-29', svc: '1', relay: false, cells: { 헌금: ['김라온'] } },
+      { date: '2026-11-29', svc: 'LL', relay: false, cells: { 안내: ['박새봄'] } }],
+    fri: [], roles: { sun: [R('안내', '안내'), R('헌금', '헌금'), R('봉독', '봉독'), R('광고', '광고')], fri: [] } };
+  const before = JSON.stringify([team, serve]), P = A.gsWeekPeople(team, serve, '2026-11-29'), by = n => P.find(x => x.name === n);
+  sc.eq('(63) 이름순(ㄱㄴㄷ) · 글자는 먼저 본 대로(금요 정마루) · 그 주만 · 토요모임 글(기도회)은 사람이 아님', P.map(x => x.name), ['고은결', '김라온', '박새봄', '이목사', '정마루', '한별']);
+  sc.eq('(63) 같은 역할 예배는 모음(2부 · 1부 헌금) · 띄어쓰기만 다른 이름은 한 분(금요 · 2부 드럼)', [A.gsPartsText(by('김라온').parts), A.gsPartsText(by('정마루').parts), by('정마루').n], ['2부 · 1부 헌금', '인카운터 · 2부 드럼', 2]);
+  sc.eq('(63) 예배팀 봉독 = 예배위원 봉독은 한 번 · 예배마다 다른 역할은 따로(2부 헌금 · 라이프라인 안내)', [A.gsPartsText(by('고은결').parts), A.gsPartsText(by('박새봄').parts), A.gsPartsText(by('이목사').parts)], ['2부 봉독', '2부 헌금 / 라이프라인 안내', '인카운터 예배 인도 / 2부 광고']);
+  sc.eq('(63) 한 줄 글: 예배 묶음은 / · 한 예배의 여러 역할은 쉼표(어느 예배 역할인지 안 헷갈리게)', A.gsPartsText([{ whats: ['어웨이크', '1부'], roles: ['헌금'] }, { whats: ['2부'], roles: ['싱어2', '봉독'] }]), '어웨이크 · 1부 헌금 / 2부 싱어2, 봉독');
+  sc.eq('(63) 표가 없으면 빈 목록 · 읽기만(표를 고치지 않음)', [A.gsWeekPeople(null, null, '2026-11-29').length, JSON.stringify([team, serve])], [0, before]);
+  sc.eq('(63) 판: 예배별 · 사람별 알약(교역자도 누름)', [/data-gsview="\$\{k\}"/.test(HTML) && /\['ppl', '사람별'/.test(HTML), /d\.gsv \|\| d\.gsm \|\| d\.gsview/.test(HTML), /gsWeekPeople\(T, V, P\.sun\)/.test(HTML)], [true, true, true]);
 }
 
 sc.done();
