@@ -20,6 +20,9 @@
 //  ⑰ (P3) 음성 주소 지우기 — 'Audio Download URL:' 다음 줄 · 명령 줄에 주소 없음(-K - 표준 입력) · 까닭 · 기록에 주소 없음 · 모르는 꼴은 멈춤
 //  ⑱ (P3) 드라이브 txt — 이름 = 녹음번호.txt · 머리말(+09:00 시각) · 이미 있으면 만들지 않음 · 임시 이름 → 이름 바꾸기 · 받은 소리 · WAV 지움
 //  ⑲ (P3) 전사 진행 · 모델 시험 — whisper 진행 % · '전사 중 n분째' · 잰 빠르기로 어림 고침 · 시험 요청 · 시험 글은 계정에 안 감
+//  ⑳ (P3b) 파일 이름 — PLAUD 제목 날짜 'YYYY-MM-DD HH:MM:SS 글' → 'YY-MMDD HH;MM 글' · 날짜 없으면 녹음 시각 · ':' '/' 걷기 · 같은 이름 (2) · 머리말 ID 로 같은 녹음 찾기
+//  ㉑ (P3b) Mac 마다 자동 전사 · 쓰는 모델은 못 지움 · 임시 파일 크기 합계 · 비우기는 전사 중에도
+//  ㉒ (P3b) 잠근 사본 — 암호 문구 → 키 · 맞는 암호만 열림 · 잠근 글에 평문이 없음 · 표지에 암호가 없음 · 계기판 복사(누른 자리에서 시작) · 받기 이름
 const fs = require('fs'), path = require('path'), vm = require('vm'), http = require('http'), os = require('os');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -28,7 +31,7 @@ const ROOT = path.join(__dirname, '..');
 const HTML = fs.readFileSync(path.join(ROOT, 'plaudhub', 'index.html'), 'utf8');
 const m = HTML.match(/<script id="plaudhub-core">([\s\S]*?)<\/script>/);
 if (!m) { console.error('plaudhub-core 덩어리를 못 찾았습니다'); process.exit(2); }
-const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, RegExp, Promise, Error };
+const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, RegExp, Promise, Error, crypto: globalThis.crypto, TextEncoder, TextDecoder, btoa, atob };
 vm.createContext(ctx); vm.runInContext(m[1] + '\n;this.__PH = PH;', ctx);
 const A = ctx.__PH;
 const J = x => JSON.parse(JSON.stringify(x));
@@ -235,7 +238,11 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑪ 녹음 번호 꼴 = 판단 덩어리와 같음', rules.includes("'^[A-Za-z0-9_]{8,64}$'") && String(A.ID_RE) === '/^[A-Za-z0-9_]{8,64}$/', true);
   sc.eq('⑪ 규칙은 plaud 칸만 (users 를 열지 않음)', /match \/users/.test(rules), false);
   const macKeys = (/match \/mac\/\{name\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test']);
+  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk']);
+  const setKeys = (/allow create, update: if own\(\) && d\(\)\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
+  sc.eq('⑪ (P3b) 설정 칸: Mac 마다 자동 · 잠금 표지(암호 자체는 없음)', setKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['kw', 'days', 'model', 'auto', 'kdf']);
+  const txtKeys = (/match \/txt\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
+  sc.eq('⑪ (P3b) 잠근 사본 칸: 잠근 글 · iv · 판뿐(평문 · 제목 칸 없음)', txtKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['c', 'iv', 'v']);
 }
 // ⑫ 도우미
 {
@@ -356,7 +363,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
     sc.eq('⑮ 끝난 것은 맡을 차례에 다시 안 나옴', A.wantedJobs(recs, Object.fromEntries(Object.entries(S.docs).map(([k, d]) => [k, d.v])), { kw: ['심방'] }, '집', S.now).length, 0);
   }
   sc.eq('⑮ 요청 이름 mtest(모델 시험)는 녹음 번호를 실어야', [A.cmdFor({ mac: '집', what: 'mtest', st: 'new', arg: ID('a') }, '집', 0), A.cmdFor({ mac: '집', what: 'mtest', st: 'new', arg: 'x/y' }, '집', 0)], [true, false]);
-  sc.eq('⑮ 전사 · 시험 중에 미루지 않는 요청은 다시 보기 · 목록 읽기뿐', J(A.CMD_WHILE_BUSY), ['check', 'refresh']);
+  sc.eq('⑮ 전사 · 시험 중에 미루지 않는 요청은 다시 보기 · 목록 읽기 · 비우기뿐', J(A.CMD_WHILE_BUSY), ['check', 'refresh', 'clean']);
 }
 // ⑯ (P3) 공간 모자람
 {
@@ -407,9 +414,10 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑱ 본문: 줄 앞뒤 빈칸 · 빈 줄을 걷음', t.split('\n---\n\n')[1], '안녕하세요.\n네 목사님.\n');
   sc.eq('⑱ 제목 없는 녹음', /제목: \(제목 없음\)/.test(A.txtOf({ id: ID('c'), n: '', t: 1, d: 6 }, 'x')), true);
   const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), w = /async function workOne[\s\S]*?\n}\n/.exec(HELPER)[0];
-  sc.eq('⑱ 맡은 뒤 드라이브에 이미 있으면 받지도 않고 끝냄(겹 둘)', w.indexOf('existsSync(final)') >= 0 && w.indexOf('existsSync(final)') < w.indexOf('fetchAudio'), true);
-  sc.eq('⑱ 쓰기 바로 앞에 맡김을 다시 확인하고 · 또 있는지 봄', w.indexOf("setStep(J, 'drive')") < w.lastIndexOf('existsSync(final)') && w.lastIndexOf('existsSync(final)') < w.indexOf('writeFileSync(part'), true);
-  sc.eq('⑱ 임시 이름(일 폴더) → 이름 바꾸기로만 드라이브에 넣음', /writeFileSync\(part,[\s\S]*renameSync\(part, final\)/.test(w) && !/writeFileSync\(final/.test(w), true);
+  sc.eq('⑱ 맡은 뒤 드라이브에 그 녹음 ID 파일이 이미 있으면 받지도 않고 끝냄(겹 둘)', w.indexOf('if (already())') >= 0 && w.indexOf('if (already())') < w.indexOf('fetchAudio'), true);
+  sc.eq('⑱ 쓰기 바로 앞에 맡김을 다시 확인하고 · 또 있는지 봄', w.indexOf("setStep(J, 'drive')") < w.lastIndexOf('if (already())') && w.lastIndexOf('if (already())') < w.indexOf('writeFileSync(part'), true);
+  const pt = /function placeTxt[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('⑱ 임시 이름(일 폴더) → 이름 바꾸기로만 드라이브에 넣음', /writeFileSync\(part, content\)[\s\S]*placeTxt\(drive, part/.test(w) && /renameSync\(part, final\)/.test(pt) && !/writeFileSync\(final/.test(HELPER), true);
   sc.eq('⑱ 전사 글은 계정에 쓰지 않음(upd 에 text 가 없음)', /upd\([^)]*\btext\b/.test(HELPER), false);
   sc.eq('⑱ 기록(log)에 제목 · 전사 글을 넣지 않음', /log\([^)]*(rec\.n|\btext\b)/.test(HELPER), false);
 }
@@ -433,6 +441,60 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑲ 깔리지 않은 모델은 시험하지 않음(깔린 것만)', /const ms = installedModels\(\)/.test(mt), true);
   sc.eq('⑲ 계기판: 모델 시험 판에 안 깔린 모델의 설치 단추', /data-act="mtinstall"/.test(HTML) && /data-act="mtrun"/.test(HTML), true);
   sc.eq('⑲ 계기판 새로고침 아이콘: 마우스 글 · 토스트', HTML.includes('title="녹음 목록 지금 다시 읽기" aria-label="녹음 목록 지금 다시 읽기"') && HTML.includes("toast('녹음 목록을 다시 읽어 오라고 보냈습니다\\n1분 안에 새 녹음이 나타납니다')"), true);
+}
+// ⑳ (P3b) 파일 이름
+{
+  const t = Date.UTC(2026, 10, 21, 1, 0);   // 한국 11-21 오전 10:00
+  sc.eq('⑳ PLAUD 제목 날짜 · 시각 → YY-MMDD HH;MM + 덧붙인 글', A.txtBase({ n: '2026-11-22 15:05:00 김하늘 집사 심방', t }), '26-1122 15;05 김하늘 집사 심방');
+  sc.eq('⑳ 덧붙인 글이 없으면 날짜 · 시각만', A.txtBase({ n: '2026-11-22 09:05:07', t }), '26-1122 09;05');
+  sc.eq('⑳ 제목의 날짜를 그대로 씀(녹음 시각과 달라도)', A.txtBase({ n: '2026-01-02 23:59:00 송구영신 전화심방', t }), '26-0102 23;59 송구영신 전화심방');
+  sc.eq('⑳ 제목에 날짜가 없으면 녹음 시작 시각(한국)을 앞에', A.txtBase({ n: '박소망 성도 전화심방', t }), '26-1121 10;00 박소망 성도 전화심방');
+  sc.eq('⑳ 제목이 비면 시각만', A.txtBase({ n: '', t }), '26-1121 10;00');
+  sc.eq('⑳ 파일 이름에 못 쓰는 글자: \':\' → \';\' · \'/\' → \'-\' · 줄바꿈 → 빈칸', A.txtBase({ n: '2026-11-22 15:05:00 김하늘: 심방/상담\n메모', t }), '26-1122 15;05 김하늘; 심방-상담 메모');
+  sc.eq('⑳ 너무 긴 제목은 120자에서 자름', A.txtBase({ n: '2026-11-22 15:05:00 ' + '가'.repeat(300), t }).length, 120);
+  sc.eq('⑳ 같은 이름이 있으면 (2) · (3) (대소문자 안 가림)', [A.uniqueName('26-1122 15;05 a', new Set()), A.uniqueName('26-1122 15;05 a', new Set(['26-1122 15;05 a.txt'])), A.uniqueName('X', new Set(['x.txt', 'x (2).txt']))],
+    ['26-1122 15;05 a.txt', '26-1122 15;05 a (2).txt', 'X (3).txt']);
+  sc.eq('⑳ 이미 맞는 이름인지(제목이 그대로면 안 바꿈 · (2) 도 맞음)', [A.nameFits('a b.txt', 'a b'), A.nameFits('a b (2).txt', 'a b'), A.nameFits('a b (x).txt', 'a b'), A.nameFits(ID('a') + '.txt', 'a b')], [true, true, false, false]);
+  sc.eq('⑳ 같은 녹음인지는 머리말 첫 줄의 녹음 ID 로', A.idFromTxt('26-1122 15;05 아무 이름.txt', 'PLAUD 녹음 ID: ' + ID('a') + '\n제목: …'), ID('a'));
+  sc.eq('⑳ P3 때 이름(f_….txt)도 알아봄(새 이름으로 바꾸려고)', A.idFromTxt(ID('b') + '.txt', '이미 있던 파일'), ID('b'));
+  sc.eq('⑳ 모르는 txt 는 건드리지 않음', A.idFromTxt('메모.txt', '그냥 메모'), '');
+  const full = A.txtOf({ id: ID('a'), n: 'x', t, d: 60, model: 'm', mac: '집', at: t }, '첫 줄\n둘째 줄');
+  sc.eq('⑳ 머리말 아래 본문만 떼기(잠근 사본 · 복사 · 받기에 씀)', A.txtBody(full), '첫 줄\n둘째 줄\n');
+}
+// ㉑ (P3b) Mac 마다 자동 · 모델 지우기 · 임시 파일
+{
+  sc.eq('㉑ 적힌 것이 없으면 켜짐(지금처럼)', [A.autoOn(undefined, '집'), A.autoOn({}, '집'), A.autoOn({ auto: {} }, '집')], [true, true, true]);
+  sc.eq('㉑ Mac 마다 따로 — 사무실만 끔', [A.autoOn({ auto: { 사무실: false } }, '집'), A.autoOn({ auto: { 사무실: false } }, '사무실'), A.autoOn({ auto: { 사무실: true } }, '사무실')], [true, false, true]);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), pw = /async function pickWork[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('㉑ 꺼진 Mac 은 새 일감을 맡지 않음(맡기 전에 봄) · 하던 전사는 끝냄(멈추게 하지 않음)', pw.indexOf('PH.autoOn(settings, st.mac)') >= 0 && pw.indexOf('PH.autoOn(settings, st.mac)') < pw.indexOf('tryClaim') && !/autoOn/.test(/async function keep[\s\S]*?\n}\n/.exec(HELPER)[0]), true);
+  sc.eq('㉑ 지금 쓰는 모델(계정 설정)은 못 지움 · 안 쓰는 것은 지움', [A.canRemoveModel('large-v3-turbo-q5_0', {}), A.canRemoveModel('medium-q5_0', {}), A.canRemoveModel('medium-q5_0', { model: 'medium-q5_0' }), A.canRemoveModel('tiny', {})], [false, true, false, false]);
+  sc.eq('㉑ 도우미도 쓰는 모델 지우기는 거절', /c\.what === 'rmmodel'[\s\S]{0,200}PH\.canRemoveModel\(c\.arg, settings\)/.test(HELPER), true);
+  sc.eq('㉑ 모델 지우기 요청은 모델 이름을 실어야', [A.cmdFor({ mac: '집', what: 'rmmodel', st: 'new', arg: 'medium-q5_0' }, '집', 0), A.cmdFor({ mac: '집', what: 'rmmodel', st: 'new', arg: '../x' }, '집', 0)], [true, false]);
+  const ws = A.workSizes([{ id: '집', disk: { work: { [ID('a')]: 23e6, test: 1e6 } } }, { id: '사무실', disk: { work: { [ID('b')]: 5e6 } } }, { id: '서재', disk: { work: {} } }, { id: '옛 도우미' }]);
+  sc.eq('㉑ 임시 파일: 녹음별 · 합계 · 파일이 있는 Mac', [ws.by[ID('a')], ws.by[ID('b')], ws.total, J(ws.macs)], [23e6, 5e6, 29e6, ['집', '사무실']]);
+  sc.eq('㉑ 크기 글', [A.bytesLabel(0), A.bytesLabel(800), A.bytesLabel(23.4e6), A.bytesLabel(41.25e9)], ['0KB', '1KB', '23MB', '41.3GB']);
+  sc.eq('㉑ 비우기는 하던 전사를 멈추고(실패 \'임시 파일을 비움\') 일 폴더를 지움', /c\.what === 'clean'[\s\S]{0,300}stopJob\(J, 'clean'\)[\s\S]{0,200}rmQuiet\(WORK\(\)\)/.test(HELPER) && /clean: '임시 파일을 비움'/.test(HELPER), true);
+  sc.eq('㉑ 계기판: 줄마다 임시 파일 · 맨 위 합계 · 비우기', HTML.includes("'<span class=\"tmp\">임시 파일 '") && HTML.includes('임시 소리 파일 합계') && HTML.includes('data-act="cleanask"'), true);
+}
+// ㉒ (P3b) 잠근 사본
+{
+  const r = await A.newKdf('지어낸 암호 문구');
+  sc.eq('㉒ 표지 칸: 소금 · 반복 수 · iv · 잠근 표지 — 암호 · 키는 없음', [Object.keys(r.kdf).sort(), JSON.stringify(r.kdf).includes('지어낸') || JSON.stringify(r.kdf).includes(r.key)], [['c', 'it', 'iv', 's'], false]);
+  sc.eq('㉒ 반복 수 60만(기기마다 한 번만 셈)', r.kdf.it, 600000);
+  sc.eq('㉒ 같은 암호 문구 → 같은 키(다른 기기에서도)', await A.unlockKey('지어낸 암호 문구', r.kdf), r.key);
+  sc.eq('㉒ 틀린 암호는 안 열림', await A.unlockKey('지어낸 암호 문구!', r.kdf), '');
+  sc.eq('㉒ 너무 짧은 암호 문구는 정하지 않음', await A.newKdf('12345').then(() => 'ok', e => e.message), '암호 문구는 6자 이상');
+  const body = '안녕하세요 목사님. 김하늘 집사입니다.\n'.repeat(50), e = await A.encText(r.key, body);
+  sc.eq('㉒ 잠근 글에는 평문이 없음 · 매번 다른 iv', [Buffer.from(e.c, 'base64').toString('utf8').includes('김하늘'), e.c.includes('김하늘'), (await A.encText(r.key, body)).iv !== e.iv], [false, false, true]);
+  sc.eq('㉒ 맞는 키로만 풀림', [await A.decText(r.key, e), await A.decText((await A.newKdf('다른 암호 문구')).key, e).then(() => 'opened', () => 'no')], [body, 'no']);
+  sc.eq('㉒ 5시간 전사(약 9만 자)도 한 칸에 들어감', (await A.encText(r.key, '가'.repeat(90000))).c.length < A.TXT_MAX, true);
+  sc.eq('㉒ 키가 바뀌면(남이 소금을 바꿈) 맞는 키로 안 봄', await A.checkKey(r.key, (await A.newKdf('지어낸 암호 문구')).kdf), false);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8');
+  sc.eq('㉒ 도우미는 계정 표지로 맞는 키인지 본 뒤에만 둠(600)', /PH\.checkKey\(k, doc\.kdf\)[\s\S]{0,120}writeJson\('key\.json', \{ k \}, true\)/.test(HELPER), true);
+  sc.eq('㉒ 도우미가 계정에 올리는 txt 칸은 잠근 글(c · iv · v)뿐', /upd\(\['txt', id\], \{ c: e\.c, iv: e\.iv, v: 1 \}\)/.test(HELPER) && (HELPER.match(/\['txt'/g) || []).length === 1, true);
+  sc.eq('㉒ 계기판 복사는 누른 자리에서 시작(ClipboardItem 에 약속) — 아이폰', /new ClipboardItem\(\{ 'text\/plain': p\.then/.test(HTML), true);
+  sc.eq('㉒ 받기 파일 이름 = 드라이브 이름', /a\.download = fileOf\(id\)/.test(HTML) && /function fileOf\(id\) \{ return txtBase\(/.test(HTML), true);
+  sc.eq('㉒ 계기판 키는 이 기기에만(계정에 쓰지 않음)', /localStorage\.setItem\(KEY_LS/.test(HTML) && !/set\(\{[^}]*\bkey\b/.test(HTML), true);
 }
 sc.done();
 })().catch(e => { console.error(e); process.exit(1); });

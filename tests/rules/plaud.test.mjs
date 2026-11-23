@@ -22,6 +22,10 @@ await t('HB 는 설정을 읽는다', hb.doc('plaud/hb').get(), true);
 await t('HB 는 키워드 · 기간 · 모델을 쓴다', hb.doc('plaud/hb').set({ kw: ['심방', '상담'], days: 30, model: 'medium-q5_0' }, { merge: true }), true);
 await t('설정에 모르는 칸(memo)은 못 넣는다', hb.doc('plaud/hb').set({ memo: '전사문' }, { merge: true }), false);
 await t('키워드는 20개까지', hb.doc('plaud/hb').set({ kw: Array.from({ length: 21 }, (_, i) => 'k' + i) }, { merge: true }), false);
+await t('(P3b) Mac 마다 자동 전사 켜기 · 끄기', hb.doc('plaud/hb').set({ auto: { 사무실: false } }, { merge: true }), true);
+await t('(P3b) 잠금 표지(소금 · 반복 수 · iv · 잠근 표지)', hb.doc('plaud/hb').set({ kdf: { s: 'c2FsdA==', it: 600000, iv: 'aXY=', c: 'Y3Q=' } }, { merge: true }), true);
+await t('(P3b) 표지에 암호 칸(pass)은 못 넣는다', hb.doc('plaud/hb').set({ kdf: { s: 'x', it: 1, iv: 'x', c: 'x', pass: '비밀' } }, { merge: true }), false);
+await t('(P3b) auto 는 묶음(map) 꼴만', hb.doc('plaud/hb').set({ auto: false }, { merge: true }), false);
 await t('남은 설정을 못 읽는다', out.doc('plaud/hb').get(), false);
 await t('로그인 안 하면 못 읽는다', anon.doc('plaud/hb').get(), false);
 await t('남은 HB 칸에 못 쓴다', out.doc('plaud/hb').set({ kw: [] }), false);
@@ -72,6 +76,7 @@ await t('(P3) 소식에 깔린 모델 목록 · 모델 시험 결과(시간 · �
 await t('(P3) 모델 목록은 목록 꼴 · 10개까지', hb.doc('plaud/hb/mac/집').set({ at: ST, models: Array.from({ length: 11 }, (_, i) => 'm' + i) }, { merge: true }), false);
 await t('(P3) 모델 시험 결과는 묶음(map) 꼴만', hb.doc('plaud/hb/mac/집').set({ at: ST, test: '시험 전사 글' }, { merge: true }), false);
 await t('(P3) 소식에 전사 글 칸(text)은 못 넣는다', hb.doc('plaud/hb/mac/집').set({ at: ST, text: '…' }, { merge: true }), false);
+await t('(P3b) 소식에 저장 공간(남은 공간 · 모델 · 임시 파일 크기)', hb.doc('plaud/hb/mac/집').set({ at: ST, disk: { free: 41e9, models: 1e9, work: { [ID]: 2e7 } } }, { merge: true }), true);
 await t('Mac 이름이 너무 길면 못 쓴다', hb.doc('plaud/hb/mac/' + '가'.repeat(25)).set({ at: ST }), false);
 await t('계기판은 Mac 카드를 지운다', hb.doc('plaud/hb/mac/집').delete(), true);
 await t('남은 소식을 못 읽는다', out.collection('plaud/hb/mac').get(), false);
@@ -79,12 +84,23 @@ await t('남은 소식을 못 읽는다', out.collection('plaud/hb/mac').get(), 
 await t('설치 요청(정해 둔 이름)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new', at: ST }), true);
 await t('모델 요청은 고른 모델 이름을 싣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'model', arg: 'medium-q5_0', st: 'new', at: ST }), true);
 await t('(P3) 모델 시험 요청(mtest + 녹음 번호)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'mtest', arg: ID, st: 'new', at: ST }), true);
+await t('(P3b) 안 쓰는 모델 지우기 요청', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'rmmodel', arg: 'medium-q5_0', st: 'new', at: ST }), true);
+await t('(P3b) 임시 파일 비우기 요청', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'clean', st: 'new', at: ST }), true);
 await t('(P3) 전사 · 드라이브는 요청 이름이 아니다(저절로 함)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'transcribe', st: 'new' }), false);
 await t('정해 두지 않은 요청(sh)은 못 넣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'sh', st: 'new' }), false);
 await t('요청에 명령 글(argv)은 못 싣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new', argv: ['rm', '-rf', '/'] }), false);
 await t('모르는 요청 상태는 못 쓴다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'check', st: 'maybe' }), false);
 await t('남은 요청을 못 넣는다', out.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new' }), false);
 await t('로그인 안 하면 요청을 못 넣는다', anon.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new' }), false);
+// 잠근 사본(P3b)
+await t('(P3b) HB 는 잠근 사본(c · iv · v)을 쓴다', hb.doc('plaud/hb/txt/' + ID).set({ c: 'QUJD', iv: 'aXZpdml2aXY=', v: 1 }), true);
+await t('(P3b) HB 는 잠근 사본을 읽는다', hb.doc('plaud/hb/txt/' + ID).get(), true);
+await t('(P3b) 잠근 사본 칸에 평문(text) · 제목(n)은 못 넣는다', hb.doc('plaud/hb/txt/' + ID).set({ c: 'QUJD', iv: 'aXY=', v: 1, text: '전사 글' }), false);
+await t('(P3b) 잠근 글이 너무 크면(90만 자 넘게) 못 쓴다', hb.doc('plaud/hb/txt/' + ID).set({ c: 'A'.repeat(900001), iv: 'aXY=', v: 1 }), false);
+await t('(P3b) 녹음 번호 꼴이 아니면 못 쓴다', hb.doc('plaud/hb/txt/a.b').set({ c: 'QUJD', iv: 'aXY=', v: 1 }), false);
+await t('(P3b) 남은 잠근 사본을 못 읽는다', out.doc('plaud/hb/txt/' + ID).get(), false);
+await t('(P3b) 로그인 안 하면 못 읽는다', anon.doc('plaud/hb/txt/' + ID).get(), false);
+await t('(P3b) HB 는 잠근 사본을 지운다', hb.doc('plaud/hb/txt/' + ID).delete(), true);
 // 다른 앱 칸은 그대로 잠김(이 덩어리는 plaud 만)
 await t('이 규칙은 users/{uid} 를 열지 않는다', hb.doc('users/hb').get(), false);
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
