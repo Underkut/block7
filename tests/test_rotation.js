@@ -41,6 +41,7 @@
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
+//  (66) 연락처(1123-T): vcf 읽기(자모 · QP · 접힌 줄 · +82) · 이름 맞추기(꼭 같은 이름 · 번호 하나만 · 띄어 적은 직분 뗌) · 셀 inside 번호 · 계정 문서 다듬기 · 더하기(지우지 않음) · 화면 자리
 //  (65) 예배 순서 판 한 장 표 · 내 일정 명단 역할/이름 나눔(1123-B B2b, HB 시안 A2 · B1): 열 = 예배 · 묶음 둘 · 빈 줄 숨김 · 중계 접기 · 처음은 예배별(마지막 알약 기억)
 //  (64) 이번 주 부산 띠 · 내 일정 명단(1123-B B2): 예배마다 한 줄(여덟 갈래 · 싱어 하나로 · 중계 · 교역자 뺌) · 띠(표 있을 때만 · 내 주) · 카드 주 고르기(두 번 안 보임) · 화면 자리
 //  (59) 구글 자료(1121-G G1): 탭 이름 · 맨 뒤 판 · 합친 칸 펴기 · 날짜(해 넘김 · 특별예배 글) · 예배팀 / 예배위원 시트 읽기(글자로 찾기 · 판교중계 = 중계 · 옆 표 안 읽음) · 두 달 합치기 · 읽기만
@@ -60,7 +61,7 @@ const sc = makeScorer();
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'rotation', 'index.html'), 'utf8');
 const m = HTML.match(/<script id="rotation-core">([\s\S]*?)<\/script>/);
 if (!m) { console.error('rotation-core 덩어리를 못 찾았습니다'); process.exit(2); }
-const ctx = { console, Math, JSON, Number, Object, Array, String, Date, Map, Set, isNaN };
+const ctx = { console, Math, JSON, Number, Object, Array, String, Date, Map, Set, isNaN, TextEncoder, TextDecoder };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svcDate, slotId, visitId, markId,
@@ -77,7 +78,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable };`, ctx);
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -471,7 +472,7 @@ sc.eq('㉒ 가져오기 3판: 앞 판으로 들어온 방문의 숙소를 바로
 
 // ⑧ 저장 자리 · 집 주소
 sc.eq('⑧ 계정 문서는 rota/{uid}', /collection\('rota'\)\.doc\(u\.uid\)/.test(HTML) && /collection\('rota'\)\.doc\(FB\.user\.uid\)/.test(HTML), true);
-sc.eq('⑧ users 는 부르지 않는다 · cellbook 은 AI 열쇠 읽기 한 곳뿐(R9)', [/collection\('users'\)/.test(HTML), (HTML.match(/collection\('cellbook'\)/g) || []).length, /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.get\(\)/.test(HTML)], [false, 1, true]);
+sc.eq('⑧ users 는 부르지 않는다 · cellbook 은 읽기 한 곳뿐(cbRead — AI 열쇠 R9 · 셀원 번호 1123-T)', [/collection\('users'\)/.test(HTML), (HTML.match(/collection\('cellbook'\)/g) || []).length, /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.get\(\)/.test(HTML)], [false, 1, true]);
 sc.eq('⑧ 로그인 칸 이름은 rota (다른 앱 로그인과 섞이지 않게)', HTML.includes("firebase.initializeApp(FB_CFG, 'rota')"), true);
 sc.eq('⑧ block7.my 로 열리면 sweeter.my/rotation/ 으로', HTML.includes("location.replace('https://sweeter.my/rotation/'"), true);
 sc.eq('⑧ 버전 두 곳이 같다(2번째 줄 주석 · APP_VERSION)', HTML.split('\n')[1].includes(A.APP_VERSION), true);
@@ -1853,7 +1854,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   // (60) G2: 계정에 쓰는 곳은 gs 칸 둘(고른 파일 · 읽은 표)뿐 — 책 · 교역자 칸 · update 없음
   const sets = gs.match(/\.(set|update|delete)\(/g) || [];
   sc.eq('(60) 계정에 쓰는 곳: gsRef(…).set 셋(src · 표 · 읽은 때)뿐 · collection(\'gs\') 밖으로 안 씀 · update/delete 없음', [sets.length, (gs.match(/gsRef\([^)]*\)\.set\(/g) || []).length, /\.update\(|\.delete\(/.test(gs.replace(/delete GS\.res\[[^\]]+\]/g, '')), /collection\('(staff|img|ext)'\)/.test(gs), /FB\.db\.collection\('rota'\)\.doc\([^)]*\)\.set\(/.test(gs)], [3, 3, false, false, false]);
-  sc.eq('(60) HB 만 계정에 씀(owner) · 교역자는 표 둘만 듣고 src 는 안 들음', [/function gsCloudSrc\(o\) \{ if \(DEMO \|\| !FB\.user \|\| FB\.role !== 'owner'\) return;/.test(gs), /if \(!FB\.user \|\| FB\.role !== 'owner'\) \{ r\.saved = \{ state: 'off' \}; return; \}/.test(gs), /GS_SRC\.map\(x => x\.k\)\.concat\(own \? \['src'\] : \[\]\)/.test(gs), /listenGs\(u\.uid, true\)/.test(HTML), /listenGs\(team, false\)/.test(HTML)], [true, true, true, true, true]);
+  sc.eq('(60) HB 만 계정에 씀(owner) · 교역자는 표 둘 + 연락처(1123-T)만 듣고 src 는 안 들음', [/function gsCloudSrc\(o\) \{ if \(DEMO \|\| !FB\.user \|\| FB\.role !== 'owner'\) return;/.test(gs), /if \(!FB\.user \|\| FB\.role !== 'owner'\) \{ r\.saved = \{ state: 'off' \}; return; \}/.test(gs), /GS_SRC\.map\(x => x\.k\)\.concat\(\['phones'\], own \? \['src'\] : \[\]\)/.test(gs), /listenGs\(u\.uid, true\)/.test(HTML), /listenGs\(team, false\)/.test(HTML)], [true, true, true, true, true]);
   sc.eq('(60) 미리보기 시트 채우기는 시트 칸(bteam · bserve)으로 판단 — 고른 파일에 at 칸이 생겨도', /if \(DEMO && !GS_SRC\.some\(x => gsFiles\(\)\[x\.k\]\)\) lsSet\(GS_KEY/.test(gs) && !/Object\.keys\(gsFiles\(\)\)/.test(gs), true);
   sc.eq('(60) 견주기는 지문(h)끼리 — 계정 문서를 JSON.stringify 로 견주지 않음(1117-F)', /JSON\.stringify\(S\.gs|JSON\.stringify\(d\.data\(\)/.test(gs), false);
   sc.eq('(60) 로그아웃 · 계정 바뀜이면 표 · 읽은 것 · 자동 시각을 비움(남의 표를 들고 있지 않게)', /function stopListen\(\) \{[^\n]*'unsubG'[^\n]*S\.gs = \{\}; GS\.res = \{\}; GS\.autoAt = 0; \}/.test(HTML), true);
@@ -2125,6 +2126,37 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(65) 화면: 예배별 = 표(알약 전환 없음) · 처음은 예배별 · 마지막 알약 기억(띠 · 이번 주 카드도 강제 안 함) · 명단 역할/이름 다른 모양 · 예배 이름 칸 같은 폭',
     [/gsWeekTable\(T, V, P\.sun\)/.test(ui), /data-gsv="/.test(ui), /\(P\.view \|\| PREF\.gsvw\) === 'ppl'/.test(ui), /PREF\.gsvw = d\.gsview; savePref\(\)/.test(ui), /class="r">\$\{esc\(y\.role\)\}<\/span> <span class="n">/.test(ui), /\.gsbl\{display:grid;grid-template-columns:5\.2em 1fr/.test(HTML)],
     [true, false, true, true, true, true]);
+}
+
+
+// (66) 1123-T — 이름을 눌러 전화 · 문자 (HB 11/23). 이름 · 번호는 모두 지어낸 것.
+{
+  const vcf = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:' + '한별'.normalize('NFD'), 'TEL;TYPE=CELL:+82 10-1111-2222', 'END:VCARD',
+    'BEGIN:VCARD', 'VERSION:2.1', 'N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=EB=82=98;=EB=9E=98;;;', 'TEL;CELL:010 3333 4444', 'END:VCARD',
+    'BEGIN:VCARD', 'FN:고은결 집사', 'TEL:01055556666', 'END:VCARD',
+    'BEGIN:VCARD', 'FN:박새봄', 'TEL:010-7777-8888', 'TEL:010-7777-9999', 'END:VCARD',
+    'BEGIN:VCARD', 'FN:번호없음', 'END:VCARD',
+    'BEGIN:VCARD', 'FN:이목', ' 사', 'TEL:02-123-4567', 'END:VCARD'].join('\r\n');
+  const C = A.phParseVcf(vcf);
+  sc.eq('(66) vcf: 자모로 풀린 한글 · QP 이름(N 칸) · +82 → 0 · 번호 없는 사람 버림 · 접힌 줄', C.map(c => [c.name, c.tels]),
+    [['한별', ['010-1111-2222']], ['나래', ['010-3333-4444']], ['고은결 집사', ['010-5555-6666']], ['박새봄', ['010-7777-8888', '010-7777-9999']], ['이목사', ['02-123-4567']]]);
+  sc.eq('(66) 열쇠: 띄어쓰기 없이 · 연락처의 띄어 적은 끝 직분만 뗌(붙은 이목사는 그대로)', [A.phKey('고은결 집사', true), A.phKey('이목사', true), A.phKey('김 마루'), A.phKey('김하나 권사 님', true)], ['고은결', '이목사', '김마루', '김하나']);
+  const team = { sun: [{ date: '2026-11-29', svc: '2', relay: false, cells: { 예배인도: ['한별'], 싱어1: ['나 래'], 토요모임: ['기도회'] } }], fri: [], roles: { sun: [], fri: [] } };
+  const serve = { sun: [{ date: '2026-11-29', svc: '2', relay: false, cells: { 봉독: ['고은결'], 헌금: ['박새봄', '없는분'], 광고: ['이목사'] } }], fri: [], roles: { sun: [], fri: [] } };
+  const book = { people: [{ id: 'p1', name: '이목사' }, { id: 'p2', name: '담임목사님', kind: 'other' }, { id: 'p3', name: '지운분', del: true }, { id: 'p4', name: '김셀원', kind: 'lay' }] };
+  const names = A.phNames(team, serve, book);
+  sc.eq('(66) 맞출 이름: 두 표(토요모임 빼고) + 사람 탭(담임 · 초청 · 지운 분 빼고) · 한 번씩', names, ['한별', '나 래', '고은결', '박새봄', '없는분', '이목사', '김셀원']);
+  const M = A.phMatch(names, C.concat(A.phFromCell({ m1: { n: '김셀원', p: '010-2222-3333', c: '셀' }, m2: { n: '빈번호' } })));
+  sc.eq('(66) 맞추기: 꼭 같은 이름에 번호 하나만 · 번호 여럿은 multi · 없으면 miss · 셀 inside 번호도', [Object.keys(M.hit), M.hit['나래'], M.multi, M.miss],
+    [['한별', '나래', '고은결', '이목사', '김셀원'], { n: '나 래', p: '010-3333-4444', src: '나래' }, ['박새봄'], ['없는분']]);
+  const m1 = A.phMerge(null, M.hit, 5), m2 = A.phMerge(m1.doc, { 한별: { n: '한별', p: '010-1111-2222', src: '한별' } }, 6), m3 = A.phMerge(m1.doc, { 한별: { n: '한별', p: '010-0000-1111', src: '새' } }, 7);
+  sc.eq('(66) 더하기: 처음은 올림 · 같으면 안 올림 · 바뀐 번호는 새것 · 다른 분은 지우지 않음', [m1.changed, m2.changed, m3.changed, A.phOf(m3.doc, '한별'), A.phOf(m3.doc, '고은결'), Object.keys(m3.doc.by).length], [true, false, true, '010-0000-1111', '010-5555-6666', 5]);
+  sc.eq('(66) 계정 문서 다듬기: 모양 다르면 빈 것 · 번호 아닌 것 · 빈칸 든 열쇠는 버림', [A.phDoc({ v: 9, by: { a: { p: '010-1111-2222' } } }).by, Object.keys(A.phDoc({ v: 1, by: { 가: { n: '가', p: '010-1111-2222' }, 나: { p: 'abc' }, '다 라': { p: '010-1111-2222' } } }).by)], [{}, ['가']]);
+  sc.eq('(66) 이름 → 번호(띄어쓰기 달라도) · 없으면 빈 글', [A.phOf(m1.doc, '나래'), A.phOf(m1.doc, '모르는분'), A.phOf(null, '한별')], ['010-3333-4444', '', '']);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  sc.eq('(66) 화면: 계정 gs/phones(HB 만 씀 · 팀은 듣기) · 파일 내용은 안 둠 · 예배 순서 판 이름 누르면 전화 · 문자 · 셀 inside 는 읽기만',
+    [/gsRef\('phones'\)\.set\(/.test(ui), /keys = GS_SRC\.map\(x => x\.k\)\.concat\(\['phones'\]/.test(ui), /data-ph="/.test(ui) && /href="tel:/.test(ui) && /href="sms:/.test(ui), /collection\('cellbook'\)[^;]*\.(set|update|delete)\(/.test(ui), /phParseVcf\(/.test(ui)],
+    [true, true, true, false, true]);
 }
 
 sc.done();
