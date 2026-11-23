@@ -15,6 +15,11 @@
 //  ⑫ 도우미 — 판 맞음 · 계기판 파일에서 덩어리를 떼어 돌림 · 연결 자리는 block7.my 에서 온 것만 · 주소 지우기
 //  ⑬ 설치 한 줄 — sudo 없음 · 묻고 나서 · 두 번째 Mac 도 같은 줄 · 지우기 · users/{uid} 안 건드림
 //  ⑭ Mac 카드 — 켜짐 · 꺼짐 · 낡은 도우미 · 이름 다듬기
+//  ⑮ (P3) 맡기기 — 실패는 한 시간 뒤 · 하는 동안 HB 가 빼면 멈춤 · 잃으면 멈춤 · 두 Mac 이 번갈아 집어도 한 대씩 · 맡을 차례
+//  ⑯ (P3) 공간 모자람 — 5시간 녹음 · 모자라면 맡지 않음 · Mac 카드 글 · 준비 상태가 모자라면 안 함
+//  ⑰ (P3) 음성 주소 지우기 — 'Audio Download URL:' 다음 줄 · 명령 줄에 주소 없음(-K - 표준 입력) · 까닭 · 기록에 주소 없음 · 모르는 꼴은 멈춤
+//  ⑱ (P3) 드라이브 txt — 이름 = 녹음번호.txt · 머리말(+09:00 시각) · 이미 있으면 만들지 않음 · 임시 이름 → 이름 바꾸기 · 받은 소리 · WAV 지움
+//  ⑲ (P3) 전사 진행 · 모델 시험 — whisper 진행 % · '전사 중 n분째' · 잰 빠르기로 어림 고침 · 시험 요청 · 시험 글은 계정에 안 감
 const fs = require('fs'), path = require('path'), vm = require('vm'), http = require('http'), os = require('os');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -117,7 +122,8 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑥ 누르면 뒤집힘', [A.tapPick('auto'), A.tapPick('in'), A.tapPick('out'), A.tapPick('none')], ['out', 'out', 'in', 'in']);
   sc.eq('⑥ 5시간 회의도 키워드면 고름 (길이로 빼지 않음)', A.pickState(r('구역 심방 모임', 5 * 3600), null, ['심방']), 'auto');
   sc.eq('⑥ 5시간 회의를 직접 넣을 수 있음', A.isPicked(A.pickState(r('교역자 회의', 5 * 3600), { pick: 'in' }, ['심방'])), true);
-  sc.eq('⑥ 설정 다듬기 (모르는 기간 · 모델은 기본)', J(A.settingsOf({ kw: ['상담'], days: 99, model: 'tiny' })), { kw: ['상담'], days: 14, model: 'medium-q5_0' });
+  sc.eq('⑥ 설정 다듬기 (모르는 기간 · 모델은 기본 = 터보, HB 11/23)', J(A.settingsOf({ kw: ['상담'], days: 99, model: 'tiny' })), { kw: ['상담'], days: 14, model: 'large-v3-turbo-q5_0' });
+  sc.eq('⑥ 고른 모델은 그대로', A.settingsOf({ model: 'medium-q5_0' }).model, 'medium-q5_0');
 }
 // ⑦ 계기판 목록
 {
@@ -131,8 +137,10 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑦ 기간(14일) 안만', v.map(x => x.id), [ID('a'), ID('b')]);
   sc.eq('⑦ 새것부터 · 고름 표시', v.map(x => [x.st, x.picked]), [['auto', true], ['in', true]]);
   sc.eq('⑦ 한국 시각 글', v[0].when, '11. 23. (월) 오전 7:00');
-  sc.eq('⑦ 전사 어림 = 길이 ÷ 모델 빠르기 + 1분', [v[0].est, v[1].est], [Math.ceil(48 / 4) + 1, 60 + 1]);
-  sc.eq('⑦ 터보 모델이면 더 짧게 어림', A.estMin(4 * 3600, 'large-v3-turbo-q5_0'), 41);
+  sc.eq('⑦ 전사 어림 = 길이 ÷ 모델 빠르기 + 1분 (기본 터보 = 6배)', [v[0].est, v[1].est], [Math.ceil(48 / 6) + 1, 40 + 1]);
+  sc.eq('⑦ 중간 모델(4배)이면 더 길게 어림', A.estMin(4 * 3600, 'medium-q5_0'), 61);
+  const v2 = A.listView(recs, {}, { kw: ['심방'], days: 14 }, now, { 'large-v3-turbo-q5_0': 3 });
+  sc.eq('⑦ 잰 빠르기(모델 시험 3배)가 있으면 그것으로 어림', v2[0].est, 16 + 1);
 }
 // ⑧ 두 Mac 일감 맡기 — 조건부 쓰기(파이어베이스 트랜잭션과 같은 뜻)를 흉내 내는 가게
 {
@@ -226,6 +234,8 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err']);
   sc.eq('⑪ 녹음 번호 꼴 = 판단 덩어리와 같음', rules.includes("'^[A-Za-z0-9_]{8,64}$'") && String(A.ID_RE) === '/^[A-Za-z0-9_]{8,64}$/', true);
   sc.eq('⑪ 규칙은 plaud 칸만 (users 를 열지 않음)', /match \/users/.test(rules), false);
+  const macKeys = (/match \/mac\/\{name\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
+  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test']);
 }
 // ⑫ 도우미
 {
@@ -233,7 +243,8 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑫ 도우미 판 = 계기판이 아는 최신 판', (/export const HELPER_VERSION = '([^']+)'/.exec(HELPER) || [])[1], A.HELPER_LATEST);
   sc.eq('⑫ 도우미는 판단을 두 벌로 갖지 않는다(parseRecent 를 스스로 정의하지 않음)', /function parseRecent|function claimCheck/.test(HELPER), false);
   sc.eq('⑫ 도우미는 PLAUD 사용 통계 · 새 판 알림을 끈다', /PLAUD_TELEMETRY_DISABLED = '1'/.test(HELPER) && /PLAUD_NO_UPDATE_NOTIFIER = '1'/.test(HELPER), true);
-  sc.eq('⑫ 도우미는 음성 주소를 묻지 않는다(P2 — plaud audio 없음)', /'audio'/.test(HELPER), false);
+  sc.eq('⑫ 전사 길의 명령은 core 의 PIPE 표로만(도우미에 ffmpeg · curl · whisper 명령 글이 없음)', /run\(\s*'(ffmpeg|curl|whisper-cli|whisper-cpp)'|\['(ffmpeg|whisper-cli)',/.test(HELPER) || !/runP\('audio'/.test(HELPER), false);
+  sc.eq('⑫ 받은 소리 · WAV 는 끝나면 지운다', /finally \{[\s\S]{0,200}rmQuiet\(ogg, wav/.test(HELPER), true);
   sc.eq('⑫ sudo 를 부르지 않는다', /['"]sudo['"]/.test(HELPER), false);
   sc.eq('⑫ 주소 지우기 (24시간 열쇠가 기록에 남지 않게)', A.clean('받기 실패 https://x.example/a.ogg?X-Amz-Signature=abc 다시'), '받기 실패 [주소] 다시');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'plaudhub-'));
@@ -294,6 +305,134 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑭ 이름 다듬기', [A.normMac(' 집 '), A.normMac('a/b'), A.normMac(''), A.normMac('가'.repeat(13)), A.normMac('__x__')], ['집', '', '', '', '']);
   sc.eq('⑭ 버전 형식 · 2번째 줄 주석', [/^v\. \d{2}-\d{4}-\d+$/.test(A.APP_VERSION), HTML.split('\n')[1]], [true, '<!-- PLAUDHUB ' + A.APP_VERSION + ' -->']);
   sc.eq('⑭ 미리보기 녹음 제목은 지어낸 이름(실제 이름 목록과 따로)', /김하늘|박소망|이은혜|최기쁨/.test(HTML), true);
+}
+// ⑮ (P3) 맡기기 · renew
+{
+  const store = () => {
+    const S = { docs: {}, now: 1e12 };
+    S.io = () => ({
+      read: async id => ({ job: S.docs[id] ? J(S.docs[id].v) : null, ver: S.docs[id] ? S.docs[id].ver : null, now: S.now }),
+      write: async (id, patch, ver) => { const cur = S.docs[id]; if ((cur ? cur.ver : null) !== ver) return false;
+        S.docs[id] = { v: Object.assign({}, cur ? cur.v : {}, patch, { at: S.now }), ver: (cur ? cur.ver : 0) + 1 }; return true; },
+    });
+    S.hb = (id, patch) => { const cur = S.docs[id]; S.docs[id] = { v: Object.assign({}, cur ? cur.v : {}, patch), ver: (cur ? cur.ver : 0) + 1 }; };   // 계기판(HB)이 pick 을 고침 — at 은 그대로
+    return S;
+  };
+  const id = ID('a');
+  {
+    const S = store(); await A.tryClaim(S.io(), id, '집'); await A.finish(S.io(), id, '집', false, '소리를 받지 못함 (curl 22)');
+    sc.eq('⑮ 실패한 일감은 곧바로 다시 집지 않음(한 시간 기다림)', (await A.tryClaim(S.io(), id, '사무실')).why, 'wait');
+    S.now += A.FAIL_WAIT_MS + 1000;
+    const c = await A.tryClaim(S.io(), id, '사무실');
+    sc.eq('⑮ 한 시간 뒤에는 어느 Mac 이든 다시 집음 · 받기부터', [c.ok, S.docs[id].v.st, S.docs[id].v.step, S.docs[id].v.mac], [true, 'work', 'get', '사무실']);
+    sc.eq('⑮ 실패 까닭은 짧은 글(제목 없음)', /김하늘/.test(S.docs[id].v.err || ''), false);
+  }
+  {
+    const S = store(); await A.tryClaim(S.io(), id, '집');
+    S.hb(id, { pick: 'out' });
+    sc.eq('⑮ 하는 동안 HB 가 목록에서 빼면 renew 가 \'out\' 으로 멈추게 함', J(await A.renew(S.io(), id, '집', 'stt')), { ok: false, why: 'out' });
+    sc.eq('⑮ … 뺀 줄을 실패로 적을 수 있음(맡은 Mac 이 아직 나)', (await A.finish(S.io(), id, '집', false, '목록에서 뺌')).ok, true);
+    sc.eq('⑮ … 뺀 것은 아무도 다시 안 집음', (await A.tryClaim(S.io(), id, '사무실')).why, 'out');
+  }
+  {
+    const S = store(); await A.tryClaim(S.io(), id, '집');
+    S.hb(id, { pick: 'in' });   // HB 가 고름을 다시 눌러도(판이 바뀜) 맡김은 그대로
+    sc.eq('⑮ HB 가 pick 을 고쳐도 renew 는 다시 읽고 이어 감', (await A.renew(S.io(), id, '집', 'stt')).ok, true);
+    // 맡은 Mac 이 renew 를 4번(20분) 놓쳐도 아직 안 풀림 · 31분이면 풀림
+    S.now += 20 * 60e3; sc.eq('⑮ 20분 renew 가 없어도 아직 집 몫', (await A.tryClaim(S.io(), id, '사무실')).why, 'busy');
+    S.now += 11 * 60e3; const c = await A.tryClaim(S.io(), id, '사무실');
+    sc.eq('⑮ 31분이면 사무실이 이어받음 → 집은 renew 에서 \'lost\' 로 멈춤', [c.how, (await A.renew(S.io(), id, '집', 'stt')).why], ['expired', 'lost']);
+  }
+  {
+    // 두 Mac 이 같은 목록을 보고 번갈아 집어도 녹음마다 한 대씩
+    const S = store(), recs = {}; for (const k of 'abcde') recs[ID(k)] = { id: ID(k), n: '심방 ' + k, t: k.charCodeAt(0) };
+    const got = { 집: [], 사무실: [] };
+    for (let round = 0; round < 6; round++) for (const mac of ['집', '사무실']) {
+      const jobs = Object.fromEntries(Object.entries(S.docs).map(([k, d]) => [k, d.v]));
+      for (const x of A.wantedJobs(recs, jobs, { kw: ['심방'] }, mac, S.now)) { const c = await A.tryClaim(S.io(), x, mac); if (c.ok) { got[mac].push(x); await A.finish(S.io(), x, mac, true); break; } }
+    }
+    const all = got['집'].concat(got['사무실']);
+    sc.eq('⑮ 다섯 녹음을 두 Mac 이 나눠 함 · 겹친 것 없음 · 빠진 것 없음', [all.length, new Set(all).size, got['집'].length > 0 && got['사무실'].length > 0], [5, 5, true]);
+    sc.eq('⑮ 끝난 것은 맡을 차례에 다시 안 나옴', A.wantedJobs(recs, Object.fromEntries(Object.entries(S.docs).map(([k, d]) => [k, d.v])), { kw: ['심방'] }, '집', S.now).length, 0);
+  }
+  sc.eq('⑮ 요청 이름 mtest(모델 시험)는 녹음 번호를 실어야', [A.cmdFor({ mac: '집', what: 'mtest', st: 'new', arg: ID('a') }, '집', 0), A.cmdFor({ mac: '집', what: 'mtest', st: 'new', arg: 'x/y' }, '집', 0)], [true, false]);
+  sc.eq('⑮ 전사 · 시험 중에 미루지 않는 요청은 다시 보기 · 목록 읽기뿐', J(A.CMD_WHILE_BUSY), ['check', 'refresh']);
+}
+// ⑯ (P3) 공간 모자람
+{
+  const five = 5 * 3600;
+  sc.eq('⑯ 5시간 녹음에 필요한 공간 = 받은 소리 + WAV + 여유 2GB (약 2.7GB)', A.gbLabel(A.needBytes(five)), '2.7GB');
+  sc.eq('⑯ 1GB 남은 Mac 은 48분 녹음도 맡지 않음', A.spaceCheck(1e9, 48 * 60).ok, false);
+  sc.eq('⑯ 20GB 남으면 맡음', A.spaceCheck(20e9, five).ok, true);
+  sc.eq('⑯ 공간을 모르면(읽지 못함) 막지 않음', A.spaceCheck(Infinity, five).ok, true);
+  const msg = A.spaceMsg(A.spaceCheck(0.4e9, 48 * 60));
+  sc.eq('⑯ Mac 카드 글: 남음 · 필요 · 다른 Mac 이 함', /남음 0\.4GB/.test(msg) && /필요 2\.1GB/.test(msg) && /다른 Mac/.test(msg), true);
+  sc.eq('⑯ 준비 상태가 모자라면 전사를 맡지 않음(무엇이 모자란지)', J(A.workBlock({ ffmpeg: true, whisper: true, model: false, plaud: true, login: true, drive: false })), ['model', 'drive']);
+  sc.eq('⑯ 다 갖추면 맡음', A.workBlock({ ffmpeg: true, whisper: true, model: true, plaud: true, login: true, drive: true }).length, 0);
+}
+// ⑰ (P3) 음성 주소 지우기
+{
+  const URL1 = 'https://plaud-audio.example.com/f/abc.ogg?X-Amz-Credential=AK%2F1&X-Amz-Signature=deadbeef';
+  const AUDIO = '\n\x1b[32mAudio Download URL:\x1b[39m\n' + URL1 + '\n\n(valid for 24 hours)\n';
+  const p = A.parseAudioUrl(AUDIO);
+  sc.eq('⑰ \'Audio Download URL:\' 다음 줄의 주소를 읽음(색 글자 섞여도)', [p.ok, p.url], [true, URL1]);
+  sc.eq('⑰ 같은 줄에 있어도 읽음', A.parseAudioUrl('Audio Download URL: ' + URL1).url, URL1);
+  sc.eq('⑰ 모르는 꼴(줄 이름이 바뀜)은 멈춤', A.parseAudioUrl('Download: ' + URL1).ok, false);
+  sc.eq('⑰ 주소 자리에 주소가 아닌 것은 멈춤', A.parseAudioUrl('Audio Download URL:\nnot available yet\n').ok, false);
+  sc.eq('⑰ 멈춤 까닭에 주소를 싣지 않음', /amazonaws|example|deadbeef/.test(A.parseAudioUrl('Audio Download URL:\n' + URL1 + ' x\n').err || ''), false);
+  const get = A.pipeArgv('get', { ogg: '/x/work/a.ogg' });
+  sc.eq('⑰ 받기 명령 줄에는 주소가 없음(curl -K - 로 표준 입력에서)', [get.join(' ').includes('http'), get.slice(-4)], [false, ['-K', '-', '-o', '/x/work/a.ogg']]);
+  sc.eq('⑰ curl 에 넘기는 글', A.curlConf(URL1), 'url = "' + URL1 + '"\n');
+  let threw = ''; try { A.curlConf('https://x.example/a" -o /etc/x'); } catch (e) { threw = e.message; }
+  sc.eq('⑰ 따옴표 · 빈칸이 든 주소는 넘기지 않음(설정 글 끼워 넣기 막기)', [!!threw, threw.includes('x.example')], [true, false]);
+  sc.eq('⑰ 기록 · 화면에 남기기 전에 주소를 지움', A.clean('curl 실패 ' + URL1 + ' (22)'), 'curl 실패 [주소] (22)');
+  sc.eq('⑰ 명령 표에 없는 이름 · 빈 칸은 거절', (() => { try { A.pipeArgv('rm', {}); return 'ran'; } catch (_) { } try { A.pipeArgv('wav', { ogg: '/a' }); return 'ran'; } catch (_) { return 'no'; } })(), 'no');
+  sc.eq('⑰ 전사 도구 이름은 whisper-cli · whisper-cpp 만', (() => { try { A.pipeArgv('stt', { bin: 'sh', model: 'm', wav: 'w', out: 'o' }); return 'ran'; } catch (_) { return 'no'; } })(), 'no');
+  sc.eq('⑰ 전사 명령: 계정 설정 모델 · 한국어 · 글 파일 · 진행 표시', A.pipeArgv('stt', { bin: 'whisper-cli', model: '/m/ggml-large-v3-turbo-q5_0.bin', wav: '/w/a.wav', out: '/w/a.whisper' }),
+    ['whisper-cli', '-m', '/m/ggml-large-v3-turbo-q5_0.bin', '-l', 'ko', '-f', '/w/a.wav', '-otxt', '-of', '/w/a.whisper', '-pp']);
+  sc.eq('⑰ 소리 바꾸기: 16kHz · 모노 · WAV', A.pipeArgv('wav', { ogg: 'a.ogg', wav: 'a.wav' }).join(' ').includes('-ar 16000 -ac 1 -c:a pcm_s16le a.wav'), true);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8');
+  sc.eq('⑰ 도우미는 받은 주소를 표준 입력으로만(curlConf → input)', /input: PH\.curlConf\(u\.url\)/.test(HELPER), true);
+  sc.eq('⑰ 도우미는 plaud audio 글(주소가 든)을 기록하지 않음', /log\([^)]*\ba\.out|log\([^)]*u\.url/.test(HELPER), false);
+}
+// ⑱ (P3) 드라이브 txt
+{
+  sc.eq('⑱ 파일 이름 = 녹음번호.txt', A.txtName(ID('a')), ID('a') + '.txt');
+  sc.eq('⑱ 녹음 번호 꼴이 아니면 이름을 만들지 않음(폴더 밖 쓰기 막기)', (() => { try { A.txtName('../x'); return 'ran'; } catch (_) { return 'no'; } })(), 'no');
+  sc.eq('⑱ 한국 시각 +09:00 꼴(ChatGPT 지침 recorded_at)', A.kstIso(Date.UTC(2026, 10, 22, 6, 5, 7)), '2026-11-22T15:05:07+09:00');
+  const t = A.txtOf({ id: ID('a'), n: '김하늘 집사 심방', t: Date.UTC(2026, 10, 22, 6, 5), d: 2880, model: 'large-v3-turbo-q5_0', mac: '집', at: Date.UTC(2026, 10, 23, 1, 0) }, ' 안녕하세요.\n\n 네 목사님.\r\n');
+  const head = t.split('\n---\n')[0].split('\n');
+  sc.eq('⑱ 머리말: 녹음 ID · 제목 · 녹음 시각 · 길이 · 전사(모델 · Mac)', head, ['PLAUD 녹음 ID: ' + ID('a'), '제목: 김하늘 집사 심방', '녹음 시각: 2026-11-22T15:05:00+09:00', '길이: 48분',
+    '전사: whisper.cpp large-v3-turbo-q5_0 · 집 Mac · 2026-11-23T10:00:00+09:00']);
+  sc.eq('⑱ 본문: 줄 앞뒤 빈칸 · 빈 줄을 걷음', t.split('\n---\n\n')[1], '안녕하세요.\n네 목사님.\n');
+  sc.eq('⑱ 제목 없는 녹음', /제목: \(제목 없음\)/.test(A.txtOf({ id: ID('c'), n: '', t: 1, d: 6 }, 'x')), true);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), w = /async function workOne[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('⑱ 맡은 뒤 드라이브에 이미 있으면 받지도 않고 끝냄(겹 둘)', w.indexOf('existsSync(final)') >= 0 && w.indexOf('existsSync(final)') < w.indexOf('fetchAudio'), true);
+  sc.eq('⑱ 쓰기 바로 앞에 맡김을 다시 확인하고 · 또 있는지 봄', w.indexOf("setStep(J, 'drive')") < w.lastIndexOf('existsSync(final)') && w.lastIndexOf('existsSync(final)') < w.indexOf('writeFileSync(part'), true);
+  sc.eq('⑱ 임시 이름(일 폴더) → 이름 바꾸기로만 드라이브에 넣음', /writeFileSync\(part,[\s\S]*renameSync\(part, final\)/.test(w) && !/writeFileSync\(final/.test(w), true);
+  sc.eq('⑱ 전사 글은 계정에 쓰지 않음(upd 에 text 가 없음)', /upd\([^)]*\btext\b/.test(HELPER), false);
+  sc.eq('⑱ 기록(log)에 제목 · 전사 글을 넣지 않음', /log\([^)]*(rec\.n|\btext\b)/.test(HELPER), false);
+}
+// ⑲ (P3) 전사 진행 · 모델 시험
+{
+  sc.eq('⑲ whisper 진행 % (마지막 값)', [A.parseProgress('whisper_print_progress_callback: progress =   5%\nwhisper_print_progress_callback: progress =  42%\n'), A.parseProgress('x')], [42, null]);
+  const t0 = 1e12;
+  sc.eq('⑲ 하는 일 글', [A.workLabel({ step: 'get', t0 }, t0), A.workLabel({ step: 'stt', t0, pct: 42 }, t0 + 6.5 * 60e3), A.workLabel({ step: 'drive', t0 }, t0), A.workLabel(null, t0)],
+    ['녹음 받는 중', '전사 중 7분째 (42%)', '드라이브에 쓰는 중', '쉼']);
+  sc.eq('⑲ 모델 시험 중 글', A.workLabel({ kind: 'test', step: 'stt', model: '터보 · 양자화', k: 1, of: 2, t0 }, t0), '모델 시험 — 터보 · 양자화 전사 중 · 1/2');
+  const macs = [{ id: '집', test: { at: 5, len: 600, r: { 'large-v3-turbo-q5_0': { s: 130, x: 4.6 }, 'medium-q5_0': { s: 200, x: 3 } } } },
+    { id: '사무실', test: { at: 9, len: 600, r: { 'large-v3-turbo-q5_0': { s: 100, x: 6 }, 'tiny': { s: 1, x: 99 } } } }, { id: '서재' }];
+  sc.eq('⑲ 잰 빠르기 = 모델마다 가장 새 시험 · 모르는 모델은 버림', J(A.speedsOf(macs)), { 'large-v3-turbo-q5_0': 6, 'medium-q5_0': 3 });
+  sc.eq('⑲ \'녹음 1분당\' 글', [A.perMinLabel(4.6), A.perMinLabel(0.5), A.perMinLabel(0)], ['녹음 1분에 13초', '녹음 1분에 2분', '']);
+  const tv = A.testView(macs[0].test);
+  sc.eq('⑲ Mac 카드의 시험 결과 줄', [tv.len, tv.rows.map(r => [r.label, r.took, r.per])], ['10분', [['중간 · 양자화', '3분', '녹음 1분에 20초'], ['터보 · 양자화', '2분', '녹음 1분에 13초']]]);
+  sc.eq('⑲ 시험 결과에는 걸린 시간 · 빠르기만(글 칸이 없음)', Object.keys(macs[0].test.r['medium-q5_0']).sort(), ['s', 'x']);
+  sc.eq('⑲ 시험은 앞 10분', A.TEST_SEC, 600);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), mt = /async function modelTest[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('⑲ 시험 글은 그 Mac 의 test 폴더에만 · 계정에는 { at, len, r }', /writeFileSync\(path\.join\(TESTDIR\(\)/.test(mt) && /test: \{ at: serverNow\(\), len, r \}/.test(mt) && !/drive/i.test(mt), true);
+  sc.eq('⑲ 깔리지 않은 모델은 시험하지 않음(깔린 것만)', /const ms = installedModels\(\)/.test(mt), true);
+  sc.eq('⑲ 계기판: 모델 시험 판에 안 깔린 모델의 설치 단추', /data-act="mtinstall"/.test(HTML) && /data-act="mtrun"/.test(HTML), true);
+  sc.eq('⑲ 계기판 새로고침 아이콘: 마우스 글 · 토스트', HTML.includes('title="녹음 목록 지금 다시 읽기" aria-label="녹음 목록 지금 다시 읽기"') && HTML.includes("toast('녹음 목록을 다시 읽어 오라고 보냈습니다\\n1분 안에 새 녹음이 나타납니다')"), true);
 }
 sc.done();
 })().catch(e => { console.error(e); process.exit(1); });

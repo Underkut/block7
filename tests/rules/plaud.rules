@@ -27,13 +27,15 @@ service cloud.firestore {
       }
       match /mac/{name} {
         allow read, delete: if own();
-        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli'])
-          && d().at == request.time;
+        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test'])
+          && d().at == request.time
+          && (!('models' in d()) || (d().models is list && d().models.size() <= 10))
+          && (!('test' in d()) || d().test is map);
       }
       match /cmd/{id} {
         allow read, delete: if own();
         allow create, update: if own() && d().keys().hasOnly(['mac', 'what', 'st', 'at', 'arg', 'log'])
-          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check']
+          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest']
           && d().st in ['new', 'run', 'ok', 'fail'];
       }
     }
