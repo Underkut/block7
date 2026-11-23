@@ -6,7 +6,8 @@ import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { createRequire } from 'module';
 const req = createRequire(import.meta.url); let pw; try { pw = req('playwright'); } catch (_) { pw = req('/opt/node-tools/node_modules/playwright'); } const { chromium } = pw;
 import fs from 'fs'; import path from 'path';
-const ROOT = 'http://localhost:8765/rotation/', NM = path.resolve('node_modules/firebase');
+const ROOT = process.env.ROTA_ROOT || 'http://localhost:8765/rotation/',   // 고치기 전 판과 견줄 때: 다른 자리에 띄운 옛 파일 주소
+  NM = path.resolve('node_modules/firebase');
 const env = await initializeTestEnvironment({ projectId: 'demo-rota', firestore: { rules: fs.readFileSync('rota.rules', 'utf8'), host: '127.0.0.1', port: 8089 } });
 const admin = async (fn) => { let out; await env.withSecurityRulesDisabled(async c => { out = await fn(c.firestore()); }); return out; };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -27,8 +28,12 @@ async function bigBook(weeks) {
 // 구글 자료 표 · 카톡 글 · 예배팀 · 연락처 — 지어낸 크기 비슷한 것(모양은 앱이 읽다 버려도 상관없음: 시간만 잰다)
 const filler = (n) => Array.from({ length: n }, (_, i) => ({ k: 'r' + i, v: '가나다라마바사 '.repeat(3) + i }));
 
-async function device(net) {
-  const ctx = await browser.newContext({ viewport: { width: 1024, height: 1366 } });
+// 아이패드 사파리(홈 화면 앱) — iPadOS 는 맥 사파리 이름표를 단다. 로그인 도구가 사파리면 구글 스크립트 · 숨은 창을 먼저 받는다(B3d-2).
+//   시험 기계는 구글에 못 닿으니 구글 스크립트를 gapiMs 만큼 늦게 '실패' 로 돌려준다 = 그만큼 걸린 구글 쪽 준비의 흉내(실제 아이패드 값은 앱의 개발자 줄로 본다)
+const SAFARI = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+async function device(net, opt = {}) {
+  const ctx = await browser.newContext(Object.assign({ viewport: { width: 1024, height: 1366 } }, opt.safari ? { userAgent: SAFARI } : {}));
+  await ctx.route('https://apis.google.com/**', async r => { await sleep(opt.gapiMs || 0); r.abort(); });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => { const f = r.request().url().split('/').pop(); r.fulfill({ path: path.join(NM, f), contentType: 'text/javascript' }); });
   await ctx.route('https://asia-northeast3-block7-8f24e.cloudfunctions.net/**', r => r.abort());
   await ctx.route('https://fonts.googleapis.com/**', r => r.abort()); await ctx.route('https://fonts.gstatic.com/**', r => r.abort());
@@ -56,14 +61,14 @@ async function device(net) {
   return { ctx, pg };
 }
 
-async function run(label, weeks, net) {
+async function run(label, weeks, net, opt = {}) {
   const { b: book, team, wkeys } = await bigBook(weeks);
   await admin(async db => { await db.doc('rota/' + HB).set({ b18: book, team, wkeys, wpull: true, v: 'seed', at: 1 });   // 앱이 쓰는 모양 그대로 — 열 때 다시 쓰지 않게
     await db.doc(`rota/${HB}/gs/bteam`).set({ rows: filler(400), h: 'x', at: 1 }); await db.doc(`rota/${HB}/gs/bserve`).set({ rows: filler(200), h: 'y', at: 1 });
     await db.doc(`rota/${HB}/gs/phones`).set({ list: filler(150), at: 1 }); await db.doc(`rota/${HB}/kt/hb`).set({ v: 1, items: {} });
     await db.doc(`rota/${HB}/ext/worship`).set({ services: filler(60), at: 1 }); });
   const size = JSON.stringify(book).length;
-  const { ctx, pg } = await device(net);
+  const { ctx, pg } = await device(net, opt);
   // 1) 처음 로그인(빈 기기) — 이 기기 사본이 없을 때
   await pg.goto(ROOT); await pg.waitForTimeout(300);
   await pg.evaluate(async () => { await fbInit(); window.__T.push({ t: Math.round(performance.now()), ev: '로그인 누름' }); await FB.auth.signInWithEmailAndPassword('hb@example.com', 'pw123456'); });
@@ -75,6 +80,8 @@ async function run(label, weeks, net) {
   await pg.evaluate(() => { const b = document.querySelector('[data-mtab="acct"]'); if (b) b.click(); });
   await until(() => pg.evaluate(() => FB.synced));
   await sleep(1500);
+  // 개발자 줄(메뉴 → 계정) — 시험 계정은 개발자가 아니라서 잠깐 개발자인 척
+  const devLine = await pg.evaluate(() => { try { isDev = () => true; renderMenu(); } catch (_) { } const m = document.querySelector('#menu'); return m ? m.innerText.replace(/\s+/g, ' ').trim() : ''; });
   const re = await pg.evaluate(() => window.__T);
   const nav = await pg.evaluate(() => { const n = performance.getEntriesByType('navigation')[0]; return { dcl: Math.round(n.domContentLoadedEventEnd), load: Math.round(n.loadEventEnd) }; });
   const ls = await pg.evaluate(() => (localStorage.getItem('rota_book_v1') || '').length);
@@ -83,12 +90,12 @@ async function run(label, weeks, net) {
   console.log(`\n■ ${label} — 책 ${weeks}주 · ${Math.round(size / 1024)}KB (이 기기 사본 ${Math.round(ls / 1024)}KB)`);
   console.log('  [빈 기기 로그인]\n' + show(first));
   console.log(`  [다시 열기] DOMContentLoaded ${nav.dcl}ms · load ${nav.load}ms\n` + show(re));
+  console.log('  [메뉴 → 계정]', devLine);
   if (pg.errs.length) console.log('  오류:', pg.errs.slice(0, 3));
 }
 const SLOW = { lat: 150, down: 1.5e6 / 8 * 8, up: 750e3 / 8 * 8, cpu: 4 };   // 느린 망 흉내: 왕복 150ms · 1.5MB/s · CPU 4배 느림
 const LTE = { lat: 80, down: 4e6, up: 1e6, cpu: 2 };
-await run('빠름(시험 기계)', 160, null);
-await run('LTE 흉내', 160, LTE);
-await run('느린 망 흉내', 160, SLOW);
-await run('느린 망 흉내', 400, SLOW);
+const only = process.env.ROTA_ONLY || '';
+if (!only || only === 'chrome') { await run('LTE 흉내 · 크롬', 160, LTE); await run('느린 망 흉내 · 크롬', 160, SLOW); }
+if (!only || only === 'safari') { await run('LTE 흉내 · 아이패드 사파리(구글 쪽 준비 1.5초)', 160, LTE, { safari: true, gapiMs: 1500 }); await run('느린 망 흉내 · 아이패드 사파리(구글 쪽 준비 3초)', 160, SLOW, { safari: true, gapiMs: 3000 }); }
 await browser.close(); await env.cleanup();
