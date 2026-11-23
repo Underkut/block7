@@ -1884,9 +1884,9 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
 
   // ── G3 한 부산 주
   const wk = A.gsWeek(team, serve, '2026-11-22');
-  sc.eq('(61) 한 부산 주 = 월 ~ 주일: 금요(인카운터) · 2부 · 1부 차례 · 두 시트가 예배마다 나란히 · 중계 표시',
+  sc.eq('(61) 한 부산 주 = 월 ~ 주일: 시간 차례 금요(인카운터) · 1부 · 2부(HB 11/23) · 두 시트가 예배마다 나란히 · 중계 표시',
     J(wk.map(x => [x.id, x.label, x.relay, !!x.team, !!x.serve])),
-    [['fri|2026-11-20|', '인카운터', false, true, true], ['sun|2026-11-22|2', '2부', false, true, true], ['sun|2026-11-22|1', '1부', true, true, true]]);
+    [['fri|2026-11-20|', '인카운터', false, true, true], ['sun|2026-11-22|1', '1부', true, true, true], ['sun|2026-11-22|2', '2부', false, true, true]]);
   sc.eq('(61) 다른 주는 안 섞임 · 금요 이름이 없으면 예배팀 이름을 씀(예배위원은 비어 옴)', [A.gsWeek(team, serve, '2026-11-15').map(x => x.id), wk[0].name], [['sun|2026-11-15|1'], '인카운터']);
   const xmas = A.gsWeek({ sun: [], fri: [{ date: '2026-12-24', name: '8PM 워십나잇', cells: {} }], roles: {} }, { sun: [{ date: '2026-12-25', svc: '2', cells: { 안내: ['한별'] } }, { date: '2026-12-27', svc: '2', cells: {} }], fri: [], roles: {} }, '2026-12-27');
   sc.eq('(61) 특별예배: 성탄 전야(목) · 성탄(금) 2부가 그 주일(12/27) 부산 주에 날짜를 달고 붙음', J(xmas.map(x => x.label)), ['8PM 워십나잇', '12/25 2부', '2부']);
@@ -2057,7 +2057,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     fri: [], roles: { sun: [R('안내', '안내'), R('헌금', '헌금'), R('봉독', '봉독'), R('광고', '광고')], fri: [] } };
   const before = JSON.stringify([team, serve]), P = A.gsWeekPeople(team, serve, '2026-11-29'), by = n => P.find(x => x.name === n);
   sc.eq('(63) 이름순(ㄱㄴㄷ) · 글자는 먼저 본 대로(금요 정마루) · 그 주만 · 토요모임 글(기도회)은 사람이 아님', P.map(x => x.name), ['고은결', '김라온', '박새봄', '이목사', '정마루', '한별']);
-  sc.eq('(63) 같은 역할 예배는 모음(2부 · 1부 헌금) · 띄어쓰기만 다른 이름은 한 분(금요 · 2부 드럼)', [A.gsPartsText(by('김라온').parts), A.gsPartsText(by('정마루').parts), by('정마루').n], ['2부 · 1부 헌금', '인카운터 · 2부 드럼', 2]);
+  sc.eq('(63) 같은 역할 예배는 모음(2부 · 1부 헌금) · 띄어쓰기만 다른 이름은 한 분(금요 · 2부 드럼)', [A.gsPartsText(by('김라온').parts), A.gsPartsText(by('정마루').parts), by('정마루').n], ['1부 · 2부 헌금', '인카운터 · 2부 드럼', 2]);
   sc.eq('(63) 예배팀 봉독 = 예배위원 봉독은 한 번 · 예배마다 다른 역할은 따로(2부 헌금 · 라이프라인 안내)', [A.gsPartsText(by('고은결').parts), A.gsPartsText(by('박새봄').parts), A.gsPartsText(by('이목사').parts)], ['2부 봉독', '2부 헌금 / 라이프라인 안내', '인카운터 예배 인도 / 2부 광고']);
   sc.eq('(63) 한 줄 글: 예배 묶음은 / · 한 예배의 여러 역할은 쉼표(어느 예배 역할인지 안 헷갈리게)', A.gsPartsText([{ whats: ['어웨이크', '1부'], roles: ['헌금'] }, { whats: ['2부'], roles: ['싱어2', '봉독'] }]), '어웨이크 · 1부 헌금 / 2부 싱어2, 봉독');
   sc.eq('(63) 표가 없으면 빈 목록 · 읽기만(표를 고치지 않음)', [A.gsWeekPeople(null, null, '2026-11-29').length, JSON.stringify([team, serve])], [0, before]);
@@ -2078,9 +2078,9 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
       { date: '2026-11-29', svc: '1', relay: false, cells: { 헌금: ['김마루'] } }],
     fri: [], roles: { sun: [], fri: [] } };
   const before = JSON.stringify([team, serve]), B = A.gsWeekBrief(team, serve, '2026-11-29');
-  sc.eq('(64) 예배마다 한 줄 · 차례(금요 → 2부 → 1부)', B.map(x => x.label), ['인카운터', '2부', '1부']);
-  sc.eq('(64) 여덟 갈래 차례 · 싱어1 · 싱어2 는 싱어 하나 · 음향 & 중계 = 음향 · 봉독 한 번 · 교역자 · 토요모임 · 드럼은 뺌', B[1].text, '예배 인도 한별 · 싱어 나래, 다 온 · 건반 차소율 · 음향 문이든 · 봉독 고은결 · 안내 전하람 · 헌금 박새봄, 김라온 · 광고 이목사');
-  sc.eq('(64) 중계 예배는 분당 중계를 앞에(예배위원은 그대로)', B[2].text, '분당 중계 · 헌금 김마루');
+  sc.eq('(64) 예배마다 한 줄 · 시간 차례(금요 → 1부 → 2부)', B.map(x => x.label), ['인카운터', '1부', '2부']);
+  sc.eq('(64) 여덟 갈래 차례 · 싱어1 · 싱어2 는 싱어 하나 · 음향 & 중계 = 음향 · 봉독 한 번 · 교역자 · 토요모임 · 드럼은 뺌', B[2].text, '예배 인도 한별 · 싱어 나래, 다 온 · 건반 차소율 · 음향 문이든 · 봉독 고은결 · 안내 전하람 · 헌금 박새봄, 김라온 · 광고 이목사');
+  sc.eq('(64) 중계 예배는 분당 중계를 앞에(예배위원은 그대로)', B[1].text, '분당 중계 · 헌금 김마루');
   sc.eq('(64) 표가 없거나 다른 주면 빈 목록 · 읽기만', [A.gsWeekBrief(null, null, '2026-11-29').length, A.gsWeekBrief(team, serve, '2026-12-06').length, JSON.stringify([team, serve])], [0, 0, before]);
   const book = { visits: [{ id: 'v1', date: '2026-11-27', who: ['p1'] }, { id: 'v2', date: '2026-12-04', who: ['p2'], del: true }] };
   sc.eq('(64) 띠: 표 있을 때만 · 섬기는 분 수 = 사람별 수 · 내 부산 주면 mine(금요만 머물러도 그 주)',
@@ -2109,18 +2109,18 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const serve = { sun: [{ date: '2026-11-29', svc: '2', relay: false, cells: { 헌금: ['박새봄', '김라온'] } }, { date: '2026-11-29', svc: 'LL', relay: false, cells: { 안내: ['이나래'] } }],
     fri: [], roles: { sun: [R('안내', '안내'), R('헌금', '헌금')], fri: [] } };
   const before = JSON.stringify([team, serve]), tb = A.gsWeekTable(team, serve, '2026-11-29');
-  sc.eq('(65) 열 = 그 주 예배(금요 → 2부 → 1부 → 라이프라인) · 본 예배 = 2부 · 금요는 날짜',
-    tb.cols.map(c => [c.label, c.sub, c.main, c.relay]), [['워십나잇', '11/27 금', false, false], ['2부', '주일', true, false], ['1부', '주일', false, true], ['라이프라인', '주일', false, true]]);
+  sc.eq('(65) 열 = 그 주 예배 시간 차례(수 · 금 → 1부 → 2부 → 3부 → 라이프라인, HB 11/23) · 본 예배 = 2부 · 금요는 날짜',
+    tb.cols.map(c => [c.label, c.sub, c.main, c.relay]), [['워십나잇', '11/27 금', false, false], ['1부', '주일', false, true], ['2부', '주일', true, false], ['라이프라인', '주일', false, true]]);
   const tg = tb.groups[0], sg = tb.groups[1];
   sc.eq('(65) 묶음 둘 · 줄은 시트 역할 차례(주일 칸 → 금요에만 있는 칸) · 그 주 내내 빈 줄은 숨김 · 토요모임은 할 일(note)',
     [tb.groups.map(g => g.name), tg.rows.map(r => r.label), tg.rows.filter(r => r.note).map(r => r.label), sg.rows.map(r => r.label)],
     [['예배팀', '예배위원'], ['예배 인도', '싱어1', '드럼', '음향 & 중계', '토요모임', '자막'], ['토요모임'], ['안내', '헌금']]);
-  sc.eq('(65) 칸 = 그 예배 그 역할 이름들(금요 예배 인도 · 2부 헌금 둘)', [tg.rows[0].cells, sg.rows[1].cells[1]], [[['이목사'], ['한별'], [], []], ['박새봄', '김라온']]);
+  sc.eq('(65) 칸 = 그 예배 그 역할 이름들(금요 예배 인도 · 2부 헌금 둘)', [tg.rows[0].cells, sg.rows[1].cells[2]], [[['이목사'], [], ['한별'], []], ['박새봄', '김라온']]);
   sc.eq('(65) 중계 예배는 예배팀 맨 위부터 이어진 빈 줄을 한 칸으로 접음(1부 = 음향 위 셋 · 라이프라인 = 할 일 줄 전까지) · 중계 아니면 0 · 예배위원은 안 접음',
-    [tg.fold, sg.fold], [[0, 0, 3, 4], [0, 0, 0, 0]]);
+    [tg.fold, sg.fold], [[0, 3, 0, 4], [0, 0, 0, 0]]);
   sc.eq('(65) 표가 없으면 빈 표 · 읽기만', [JSON.stringify(A.gsWeekTable(null, null, '2026-11-29')), JSON.stringify([team, serve])], ['{"cols":[],"groups":[]}', before]);
-  const bp = A.gsBriefParts(A.gsWeek(team, serve, '2026-11-29')[1]);
-  sc.eq('(65) 내 일정 명단 조각: 역할 · 이름 따로(화면이 다른 모양으로) · 글은 예전 그대로', [bp, A.gsBrief(A.gsWeek(team, serve, '2026-11-29')[1])],
+  const bp = A.gsBriefParts(A.gsWeek(team, serve, '2026-11-29')[2]);
+  sc.eq('(65) 내 일정 명단 조각: 역할 · 이름 따로(화면이 다른 모양으로) · 글은 예전 그대로', [bp, A.gsBrief(A.gsWeek(team, serve, '2026-11-29')[2])],
     [{ relay: false, parts: [{ role: '예배 인도', names: ['한별'] }, { role: '싱어', names: ['나래'] }, { role: '헌금', names: ['박새봄', '김라온'] }] }, '예배 인도 한별 · 싱어 나래 · 헌금 박새봄, 김라온']);
   const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
   sc.eq('(65) 화면: 예배별 = 표(알약 전환 없음) · 처음은 예배별 · 마지막 알약 기억(띠 · 이번 주 카드도 강제 안 함) · 명단 역할/이름 다른 모양 · 예배 이름 칸 같은 폭',
@@ -2140,7 +2140,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const C = A.phParseVcf(vcf);
   sc.eq('(66) vcf: 자모로 풀린 한글 · QP 이름(N 칸) · +82 → 0 · 번호 없는 사람 버림 · 접힌 줄', C.map(c => [c.name, c.tels]),
     [['한별', ['010-1111-2222']], ['나래', ['010-3333-4444']], ['고은결 집사', ['010-5555-6666']], ['박새봄', ['010-7777-8888', '010-7777-9999']], ['이목사', ['02-123-4567']]]);
-  sc.eq('(66) 열쇠: 띄어쓰기 없이 · 연락처의 띄어 적은 끝 직분만 뗌(붙은 이목사는 그대로)', [A.phKey('고은결 집사', true), A.phKey('이목사', true), A.phKey('김 마루'), A.phKey('김하나 권사 님', true)], ['고은결', '이목사', '김마루', '김하나']);
+  sc.eq('(66) 열쇠(셀 inside normName 결): 띄어쓰기 · 괄호 · 기호 걷기 · 끝 직분 두 번까지(띄었든 붙었든) · 시트 쪽만 끝 A · B · 숫자 뗌', [A.phKey('고은결 집사'), A.phKey('정혜정집사님'), A.phKey('김 마루'), A.phKey('김하나 권사 님'), A.phKey('조윤정(부산 청년)'), A.phKey('김미선A', true), A.phKey('김미선A'), A.phKey('한별2', true)], ['고은결', '정혜정', '김마루', '김하나', '조윤정', '김미선', '김미선a', '한별']);
   const team = { sun: [{ date: '2026-11-29', svc: '2', relay: false, cells: { 예배인도: ['한별'], 싱어1: ['나 래'], 토요모임: ['기도회'] } }], fri: [], roles: { sun: [], fri: [] } };
   const serve = { sun: [{ date: '2026-11-29', svc: '2', relay: false, cells: { 봉독: ['고은결'], 헌금: ['박새봄', '없는분'], 광고: ['이목사'] } }], fri: [], roles: { sun: [], fri: [] } };
   const book = { people: [{ id: 'p1', name: '이목사' }, { id: 'p2', name: '담임목사님', kind: 'other' }, { id: 'p3', name: '지운분', del: true }, { id: 'p4', name: '김셀원', kind: 'lay' }] };
@@ -2148,7 +2148,15 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(66) 맞출 이름: 두 표(토요모임 빼고) + 사람 탭(담임 · 초청 · 지운 분 빼고) · 한 번씩', names, ['한별', '나 래', '고은결', '박새봄', '없는분', '이목사', '김셀원']);
   const M = A.phMatch(names, C.concat(A.phFromCell({ m1: { n: '김셀원', p: '010-2222-3333', c: '셀' }, m2: { n: '빈번호' } })));
   sc.eq('(66) 맞추기: 꼭 같은 이름에 번호 하나만 · 번호 여럿은 multi · 없으면 miss · 셀 inside 번호도', [Object.keys(M.hit), M.hit['나래'], M.multi, M.miss],
-    [['한별', '나래', '고은결', '이목사', '김셀원'], { n: '나 래', p: '010-3333-4444', src: '나래' }, ['박새봄'], ['없는분']]);
+    [['한별', '나래', '고은결', '이목사', '김셀원'], { n: '나 래', p: '010-3333-4444', src: '나래', how: 'same' }, ['박새봄'], ['없는분']]);
+  // HB 11/23 사진: 이름이 같거나 메모가 덧붙었을 뿐인데 24분을 못 찾음 → 연락처 이름 속에 든 것도(번호가 하나로 모일 때만)
+  const C2 = [{ name: '조윤정 부산청년', tels: ['010-1000-0001'] }, { name: '하나엄마 김하나', tels: ['010-1000-0002'] }, { name: '김미선', tels: ['010-1000-0003'] },
+    { name: '이혜란 권사님(부산)', tels: ['010-1000-0004'] }, { name: '한결', tels: ['010-1000-0005'] }, { name: '한결이네', tels: ['010-1000-0006'] }, { name: '박민경 집사', tels: ['010-1000-0007'] }, { name: '박민경B', tels: ['010-1000-0008'] },
+    { name: '하늘 서', n2: '서하늘', tels: ['010-1000-0009'] }];
+  const M2 = A.phMatch(['조윤정', '김하나', '김미선A', '김미선B', '이혜란', '한결', '박민경', '서하늘', '우주'], C2);
+  sc.eq('(66) 메모 · 소속 · 괄호가 붙은 연락처도(near, 연락처 이름 함께) · 꼭 같은 것 먼저 · 두 글자는 낱말로만(한결이네 ✗) · 성 · 이름 바뀐 꼴 · 시트 김미선A · B 는 누구 번호인지 몰라 둘 다 여럿',
+    [Object.keys(M2.hit).map(k => [k, M2.hit[k].how, M2.hit[k].src]), M2.multi, M2.miss],
+    [[['조윤정', 'near', '조윤정 부산청년'], ['김하나', 'near', '하나엄마 김하나'], ['이혜란', 'same', '이혜란 권사님(부산)'], ['한결', 'same', '한결'], ['박민경', 'same', '박민경 집사'], ['서하늘', 'same', '하늘 서']], ['김미선A', '김미선B'], ['우주']]);
   const m1 = A.phMerge(null, M.hit, 5), m2 = A.phMerge(m1.doc, { 한별: { n: '한별', p: '010-1111-2222', src: '한별' } }, 6), m3 = A.phMerge(m1.doc, { 한별: { n: '한별', p: '010-0000-1111', src: '새' } }, 7);
   sc.eq('(66) 더하기: 처음은 올림 · 같으면 안 올림 · 바뀐 번호는 새것 · 다른 분은 지우지 않음', [m1.changed, m2.changed, m3.changed, A.phOf(m3.doc, '한별'), A.phOf(m3.doc, '고은결'), Object.keys(m3.doc.by).length], [true, false, true, '010-0000-1111', '010-5555-6666', 5]);
   sc.eq('(66) 계정 문서 다듬기: 모양 다르면 빈 것 · 번호 아닌 것 · 빈칸 든 열쇠는 버림', [A.phDoc({ v: 9, by: { a: { p: '010-1111-2222' } } }).by, Object.keys(A.phDoc({ v: 1, by: { 가: { n: '가', p: '010-1111-2222' }, 나: { p: 'abc' }, '다 라': { p: '010-1111-2222' } } }).by)], [{}, ['가']]);
