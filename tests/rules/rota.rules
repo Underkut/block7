@@ -36,6 +36,10 @@ service cloud.firestore {
         allow read: if isOwner() || isMember();
         allow write: if isOwner();
       }
+      match /kt/{k} {
+        allow read: if isOwner() || (isMember() && (k == 'share' || k == request.auth.uid));
+        allow write: if isOwner() || (isMember() && k == request.auth.uid && k != 'share' && k != 'hb');
+      }
     }
     // ── 교역자 로테이션 — 여기까지 ──
   }

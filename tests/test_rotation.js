@@ -41,6 +41,7 @@
 //  (61) 구글 자료 화면(1121-G G3 · G3b): 한 부산 주(월 ~ 주일) 예배 순서 · 카드 한 줄 · 내 이름(같은 이름 둘은 안 이음) · 월간 예배팀(빈 줄 숨김 · 중계 접기) · 예배위원 · 사람별 횟수(HB 만)
 //  (62) 시트와 맞춰 보기(1121-G G4): 부산 교역자(예배팀 교역자 · 예배위원 광고 ↔ who) · 금요 인도 · 주일 · LL 중계 ↔ lead / 이름 맞추기 / 반영은 누를 때만 · 한 칸만 / 넘기기 열쇠 / 알림 판 한 줄(HB 만)
 //  (63) 그 주 사람별(1123-B B1): 이름순 · 한 분이 맡은 것 한 줄 · 같은 역할 예배는 모음 · 봉독 한 번 · 토요모임 뺌 · 다른 주 안 섞임
+//  (70) 카톡 글 프리셋(1123-B B3): 틀 채우기(예배 역할 · 갈래 · 시트 칸 이름 · 금요 이름) · 빈 칸 든 줄 빼기 · {날} 복사하는 날 기준 · 모르는 칸 그대로 · 칸 단추 · 프리셋 다듬기 · 합치기(HB · 함께 쓰기 · 교역자 것) · 쓸 것 · 저장 칸 · 화면
 //  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
 //  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
@@ -81,7 +82,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phSpans, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll };`, ctx);
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phSpans, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll,
+  KT_BASE, KT_MAX, ktTokens, ktSvc, ktNames, ktDay, ktFill, ktItem, ktDoc, ktList, ktPut, ktNextOrd, ktStaff };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -1860,7 +1862,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(60) HB 만 계정에 씀(owner) · 교역자는 표 둘 + 연락처(1123-T)만 듣고 src 는 안 들음', [/function gsCloudSrc\(o\) \{ if \(DEMO \|\| !FB\.user \|\| FB\.role !== 'owner'\) return;/.test(gs), /if \(!FB\.user \|\| FB\.role !== 'owner'\) \{ r\.saved = \{ state: 'off' \}; return; \}/.test(gs), /GS_SRC\.map\(x => x\.k\)\.concat\(\['phones'\], own \? \['src'\] : \[\]\)/.test(gs), /listenGs\(u\.uid, true\)/.test(HTML), /listenGs\(team, false\)/.test(HTML)], [true, true, true, true, true]);
   sc.eq('(60) 미리보기 시트 채우기는 시트 칸(bteam · bserve)으로 판단 — 고른 파일에 at 칸이 생겨도', /if \(DEMO && !GS_SRC\.some\(x => gsFiles\(\)\[x\.k\]\)\) lsSet\(GS_KEY/.test(gs) && !/Object\.keys\(gsFiles\(\)\)/.test(gs), true);
   sc.eq('(60) 견주기는 지문(h)끼리 — 계정 문서를 JSON.stringify 로 견주지 않음(1117-F)', /JSON\.stringify\(S\.gs|JSON\.stringify\(d\.data\(\)/.test(gs), false);
-  sc.eq('(60) 로그아웃 · 계정 바뀜이면 표 · 읽은 것 · 자동 시각을 비움(남의 표를 들고 있지 않게)', /function stopListen\(\) \{[^\n]*'unsubG'[^\n]*S\.gs = \{\}; GS\.res = \{\}; GS\.autoAt = 0; \}/.test(HTML), true);
+  sc.eq('(60) 로그아웃 · 계정 바뀜이면 표 · 읽은 것 · 자동 시각을 비움(남의 표를 들고 있지 않게)', /function stopListen\(\) \{[^\n]*'unsubG'[^\n]*S\.gs = \{\}; GS\.res = \{\}; GS\.autoAt = 0; ktReset\(\); \}/.test(HTML), true);   // ktReset = 카톡 글 프리셋도(1123-B B3)
   sc.eq('(59) 열쇠: 캘린더 · 심방 노트와 한 벌(/token 메일 아님) · 연결은 care:true(고른 파일만) · 돌아올 자리 ?g=src · 드라이브 전체 권한 없음', [/gfn\('\/token'\)/.test(gs), /gfn\('\/start', \{ ret: GS_RET, care: true \}\)/.test(gs), /GS_RET = 'https:\/\/sweeter\.my\/rotation\/\?g=src'/.test(gs), /auth\/drive['"\s]|drive\.readonly|spreadsheets['"]\s*\]/.test(HTML)], [true, true, true, false]);
   sc.eq('(59) 고르기 창: 심방 노트와 같은 공개 키 · 프로젝트 번호 · 시트만', [/GS_PICKER_KEY = 'AIzaSyAOLbBCajy6vF33xN1PQWk1qnU7VoynuC8'/.test(gs), /GS_PICKER_APP = '517626689480'/.test(gs), /ViewId\.SPREADSHEETS/.test(gs)], [true, true, true]);
   sc.eq('(59) HB 만: gsCan = 주인(owner) · 메뉴 개발 탭 단추 · 교역자 누름 목록에 없음', [/function gsCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(gs), /gsCan\(\) \? '<button class="btn ghost" data-act="gsopen">구글 자료/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('))), /'gsopen'|'gsread'|'gsconnect'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))], [true, true, false]);
@@ -2221,6 +2223,80 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [/addEventListener\('pointerdown', e => \{ if \(\$\('#phmenu'\)/.test(ui), /addEventListener\('click', e => \{ if \(\$\('#phmenu'\) && !e\.target\.closest/.test(ui), /closest\('span\.phn\[data-ph\]'\); if \(!t\) return; e\.preventDefault\(\); e\.stopPropagation\(\); phMenu\(t\); \}, true\)/.test(ui),
       /paintSure\(p\); phPaint\(p\);/.test(ui), /paintSure\(el\); phPaintPane\(el\);/.test(ui), /\[data-me\],\[data-pid\],\[data-who\]/.test(ui) && /\[aria-pressed\]/.test(ui), /filter\(k => k !== myK\)/.test(ui)],
     [true, false, true, true, true, true, true]);
+}
+
+
+// (70) 1123-B B3 — 카톡 글 프리셋 (HB 결정 D1 · D3, 11/23). 이름은 모두 지어낸 것.
+{
+  const R = (k, label) => ({ k, label });
+  const team = { sun: [
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 예배인도: ['한별'], 싱어1: ['나래'], 싱어2: ['다 온'], '음향&중계': ['문이든'], 봉독: ['고은결'], 드럼: ['진우람'], 토요모임: ['기도회'] } },
+      { date: '2026-11-29', svc: '1', relay: true, cells: {} },
+      { date: '2026-11-29', svc: 'LL', relay: false, cells: { 예배인도: ['도하율'] } }],
+    fri: [{ date: '2026-11-27', name: '인카운터', relay: false, cells: { 예배인도: ['이목사'], '음향&중계': ['문이든'] } }],
+    roles: { sun: [R('예배인도', '예배 인도')], fri: [] } };
+  const serve = { sun: [
+      { date: '2026-11-29', svc: '2', relay: false, cells: { 안내: ['전하람'], 헌금: ['박새봄', '김라온'], 봉독: ['고은결'] } },
+      { date: '2026-11-29', svc: '1', relay: false, cells: { 헌금: ['김마루'] } },
+      { date: '2026-11-29', svc: 'LL', relay: false, cells: { 안내: ['이나래'], 봉독: [] } }],
+    fri: [], roles: { sun: [], fri: [] } };
+  const before = JSON.stringify([team, serve]);
+  const C = (today, o) => Object.assign({ team, serve, sun: '2026-11-29', today, txt: '마태복음 9:9-13', staff: ['이목사'] }, o || {});
+  const F = (t, today, o) => A.ktFill(t, C(today || '2026-11-28', o));
+  sc.eq('(70) 봉독 틀: 토요일 복사 = 내일 · 2부 봉독(예배팀 · 예배위원 같은 이름은 한 번) · 본문',
+    F(A.KT_BASE[0].t).text, '내일 봉독위원은 고은결 성도님이십니다.\n\n본문은 마태복음 9:9-13입니다.');
+  sc.eq('(70) 빈 칸 든 줄은 통째로 뺌(1부 안내 없음) · 뺀 줄 수',
+    [F(A.KT_BASE[1].t).text, F(A.KT_BASE[1].t).drop], ['내일 안내위원 섬겨 주실 분들입니다^^\n2부 전하람\n라이프라인 이나래', 1]);
+  sc.eq('(70) 갈래 이름(싱어 = 싱어1 · 싱어2, 음향 = 음향 & 중계, 예배 인도) · 시트 칸 이름(드럼) · LL = 라이프라인 · 중계 예배는 빈 줄',
+    [F('{2부 싱어}|{2부 음향}|{2부 예배 인도}|{2부 드럼}|{라이프라인 예배 인도}|{LL 예배인도}').text, F('1부 인도 {1부 예배 인도}\n끝').text],
+    ['나래, 다 온|문이든|한별|진우람|도하율|도하율', '끝']);
+  sc.eq('(70) 토요모임 · 교역자 칸은 갈래로 안 잡힘 · {금요} = 그 금요 이름 · {교역자} = 그 주 부산 일정',
+    [F('{2부 토요모임}').text, F('{금요} {금요 예배 인도} · {교역자}').text], ['', '인카운터 이목사 · 이목사']);
+  sc.eq('(70) {날}(D3) = 복사하는 날 기준: 주일에 = 오늘 · 월요일 = 이번 주일 · 그 줄의 예배 날(금요 줄은 금요일) · 일주일 밖 · 지난 날 = 날짜 · {날짜} = 언제나 날짜',
+    [F('{날}', '2026-11-29').text, F('{날}', '2026-11-23').text, F('{날} {금요 예배 인도}', '2026-11-26').text, F('{날} {금요 예배 인도}', '2026-11-25').text,
+      F('{날}', '2026-11-22').text, F('{날}', '2026-11-30').text, F('{날짜}', '2026-11-28').text],
+    ['오늘', '이번 주일', '내일 이목사', '이번 금요일 이목사', '11월 29일 주일', '11월 29일 주일', '11월 29일 주일']);
+  sc.eq('(70) 예배 없는 {날} 줄은 틀에서 처음 나온 예배의 날(금요예배 틀 → 목요일에 = 내일)', F(A.KT_BASE[4].t, '2026-11-26').text, '내일 인카운터 예배 인도는 이목사입니다.\n음향은 문이든입니다.');
+  sc.eq('(70) 모르는 칸은 글 그대로(틀 고칠 수 있게) · 본문이 비면 그 줄 뺌',
+    [F('{봉독자} 안녕\n본문 {본문}', '2026-11-28', { txt: '' }).text, F('{봉독자}').unknown], ['{봉독자} 안녕', ['봉독자']]);
+  sc.eq('(70) 표가 없으면 시트 칸 줄은 다 빠짐 · 읽기만(표를 고치지 않음)',
+    [A.ktFill(A.KT_BASE[0].t, { sun: '2026-11-29', today: '2026-11-28', txt: '요 3:16' }).text, JSON.stringify([team, serve])], ['본문은 요 3:16입니다.', before]);
+  sc.eq('(70) 끼울 칸 단추: 기본 셋 + 그 주에 있는 예배 · 적힌 갈래만(시간 차례, 금요는 이름 칸도 · 중계 1부는 예배위원 헌금만)',
+    A.ktTokens(team, serve, '2026-11-29').map(x => x.k),
+    ['날', '본문', '교역자', '금요', '금요 예배 인도', '금요 음향', '1부 헌금', '2부 예배 인도', '2부 싱어', '2부 음향', '2부 봉독', '2부 안내', '2부 헌금', 'LL 예배 인도', 'LL 안내']);
+  // 프리셋 다듬기 · 합치기
+  sc.eq('(70) 한 줄 다듬기: 이름 20자 · 틀 1000자 · 지우기 표지는 글을 비움 · 칸은 언제나 다 있음',
+    [A.ktItem({ n: '  가'.repeat(15), t: 'x'.repeat(1200), share: 1, ord: '3', at: 5 }), A.ktItem({ n: '가', t: '나', share: true, del: true }, 9)],
+    [{ n: '가  가  가  가  가  가  가', t: 'x'.repeat(1000), ord: 3, share: false, del: false, at: 5 }, { n: '', t: '', ord: 0, share: false, del: true, at: 9 }]);
+  sc.eq('(70) 계정 문서: 틀린 id · 모양 버림', Object.keys(A.ktDoc({ items: { 'h1': { n: '가', t: '' }, 'a/b': { n: '나' }, 'h2': 'x' } })), ['h1']);
+  const L0 = A.ktList(null, null, true);
+  sc.eq('(70) HB 처음: 기본 다섯 · 함께 쓰기 켬 · HB 가 고침', L0.map(x => [x.id, x.n, x.share, x.own, x.base]),
+    [['b1', '봉독위원', true, true, true], ['b2', '안내위원', true, true, true], ['b3', '헌금위원', true, true, true], ['b4', '예배팀 인도', true, true, true], ['b5', '금요예배', true, true, true]]);
+  const hb = { items: { b2: A.ktItem({ n: '안내위원', t: '{날} 안내 {2부 안내}', share: false, ord: -4 }, 10), b5: A.ktItem({ del: true }, 11), h1: A.ktItem({ n: '광고', t: '{2부 광고}', share: true, ord: 1 }, 12), h2: A.ktItem({ n: '나만', t: '메모', share: false, ord: 2 }, 13) } };
+  const share = { items: {} };
+  for (const id of Object.keys(hb.items)) share.items[id] = A.ktPut(id, hb.items[id], true, hb.items[id].at).share;
+  sc.eq('(70) HB: 고친 기본 · 지운 기본은 숨김 · 새 프리셋은 뒤에(차례)', A.ktList(hb, null, true).map(x => [x.id, x.share, x.t.slice(0, 7)]),
+    [['b1', true, '{날} 봉독위'], ['b2', false, '{날} 안내 '], ['b3', true, '{날} 헌금위'], ['b4', true, '{날} 예배 '], ['h1', true, '{2부 광고}'], ['h2', false, '메모']]);
+  sc.eq('(70) 쓸 것(HB): 함께 쓰기 끔 · 지움 → share 쪽은 지우기 표지(글 없음) · 켠 것은 같은 줄',
+    [share.items.b2, share.items.b5.del, share.items.h1, share.items.h2.del], [{ n: '', t: '', ord: -4, share: false, del: true, at: 10 }, true, hb.items.h1, true]);
+  const mine = { items: { s1: A.ktItem({ n: '내 인사', t: '{날} 인사', ord: 1 }, 20), b1: A.ktItem({ n: '가짜', t: '덮기' }, 21) } };
+  sc.eq('(70) 교역자: HB 가 함께 쓰는 것만(끈 것 · 지운 것 · 나만 것 안 보임) · 자기 것은 뒤에 · HB 것은 못 고침 · 기본 id 를 자기 것으로 덮지 못함',
+    A.ktList(share, mine, false).map(x => [x.id, x.own]), [['b1', false], ['b3', false], ['b4', false], ['h1', false], ['s1', true]]);
+  sc.eq('(70) 쓸 것(교역자): 자기 칸만 · 함께 쓰기 없음 · 틀린 id 막음 · 다음 차례',
+    [A.ktPut('s2', { n: '가', t: '나', share: true, ord: 3 }, false, 30), A.ktPut('a/b', { n: '가' }, true, 1), A.ktNextOrd(hb, mine)],
+    [{ mine: { n: '가', t: '나', ord: 3, share: false, del: false, at: 30 } }, null, 3]);
+  sc.eq('(70) {교역자}: 그 주 부산 일정(금요만 머물러도) · 지운 일정 · 지운 사람 뺌',
+    A.ktStaff({ people: [{ id: 'p1', name: '이목사' }, { id: 'p2', name: '박목사' }, { id: 'p3', name: '지운분', del: true }], visits: [{ id: 'v1', date: '2026-11-27', who: ['p1', 'p3'] }, { id: 'v2', date: '2026-11-28', who: ['p2'], del: true }, { id: 'v3', date: '2026-12-04', who: ['p2'] }] }, '2026-11-29'), ['이목사']);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const RULES = fs.readFileSync(path.join(__dirname, 'rules', 'rota.rules'), 'utf8');
+  sc.eq('(70) 저장 칸: kt/hb · kt/share(HB) · kt/{자기 uid}(교역자) · 책 · ui · staff 칸에 안 넣음 · 규칙(교역자는 share · 자기 것만 읽고 자기 것만 씀)',
+    [/collection\('kt'\)\.doc\(/.test(ui), /ktRef\('hb'\)/.test(ui) && /ktRef\('share'\)/.test(ui) && /ktRef\(FB\.user\.uid\)/.test(ui), /\{ merge: true \}/.test(ui.slice(ui.indexOf('function ktWrite'), ui.indexOf('function ktWrite') + 900)),
+      /hasOnly\(\[[^\]]*'kt'/.test(RULES), /match \/kt\/\{k\} \{\s*allow read: if isOwner\(\) \|\| \(isMember\(\) && \(k == 'share' \|\| k == request\.auth\.uid\)\);\s*allow write: if isOwner\(\) \|\| \(isMember\(\) && k == request\.auth\.uid && k != 'share' && k != 'hb'\);/.test(RULES)],
+    [true, true, true, false, true]);
+  sc.eq('(70) 화면: 세 번째 알약 카톡 글 · 복사는 누른 그 자리에서(기다리지 않고) · 판단은 core · 교역자도 누름(자기 것만 씀) · 함께 쓰기는 HB 만',
+    [/\['kt', '카톡 글'\]/.test(ui), /function ktCopy\(\) \{[^]*?navigator\.clipboard\.writeText\(/.test(ui) && !/function ktCopy\(\) \{[^}]*await/.test(ui), /function ktFill\(|function ktList\(/.test(ui),
+      /'ktcopy'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('function staffOk'))), /function ktShare\([^)]*\) \{ if \(isStaff\(\)\) return/.test(ui)],
+    [true, true, false, true, true]);
 }
 
 sc.done();

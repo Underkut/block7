@@ -70,9 +70,34 @@ await t('팀 교역자는 설정도 못 읽는다(S1b — 성도 화면 S3 에�
 await t('팀 밖 사람은 월 판을 못 읽는다', out.doc('rota/hb/svm/2026-11').get(), false);
 await t('로그인 안 하면 월 판을 못 읽는다', anon.doc('rota/hb/svm/2026-11').get(), false);
 await t('남의 HB 는 내 월 판에 못 쓴다', ctx('hb2', 'x@example.com', false).doc('rota/hb/svm/2026-11').set({ ym: '2026-11' }), false);
+// 카톡 글 프리셋 (1123-B B3) — kt/hb(HB 만) · kt/share(HB 쓰기 · 팀 읽기) · kt/{교역자 uid}(그분만)
+const KI = (n, share, at) => ({ v: 1, items: { h1: { n, t: '{날} {2부 봉독}', ord: 1, share, del: false, at } } });
+await t('HB 는 자기 프리셋(kt/hb)과 함께 쓰는 것(kt/share)을 한 번에 쓴다', (() => { const b = hb.batch(); b.set(hb.doc('rota/hb/kt/hb'), KI('봉독', true, 1), { merge: true }); b.set(hb.doc('rota/hb/kt/share'), KI('봉독', true, 1), { merge: true }); return b.commit(); })(), true);
+await t('HB 는 둘 다 읽는다', Promise.all([hb.doc('rota/hb/kt/hb').get(), hb.doc('rota/hb/kt/share').get()]), true);
+await t('팀 교역자는 함께 쓰는 프리셋을 읽는다', ga.doc('rota/hb/kt/share').get(), true);
+await t('팀 교역자는 HB 의 안 나눈 프리셋(kt/hb)을 못 읽는다', ga.doc('rota/hb/kt/hb').get(), false);
+await t('팀 교역자는 함께 쓰는 프리셋에 못 쓴다', ga.doc('rota/hb/kt/share').set(KI('가짜', true, 2), { merge: true }), false);
+await t('팀 교역자는 HB 프리셋 문서에 못 쓴다', ga.doc('rota/hb/kt/hb').set(KI('가짜', true, 2), { merge: true }), false);
+await t('팀 교역자는 함께 쓰는 프리셋을 못 지운다', ga.doc('rota/hb/kt/share').delete(), false);
+await t('교역자는 자기 프리셋(kt/자기 uid)을 쓰고 읽는다', ga.doc('rota/hb/kt/uga').set(KI('내 것', false, 3), { merge: true }).then(() => ga.doc('rota/hb/kt/uga').get()), true);
+await t('교역자는 다른 교역자 프리셋을 못 읽는다', ra.doc('rota/hb/kt/uga').get(), false);
+await t('교역자는 다른 교역자 프리셋에 못 쓴다', ra.doc('rota/hb/kt/uga').set(KI('가짜', false, 4), { merge: true }), false);
+await t('교역자는 자기 프리셋 문서를 지운다', ga.doc('rota/hb/kt/uga').delete(), true);
+await t('팀 밖 사람은 자기 uid 라도 프리셋을 못 쓴다', out.doc('rota/hb/kt/uzz').set(KI('가', false, 1)), false);
+await t('팀 밖 사람은 함께 쓰는 프리셋을 못 읽는다', out.doc('rota/hb/kt/share').get(), false);
+await t('로그인 안 하면 프리셋을 못 읽는다', anon.doc('rota/hb/kt/share').get(), false);
+await t('남의 HB 는 내 프리셋을 못 읽는다', ctx('hb2', 'x@example.com', false).doc('rota/hb/kt/hb').get(), false);
+await t('남의 HB 는 내 프리셋에 못 쓴다', ctx('hb2', 'x@example.com', false).doc('rota/hb/kt/share').set(KI('가', true, 1)), false);
+// 합쳐 쓰기: 지우기 표지는 칸을 다 적어 옛 글이 남지 않음 · 다른 프리셋은 그대로
+await hb.doc('rota/hb/kt/hb').set({ v: 1, items: { h2: { n: '안내', t: '{2부 안내}', ord: 2, share: false, del: false, at: 5 } } }, { merge: true });
+await hb.doc('rota/hb/kt/hb').set({ v: 1, items: { h1: { n: '', t: '', ord: 1, share: false, del: true, at: 6 } } }, { merge: true });
+{ const d = (await hb.doc('rota/hb/kt/hb').get()).data(); n++; const ok = d.items.h1.del === true && d.items.h1.t === '' && d.items.h2.n === '안내';
+  if (ok) console.log('  ✓ 프리셋 한 줄 합쳐 쓰기 — 지운 줄은 글이 비고 다른 줄은 그대로'); else { bad++; console.log('  ✗ 프리셋 합쳐 쓰기', JSON.stringify(d)); } }
 await t('팀에서 빠지면(HB 가 이메일 지움) 더는 못 읽는다', hb.doc('rota/hb').set({ team: ['ra@example.com'] }, { merge: true }).then(() => ga.doc('rota/hb').get()), false);
 await t('… 구글 자료 표도 못 읽는다', ga.doc('rota/hb/gs/bteam').get(), false);
 await t('… 예배위원 월 판도 못 읽는다', ga.doc('rota/hb/svm/2026-11').get(), false);
+await t('… 함께 쓰는 프리셋도 못 읽는다', ga.doc('rota/hb/kt/share').get(), false);
+await t('… 자기 프리셋에도 못 쓴다', ga.doc('rota/hb/kt/uga').set(KI('가', false, 9)), false);
 await t('… 자기 칸에도 못 쓴다', ga.doc('rota/hb/staff/uga').set({ email: 'ga@example.com', at: 9 }), false);
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
 await env.cleanup(); process.exit(bad ? 1 : 0);
