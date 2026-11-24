@@ -50,6 +50,9 @@ await t('일감 칸에 전사문(text)은 못 넣는다', hb.doc('plaud/hb/job/'
 await t('모르는 상태(st: maybe)는 못 쓴다', hb.doc('plaud/hb/job/' + ID).set({ st: 'maybe' }, { merge: true }), false);
 await t('모르는 단계는 못 쓴다', hb.doc('plaud/hb/job/' + ID).set({ step: 'send' }, { merge: true }), false);
 await t('실패 까닭은 120자까지', hb.doc('plaud/hb/job/' + ID).set({ st: 'fail', err: 'x'.repeat(121) }, { merge: true }), false);
+await t('(P3c) 드라이브에 없음 표시(gone)', hb.doc('plaud/hb/job/' + ID).set({ gone: true }, { merge: true }), true);
+await t('(P3c) gone 은 참 · 거짓만', hb.doc('plaud/hb/job/' + ID).set({ gone: '지움' }, { merge: true }), false);
+await t('(P3c) 다시 전사 · txt 지우기 — 일감을 pick 하나로 새로 씀', hb.doc('plaud/hb/job/' + ID).set({ pick: 'in' }), true);
 await t('남은 일감을 못 읽는다', out.doc('plaud/hb/job/' + ID).get(), false);
 await t('남은 일감을 못 집는다', out.doc('plaud/hb/job/' + ID).set({ st: 'work', mac: '남', at: ST }, { merge: true }), false);
 // 두 Mac 이 같은 녹음을 동시에 집기 — 트랜잭션이라 한 대만 된다(같은 계정 둘 = 집 · 사무실)
@@ -77,6 +80,7 @@ await t('(P3) 모델 목록은 목록 꼴 · 10개까지', hb.doc('plaud/hb/mac/
 await t('(P3) 모델 시험 결과는 묶음(map) 꼴만', hb.doc('plaud/hb/mac/집').set({ at: ST, test: '시험 전사 글' }, { merge: true }), false);
 await t('(P3) 소식에 전사 글 칸(text)은 못 넣는다', hb.doc('plaud/hb/mac/집').set({ at: ST, text: '…' }, { merge: true }), false);
 await t('(P3b) 소식에 저장 공간(남은 공간 · 모델 · 임시 파일 크기)', hb.doc('plaud/hb/mac/집').set({ at: ST, disk: { free: 41e9, models: 1e9, work: { [ID]: 2e7 } } }, { merge: true }), true);
+await t('(P3c) 소식에 목록 읽은 때(listed)', hb.doc('plaud/hb/mac/집').set({ at: ST, listed: 1795478400000 }, { merge: true }), true);
 await t('Mac 이름이 너무 길면 못 쓴다', hb.doc('plaud/hb/mac/' + '가'.repeat(25)).set({ at: ST }), false);
 await t('계기판은 Mac 카드를 지운다', hb.doc('plaud/hb/mac/집').delete(), true);
 await t('남은 소식을 못 읽는다', out.collection('plaud/hb/mac').get(), false);
@@ -86,6 +90,9 @@ await t('모델 요청은 고른 모델 이름을 싣는다', hb.collection('pla
 await t('(P3) 모델 시험 요청(mtest + 녹음 번호)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'mtest', arg: ID, st: 'new', at: ST }), true);
 await t('(P3b) 안 쓰는 모델 지우기 요청', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'rmmodel', arg: 'medium-q5_0', st: 'new', at: ST }), true);
 await t('(P3b) 임시 파일 비우기 요청', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'clean', st: 'new', at: ST }), true);
+await t('(P3c) 지금 시작 요청(kick)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'kick', arg: ID, st: 'new', at: ST }), true);
+await t('(P3c) 전사 txt 지우기 요청(rmtxt)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'rmtxt', arg: ID, st: 'new', at: ST }), true);
+await t('(P3c) 다시 전사 요청(redo)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'redo', arg: ID, st: 'new', at: ST }), true);
 await t('(P3) 전사 · 드라이브는 요청 이름이 아니다(저절로 함)', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'transcribe', st: 'new' }), false);
 await t('정해 두지 않은 요청(sh)은 못 넣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'sh', st: 'new' }), false);
 await t('요청에 명령 글(argv)은 못 싣는다', hb.collection('plaud/hb/cmd').add({ mac: '집', what: 'ffmpeg', st: 'new', argv: ['rm', '-rf', '/'] }), false);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1123-3 -->
+<!-- PLAUDHUB v. 26-1124-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -32,6 +32,10 @@ input{font:inherit;color:inherit}
 header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
   padding:calc(var(--safe-t) + 10px) 16px 10px;background:var(--bg)}
 header.top h1{font-size:17px;font-weight:600;margin:0;text-align:center;flex:1}
+header.top{display:grid;grid-template-columns:1fr auto 1fr}
+header.top .tr{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+.verb{font-size:11.5px;color:var(--dim);padding:3px 7px;border-radius:8px;white-space:nowrap}
+.verb.newv{color:var(--chip-ink);background:var(--chip);font-weight:600}
 .ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--sub)}
 .ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 main{max-width:720px;margin:0 auto;padding:0 16px calc(var(--safe-b) + 40px)}
@@ -68,14 +72,46 @@ h2 small{font-weight:400;color:var(--dim)}
 .mtest .msg{font-size:12.5px}
 .mtest .act,.doing .act{font-size:13px}
 .recs{background:var(--card);border-radius:14px;overflow:hidden}
-.rec{display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.rec{display:flex;gap:9px;align-items:center;padding:9px 12px 9px 8px;border-bottom:1px solid var(--line);cursor:pointer}
+.rec.done{cursor:default}
+.rec .nw{width:6px;height:6px;border-radius:50%;background:var(--ac);flex:none} .rec .nw.off{background:transparent}
+.rec .tm{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;width:42px;flex:none}
+.rec .right{display:flex;align-items:center;gap:6px;flex:none}
+.rec .len{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rec .len.long{color:var(--warn);font-weight:600}
+.rec .meta.bad{color:var(--bad)}
+.ibs{display:inline-flex;gap:0}
+.ib{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;color:var(--ac);border-radius:8px}
+.ib svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ib[data-act="more"]{color:var(--dim)} .ib[data-act="more"] svg{fill:currentColor}
+.s{font-size:11.5px;padding:1px 8px;border-radius:9px;white-space:nowrap}
+.s.work{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.s.fail{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.s.out{color:var(--dim)}
+.lnk{color:var(--ac);font-size:13px;white-space:nowrap}
+.btn.sm{height:28px;padding:0 10px;font-size:12.5px}
+.day{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--sub);padding:10px 14px 4px;background:var(--bg)}
+.day small{font-weight:400;color:var(--dim)}
+.seg{display:flex;gap:4px;background:var(--card);border-radius:11px;padding:3px;margin:0 0 8px}
+.seg button{flex:1;font-size:13px;padding:6px 0;border-radius:9px;color:var(--sub)}
+.seg button.on{background:var(--chip);color:var(--chip-ink);font-weight:600}
+.seg button i{font-style:normal;font-size:11px;opacity:.75;margin-left:4px}
+.bar{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:12px;padding:8px 10px 8px 14px;margin:0 0 8px;font-size:13.5px}
+.bar .grow{flex:1;min-width:0}
+.card.mac.off{padding:10px 16px}
+.fold{display:flex;flex-wrap:wrap;align-items:center;gap:0 4px;width:100%;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;color:var(--sub);text-align:left}
+.fold .okc{color:var(--ok)} .fold.bad{color:var(--bad)}
+.fold .chev{margin-left:auto;color:var(--dim)}
+.vmeta{font-size:12.5px;color:var(--sub);text-align:center;margin:-2px 0 10px}
+.vtext{white-space:pre-wrap;font-size:15px;line-height:1.75;user-select:text;-webkit-user-select:text}
 .rec:last-child{border-bottom:0}
 .rec .chk{width:22px;height:22px;border-radius:50%;border:1.6px solid var(--dim);flex:none;display:flex;align-items:center;justify-content:center}
 .rec.pick .chk{background:var(--ac);border-color:var(--ac)}
 .rec.pick .chk::after{content:'';width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
 .rec .body{flex:1;min-width:0}
-.rec .ttl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .ttl{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
 .rec .ttl.none{color:var(--dim)}
+.rec.done .chk{opacity:.35}
 .rec .meta{font-size:12px;color:var(--sub);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:1px}
 .rec .why{font-size:11px;padding:1px 7px;border-radius:9px;background:var(--chip);color:var(--chip-ink)}
 .rec .why.out{background:transparent;color:var(--dim);padding:0}
@@ -123,9 +159,9 @@ h2 small{font-weight:400;color:var(--dim)}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1123-3";
+const APP_VERSION = "v. 26-1124-1";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
-const HELPER_LATEST = 'h. 26-1123-3';
+const HELPER_LATEST = 'h. 26-1124-1';
 const PROJECT = 'block7-8f24e';
 const SITE = 'https://block7.my/plaudhub/';
 const PAIR_PORT = 47211;
@@ -175,10 +211,14 @@ const INSTALLS = {
   rmmodel: { title: '모델 지우기', argv: ['rm', '~/Library/Application Support/plaudhub/models/(모델 파일)'], where: '~/Library/Application Support/plaudhub/models', size: '-', mins: 1 },
   // 임시 소리 파일 비우기 — 전사 중이면 그 전사를 멈추고(한 시간 뒤 다시) 일 폴더를 비운다
   clean: { title: '임시 파일 비우기', argv: ['rm', '-r', '~/Library/Application Support/plaudhub/work'], where: '~/Library/Application Support/plaudhub/work', size: '-', mins: 1 },
+  // P3c — 지금 시작(arg = 먼저 할 녹음, 없어도 됨) · 전사 txt 지우기 · 다시 전사(arg = 녹음). 명령을 돌리지 않고 도우미가 파일 하나 · 계정 줄만 다룬다
+  kick: { title: '지금 전사 시작', argv: [], where: '-', size: '-', mins: 1 },
+  rmtxt: { title: '전사 txt 지우기', argv: ['rm', '(드라이브 HB-심방-전사/그 녹음.txt)'], where: '드라이브 HB-심방-전사 · 잠근 사본', size: '-', mins: 1 },
+  redo: { title: '다시 전사', argv: ['rm', '(드라이브 HB-심방-전사/그 녹음.txt)'], where: '드라이브 HB-심방-전사 · 잠근 사본', size: '-', mins: 1 },
 };
 const CMD_WHAT = Object.keys(INSTALLS);
 // 계정 요청이 와도 전사 · 시험 중에는 미뤄 두는 것(도우미를 다시 켜거나 같은 Mac 을 바쁘게 하는 것). 미룬 요청은 '기다림' 으로 남는다
-const CMD_WHILE_BUSY = ['check', 'refresh', 'clean'];
+const CMD_WHILE_BUSY = ['check', 'refresh', 'clean', 'kick', 'rmtxt', 'redo'];
 
 /* ---------- 받기 → 전사 → 드라이브 (P3) ----------
    도우미가 그 Mac 에서 돌리는 명령은 이 표(PIPE)와 위 INSTALLS 가 전부다. {칸} 은 pipeArgv 가 채운다.
@@ -364,7 +404,8 @@ function listView(recs, jobs, settings, nowMs, speeds) {
   return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && Number.isFinite(r.c) && r.c >= from)
     .map(r => { const j = J[r.id] || null, st = pickState(r, j, s.kw);
       return { id: r.id, name: r.n || '', when: kstLabel(r.t, nowMs), t: r.t, dur: durLabel(r.d), d: r.d || 0, st, picked: isPicked(st), hit: kwHit(r.n, s.kw),
-        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', err: j && j.st === 'fail' && j.err ? j.err : '', est: estMin(r.d, s.model, speeds) }; })
+        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', err: j && j.st === 'fail' && j.err ? j.err : '', gone: !!(j && j.st === 'done' && j.gone), est: estMin(r.d, s.model, speeds) }; })
+    .map(x => Object.assign(x, { tab: tabOf(x), rest: titleRest(x.name), tm: hhmm(x.t), day: dayKey(x.t) }))
     .sort((a, b) => (b.t || 0) - (a.t || 0) || (a.id < b.id ? -1 : 1));
 }
 function macView(doc, nowMs) {
@@ -441,7 +482,7 @@ function wantedJobs(recs, jobs, settings, mac, now) {
 const CMD_STALE_MS = 24 * 3600e3;
 function cmdFor(cmd, mac, now) {
   return !!(cmd && cmd.mac === mac && cmd.st === 'new' && CMD_WHAT.includes(cmd.what) && !(Number.isFinite(cmd.at) && now - cmd.at > CMD_STALE_MS)
-    && (!['model', 'rmmodel'].includes(cmd.what) || MODELS.some(m => m.id === cmd.arg)) && (cmd.what !== 'mtest' || ID_RE.test(String(cmd.arg || ''))));
+    && (!['model', 'rmmodel'].includes(cmd.what) || MODELS.some(m => m.id === cmd.arg)) && (!['mtest', 'rmtxt', 'redo'].includes(cmd.what) || ID_RE.test(String(cmd.arg || ''))) && (cmd.what !== 'kick' || !cmd.arg || ID_RE.test(String(cmd.arg))));
 }
 // 화면 · 기록에 남기기 전에: 주소(내려받기 열쇠가 들 수 있음)를 지운다
 function clean(s, max) { return String(s == null ? '' : s).replace(/https?:\/\/\S+/g, '[주소]').slice(-(max || 600)); }
@@ -533,6 +574,31 @@ function workSizes(macs) {
   return { by, total, macs: on };
 }
 
+/* ---------- P3c 녹음 목록(시안 B2 · D1, HB 11/24) ---------- */
+// 탭: new = 고르지도 빼지도 않은(키워드도 안 걸린) 것 · todo = 고름 · 기다림 · 전사 중 · 실패 · 드라이브에 없음 · done = 드라이브에 있음 · out = 뺌(전체에만)
+const TABS = [['new', '새 녹음'], ['todo', '할 것'], ['done', '끝남'], ['all', '전체']];
+function tabOf(x) {
+  if (x.job === 'done') return x.gone ? 'todo' : 'done';
+  if (x.picked) return 'todo';
+  if (x.st === 'out') return 'out';
+  return x.job ? 'todo' : 'new';
+}
+function inTab(x, tab) { return tab === 'all' || x.tab === tab; }
+// 제목 앞의 PLAUD 날짜 · 시각('2026-11-23 16:55:33 ')을 뗀 덧붙인 글 — 날짜 · 시각은 묶음 · 시각 칸에 따로 보인다
+function titleRest(n) { return String(n || '').trim().replace(/^\d{4}-\d{2}-\d{2}[ T_]+\d{1,2}[:;.]\d{2}(?:[:;.]\d{2})?(?=\s|$)\s*/, '').trim(); }
+function hhmm(ms) { if (!Number.isFinite(ms)) return ''; const a = kst(ms); return String(a.h).padStart(2, '0') + ':' + String(a.mi).padStart(2, '0'); }
+function dayKey(ms) { if (!Number.isFinite(ms)) return ''; const a = kst(ms); return a.y + '-' + String(a.mo).padStart(2, '0') + '-' + String(a.d).padStart(2, '0'); }
+function dayLabel(ms, nowMs) {
+  if (!Number.isFinite(ms)) return '날짜 모름';
+  const a = kst(ms), k = dayKey(ms), base = a.mo + '. ' + a.d + '. (' + WD[a.wd] + ')';
+  if (k === dayKey(nowMs)) return '오늘 · ' + base; if (k === dayKey(nowMs - 86400e3)) return '어제 · ' + base;
+  return (a.y !== kst(nowMs).y ? a.y + '. ' : '') + base;
+}
+const LONG_SEC = 3600;   // 1시간 넘는 녹음은 길이를 진하게
+// 드라이브에서 지운 것 알아채기: 끝난 녹음인데 폴더에 파일이 없음 → gone. 한 번에 많이 사라지면(드라이브 앱이 잠깐 비어 보임) 적지 않고 알림
+const GONE_CAP = 3;
+function gonePlan(missing, cap) { const m = (missing || []).slice(); return m.length > (cap || GONE_CAP) ? { set: [], held: m.length } : { set: m, held: 0 }; }
+
 var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS, RENEW_MS, ALIVE_MS, DEFAULT_KW, KW_MAX, KW_LEN, DAY_CHOICES, DEFAULT_DAYS,
   MODELS, DEFAULT_MODEL, modelOf, modelUrl, READY, INSTALLS, CMD_WHAT, stripAnsi, durSec, parseRecent, parseFileDetail, apiMs, kst, kstLabel, durLabel, agoLabel,
   cleanKw, normKw, addKw, removeKw, kwHit, pickState, isPicked, tapPick, settingsOf, estMin, listView, macView, normMac, DEL_CAP, recPlan,
@@ -540,13 +606,15 @@ var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS
   CMD_WHILE_BUSY, DRIVE_DIR, WHISPER_BINS, PIPE, pipeArgv, parseAudioUrl, curlConf, parseProgress, SPACE_SPARE, needBytes, gbLabel, spaceCheck, spaceMsg,
   WORK_NEEDS, workBlock, txtName, kstIso, cleanText, txtOf, workLabel, TEST_SEC, speedsOf, perMinLabel, testView, FAIL_WAIT_MS,
   NAME_MAX, safeName, txtBase, uniqueName, nameFits, idFromTxt, txtBody, autoOn, canRemoveModel,
-  KDF_IT, KEY_CHECK, TXT_MAX, PASS_MIN, b64e, b64d, deriveKey, encText, decText, newKdf, checkKey, unlockKey, bytesLabel, workSizes };
+  KDF_IT, KEY_CHECK, TXT_MAX, PASS_MIN, b64e, b64d, deriveKey, encText, decText, newKdf, checkKey, unlockKey, bytesLabel, workSizes,
+  TABS, tabOf, inTab, titleRest, hhmm, dayKey, dayLabel, LONG_SEC, GONE_CAP, gonePlan };
 </script>
 
 <header class="top">
   <button class="ico" data-act="menu" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <h1>심방 녹음</h1>
-  <button class="ico" data-act="reload" title="녹음 목록 지금 다시 읽기" aria-label="녹음 목록 지금 다시 읽기"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button>
+  <div class="tr"><button class="verb" id="verbtn" data-act="ver"></button>
+  <button class="ico" data-act="reload" title="녹음 목록 지금 다시 읽기" aria-label="녹음 목록 지금 다시 읽기"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg></button></div>
 </header>
 <main id="main"></main>
 
@@ -559,7 +627,22 @@ const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 
   storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
 const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
 const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsubs: [] };
-const S = { settings: null, recs: {}, jobs: {}, macs: {}, cmds: {}, pane: null, here: null, hereErr: '', pairBusy: false };
+const S = { settings: null, recs: {}, jobs: {}, macs: {}, cmds: {}, pane: null, here: null, hereErr: '', pairBusy: false, tab: 'new', open: new Set(), seenPrev: 0, newVer: '' };
+// 이 기기에 기억하는 화면 취향(P3c): 마지막 탭 · 펼친 Mac 카드 · 지난번 연 때(새 녹음 파란 점)
+const UI_LS = 'plaudhub_ui_v1';
+(function () { try { const o = JSON.parse(localStorage.getItem(UI_LS) || '{}'); if (TABS.some(t => t[0] === o.tab)) S.tab = o.tab; if (Array.isArray(o.open)) S.open = new Set(o.open); S.seenPrev = +o.seen || 0;
+  localStorage.setItem(UI_LS, JSON.stringify(Object.assign(o, { seen: Date.now() }))); } catch (_) { } })();
+function uiSave() { try { const o = JSON.parse(localStorage.getItem(UI_LS) || '{}'); o.tab = S.tab; o.open = [...S.open]; localStorage.setItem(UI_LS, JSON.stringify(o)); } catch (_) { } }
+// 새 버전 확인 — 계기판 파일의 APP_VERSION 을 읽어 지금 판과 다르면 '새 버전 받기'
+async function verCheck(byHand) {
+  if (DEMO) return;
+  try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(), m = /const APP_VERSION = "([^"]+)"/.exec(t);
+    S.newVer = m && m[1] !== APP_VERSION ? m[1] : ''; } catch (_) { if (byHand) toast('새 버전을 확인하지 못했습니다\n인터넷 연결을 봐 주세요'); return; }
+  verPaint(); if (byHand && !S.newVer) toast('지금이 최신 판입니다\n' + APP_VERSION);
+}
+function verPaint() { const b = $('#verbtn'); if (!b) return; b.textContent = S.newVer ? '새 버전 받기' : APP_VERSION; b.classList.toggle('newv', !!S.newVer);
+  b.title = S.newVer ? '새 판 ' + S.newVer + ' 받기 — 누르면 새로 엽니다' : '지금 판 ' + APP_VERSION + ' — 누르면 새 판이 있는지 봅니다'; }
+async function verGet() { try { const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('plaudhub-')).map(k => caches.delete(k))); } catch (_) { } location.reload(); }
 const PROBE_KEY = 'plaudhub_probe_v1';
 const $ = q => document.querySelector(q);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -718,6 +801,30 @@ function sweepCmds() {
 }
 function cmdOf(mac, what) { return Object.values(S.cmds).filter(c => c.mac === mac && c.what === what).sort((a, b) => (b.at || 0) - (a.at || 0))[0] || null; }
 
+/* ---------- 지금 시작 · 보기 · txt 지우기 (P3c, 시안 D1) ---------- */
+function aliveMacs() { return Object.values(S.macs).map(x => macView(x, now())).filter(x => x.alive); }
+// 켜지고 자동 전사가 켜진 Mac 에 '지금 보라' — 3분 기다림 없이 다음 차례(30초 안)에
+function kick(id) {
+  if (DEMO) return toast('미리보기에서는 보내지 않습니다');
+  const on = aliveMacs().filter(x => autoOn(S.settings, x.name));
+  if (!on.length) return toast('자동 전사가 켜진 Mac 이 없습니다\nMac 카드에서 자동 전사를 켜 주세요');
+  Promise.all(on.map(x => sendCmd(x.name, 'kick', id || undefined, true))).then(r => { if (r.some(Boolean)) toast((id ? '이 녹음을' : '고른 녹음을') + ' 지금 시작하라고 보냈습니다\n30초 안에 시작합니다' + (aliveMacs().some(x => /전사|받는|시험/.test(x.doing)) ? '\n(전사 중인 Mac 은 지금 것을 끝낸 뒤)' : '')); });
+}
+function viewTxt(id) {
+  openPane({ kind: 'view', id, text: null, err: '' });
+  if (!devKey()) return;
+  plainOf(id).then(t => { if (S.pane && S.pane.kind === 'view' && S.pane.id === id) { S.pane.text = t; renderPane(); } },
+    e => { if (S.pane && S.pane.kind === 'view' && S.pane.id === id) { S.pane.err = e.message || '열지 못했습니다'; renderPane(); } });
+}
+// 다시 전사 · txt 지우기 — 드라이브 파일은 Mac 도우미만 지울 수 있다(켜진 Mac 한 대에 보냄)
+function dropAsk(what, id) {
+  if (DEMO) { closePane(); return toast('미리보기에서는 보내지 않습니다'); }
+  const on = aliveMacs().filter(x => (S.macs[x.name] || {}).ready && S.macs[x.name].ready.drive);
+  if (!on.length) return toast('드라이브 폴더가 있는 켜진 Mac 이 없습니다\nMac 이 켜지면 다시 눌러 주세요');
+  closePane(); delete PLAIN[id];
+  sendCmd(on[0].name, what, id, true).then(ok => ok && toast(what === 'redo' ? '다시 전사하라고 보냈습니다\n지운 뒤 곧 처음부터 합니다' : '전사 txt 를 지우라고 보냈습니다\n30초 안에 지웁니다'));
+}
+
 /* ---------- 이 Mac 의 도우미 (127.0.0.1 — 같은 Mac 크롬에서만) ----------
    처음 한 번은 HB 가 눌러야 묻는다(크롬이 '이 기기의 다른 앱' 허락을 묻기 때문 — 아무 설명 없이 뜨지 않게). 한 번 되면 다음부터 저절로. */
 async function helperCall(path, body) {
@@ -751,16 +858,29 @@ function render() {
   if (!FB.ready) { m.innerHTML = '<div class="empty">불러오는 중…</div>'; return; }
   if (!FB.user) { m.innerHTML = loginHtml(); return; }
   const t = now(), macs = Object.values(S.macs).map(d => macView(d, t)).sort((a, b) => (b.alive - a.alive) || a.name.localeCompare(b.name, 'ko'));   // 켜진 Mac 먼저
-  const rows = listView(S.recs, S.jobs, settings(), t, speedsOf(Object.values(S.macs))), picked = rows.filter(r => r.picked && r.job !== 'done');
+  const rows = listView(S.recs, S.jobs, settings(), t, speedsOf(Object.values(S.macs)));
+  const ws = workSizes(Object.values(S.macs).filter(d => macView(d, t).alive)); S.ws = ws;   // 꺼진 Mac 의 마지막 소식은 빼고(그 Mac 은 다시 켜질 때 스스로 비움)
   let h = FB.err ? '<div class="card msg bad">' + esc(FB.err) + '</div>' : '';
   h += '<h2>Mac <small>' + (macs.filter(x => x.alive).length) + ' / ' + macs.length + ' 켜짐</small></h2>';
   h += macs.length ? '<div class="macs">' + macs.map(macHtml).join('') + '</div>' : '<div class="card msg">아직 연결된 Mac 이 없습니다.\nMac 크롬에서 이 화면을 열고 메뉴 › \'이 Mac 연결\' 을 눌러 주세요.</div>';
   h += hereHtml();
-  h += '<h2>녹음 <small>' + settings().days + '일 · 고른 것 ' + picked.length + (picked.length ? ' · 전사 어림 ' + durLabel(picked.reduce((s, r) => s + r.est, 0) * 60) : '') + '</small></h2>';
-  const ws = workSizes(Object.values(S.macs).filter(d => macView(d, t).alive)); S.ws = ws;   // 꺼진 Mac 의 마지막 소식은 빼고(그 Mac 은 다시 켜질 때 스스로 비움)
-  h += '<div class="tmpline"><span>임시 소리 파일 합계 <b>' + bytesLabel(ws.total) + '</b>' + (ws.total ? ' · ' + esc(ws.macs.join(' · ')) + ' Mac' : ' — 전사하는 동안만 생기고 끝나면 지웁니다') + '</span>'
-    + (ws.total ? '<button class="act" data-act="cleanask">비우기</button>' : '') + '</div>';
-  h += rows.length ? '<div class="recs">' + rows.map(recHtml).join('') + '</div>' : '<div class="card empty">' + (macs.length ? '이 기간에 녹음이 없거나 아직 도우미가 목록을 읽지 않았습니다.' : 'Mac 도우미가 목록을 읽으면 여기에 나옵니다.') + '</div>';
+  // 녹음 — 시안 B2(탭 · 날짜 묶음) · D1(지금 · 모두 지금 시작)
+  const lst = Object.values(S.macs).filter(d => Number.isFinite(d.listed) && d.listed > 0).sort((a, b) => b.listed - a.listed)[0];
+  h += '<h2>녹음 <small>' + settings().days + '일' + (lst ? ' · 목록 읽은 때 ' + esc(agoLabel(lst.listed, t)) + ' · ' + esc(lst.id) : '') + '</small></h2>';
+  const wait = rows.filter(r => r.picked && !r.job || r.picked && r.job === 'fail');
+  if (wait.length) h += '<div class="bar"><span class="grow">고른 ' + wait.length + '개 기다림 · 어림 ' + durLabel(wait.reduce((a, r) => a + r.est, 0) * 60) + '</span><button class="btn sm" data-act="kickall">모두 지금 시작</button></div>';
+  if (ws.total) h += '<div class="tmpline"><span>임시 소리 파일 합계 <b>' + bytesLabel(ws.total) + '</b> · ' + esc(ws.macs.join(' · ')) + ' Mac</span><button class="act" data-act="cleanask">비우기</button></div>';
+  else h += '<div class="tmpline"><span>임시 소리 파일 합계 <b>0KB</b></span></div>';
+  const cnt = k => rows.filter(r => inTab(r, k)).length;
+  h += '<div class="seg" role="tablist">' + TABS.map(([k, n]) => '<button role="tab" aria-selected="' + (S.tab === k) + '" class="' + (S.tab === k ? 'on' : '') + '" data-act="tab" data-k="' + k + '">' + n + '<i>' + cnt(k) + '</i></button>').join('') + '</div>';
+  const vis = rows.filter(r => inTab(r, S.tab));
+  if (!rows.length) h += '<div class="card empty">' + (macs.length ? '이 기간에 녹음이 없거나 아직 도우미가 목록을 읽지 않았습니다.' : 'Mac 도우미가 목록을 읽으면 여기에 나옵니다.') + '</div>';
+  else if (!vis.length) h += '<div class="card empty">' + ({ new: '새로 들어온 녹음이 없습니다.', todo: '할 것이 없습니다.', done: '아직 끝난 전사가 없습니다.' }[S.tab] || '없습니다.') + '</div>';
+  else {
+    let day = '', out = '';
+    for (const r of vis) { if (r.day !== day) { day = r.day; out += '<div class="day">' + esc(dayLabel(r.t, t)) + '<small>' + vis.filter(x => x.day === day).length + '개</small></div>'; } out += recHtml(r); }
+    h += '<div class="recs">' + out + '</div>';
+  }
   h += '<div class="ver">고른 녹음은 자동 전사가 켜진 Mac 이 하나씩 받아 전사해 드라이브 \'' + esc(DRIVE_DIR) + '\' 에 \'26-1122 15;05 제목.txt\' 꼴로 둡니다</div>';
   m.innerHTML = h;
 }
@@ -783,12 +903,19 @@ function macHtml(v) {
     return '<li>' + mk + '<span>' + esc(r.label) + '<span class="why">' + esc(r.why) + '</span></span>' + act + '</li>';
   };
   const last = Object.values(S.cmds).filter(c => c.mac === v.name && c.st === 'fail').sort((a, b) => (b.at || 0) - (a.at || 0))[0];
-  return '<div class="card mac"><div class="row1"><span class="dot' + (v.alive ? ' on' : '') + '"></span><span class="name">' + esc(v.name) + '</span>'
-    + '<span class="state">' + (v.alive ? '켜짐' : '꺼짐') + ' · ' + esc(v.ago) + '</span></div>'
-    + ((v.alive || v.old) ? '<div class="doing">' + (v.alive ? esc('하는 일: ' + v.doing) : '') + (v.old ? (v.alive ? ' · ' : '') + '<button class="act" style="color:var(--ac)" data-act="cmd" data-mac="' + esc(v.name) + '" data-w="update">도우미 새로 받기</button>' : '') + '</div>' : '')
+  const head = '<div class="row1"><span class="dot' + (v.alive ? ' on' : '') + '"></span><span class="name">' + esc(v.name) + '</span>'
+    + '<span class="state">' + (v.alive ? '켜짐' : '꺼짐') + ' · ' + esc(v.ago) + '</span></div>';
+  if (!v.alive) return '<div class="card mac off">' + head + '</div>';   // 꺼진 Mac 은 한 줄(A)
+  // A: 설치 · 공간 · 시험은 '준비 n/8' 한 줄로 접는다 — ✕ 가 있으면 저절로 펼침, 펼친 것은 이 기기에 기억
+  const okN = v.ready.filter(r => r.ok === true).length, bad = v.ready.some(r => r.ok === false), open = bad || S.open.has(v.name);
+  const d = (S.macs[v.name] || {}).disk || {};
+  const fold = '<button class="fold' + (bad ? ' bad' : '') + '" data-act="fold" data-mac="' + esc(v.name) + '" aria-expanded="' + open + '"><span class="' + (bad ? '' : 'okc') + '">준비 ' + okN + '/' + v.ready.length + (bad ? ' — ' + esc(v.ready.filter(r => r.ok === false).map(r => r.label).join(' · ')) + ' ✕' : ' ✓') + '</span>'
+    + (d.free >= 0 ? '<span> · 남음 ' + bytesLabel(d.free) + '</span>' : '') + (d.models ? '<span> · 모델 ' + bytesLabel(d.models) + '</span>' : '') + '<span class="chev">' + (open ? '접기 ‹' : '설치 · 공간 · 시험 ›') + '</span></button>';
+  return '<div class="card mac">' + head
+    + '<div class="doing">' + esc('하는 일: ' + v.doing) + (v.old ? ' · <button class="act" style="color:var(--ac)" data-act="cmd" data-mac="' + esc(v.name) + '" data-w="update">도우미 새로 받기</button>' : '') + '</div>'
     + (v.err ? '<div class="err">' + esc(v.err) + '</div>' : '')
     + (last && now() - (last.at || 0) < 86400e3 ? '<div class="err">' + esc((INSTALLS[last.what] || {}).title || last.what) + ' 실패: ' + esc(String(last.log || '').split('\n').filter(Boolean).slice(-2).join('\n')) + '</div>' : '')
-    + autoHtml(v) + '<ul class="ready">' + v.ready.map(li).join('') + '</ul>' + diskHtml(v) + testHtml(v) + '</div>';
+    + autoHtml(v) + fold + (open ? '<ul class="ready">' + v.ready.map(li).join('') + '</ul>' + diskHtml(v) + testHtml(v) : '') + '</div>';
 }
 // Mac 마다 자동 전사 켜기 · 끄기(HB 11/23)
 function autoHtml(v) {
@@ -818,24 +945,32 @@ function hereHtml() {
   if (S.hereErr) return '<div class="card msg bad" style="margin-top:10px">' + esc(S.hereErr) + '</div>';
   return '';
 }
+// 그림 단추 — 보기(HB 가 준 모양: 둥근 네모 안 세 줄) · 복사 · 받기 · 더 보기
+const ICON = {
+  view: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/></svg>',
+  copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>',
+  save: '<svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
+};
+const IB_NAME = { view: '보기', copy: '복사', save: '받기', more: '다시 전사 · txt 지우기' };
+function ib(act, id) { return '<button class="ib" data-act="' + act + '" data-id="' + esc(id) + '" title="' + IB_NAME[act] + '" aria-label="' + IB_NAME[act] + '">' + ICON[act] + '</button>'; }
+// 녹음 한 줄 — 시안 B2 · D1. 끝난 것은 왼쪽 동그라미가 빈 채(눌러도 고름이 바뀌지 않음, HB 11/24) · 오른쪽에 상태 · 단추
 function recHtml(r) {
-  const why = r.st === 'auto' ? '<span class="why">키워드 \'' + esc(r.hit) + '\'</span>' : r.st === 'in' ? '<span class="why">직접 고름</span>' : r.st === 'out' ? '<span class="why out">뺌</span>' : '';
-  const steps = r.picked ? stepsHtml(r) : '';
-  return '<div class="rec' + (r.picked ? ' pick' : '') + '" data-act="pick" data-id="' + esc(r.id) + '" data-st="' + r.st + '">'
-    + '<span class="chk"></span><div class="body"><div class="ttl' + (r.name ? '' : ' none') + '">' + esc(r.name || '제목 없음') + '</div>'
-    + '<div class="meta"><span>' + esc(r.when) + '</span><span>' + esc(r.dur) + '</span>' + (r.picked && r.job !== 'done' ? '<span>전사 어림 ' + durLabel(r.est * 60) + '</span>' : '') + why
-    + (r.job === 'work' && r.mac ? '<span>' + esc(r.mac) + ' Mac 이 하는 중</span>' : '') + (r.job === 'done' && r.mac ? '<span>' + esc(r.mac) + ' Mac 전사 · 드라이브에 있음</span>' : '')
-    + (S.ws && S.ws.by[r.id] ? '<span class="tmp">임시 파일 ' + bytesLabel(S.ws.by[r.id]) + '</span>' : '')
-    + '</div>' + (r.job === 'done' ? '<div class="txtbtns"><button class="act" data-act="copy" data-id="' + esc(r.id) + '">복사</button><button class="act" data-act="save" data-id="' + esc(r.id) + '">받기</button></div>' : '') + (r.err ? '<div class="meta" style="color:var(--bad)">실패: ' + esc(r.err) + ' — 한 시간 뒤 다시 합니다</div>' : '') + '</div>' + steps + '</div>';
+  const done = r.job === 'done' && !r.gone, rec = S.recs[r.id] || {}, isNew = S.seenPrev && Number.isFinite(rec.c) && rec.c > S.seenPrev;
+  const stepName = { get: '받는 중', stt: '전사 중', drive: '드라이브에 쓰는 중' };
+  const len = '<span class="len' + (r.d >= LONG_SEC ? ' long' : '') + '">' + esc(r.dur) + '</span>';
+  let right = '', sub = '';
+  if (done) right = '<span class="ibs">' + ib('view', r.id) + ib('copy', r.id) + ib('save', r.id) + ib('more', r.id) + '</span>';
+  else if (r.gone) { right = '<span class="s fail">드라이브에 없음</span><button class="lnk" data-act="redo" data-id="' + esc(r.id) + '">다시 전사</button>' + ib('more', r.id); sub = '드라이브에서 지운 것 같습니다 · 저절로 다시 하지 않습니다'; }
+  else if (r.job === 'work') { right = '<span class="s work">' + (stepName[r.step] || '하는 중') + (r.mac ? ' · ' + esc(r.mac) : '') + '</span>'; if (S.ws && S.ws.by[r.id]) sub = '<span class="tmp">임시 파일 ' + bytesLabel(S.ws.by[r.id]) + '</span>'; }
+  else if (r.picked) { right = (r.job === 'fail' ? '<span class="s fail">실패</span>' : len) + '<button class="btn ghost sm" data-act="kick" data-id="' + esc(r.id) + '" title="켜진 Mac 이 30초 안에 시작">지금</button>';
+    sub = (r.job === 'fail' ? '실패: ' + esc(r.err || '') + ' — 한 시간 뒤 다시 합니다 · ' : '') + '전사 어림 ' + durLabel(r.est * 60) + ' · ' + (r.st === 'auto' ? '키워드 \'' + esc(r.hit) + '\'' : '직접 고름'); }
+  else right = (r.st === 'out' ? '<span class="s out">뺌</span>' : '') + len;
+  return '<div class="rec' + (r.picked && !done ? ' pick' : '') + (done ? ' done' : '') + '"' + (done ? '' : ' data-act="pick" data-st="' + r.st + '"') + ' data-id="' + esc(r.id) + '">'
+    + '<span class="nw' + (isNew ? '' : ' off') + '"' + (isNew ? ' title="새로 들어온 녹음"' : '') + '></span><span class="chk"></span><span class="tm">' + esc(r.tm) + '</span>'
+    + '<div class="body"><div class="ttl' + (r.rest ? '' : ' none') + '">' + esc(r.rest || '제목 없음') + '</div>' + (sub ? '<div class="meta' + (r.job === 'fail' || r.gone ? ' bad' : '') + '">' + sub + '</div>' : '') + '</div>'
+    + '<div class="right">' + right + '</div></div>';
 }
-function stepsHtml(r) {
-  const order = ['get', 'stt', 'drive'], name = { get: '받음', stt: '전사', drive: '드라이브' }, cur = order.indexOf(r.step);
-  return '<div class="steps">' + order.map((k, i) => {
-    const cls = r.job === 'done' || (r.job === 'work' && i < cur) ? 'on' : r.job === 'work' && i === cur ? 'cur' : '';
-    return '<span class="' + cls + '">' + name[k] + '</span>';
-  }).join('<span>›</span>') + (r.job === 'fail' ? '<span style="color:var(--bad)"> 실패</span>' : '') + '</div>';
-}
-
 /* ---------- 아래에서 올라오는 판 (메뉴 · 설치 · 연결) ---------- */
 const XSVG = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function openPane(p) {
@@ -883,6 +1018,20 @@ function renderPane() {
     else body = '<div class="msg">도우미가 이 Mac 에서 돌고 있습니다' + (S.here.paired ? ' (지금 \'' + esc(S.here.mac) + '\' 로 연결됨 — 다시 연결하면 바뀝니다)' : '') + '.\n이 Mac 의 이름을 골라 주세요. 지금 로그인한 계정의 열쇠를 이 Mac 안(내 계정만 읽는 파일)에 둡니다.</div>'
       + '<div class="chips">' + ['집', '사무실'].map(n => '<button class="chip" data-act="pairname" data-n="' + n + '">' + n + '</button>').join('') + '</div>'
       + '<div style="display:flex;gap:8px"><input class="field" id="mac-in" maxlength="' + MAC_MAX + '" placeholder="직접 적기" style="margin:0"><button class="btn ghost" data-act="pairtyped"' + (S.pairBusy ? ' disabled' : '') + '>연결</button></div>';
+  } else if (P.kind === 'view') {   // 보기 — 전사 글
+    const r = S.recs[P.id] || {}, j = S.jobs[P.id] || {};
+    title = titleRest(r.n) || '제목 없음';
+    body = '<div class="vmeta">' + esc(kstLabel(r.t, now())) + ' · ' + esc(durLabel(r.d)) + (j.mac ? ' · ' + esc(j.mac) + ' Mac 전사' : '') + '</div>'
+      + (!devKey() ? '<div class="msg">전사 글을 열려면 이 기기에 암호 문구를 한 번 넣어야 합니다.</div><div class="pairbox"><button class="btn ghost" data-act="lockpane">암호 넣기</button></div>'
+        : P.err ? '<div class="msg bad">' + esc(P.err) + '</div>' : P.text == null ? '<div class="msg">여는 중…</div>' : '<div class="vtext">' + esc(P.text) + '</div>');
+    foot = P.text != null ? '<span class="ibs">' + ib('copy', P.id) + ib('save', P.id) + '</span>' : '';
+  } else if (P.kind === 'more') {   // ⋯ — 다시 전사 · txt 지우기
+    const r = S.recs[P.id] || {}, nm = (titleRest(r.n) || '제목 없음') + ' (' + kstLabel(r.t, now()) + ')';
+    title = '전사 txt';
+    body = '<div class="msg">' + esc(nm) + '</div>'
+      + '<h3>다시 전사</h3><div class="msg">드라이브 txt 와 잠근 사본을 지우고 처음부터 다시 전사합니다(모델을 바꾼 뒤 등).</div><div class="pairbox"><button class="btn ghost" data-act="redo" data-id="' + esc(P.id) + '">다시 전사</button></div>'
+      + '<h3>txt 지우기</h3><div class="msg">드라이브 \'' + esc(DRIVE_DIR) + '\' 의 이 녹음 txt 와 폰에서 보던 잠근 사본을 지우고, 이 녹음을 목록에서 뺍니다(다시 저절로 전사하지 않음).\nPLAUD 의 녹음 원본은 그대로입니다.</div>'
+      + '<div class="pairbox"><button class="btn" style="background:var(--bad)" data-act="rmtxt" data-id="' + esc(P.id) + '">txt 지우기</button></div>';
   } else if (P.kind === 'lock') {
     const kdf = S.settings && S.settings.kdf, k = devKey();
     title = '전사 글 암호';
@@ -1010,6 +1159,14 @@ document.addEventListener('click', e => {
       return;
     }
     case 'mtestpane': return openPane({ kind: 'mtest', mac: d.mac, rec: '' });
+    case 'tab': S.tab = d.k; uiSave(); return render();
+    case 'fold': { if (S.open.has(d.mac)) S.open.delete(d.mac); else S.open.add(d.mac); uiSave(); return render(); }
+    case 'ver': return S.newVer ? verGet() : verCheck(true);
+    case 'kick': return kick(d.id);
+    case 'kickall': return kick('');
+    case 'view': return viewTxt(d.id);
+    case 'more': return openPane({ kind: 'more', id: d.id });
+    case 'redo': case 'rmtxt': return dropAsk(d.act, d.id);
     case 'auto': return setAuto(d.mac, d.on !== '1');
     case 'copy': return copyTxt(d.id);
     case 'save': return saveTxt(d.id);
@@ -1048,8 +1205,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target && e.target.id === 'kw-in') { e.preventDefault(); $('[data-act="kwadd"]').click(); }
 });
 setInterval(() => { if (!S.pane) render(); sweepCmds(); }, 30000);   // 켜짐 · 'n분 전' 을 새로
-if (DEMO) { demoData(); render(); }
-else { render(); fbInit(); let p = ''; try { p = localStorage.getItem(PROBE_KEY); } catch (_) { } if (p) probeHere(false); }
+if (DEMO) { demoData(); render(); verPaint(); }
+else { render(); verPaint(); verCheck(false); setInterval(() => verCheck(false), 10 * 60e3); fbInit(); let p = ''; try { p = localStorage.getItem(PROBE_KEY); } catch (_) { } if (p) probeHere(false); }
 if ('serviceWorker' in navigator && !DEMO) navigator.serviceWorker.register('sw.js').catch(() => { });
 </script>
 </body>

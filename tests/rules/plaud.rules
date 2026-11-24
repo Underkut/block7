@@ -20,16 +20,17 @@ service cloud.firestore {
       }
       match /job/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone'])
           && (!('st' in d()) || d().st in ['work', 'done', 'fail'])
           && (!('step' in d()) || d().step in ['get', 'stt', 'drive'])
           && (!('pick' in d()) || d().pick in ['in', 'out'])
           && (!('err' in d()) || (d().err is string && d().err.size() <= 120))
+          && (!('gone' in d()) || d().gone is bool)
           && atOk();
       }
       match /mac/{name} {
         allow read, delete: if own();
-        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk'])
+        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed'])
           && d().at == request.time
           && (!('models' in d()) || (d().models is list && d().models.size() <= 10))
           && (!('test' in d()) || d().test is map)
@@ -38,7 +39,7 @@ service cloud.firestore {
       match /cmd/{id} {
         allow read, delete: if own();
         allow create, update: if own() && d().keys().hasOnly(['mac', 'what', 'st', 'at', 'arg', 'log'])
-          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest', 'rmmodel', 'clean']
+          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest', 'rmmodel', 'clean', 'kick', 'rmtxt', 'redo']
           && d().st in ['new', 'run', 'ok', 'fail'];
       }
       // 잠근 사본(P3b) — HB 암호 문구로 잠근 전사 글만(c · iv). 평문 칸은 없다

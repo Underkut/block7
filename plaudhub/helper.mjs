@@ -19,7 +19,7 @@ import vm from 'node:vm';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const HELPER_VERSION = 'h. 26-1123-3';
+export const HELPER_VERSION = 'h. 26-1124-1';
 const HOME = os.homedir();
 const DIR = process.env.PLAUDHUB_DIR || path.join(HOME, 'Library', 'Application Support', 'plaudhub');
 const SITE = process.env.PLAUDHUB_SITE || 'https://block7.my/plaudhub/';
@@ -43,7 +43,7 @@ process.env.PLAUD_TELEMETRY_DISABLED = '1'; process.env.DO_NOT_TRACK = '1'; proc
 
 let PH = null;   // 판단 덩어리
 const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, models: [], err: '', warn: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, lastJob: 0,
-  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0 };
+  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '' };
 
 function log(...a) { const s = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '); console.log(new Date().toISOString(), PH ? PH.clean(s, 2000) : s.replace(/https?:\/\/\S+/g, '[주소]')); }
 function readJson(f, d) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch (_) { return d; } }
@@ -218,11 +218,11 @@ function diskNow() {
   return { free: Number.isFinite(free) ? Math.round(free / 1e8) * 1e8 : -1, models, work };   // 소식이 1분마다 바뀌지 않게 남은 공간은 0.1GB 단위
 }
 async function beat(force) {
-  const doing = doingNow(), err = [st.err, st.warn].filter(Boolean).join('\n'), disk = diskNow();
-  const key = JSON.stringify([doing, st.ready, err, st.cli, st.models, disk.free, disk.models, Object.entries(disk.work).map(([k, b]) => k + Math.round(b / 1e6))]);
+  const doing = doingNow(), err = [st.err, st.warn, st.goneWarn].filter(Boolean).join('\n'), disk = diskNow();
+  const key = JSON.stringify([doing, st.ready, err, st.cli, st.models, st.listed, disk.free, disk.models, Object.entries(disk.work).map(([k, b]) => k + Math.round(b / 1e6))]);
   if (!force && key === st.sentKey && Date.now() - st.lastBeat < BEAT_MS) return;
   if (!force && key !== st.sentKey && Date.now() - st.lastBeat < 50e3) return;   // 전사 중 'n분째' 는 1분에 한 번만
-  const r = await commit([upd(['mac', st.mac], { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models, disk }, { serverAt: true })]);
+  const r = await commit([upd(['mac', st.mac], { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models, disk, listed: st.listed }, { serverAt: true })]);
   if (!r.ok) throw new Error('소식 쓰기 ' + r.status + (r.status === 403 ? ' (보안 규칙을 붙였는지 확인)' : ''));
   st.lastBeat = Date.now(); st.sentKey = key;
 }
@@ -256,7 +256,8 @@ async function refreshList(settings) {
   for (const x of plan.put) now[x.id] = Object.assign({ id: x.id }, x.v);
   st.recs = now;   // 맡을 일감을 고를 때 쓴다(다시 읽지 않게)
   st.err = plan.held ? 'PLAUD 에서 녹음 ' + plan.held + '개가 한꺼번에 사라져 계정에서 지우지 않았습니다 — 확인해 주세요' : '';
-  st.lastList = Date.now();
+  st.lastList = Date.now(); st.listed = serverNow();   // 계기판 '목록 읽은 때'
+  st.done.clear();   // 끝난 일감 기억은 목록마다 새로 — 다른 Mac 이 '다시 전사' 로 되돌린 것을 놓치지 않게
   log('목록', rows.length + '개 · 새로 씀 ' + plan.put.length + ' · 지움 ' + plan.del.length);
 }
 async function doCmds(settings) {
@@ -280,6 +281,8 @@ async function doCmds(settings) {
 }
 async function runCmd(c, I, settings) {
   if (c.what === 'check') { await checkReady(settings); return { ok: true, log: '' }; }
+  if (c.what === 'kick') { st.lastJob = 0; st.kickId = c.arg || ''; return { ok: true, log: '' }; }   // 지금 시작 — 다음 차례(30초 안)에 맡을 일감을 봄
+  if (c.what === 'rmtxt' || c.what === 'redo') return dropTxt(c.arg, c.what === 'redo');
   if (c.what === 'clean') {   // 비우기 — 전사 · 시험 중이면 먼저 멈추고(그 일감은 실패 '임시 파일을 비움' → 한 시간 뒤 다시) 일 폴더를 비운다
     const J = st.job; if (J) { stopJob(J, 'clean'); for (let i = 0; i < 60 && st.job === J; i++) await new Promise(r => setTimeout(r, 250)); }
     rmQuiet(WORK()); log('임시 파일 비움', J ? '(하던 ' + (J.kind === 'test' ? '모델 시험' : '전사') + ' 멈춤)' : '');
@@ -413,21 +416,49 @@ async function syncDrive(drive) {
     }
   }
   if (renamed || sent) log('드라이브 정리', '이름 ' + renamed + ' · 잠근 사본 ' + sent);
+  // 드라이브에서 지운 것: 끝난 녹음인데 폴더에 그 ID 파일이 없음 → 일감에 gone(다시 전사하지 않음 — HB 가 일부러 지웠을 수 있다). 다시 생기면 지움
+  const missing = [...st.done].filter(id => st.recs[id] && !idx[id] && !st.gone.has(id));
+  if (missing.length) {
+    const js = await getMany('job', missing), real = missing.filter(id => js[id] && js[id].st === 'done' && !js[id].gone);
+    missing.forEach(id => { if (js[id] && js[id].gone) st.gone.add(id); });   // 이미 적힌 것은 기억만
+    const p = PH.gonePlan(real);
+    st.goneWarn = p.held ? '드라이브 폴더에서 끝난 전사 파일 ' + p.held + '개가 한꺼번에 안 보여 \'드라이브에 없음\' 으로 적지 않았습니다 — 드라이브 앱을 확인해 주세요' : '';
+    if (p.set.length) { const r = await commit(p.set.map(id => upd(['job', id], { gone: true }))); if (r.ok) { p.set.forEach(id => st.gone.add(id)); log('드라이브에 없음', p.set.length + '개'); } }
+  } else st.goneWarn = '';
+  const back = [...st.gone].filter(id => idx[id]);
+  if (back.length) { const r = await commit(back.map(id => upd(['job', id], { gone: false }))); if (r.ok) back.forEach(id => st.gone.delete(id)); }
+}
+// txt 지우기 · 다시 전사(P3c) — 드라이브 파일(머리말 ID) · 잠근 사본을 지우고 일감을 새로 씀(지우기 = 뺌, 다시 = 고름). PLAUD 원본은 그대로
+async function dropTxt(id, again) {
+  if (!PH.ID_RE.test(String(id || ''))) return { ok: false, log: '녹음 번호가 이상합니다' };
+  const drive = driveFolder(); if (!drive) return { ok: false, log: '이 Mac 에서 드라이브 폴더를 찾지 못했습니다' };
+  const { idx } = driveIndex(drive);
+  if (idx[id]) { try { fs.rmSync(path.join(drive, idx[id])); } catch (e) { return { ok: false, log: '드라이브 파일을 지우지 못했습니다' }; } }
+  const r = await commit([{ delete: docName('txt', id) }, { update: { name: docName('job', id), fields: { pick: PH.fsEnc(again ? 'in' : 'out') } } }]);   // 일감은 통째로 새로(단계 · 맡은 Mac · gone 을 지움)
+  if (!r.ok) return { ok: false, log: '계정에 적지 못했습니다 ' + r.status };
+  st.done.delete(id); st.gone.delete(id);
+  const u = upDone(); if (u.delete(id)) writeJson('uploaded.json', [...u]);
+  if (again) { st.lastJob = 0; st.kickId = id; }
+  log(again ? '다시 전사 — 지움' : '전사 txt 지움', id);
+  return { ok: true, log: '' };
 }
 
 // 맡을 일감 찾기 — 쉬는 동안 JOB_MS 마다. 고른 녹음 중 오래된 것부터, 맡으면 뒤에서 돌린다
 async function pickWork(settings) {
   st.lastJob = Date.now();
   const drive = driveFolder(); st.ready.drive = !!drive;
-  if (drive) await syncDrive(drive).catch(e => log('드라이브 정리 실패', String(e.message || e)));
-  if (!PH.autoOn(settings, st.mac)) { if (st.warn) { st.warn = ''; await beat(true).catch(() => { }); } return; }   // 이 Mac 은 자동 전사 꺼짐(HB)
-  if (PH.workBlock(st.ready).length || !st.recs) return;
-  const s = PH.settingsOf(settings), m = PH.modelOf(s.model); if (!modelOk(m)) { st.ready.model = false; return; }
+  if (!drive || !st.recs) return;
+  // 끝나지 않은 일감을 읽어 끝난 것을 기억(드라이브에 없음 알아채기 · 맡기에 함께 씀) — 자동 전사가 꺼져 있어도
   const ids = Object.keys(st.recs).filter(id => !st.done.has(id));
-  if (!ids.length) return;
-  const jobs = await getMany('job', ids);
+  const jobs = ids.length ? await getMany('job', ids) : {};
   for (const id of Object.keys(jobs)) if (jobs[id].st === 'done') st.done.add(id);
-  const want = PH.wantedJobs(st.recs, jobs, s, st.mac, serverNow());
+  await syncDrive(drive).catch(e => log('드라이브 정리 실패', String(e.message || e)));
+  if (!PH.autoOn(settings, st.mac)) { st.kickId = ''; if (st.warn) { st.warn = ''; await beat(true).catch(() => { }); } return; }   // 이 Mac 은 자동 전사 꺼짐(HB)
+  if (PH.workBlock(st.ready).length) return;
+  const s = PH.settingsOf(settings), m = PH.modelOf(s.model); if (!modelOk(m)) { st.ready.model = false; return; }
+  let want = PH.wantedJobs(st.recs, jobs, s, st.mac, serverNow());
+  if (st.kickId && want.includes(st.kickId)) want = [st.kickId].concat(want.filter(x => x !== st.kickId));   // '지금' 누른 녹음부터
+  st.kickId = '';
   if (!want.length) { if (st.warn) { st.warn = ''; await beat(true).catch(() => { }); } return; }
   for (const id of want) {
     const rec = st.recs[id] || {}, sp = PH.spaceCheck(freeBytes(), rec.d);
