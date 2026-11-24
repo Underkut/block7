@@ -1,8 +1,14 @@
 # 심방 녹음(plaudhub) — 보안 규칙 (HB)
 
 PLAUD 도우미 자료는 HB 파이어베이스(block7-8f24e)의 `plaud/{HB uid}` 아래에 있다 — 설정(키워드 · 기간 · 모델) 한 장과
-`rec`(녹음 제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계) · `mac`(두 Mac 소식 · 준비 상태 · 깔린 모델 · 모델 시험 시간) · `cmd`(설치 요청) · `txt`(HB 암호 문구로 잠근 전사 글 — 파이어베이스 · 구글 쪽에서는 풀 수 없음) 여섯 칸.
+`rec`(녹음 제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계) · `mac`(두 Mac 소식 · 준비 상태 · 깔린 모델 · 모델 시험 시간) · `cmd`(설치 요청) · `txt`(HB 암호 문구로 잠근 전사 글 — 파이어베이스 · 구글 쪽에서는 풀 수 없음) · `draft`(잠근 AI 초안 · 고칠 점) · `cfg/guide`(잠근 초안 지침) 여덟 칸.
 BLOCK7 · Sweeter · 기도노트 · 셀 inside · 교역자 로테이션의 규칙은 건드리지 않고 **이 덩어리 하나만 더한다.**
+
+## 다시 붙이기 (2026-11-24 밤, 1122-P P4 — 도우미 h. 26-1124-4)
+
+P4(AI 초안)에서 바뀐 곳: 설정에 **AI 초안 켜기 · 고른 모델(`ai`)**, 일감에 **초안 상태(`dr`) · 실패 까닭(`dre`)**, Mac 소식에 **OpenAI 열쇠가 있는지(`aik`) · 쓸 수 있는 모델 목록(`aim`)**,
+새 칸 **`draft`(HB 암호로 잠근 초안 · 고칠 점)** 와 **`cfg/guide`(잠근 초안 지침)**. OpenAI 열쇠 자체는 계정에 없다(그 Mac 안에만).
+다시 붙이지 않으면 새 도우미의 소식 쓰기가 거절되어 Mac 이 '꺼짐' 으로 보이고, 초안이 만들어지지 않는다. 아래 '붙이는 순서' 5번 괄호(지우고 그 자리에)대로.
 
 ## 다시 붙이기 (2026-11-24 오후, 1122-P P3e — 도우미 h. 26-1124-3)
 
@@ -48,8 +54,9 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
       // 맡은 시각(at)은 파이어베이스 시계로만 찍는다(두 Mac 시계가 달라도 맡김 판단이 같게) — 안 바꾸면 그대로 둬도 된다
       function atOk() { return !('at' in d()) || d().at == request.time || (resource != null && 'at' in resource.data && resource.data.at == d().at); }
       allow read, delete: if own();
-      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf'])
+      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf', 'ai'])
         && (!('kw' in d()) || (d().kw is list && d().kw.size() <= 20))
+        && (!('ai' in d()) || (d().ai is map && d().ai.keys().hasOnly(['on', 'model'])))
         && (!('auto' in d()) || (d().auto is map && d().auto.size() <= 12))
         && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
@@ -60,7 +67,7 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
       }
       match /job/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd', 'dr', 'dre'])
           && (!('st' in d()) || d().st in ['work', 'done', 'fail'])
           && (!('step' in d()) || d().step in ['get', 'stt', 'drive'])
           && (!('pick' in d()) || d().pick in ['in', 'out'])
@@ -68,12 +75,16 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
           && (!('gone' in d()) || d().gone is bool)
           && (!('src' in d()) || d().src in ['p', 'w'])
           && (!('odd' in d()) || d().odd is bool)
+          && (!('dr' in d()) || d().dr in ['wait', 'run', 'ok', 'fail', 'sent'])
+          && (!('dre' in d()) || (d().dre is string && d().dre.size() <= 120))
           && atOk();
       }
       match /mac/{name} {
         allow read, delete: if own();
-        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed'])
+        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed', 'aik', 'aim'])
           && d().at == request.time
+          && (!('aik' in d()) || d().aik is bool)
+          && (!('aim' in d()) || (d().aim is list && d().aim.size() <= 60))
           && (!('models' in d()) || (d().models is list && d().models.size() <= 10))
           && (!('test' in d()) || d().test is map)
           && (!('disk' in d()) || d().disk is map);
@@ -90,6 +101,21 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
         allow create, update: if own() && idOk(id) && d().keys().hasOnly(['c', 'iv', 'v'])
           && d().c is string && d().c.size() <= 900000 && d().iv is string && d().iv.size() <= 40;
       }
+      // AI 초안(P4) — HB 암호 문구로 잠근 초안(c · iv)과 고칠 점(fc · fiv)만. 평문 칸은 없다
+      match /draft/{id} {
+        allow read, delete: if own();
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['c', 'iv', 'v', 'fc', 'fiv'])
+          && (!('c' in d()) || (d().c is string && d().c.size() <= 600000))
+          && (!('iv' in d()) || (d().iv is string && d().iv.size() <= 40))
+          && (!('fc' in d()) || (d().fc is string && d().fc.size() <= 20000))
+          && (!('fiv' in d()) || (d().fiv is string && d().fiv.size() <= 40));
+      }
+      // 초안 지침(P4, HB [지침]) — 문서 하나(guide), 잠근 글만
+      match /cfg/{id} {
+        allow read, delete: if own();
+        allow create, update: if own() && id == 'guide' && d().keys().hasOnly(['c', 'iv', 'v'])
+          && d().c is string && d().c.size() <= 100000 && d().iv is string && d().iv.size() <= 40;
+      }
     }
     // ── PLAUD 도우미 — 여기까지 ──
 ```
@@ -102,6 +128,7 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
 - 녹음 번호 꼴(영문 · 숫자 · 밑줄 8 ~ 64자)이 아니면 받지 않는다.
 - 맡은 시각 · Mac 소식 시각은 **파이어베이스 시계로만** 찍힌다 — 두 Mac 시계가 달라도 '30분 지나면 풀림' 이 똑같이 셈해진다.
 - 설치 요청(`cmd`)은 정해 둔 열네 가지 이름만 받는다(ffmpeg · whisper · plaud · model · login · update · refresh · check · mtest · rmmodel · clean · kick · rmtxt · redo). Mac 도우미도 그 표에 있는 명령만 돌린다.
+- AI 초안(`draft`)과 초안 지침(`cfg/guide`)도 **잠근 글자만** 받는다 — 초안에는 성도 이름 · 심방 내용이 들어 있어서다. OpenAI 열쇠는 어느 칸에도 없다(쓰는 Mac 안 `ai.json` 에만).
 - Mac 소식(`mac`)의 모델 시험 결과(`test`)에는 모델별 걸린 시간 · 빠르기만 — 시험 전사 글은 그 Mac 안(`~/Library/Application Support/plaudhub/test`)에만 있다.
 
 ### 시험

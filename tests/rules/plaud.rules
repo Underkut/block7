@@ -9,8 +9,9 @@ service cloud.firestore {
       // 맡은 시각(at)은 파이어베이스 시계로만 찍는다(두 Mac 시계가 달라도 맡김 판단이 같게) — 안 바꾸면 그대로 둬도 된다
       function atOk() { return !('at' in d()) || d().at == request.time || (resource != null && 'at' in resource.data && resource.data.at == d().at); }
       allow read, delete: if own();
-      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf'])
+      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf', 'ai'])
         && (!('kw' in d()) || (d().kw is list && d().kw.size() <= 20))
+        && (!('ai' in d()) || (d().ai is map && d().ai.keys().hasOnly(['on', 'model'])))
         && (!('auto' in d()) || (d().auto is map && d().auto.size() <= 12))
         && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
@@ -21,7 +22,7 @@ service cloud.firestore {
       }
       match /job/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd', 'dr', 'dre'])
           && (!('st' in d()) || d().st in ['work', 'done', 'fail'])
           && (!('step' in d()) || d().step in ['get', 'stt', 'drive'])
           && (!('pick' in d()) || d().pick in ['in', 'out'])
@@ -29,12 +30,16 @@ service cloud.firestore {
           && (!('gone' in d()) || d().gone is bool)
           && (!('src' in d()) || d().src in ['p', 'w'])
           && (!('odd' in d()) || d().odd is bool)
+          && (!('dr' in d()) || d().dr in ['wait', 'run', 'ok', 'fail', 'sent'])
+          && (!('dre' in d()) || (d().dre is string && d().dre.size() <= 120))
           && atOk();
       }
       match /mac/{name} {
         allow read, delete: if own();
-        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed'])
+        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed', 'aik', 'aim'])
           && d().at == request.time
+          && (!('aik' in d()) || d().aik is bool)
+          && (!('aim' in d()) || (d().aim is list && d().aim.size() <= 60))
           && (!('models' in d()) || (d().models is list && d().models.size() <= 10))
           && (!('test' in d()) || d().test is map)
           && (!('disk' in d()) || d().disk is map);
@@ -50,6 +55,21 @@ service cloud.firestore {
         allow read, delete: if own();
         allow create, update: if own() && idOk(id) && d().keys().hasOnly(['c', 'iv', 'v'])
           && d().c is string && d().c.size() <= 900000 && d().iv is string && d().iv.size() <= 40;
+      }
+      // AI 초안(P4) — HB 암호 문구로 잠근 초안(c · iv)과 고칠 점(fc · fiv)만. 평문 칸은 없다
+      match /draft/{id} {
+        allow read, delete: if own();
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['c', 'iv', 'v', 'fc', 'fiv'])
+          && (!('c' in d()) || (d().c is string && d().c.size() <= 600000))
+          && (!('iv' in d()) || (d().iv is string && d().iv.size() <= 40))
+          && (!('fc' in d()) || (d().fc is string && d().fc.size() <= 20000))
+          && (!('fiv' in d()) || (d().fiv is string && d().fiv.size() <= 40));
+      }
+      // 초안 지침(P4, HB [지침]) — 문서 하나(guide), 잠근 글만
+      match /cfg/{id} {
+        allow read, delete: if own();
+        allow create, update: if own() && id == 'guide' && d().keys().hasOnly(['c', 'iv', 'v'])
+          && d().c is string && d().c.size() <= 100000 && d().iv is string && d().iv.size() <= 40;
       }
     }
     // ── PLAUD 도우미 — 여기까지 ──

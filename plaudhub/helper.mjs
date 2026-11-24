@@ -6,8 +6,10 @@
 //  · 10분마다 공식 PLAUD CLI 로 최근 녹음 목록을 읽어 rec/{녹음번호} 에 제목 · 시각 · 길이를 둔다(바뀐 줄만)
 //  · 계정의 cmd 칸에서 이 Mac 몫 요청(설치 · 새로 받기 · 다시 읽기 · 모델 시험)을 받아 **정해 둔 명령만** 돌린다(INSTALLS · PIPE 표)
 //  · (P3) 고른 녹음을 한 번에 하나씩 맡아(tryClaim · 5분마다 renew) 받기 → ffmpeg → whisper.cpp → 드라이브 'HB-심방-전사/녹음번호.txt'
-//  · 127.0.0.1:47211 에서 block7.my 계기판의 '이 Mac 연결' 만 받는다(로그인 열쇠를 건네받음)
-// 하지 않는 것: sudo · 비공식 PLAUD 도구 · 음성 주소(24시간 열쇠)를 명령 줄 · 기록 · 계정에 남기기 · 전사 글을 계정 · 기록에 두기.
+//  · (P4) 이 Mac 에 OpenAI 열쇠가 있으면: 초안을 기다리는 녹음(job.dr = wait)을 맡아 지침대로 ①~⑧ 초안 + hb-care.v1 묶음을 받고
+//    심방 노트 규격(care-core pkValidate)으로 본 뒤 HB 암호로 잠가 draft/{녹음번호} 에. 시트에는 쓰지 않는다(승인은 계기판에서 HB 가)
+//  · 127.0.0.1:47211 에서 block7.my 계기판의 '이 Mac 연결' 만 받는다(로그인 열쇠 · 잠금 키 · OpenAI 열쇠를 건네받음)
+// 하지 않는 것: sudo · 비공식 PLAUD 도구 · 음성 주소(24시간 열쇠)를 명령 줄 · 기록 · 계정에 남기기 · 전사 글 · 초안을 평문으로 계정 · 기록에 두기 · OpenAI 열쇠를 계정에 두기.
 //
 // 판단(CLI 글 읽기 · 고르기 · 맡기 · 명령 표 · 값 바꾸기)은 계기판 index.html 의 <script id="plaudhub-core"> 한 곳 —
 // 여기서는 그 파일을 받아 그 덩어리만 떼어(core.js) 쓴다. 두 벌로 두지 않는다.
@@ -19,7 +21,7 @@ import vm from 'node:vm';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const HELPER_VERSION = 'h. 26-1124-3';
+export const HELPER_VERSION = 'h. 26-1124-4';
 const HOME = os.homedir();
 const DIR = process.env.PLAUDHUB_DIR || path.join(HOME, 'Library', 'Application Support', 'plaudhub');
 const SITE = process.env.PLAUDHUB_SITE || 'https://block7.my/plaudhub/';
@@ -34,6 +36,9 @@ const BEAT_MS = 2 * 60e3, LIST_MS = 10 * 60e3, READY_MS = 10 * 60e3, FILE_CALLS 
 const envMs = (k, d) => { const v = +process.env[k]; return v > 0 ? v : d; };
 const TICK_MS = envMs('PLAUDHUB_TICK_MS', 30e3);       // 요청 · 소식 차례
 const JOB_MS = envMs('PLAUDHUB_JOB_MS', 3 * 60e3);     // 쉬는 동안 맡을 일감을 보는 간격(읽기 횟수를 아끼려 3분)
+const DRAFT_MS = envMs('PLAUDHUB_DRAFT_MS', 60e3);     // (P4) 초안 기다리는 녹음을 보는 간격 — 열쇠가 있는 Mac 만(대개 0개, 읽기 한 번)
+const AI_BASE = process.env.PLAUDHUB_OPENAI_URL || '';   // 시험만 가짜 OpenAI 로(실제는 core 의 AI_URL)
+const AI_MS = envMs('PLAUDHUB_AI_MS', 8 * 60e3);       // 한 번 부르는 데 기다리는 시간
 const WORK = () => path.join(DIR, 'work'), TESTDIR = () => path.join(DIR, 'test');
 
 // launchd 는 PATH 가 짧다 — Homebrew · 내 npm 폴더를 앞에. PLAUD CLI 의 사용 통계 · 새 판 알림은 끈다
@@ -43,7 +48,8 @@ process.env.PLAUD_TELEMETRY_DISABLED = '1'; process.env.DO_NOT_TRACK = '1'; proc
 
 let PH = null;   // 판단 덩어리
 const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, models: [], err: '', warn: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, lastJob: 0,
-  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '', okSeen: new Set(), pOk: new Set() };
+  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '', okSeen: new Set(), pOk: new Set(),
+  ai: '', aim: [], lastAim: 0, lastDraft: 0, drafting: '', aiWarn: '', CARE: null };
 
 function log(...a) { const s = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '); console.log(new Date().toISOString(), PH ? PH.clean(s, 2000) : s.replace(/https?:\/\/\S+/g, '[주소]')); }
 function readJson(f, d) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch (_) { return d; } }
@@ -67,6 +73,19 @@ async function fetchCore() {
   const r = await fetch(SITE + 'index.html', { cache: 'no-store' }); if (!r.ok) throw new Error('계기판 파일 ' + r.status);
   const code = extractCore(await r.text()); if (!code) throw new Error('계기판 파일에 판단 덩어리가 없습니다');
   runCore(code); fs.writeFileSync(path.join(DIR, 'core.js'), code); return code;
+}
+// (P4) 심방 노트의 규격 검사(care-core) — 시트에 넣기 전에 앱이 받는 꼴인지 본다. 두 벌로 두지 않고 /care/ 파일에서 떼어 쓴다
+export function extractCare(html) { const m = /<script id="care-core">([\s\S]*?)<\/script>/.exec(String(html || '')); return m ? m[1] : ''; }
+export function runCare(code) {
+  const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, RegExp, Promise, Error, URL, Intl, encodeURIComponent, decodeURIComponent };
+  vm.createContext(ctx); vm.runInContext(code + '\n;this.__C = { pkValidate, PK_VER, INBOX_TAB };', ctx);
+  if (!ctx.__C || typeof ctx.__C.pkValidate !== 'function') throw new Error('심방 노트 규격을 찾지 못했습니다');
+  return ctx.__C;
+}
+async function loadCare(fresh) {
+  let code = ''; if (!fresh) { try { code = fs.readFileSync(path.join(DIR, 'care-core.js'), 'utf8'); } catch (_) { } }
+  if (!code) { const r = await fetch(new URL('../care/index.html', SITE), { cache: 'no-store' }); if (!r.ok) throw new Error('심방 노트 파일 ' + r.status); code = extractCare(await r.text()); if (!code) throw new Error('심방 노트 규격이 없습니다'); runCare(code); fs.writeFileSync(path.join(DIR, 'care-core.js'), code); }
+  st.CARE = runCare(code); return st.CARE;
 }
 async function loadCore() {
   let code = ''; try { code = fs.readFileSync(path.join(DIR, 'core.js'), 'utf8'); } catch (_) { }
@@ -187,6 +206,7 @@ function upd(seg, fields, o) {
   const w = { update: { name: docName(...seg), fields: f }, updateMask: { fieldPaths: Object.keys(fields) } };
   if (o.serverAt) w.updateTransforms = [{ fieldPath: 'at', setToServerValue: 'REQUEST_TIME' }];
   if (o.pre) w.currentDocument = o.pre;
+  if (o.del) w.updateMask.fieldPaths.push(...o.del);   // 마스크에만 있고 값이 없으면 그 칸을 지운다
   return w;
 }
 async function commit(writes) {
@@ -208,7 +228,7 @@ export const jobIO = {
 };
 
 /* ---------- 소식 · 목록 · 요청 ---------- */
-const doingNow = () => st.job ? PH.workLabel(st.job, Date.now()) : st.doing;
+const doingNow = () => st.job ? PH.workLabel(st.job, Date.now()) + (st.drafting ? ' · AI 초안' : '') : st.drafting ? 'AI 초안 만드는 중' : st.doing;
 // 저장 공간(P3b): 남은 공간 · 깔린 모델 크기 · 일 폴더(임시 소리 · WAV)를 녹음별로 — 계기판 줄마다 · 합계 · 비우기
 function diskNow() {
   const work = {};
@@ -218,11 +238,11 @@ function diskNow() {
   return { free: Number.isFinite(free) ? Math.round(free / 1e8) * 1e8 : -1, models, work };   // 소식이 1분마다 바뀌지 않게 남은 공간은 0.1GB 단위
 }
 async function beat(force) {
-  const doing = doingNow(), err = [st.err, st.warn, st.goneWarn, st.unread && st.key ? '드라이브 txt ' + st.unread + '개를 이 Mac 에서 읽지 못해 폰용 사본을 못 올렸습니다 — Finder 에서 HB-심방-전사 폴더를 오른쪽 클릭 › \'오프라인 사용 가능\' 으로 바꿔 주세요' : ''].filter(Boolean).join('\n'), disk = diskNow();
-  const key = JSON.stringify([doing, st.ready, err, st.cli, st.models, st.listed, disk.free, disk.models, Object.entries(disk.work).map(([k, b]) => k + Math.round(b / 1e6))]);
+  const doing = doingNow(), err = [st.err, st.warn, st.goneWarn, st.aiWarn, st.unread && st.key ? '드라이브 txt ' + st.unread + '개를 이 Mac 에서 읽지 못해 폰용 사본을 못 올렸습니다 — Finder 에서 HB-심방-전사 폴더를 오른쪽 클릭 › \'오프라인 사용 가능\' 으로 바꿔 주세요' : ''].filter(Boolean).join('\n'), disk = diskNow();
+  const key = JSON.stringify([doing, st.ready, err, st.cli, st.models, st.listed, disk.free, disk.models, Object.entries(disk.work).map(([k, b]) => k + Math.round(b / 1e6)), !!st.ai, st.aim]);
   if (!force && key === st.sentKey && Date.now() - st.lastBeat < BEAT_MS) return;
   if (!force && key !== st.sentKey && Date.now() - st.lastBeat < 50e3) return;   // 전사 중 'n분째' 는 1분에 한 번만
-  const r = await commit([upd(['mac', st.mac], { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models, disk, listed: st.listed }, { serverAt: true })]);
+  const r = await commit([upd(['mac', st.mac], { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models, disk, listed: st.listed, aik: !!st.ai, aim: st.aim }, { serverAt: true })]);
   if (!r.ok) throw new Error('소식 쓰기 ' + r.status + (r.status === 403 ? ' (보안 규칙을 붙였는지 확인)' : ''));
   st.lastBeat = Date.now(); st.sentKey = key;
 }
@@ -297,7 +317,7 @@ async function runCmd(c, I, settings) {
   if (c.what === 'update') {
     const r = await fetch(SITE + 'helper.mjs', { cache: 'no-store' }); const t = await r.text();
     if (!r.ok || !/export const HELPER_VERSION = 'h\. /.test(t)) return { ok: false, log: '새 도우미 파일을 받지 못했습니다' };
-    await fetchCore();
+    await fetchCore(); await loadCare(true).catch(e => log('심방 노트 규격 새로 받기 실패', String(e.message || e)));
     const p = fileURLToPath(import.meta.url); fs.writeFileSync(p + '.new', t); fs.renameSync(p + '.new', p);
     return { ok: true, log: '', restart: true };
   }
@@ -452,7 +472,9 @@ async function dropTxt(id, again) {
   const loc = locate(driveIndex(drive), id);
   if (loc) { try { fs.rmSync(path.join(drive, loc.file)); } catch (e) { return { ok: false, log: '드라이브 파일을 지우지 못했습니다' }; } }
   rememberName(id, '');
-  const r = await commit([{ delete: docName('txt', id) }, { update: { name: docName('job', id), fields: { pick: PH.fsEnc(again ? 'in' : 'out') } } }]);   // 일감은 통째로 새로(단계 · 맡은 Mac · gone 을 지움)
+  // (P4) 이미 대기함에 넣은 녹음은 그 표시(sent)와 초안을 남긴다 — 다시 전사해도 초안을 또 만들어 두 번 넣지 않게. 아니면 낡은 초안을 지운다
+  const sent = ((await getMany('job', [id]))[id] || {}).dr === 'sent', jf = { pick: PH.fsEnc(again ? 'in' : 'out') }; if (sent) jf.dr = PH.fsEnc('sent');
+  const r = await commit([{ delete: docName('txt', id) }].concat(sent ? [] : [{ delete: docName('draft', id) }], [{ update: { name: docName('job', id), fields: jf } }]));   // 일감은 통째로 새로(단계 · 맡은 Mac · gone 을 지움)
   if (!r.ok) return { ok: false, log: '계정에 적지 못했습니다 ' + r.status };
   st.done.delete(id); st.gone.delete(id); st.okSeen.delete(id);
   const u = upDone(); if (u.delete(id)) writeJson('uploaded.json', [...u]);
@@ -497,7 +519,7 @@ async function pickWork(settings) {
     const J = st.job = { kind: 'job', id, step: 'get', t0: Date.now(), okAt: Date.now(), pct: null, child: null, stop: '' };
     log('맡음', id, c.how === 'expired' ? '(꺼진 ' + (c.from || '다른') + ' Mac 에게서 이어받음)' : '');
     await beat(true).catch(() => { });
-    workOne(J, rec, m, drive).catch(e => log('일감 오류', id, String(e.message || e))).finally(() => { st.job = null; st.lastJob = 0; beat(true).catch(() => { }); });
+    workOne(J, rec, m, drive, settings).catch(e => log('일감 오류', id, String(e.message || e))).finally(() => { st.job = null; st.lastJob = 0; beat(true).catch(() => { }); });
     return;
   }
 }
@@ -511,7 +533,7 @@ async function plaudTxt(J, trf) {
   return PH.cleanText(t);
 }
 const STOP_WHY = { out: '목록에서 뺌', clean: '임시 파일을 비움' };
-async function workOne(J, rec, m, drive) {
+async function workOne(J, rec, m, drive, settings) {
   const w = WORK(), ogg = path.join(w, J.id + '.ogg'), wav = path.join(w, J.id + '.wav'), out = path.join(w, J.id + '.whisper'), part = path.join(w, J.id + '.txt.part'), trf = path.join(w, J.id + '.plaud.txt');
   const timer = setInterval(() => { keep(J); }, RENEW_MS());
   const already = () => locate(driveIndex(drive), J.id);
@@ -536,7 +558,8 @@ async function workOne(J, rec, m, drive) {
     fs.writeFileSync(part, content);
     placeTxt(drive, part, rec, J.id, src);
     await uploadTxt(J.id, PH.txtBody(content)).catch(e => log('잠근 사본 오류', J.id, String(e.message || e)));
-    const f = await PH.finish(jobIO, J.id, st.mac, true, '', { src, odd }); st.done.add(J.id); st.pOk.add(J.id);
+    const dr = PH.drAuto(rec, null, settings) ? 'wait' : '';   // (P4) 키워드로 골라진 녹음은 AI 초안을 저절로(열쇠가 있는 Mac 이 집음)
+    const f = await PH.finish(jobIO, J.id, st.mac, true, '', { src, odd, dr }); st.done.add(J.id); st.pOk.add(J.id); if (dr) st.lastDraft = 0;
     log('전사 끝', J.id, Math.round((Date.now() - J.t0) / 60e3) + '분 걸림', f.ok ? '' : '(끝 표시는 못 함 — 드라이브 파일이 있어 다시 하지 않음)');
   } catch (e) {
     if (J.stop === 'lost') { log('맡김을 잃어 멈춤 — 다른 Mac 이 이어 함', J.id); return; }
@@ -583,6 +606,95 @@ async function modelTest(J) {
   } finally { rmQuiet(ogg, wav, out + '.txt'); }
 }
 
+/* ---------- AI 초안 (P4) ----------
+   열쇠(ai.json, 600)는 이 Mac 안에만. 보내는 것: 지침 + 녹음 제목 · 시각 · 길이 + 전사 글(OpenAI API — HB '나').
+   받은 초안은 HB 암호로 잠가 계정에만, 기록(helper.log)에는 녹음 번호 · 모델 · 짧은 까닭만. */
+const aiBase = () => AI_BASE || PH.AI_URL;
+async function aiFetch(p, body, key, ms) {
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), ms || 60e3);
+  try {
+    const r = await fetch(aiBase() + p, { method: body ? 'POST' : 'GET', signal: ctl.signal,
+      headers: Object.assign({ authorization: 'Bearer ' + key }, body ? { 'content-type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined });
+    return { ok: r.ok, status: r.status, j: await r.json().catch(() => ({})) };
+  } catch (e) { return { ok: false, status: 0, j: {}, err: e && e.name === 'AbortError' ? '시간 초과' : '닿지 못함' }; }
+  finally { clearTimeout(tm); }
+}
+async function aiList(key) {
+  const r = await aiFetch('/models', null, key, 30e3);
+  if (!r.ok) throw new Error(r.status ? PH.aiErr(r.status, r.j) : 'OpenAI 에 닿지 못했습니다');
+  return PH.aiModels((r.j.data || []).map(x => x && x.id));
+}
+// 계기판 '이 Mac 에 OpenAI 열쇠 넣기' — 모델 목록을 물어 맞는 열쇠인지 본 뒤에만 둔다. 빈 글 = 지우기
+async function takeAi(j) {
+  if (!st.tok) throw new Error('먼저 이 Mac 을 연결해 주세요');
+  const k = String(j && j.k || '').trim();
+  if (!k) { rmQuiet(path.join(DIR, 'ai.json')); st.ai = ''; st.aim = []; log('AI 열쇠 지움'); st.sentKey = ''; beat(true).catch(() => { }); return; }
+  if (!PH.AI_KEY_RE.test(k)) throw new Error('OpenAI 열쇠 꼴이 아닙니다 (sk- 로 시작하는 글)');
+  const list = await aiList(k);
+  if (!list.length) throw new Error('이 열쇠로 쓸 수 있는 글 모델이 없습니다');
+  writeJson('ai.json', { k }, true); st.ai = k; st.aim = list; st.lastAim = Date.now(); st.lastDraft = 0; st.sentKey = '';
+  log('AI 열쇠 받음', '모델 ' + list.length + '개'); beat(true).catch(() => { }); setTimeout(tick, 200);   // 계기판에 곧바로 '열쇠 있음'
+}
+// 초안에 쓸 전사 글 — 잠근 사본(늘 읽힘) → 없으면 드라이브 txt(온라인 전용이면 못 읽음)
+async function draftText(id) {
+  const t = await getDoc('txt', id).catch(() => null);
+  if (t && t.c && t.iv) { try { const b = await PH.decText(st.key, t); if (b.trim()) return b; } catch (_) { } }   // 잠근 사본은 이미 머리말을 뗀 본문
+  const drive = driveFolder(); if (!drive) return '';
+  const loc = locate(driveIndex(drive), id); if (!loc) return '';
+  try { return PH.txtBody(fs.readFileSync(path.join(drive, loc.file), 'utf8')); } catch (_) { return ''; }
+}
+async function readGuide() { const g = await getDoc('cfg', 'guide').catch(() => null); if (!g || !g.c) return ''; try { return (await PH.decText(st.key, g)).slice(0, PH.GUIDE_MAX); } catch (_) { return ''; } }
+// 초안 기다리는 녹음 하나를 맡아(조건부 쓰기 — 두 Mac 이 겹치지 않게) 뒤에서 만든다
+async function draftTick(settings) {
+  st.lastDraft = Date.now();
+  const warn = st.ai && !st.key ? 'OpenAI 열쇠는 있지만 잠금 키가 없어 AI 초안을 만들 수 없습니다 — 이 Mac 크롬에서 계기판 메뉴 › 전사 글 암호를 넣어 주세요' : '';
+  if (warn !== st.aiWarn) { st.aiWarn = warn; beat(true).catch(() => { }); }
+  if (!st.ai || !st.key || st.drafting) return;
+  if (Date.now() - st.lastAim > 24 * 3600e3) { st.lastAim = Date.now(); try { st.aim = await aiList(st.ai); } catch (e) { st.aiWarn = 'AI 초안: ' + String(e.message || e); } }
+  const js = await queryColl('job', 'dr', 'IN', ['wait', 'run']), now = serverNow();
+  const id = Object.keys(js).filter(k => PH.drTake(js[k], Date.parse(js[k]._ut), now)).sort((a, b) => (js[a].dr === 'wait' ? 0 : 1) - (js[b].dr === 'wait' ? 0 : 1))[0];
+  if (!id) return;
+  const took = await commit([upd(['job', id], { dr: 'run' }, { pre: { updateTime: js[id]._ut }, del: ['dre'] })]);
+  if (!took.ok) return;   // 그 사이 다른 Mac 이 집었거나 HB 가 바꿈
+  const ver = ((took.j.writeResults || [])[0] || {}).updateTime;
+  st.drafting = id; beat(true).catch(() => { });
+  draftOne(id, ver, settings).catch(e => log('AI 초안 오류', id, String(e.message || e))).finally(() => { st.drafting = ''; st.lastDraft = 0; beat(true).catch(() => { }); });
+}
+async function draftOne(id, ver, settings) {
+  const t0 = Date.now(); let model = '';
+  try {
+    const rec = (st.recs && st.recs[id]) || await getDoc('rec', id).catch(() => null) || {};
+    const text = await draftText(id); if (!text.trim()) throw new Fail('전사 글을 찾지 못함 (잠근 사본 · 드라이브 txt 가 없음)');
+    const guide = await readGuide(), d0 = await getDoc('draft', id).catch(() => null);
+    let prev = null, fb = '';   // [다시 만들기] — HB 가 적은 고칠 점과 앞 초안
+    if (d0 && d0.fc && d0.fiv) { try { fb = await PH.decText(st.key, { c: d0.fc, iv: d0.fiv }); if (d0.c) prev = JSON.parse(await PH.decText(st.key, d0)); } catch (_) { prev = null; } }
+    model = PH.aiModelOf(settings, [{ aim: st.aim }]); if (!model) throw new Fail('쓸 수 있는 모델이 없음');
+    const care = st.CARE || await loadCare(false).catch(() => null); if (!care) throw new Fail('심방 노트 규격을 불러오지 못함');
+    const meta = { id, n: rec.n, t: rec.t, d: rec.d };
+    let msgs = PH.aiMessages(meta, text, guide, prev, fb), got = null, errs = [];
+    for (let i = 0; i < 2 && !got; i++) {   // 규격에 걸리면 까닭을 붙여 한 번 더
+      const r = await aiFetch('/chat/completions', { model, messages: msgs, response_format: { type: 'json_object' } }, st.ai, AI_MS);
+      if (!r.ok) throw new Fail(r.status ? PH.aiErr(r.status, r.j) : 'OpenAI 에 ' + (r.err || '닿지 못함'));
+      const content = String((((r.j.choices || [])[0] || {}).message || {}).content || ''), p = PH.aiParse(content, meta);
+      errs = p.ok ? care.pkValidate(p.packet) : [p.err];
+      if (p.ok && !errs.length) got = p; else msgs = PH.aiRetry(msgs, content, errs);
+    }
+    // 까닭에는 칸 자리만(값 · 이름이 섞이지 않게)
+    if (!got) throw new Fail('심방 노트 규격에 맞지 않음 — ' + String(errs[0] || '').split(' — ')[0] + (errs.length > 1 ? ' 외 ' + (errs.length - 1) + '곳' : ''));
+    const e = await PH.encText(st.key, JSON.stringify({ md: got.md, packet: got.packet, model, at: serverNow(), fb }));
+    if (e.c.length > PH.DRAFT_MAX) throw new Fail('초안이 너무 큼');
+    const w = await commit([{ update: { name: docName('draft', id), fields: { c: PH.fsEnc(e.c), iv: PH.fsEnc(e.iv), v: PH.fsEnc(1) } } },
+      upd(['job', id], { dr: 'ok' }, Object.assign({ del: ['dre'] }, ver ? { pre: { updateTime: ver } } : {}))]);
+    if (!w.ok) { log('AI 초안 — 그 사이 바뀜, 적지 않음', id); return; }   // HB 가 그 사이 [다시 만들기] · 다시 전사 → 다음 차례에 새로
+    log('AI 초안', id, model, Math.round((Date.now() - t0) / 1000) + '초');
+  } catch (e) {
+    const why = e instanceof Fail ? e.message : '도우미 오류';
+    if (!(e instanceof Fail)) log('AI 초안 도우미 오류', id, String(e && e.message || e));
+    await commit([upd(['job', id], { dr: 'fail', dre: PH.clean(why, 120) }, ver ? { pre: { updateTime: ver } } : {})]).catch(() => { });
+    log('AI 초안 실패', id, model, PH.clean(why, 120));
+  }
+}
+
 async function tick() {
   if (st.busy) return; st.busy = true;
   try {
@@ -593,12 +705,13 @@ async function tick() {
     await doCmds(settings);
     if (Date.now() - st.lastList > LIST_MS) { await refreshList(settings); if (st.err) log('알림', st.err); st.doing = '쉼'; await beat(true); }
     if (!st.job && Date.now() - st.lastJob > JOB_MS) await pickWork(settings);
+    if ((st.ai || st.aiWarn) && Date.now() - st.lastDraft > DRAFT_MS) await draftTick(settings);
   } catch (e) { log('차례 실패', String(e.message || e)); }
   finally { st.busy = false; }
 }
 
 /* ---------- 이 Mac 연결 (127.0.0.1 · block7.my 에서 온 것만) ---------- */
-export function makeServer(onPair, onKey) {
+export function makeServer(onPair, onKey, onAi) {
   return http.createServer((req, res) => {
     const origin = req.headers.origin || '', host = String(req.headers.host || '');
     const send = (code, obj) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(obj)); };
@@ -608,9 +721,9 @@ export function makeServer(onPair, onKey) {
     res.setHeader('access-control-allow-methods', 'GET, POST'); res.setHeader('access-control-allow-headers', 'content-type');
     res.setHeader('access-control-allow-private-network', 'true');
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
-    if (req.method === 'GET' && req.url === '/hello') return send(200, { app: 'plaudhub', v: HELPER_VERSION, mac: st.mac, paired: !!st.tok && !st.needPair, hasKey: !!st.key });
-    if (req.method === 'POST' && (req.url === '/pair' || (req.url === '/key' && onKey))) {
-      const fn = req.url === '/key' ? onKey : onPair;
+    if (req.method === 'GET' && req.url === '/hello') return send(200, { app: 'plaudhub', v: HELPER_VERSION, mac: st.mac, paired: !!st.tok && !st.needPair, hasKey: !!st.key, hasAi: !!st.ai });
+    if (req.method === 'POST' && (req.url === '/pair' || (req.url === '/key' && onKey) || (req.url === '/aikey' && onAi))) {
+      const fn = req.url === '/key' ? onKey : req.url === '/aikey' ? onAi : onPair;
       let body = ''; req.on('data', d => { body += d; if (body.length > 16384) req.destroy(); });
       req.on('end', async () => {
         let j; try { j = JSON.parse(body); } catch (_) { return send(400, { err: '내용을 읽지 못했습니다' }); }
@@ -651,7 +764,9 @@ async function main() {
   const tok = readJson('token.json', null), conf = readJson('conf.json', {});
   if (tok && tok.rt && tok.uid && PH.normMac(conf.mac)) { st.tok = tok; st.mac = PH.normMac(conf.mac); }
   st.key = (readJson('key.json', {}) || {}).k || '';
-  makeServer(pair, takeKey).on('error', e => { log('연결 자리를 열지 못함', String(e.message || e)); }).listen(PORT, '127.0.0.1');
+  st.ai = (readJson('ai.json', {}) || {}).k || '';
+  loadCare(false).catch(e => log('심방 노트 규격을 못 받음 — 초안 때 다시', String(e.message || e)));
+  makeServer(pair, takeKey, takeAi).on('error', e => { log('연결 자리를 열지 못함', String(e.message || e)); }).listen(PORT, '127.0.0.1');
   log('도우미 시작', HELPER_VERSION, st.mac || '(연결 전)');
   await tick(); setInterval(tick, TICK_MS);
 }

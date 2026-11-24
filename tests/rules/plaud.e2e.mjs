@@ -16,6 +16,8 @@
 //   · 잠근 사본(계기판에서 암호 정하기 → 이 Mac 도우미에 저절로 · 틀린 키 거절 → 복사 · 받기 = 드라이브 본문) · 안 쓰는 모델 지우기 · ⑮ 임시 파일 크기(줄 · 합계) → 비우기.
 // ⑰ (P3d) 구글 드라이브 '온라인 전용'(내용을 못 읽음) — 이름으로 찾아 잘못된 '드라이브에 없음' 을 되돌리고 · 옛 녹음번호.txt 를 새 이름으로 · 새로 '없음' 으로 적지 않음
 // ⑱ (P3e) PLAUD 전사문 — 있으면 whisper 대신 가져와 'p' 이름 · P 알약 · 없으면 녹음 뒤 6시간 기다림 → [지금] 이면 whisper · whisper 로 만든 것에 PLAUD 전사가 생기면 바꿈 · 되풀이 전사는 W 빨강
+// ⑲ (P4) AI 초안 — 가짜 OpenAI: 틀린 열쇠 거절 · 열쇠는 그 Mac 에만(600) · 키워드 녹음은 저절로 · 규격에 걸리면 한 번 더 · 잠근 초안만 계정에 · 기록에 글 · 열쇠 없음
+//        · 계기판 초안 판 · 고칠 점 → 다시 만들기 · [승인] → 가짜 시트 'AI 입력대기' 한 줄(같은 녹음 두 번 안 넣음) · 지침 고치기 · 한도 실패 · 이 Mac 에 열쇠 넣기(화면)
 // ⑯ (P3c) 접는 Mac 카드 · 탭 · 버전 단추 · 목록 읽은 때 · 드라이브에서 지운 것 알아채기 → 다시 전사 · txt 지우기(뺌, 다시 안 함) · 보기 판 · 모두 지금 시작. 이름은 모두 지어낸 것.
 import fs from 'fs';
 import os from 'os';
@@ -26,13 +28,15 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.join(HERE, '..', '..');
-const FS = 'http://127.0.0.1:8089', AUTH = 'http://127.0.0.1:9099', PROJECT = 'block7-8f24e', SITE_PORT = 8766;
+const FS = 'http://127.0.0.1:8089', AUTH = 'http://127.0.0.1:9099', PROJECT = 'block7-8f24e', SITE_PORT = 8766, AI_PORT = 8767;
 let n = 0, bad = 0; const ok = (name, c, extra) => { n++; if (c) console.log('  ✓', name); else { bad++; console.log('  ✗', name, extra === undefined ? '' : JSON.stringify(extra)); } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const until = async (f, ms = 20000) => { const t = Date.now(); while (Date.now() - t < ms) { const v = await f().catch(() => null); if (v) return v; await sleep(250); } return null; };
 
 // 규칙: 이 프로젝트 이름(block7-8f24e)에 plaud 덩어리를 싣는다
-{ const r = await fetch(FS + '/emulator/v1/projects/' + PROJECT + ':securityRules', { method: 'PUT', body: JSON.stringify({ rules: { files: [{ content: fs.readFileSync(path.join(HERE, 'plaud.rules'), 'utf8') }] } }) });
+// (P4) 계기판 [승인] 이 심방 노트 설정(users/{uid}/data/care)을 읽는다 — 실제 프로젝트에는 BLOCK7 규칙이 이미 열어 둔 자리. 시험에만 읽기 한 줄을 더한다
+{ const RULES = fs.readFileSync(path.join(HERE, 'plaud.rules'), 'utf8').replace('match /databases/{database}/documents {', 'match /databases/{database}/documents {\n    match /users/{uid}/data/care { allow read: if request.auth != null && request.auth.uid == uid; }');
+  const r = await fetch(FS + '/emulator/v1/projects/' + PROJECT + ':securityRules', { method: 'PUT', body: JSON.stringify({ rules: { files: [{ content: RULES }] } }) });
   if (!r.ok) { console.log('규칙을 싣지 못함', r.status, await r.text()); process.exit(1); } }
 // 계정 (지어낸 이메일)
 const sign = async em => (await (await fetch(AUTH + '/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: em, password: 'secret12', returnSecureToken: true }) })).json());
@@ -56,6 +60,24 @@ const site = http.createServer((q, s) => {
   const f = path.join(ROOT, q.url.split('?')[0]); fs.readFile(f, (e, b) => { if (e) { s.writeHead(404); return s.end(); } s.writeHead(200); s.end(b); });
 }).listen(SITE_PORT, '127.0.0.1');
 const AUDIO_URL = 'http://127.0.0.1:' + SITE_PORT + '/fake/sound.ogg?X-Amz-Signature=' + SECRET;
+// (P4) 가짜 OpenAI — 열쇠 확인 · 모델 목록 · 초안(처음 한 번은 규격에 걸리는 답 → 도우미가 까닭을 붙여 다시) · AIQ 면 한도 오류
+const AI_KEY = 'sk-test-' + 'x'.repeat(40), AIQ = { calls: [], badOnce: true, quota: false };
+const aiSrv = http.createServer((q, s) => {
+  let b = ''; q.on('data', d => b += d); q.on('end', () => {
+    const send = (code, o) => { s.writeHead(code, { 'content-type': 'application/json' }); s.end(JSON.stringify(o)); };
+    if (q.headers.authorization !== 'Bearer ' + AI_KEY) return send(401, { error: { code: 'invalid_api_key' } });
+    if (q.method === 'GET' && q.url === '/v1/models') return send(200, { data: ['gpt-9', 'gpt-9-mini', 'text-embedding-9', 'gpt-9-audio-preview', 'gpt-9-2026-01-01'].map(id => ({ id })) });
+    if (q.method !== 'POST' || q.url !== '/v1/chat/completions') return send(404, {});
+    const j = JSON.parse(b); AIQ.calls.push(j);
+    if (AIQ.quota) return send(429, { error: { code: 'insufficient_quota' } });
+    const user = j.messages[1].content, id = (/녹음 ID: (\S+)/.exec(user) || [])[1], fb = j.messages.length >= 4 && j.messages[j.messages.length - 1].role === 'user' && /고칠 점/.test(j.messages[j.messages.length - 1].content) ? j.messages[j.messages.length - 1].content.split('\n').slice(1).join(' ') : '';
+    const pr = AIQ.badOnce ? '높음' : '일반'; AIQ.badOnce = false;
+    const packet = { schema_version: 'hb-care.v1', event: { kind: 'visit', date: '2026-11-22', title: '지어낸 심방', group_summary: '', details_markdown: '', location: null },
+      records: [{ person_name: '김하늘', person_confirmed: true, speaker_label: null, category: null, contact_method: '만남', depth: '중간', summary_line: '지어낸 한줄 ' + id, brief_note: '지어낸 내용', detailed_note_markdown: '### 사실\n지어냄', priority: pr, long_term_watch: '', information_basis: '직접', tags: [], next_questions: ['지어낸 질문'], actions: [] }],
+      unknown_speakers: [], mentioned_people: [], import_notes: '' };
+    send(200, { choices: [{ message: { role: 'assistant', content: JSON.stringify({ draft_markdown: '① 핵심 한줄 — 지어낸 초안 ' + id + (fb ? '\n고침: ' + fb : ''), packet }) } }] });
+  });
+}).listen(AI_PORT, '127.0.0.1');
 
 // 가짜 PLAUD CLI — 공식 CLI 0.3.15 가 터미널이 아닐 때 내놓는 글과 같은 꼴
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'plaud-e2e-')), bin = path.join(tmp, 'bin'), tools = path.join(tmp, 'tools'); fs.mkdirSync(bin); fs.mkdirSync(tools);
@@ -122,7 +144,7 @@ const startHelper = (name, port, o = {}) => {
     const fd = fs.openSync(path.join(md, m.file), 'w'); fs.ftruncateSync(fd, m.mb * 1e6); fs.closeSync(fd); }   // 빈 큰 파일(실제 공간은 안 씀)
   const env = Object.assign({}, process.env, { PATH: bin + (o.tools ? ':' + tools : '') + ':' + process.env.PATH, PLAUDHUB_DIR: dir, PLAUDHUB_PORT: String(port), PLAUDHUB_SITE: 'http://127.0.0.1:' + SITE_PORT + '/plaudhub/',
     PLAUDHUB_TOKEN_URL: AUTH + '/securetoken.googleapis.com/v1/token', PLAUDHUB_FS_HOST: FS, PLAUDHUB_DEV_ORIGIN: 'http://127.0.0.1:8765', HOME: dir,
-    PLAUDHUB_TICK_MS: '1000', PLAUDHUB_EVICT: o.evict || '', PLAUDHUB_JOB_MS: '1500', PLAUDHUB_RENEW_MS: '2000', PLAUDHUB_FAKE_FREE_FILE: path.join(dir, 'fakefree'), no_proxy: '127.0.0.1,localhost', NO_PROXY: '127.0.0.1,localhost' });
+    PLAUDHUB_TICK_MS: '1000', PLAUDHUB_EVICT: o.evict || '', PLAUDHUB_JOB_MS: '1500', PLAUDHUB_RENEW_MS: '2000', PLAUDHUB_FAKE_FREE_FILE: path.join(dir, 'fakefree'), PLAUDHUB_OPENAI_URL: 'http://127.0.0.1:' + AI_PORT + '/v1', PLAUDHUB_DRAFT_MS: '1500', no_proxy: '127.0.0.1,localhost', NO_PROXY: '127.0.0.1,localhost' });
   const ch = spawn(process.execPath, [path.join(ROOT, 'plaudhub', 'helper.mjs')], { env, detached: true }); let logs = '';
   ch.stdout.on('data', d => logs += d); ch.stderr.on('data', d => logs += d); kids.push(ch);
   return { dir, port, name, ch, log: () => logs, free: v => fs.writeFileSync(path.join(dir, 'fakefree'), String(v)) };
@@ -513,10 +535,89 @@ try {
     const NE = '26-1119 11;00 p 지어낸 셀 모임.txt';
     const eUp = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('e')); const fsx = driveTxts().filter(x => x.startsWith('26-1119 11;00')); return d && d.st === 'done' && d.src === 'p' && fsx.length === 1 && fsx[0] === NE && d; }, 60000);
     ok('⑱ whisper 로 만든 e 에 PLAUD 전사가 생기자 PLAUD 것으로 바꿈 — 파일 하나(p) · 내용 = PLAUD 전사', !!eUp && fs.readFileSync(path.join(DRIVE, NE), 'utf8').includes('e 의 PLAUD 전사'), [eUp, driveTxts().filter(x => x.startsWith('26-1119')), home2.log().slice(-1500)]);
+    // ⑲ (P4) AI 초안
+    const aiPost = (port, k) => fetch('http://127.0.0.1:' + port + '/aikey', { method: 'POST', headers: { origin: 'http://127.0.0.1:8765', 'content-type': 'application/json' }, body: JSON.stringify({ k }) });
+    ok('⑲ 열쇠 없는 동안: 키워드 녹음(a)은 초안 기다림(wait) · 이름 없는 녹음(i)은 아님', (await admin('plaud/' + UID + '/job/' + ID('a'))).dr === 'wait' && !(await admin('plaud/' + UID + '/job/' + ID('i'))).dr);
+    let ak = await aiPost(47931, 'sk-test-' + 'y'.repeat(40));
+    ok('⑲ 틀린 OpenAI 열쇠는 받지 않음(모델 목록을 물어 확인) · 파일 없음', ak.status === 400 && /열쇠가 맞지 않습니다/.test((await ak.json()).err || '') && !fs.existsSync(path.join(home2.dir, 'ai.json')));
+    ak = await aiPost(47931, AI_KEY);
+    ok('⑲ 맞는 열쇠는 그 Mac 의 ai.json(600)에만', ak.status === 200 && (fs.statSync(path.join(home2.dir, 'ai.json')).mode & 0o777) === 0o600);
+    const macAi = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && d.aik === true && Array.isArray(d.aim) && d; }, 15000);
+    ok('⑲ Mac 소식: 열쇠 있음(aik) · 글 모델 목록(소리 · 임베딩 · 날짜 사본 빼고) · 열쇠 글은 없음', macAi && JSON.stringify(macAi.aim) === '["gpt-9","gpt-9-mini"]' && !JSON.stringify(await admin('plaud/' + UID)).includes('sk-test') && !JSON.stringify(macAi).includes('sk-test'), macAi);
+    const drA = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.dr === 'ok' && d; }, 40000);
+    ok('⑲ 키워드 녹음 a 의 초안이 저절로 만들어짐(dr ok)', !!drA, [drA, home2.log().slice(-800)]);
+    const call1 = AIQ.calls[0] || { messages: [{}, {}] };
+    ok('⑲ 보낸 것: 고른 모델(기본 = gpt-9) · 지침 v2.2 + 답 꼴 · 녹음 정보 + 전사 글 · JSON 으로', call1.model === 'gpt-9' && /① 핵심 한줄/.test(call1.messages[0].content) && /hb-care\.v1/.test(call1.messages[0].content) && /녹음 ID: f_/.test(call1.messages[1].content) && /전사문:\n/.test(call1.messages[1].content) && call1.response_format && call1.response_format.type === 'json_object', call1.model);
+    ok('⑲ 처음 답이 규격에 걸리면(우선순위 \'높음\') 까닭을 붙여 한 번 더', AIQ.calls.length >= 2 && /records\[0\]\.priority/.test(AIQ.calls[1].messages[AIQ.calls[1].messages.length - 1].content));
+    const dA = await admin('plaud/' + UID + '/draft/' + ID('a'));
+    ok('⑲ 계정의 초안은 잠근 글(c · iv · v)뿐 — 이름 · 초안 글이 없음', dA && Object.keys(dA).filter(k => !['id', '_ut'].includes(k)).sort().join() === 'c,iv,v' && !/김하늘|지어낸/.test(JSON.stringify(dA)), dA && Object.keys(dA));
+    const DA = dA && JSON.parse(await PH.decText(KEY, dA));
+    ok('⑲ 풀면: 초안 글 · 묶음(source = 녹음 ID · 한국 시각 · 길이) · 모델', DA && /지어낸 초안 f_a/.test(DA.md) && DA.packet.source.source_id === ID('a') && DA.packet.source.recorded_at === '2026-11-22T15:05:00+09:00' && DA.packet.source.duration_ms === 2880000 && DA.model === 'gpt-9' && DA.packet.records[0].priority === '일반', DA && DA.packet.source);
+    ok('⑲ 도우미 기록에 전사 글 · 초안 글 · 열쇠가 없음', !/지어낸 전사 글|지어낸 초안|지어낸 PLAUD|sk-test/.test(home2.log()), home2.log().slice(-600));
+    // 계기판 — 초안 판 · 고칠 점 · 다시 만들기 · 승인
+    await adminSet('users/' + UID + '/data/care', { sheet: { id: 'sheetFAKE01', name: '지어낸 시트' } });
+    const SHEET = [PH.INBOX_COLS.slice()], appended = [];
+    await ctx.route('https://asia-northeast3-block7-8f24e.cloudfunctions.net/gcal/token', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ access_token: 'gtok', expires_in: 3600 }) }));
+    await ctx.route('https://sheets.googleapis.com/**', r => { const q = r.request(), u = decodeURIComponent(q.url());
+      if (q.headers().authorization !== 'Bearer gtok' || !u.includes('/spreadsheets/sheetFAKE01/values/\'AI 입력대기\'!')) return r.fulfill({ status: 403, body: '{}' });
+      if (q.method() === 'GET') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ values: SHEET }) });
+      if (/:append\?valueInputOption=RAW&insertDataOption=INSERT_ROWS/.test(u)) { const v = JSON.parse(q.postData()).values; appended.push(...v); SHEET.push(...v); return r.fulfill({ contentType: 'application/json', body: '{}' }); }
+      return r.fulfill({ status: 400, body: '{}' }); });
+    await pg.click('[data-act="tab"][data-k="all"]');
+    const drBtn = await until(() => pg.$('[data-id="' + ID('a') + '"] [data-act="draft"]'), 15000);
+    ok('⑲ 계기판: 끝난 줄에 \'초안\' 단추', !!drBtn && (await drBtn.textContent()) === '초안');
+    await drBtn.click();
+    const paneMd = await until(async () => { const e = await pg.$('#pane .vtext'); return e && (await e.textContent()); }, 15000);
+    ok('⑲ 초안 판: 초안 글 · 시트로 갈 묶음 · 고칠 점 · [승인]', /지어낸 초안 f_a/.test(paneMd || '') && !!(await pg.$('#pane details.pk')) && !!(await pg.$('#dr-fb')) && !!(await pg.$('#pane [data-act="drok"]')), paneMd);
+    const nCalls = AIQ.calls.length;
+    await pg.fill('#dr-fb', '우선순위는 이번주로 바꿔 주세요'); await pg.click('#pane [data-act="drre"]');
+    const fbDoc = await until(async () => { const d = await admin('plaud/' + UID + '/draft/' + ID('a')); return d && d.fc && d; }, 10000);
+    ok('⑲ 고칠 점은 잠가서(fc · fiv) — 평문 없음', !!fbDoc && !/우선순위는/.test(JSON.stringify(fbDoc)) && (await PH.decText(KEY, { c: fbDoc.fc, iv: fbDoc.fiv })) === '우선순위는 이번주로 바꿔 주세요');
+    const re = await until(async () => { const e = await pg.$('#pane .vtext'); const t = e && (await e.textContent()); return t && /고침: 우선순위는 이번주로/.test(t) && t; }, 30000);
+    const lastCall = AIQ.calls[AIQ.calls.length - 1] || { messages: [] };
+    ok('⑲ 다시 만들기: 앞 초안 + 고칠 점을 보내고 새 초안이 판에 · 고칠 점 칸은 지워짐', !!re && AIQ.calls.length > nCalls && lastCall.messages.some(m => m.role === 'assistant' && /지어낸 초안 f_a/.test(m.content)) && !(await admin('plaud/' + UID + '/draft/' + ID('a'))).fc, re);
+    await pg.click('#pane [data-act="drok"]');
+    const sent = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.dr === 'sent' && d; }, 15000);
+    const row = appended[0] || [];
+    ok('⑲ [승인] → 시트 \'AI 입력대기\' 에 한 줄(접수ID 빈 · 한국 시각 · 규격 · JSON · 대기 · 녹음 ID) · 일감 sent', !!sent && appended.length === 1 && row[0] === '' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+09:00$/.test(row[1]) && row[2] === 'hb-care.v1' && row[4] === '대기' && row[6] === ID('a') && JSON.parse(row[3]).source.source_id === ID('a'), row.slice(0, 3).concat(row.slice(4)));
+    const sentBtn = await until(async () => { const e = await pg.$('[data-id="' + ID('a') + '"] [data-act="draft"]'); return e && (await e.textContent()) === '보냄' && e; }, 10000);
+    ok('⑲ 줄 단추가 \'보냄\' · 판에는 [승인] 이 없음', !!sentBtn && !(await pg.$('#pane [data-act="drok"]')));
+    await adminPatch('plaud/' + UID + '/job/' + ID('a'), { dr: 'ok' }); await sleep(800);
+    await until(() => pg.$('#pane [data-act="drok"]'), 10000); await pg.click('#pane [data-act="drok"]');
+    await until(async () => (await admin('plaud/' + UID + '/job/' + ID('a'))).dr === 'sent', 10000);
+    ok('⑲ 같은 녹음이 이미 대기함에 있으면 두 번 넣지 않음(지침 7항 4)', appended.length === 1);
+    await pg.keyboard.press('Escape'); await sleep(400);
+    // 지침 고치기 → 다음 초안이 따름
+    await pg.click('[data-act="menu"]'); await pg.click('[data-act="guidepane"]');
+    const gd = await until(async () => { const e = await pg.$('#gd-tx'); return e && (await e.inputValue()); }, 10000);
+    ok('⑲ 지침 판: 처음엔 v2.2(①~⑧) · 늘 붙는 답 꼴은 따로', /① 핵심 한줄/.test(gd || '') && !/hb-care\.v1/.test(gd || '') && /hb-care\.v1/.test(await pg.textContent('#pane details.pk')));
+    await pg.fill('#gd-tx', '지어낸 지침: 아주 짧게 정리'); await pg.click('#pane [data-act="gdsave"]');
+    const gdoc = await until(async () => { const d = await admin('plaud/' + UID + '/cfg/guide'); return d && d.c && d; }, 10000);
+    ok('⑲ 지침은 잠가서 계정에', !!gdoc && !/지어낸 지침/.test(JSON.stringify(gdoc)) && (await PH.decText(KEY, gdoc)) === '지어낸 지침: 아주 짧게 정리');
+    const hBtn = await until(() => pg.$('[data-id="' + ID('h') + '"] [data-act="draft"]'), 30000);
+    await hBtn.click(); await until(() => pg.$('#pane [data-act="drre"]'), 10000); await pg.click('#pane [data-act="drre"]');
+    const gCall = await until(async () => { const c = AIQ.calls.filter(x => /녹음 ID: f_h/.test(x.messages[1].content)).pop(); return c && c.messages[0].content.startsWith('지어낸 지침: 아주 짧게 정리') && c; }, 30000);
+    ok('⑲ 고친 지침으로 다시 만듦(답 꼴은 그대로 덧붙음)', !!gCall && /hb-care\.v1/.test(gCall.messages[0].content) && !/추측하지 않는다/.test(gCall.messages[0].content));
+    await until(async () => (await admin('plaud/' + UID + '/job/' + ID('h'))).dr === 'ok', 20000);
+    // 한도 → 실패 · 빨강
+    AIQ.quota = true; await pg.click('#pane [data-act="drre"]');
+    const qf = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('h')); return d && d.dr === 'fail' && d; }, 20000);
+    ok('⑲ OpenAI 한도 → 초안 실패 · 짧은 까닭(한도 · 결제)', !!qf && /한도 · 결제/.test(qf.dre || ''), qf);
+    await pg.keyboard.press('Escape'); await sleep(400);
+    ok('⑲ 계기판: 실패한 초안은 빨간 \'초안\'', !!(await until(() => pg.$('[data-id="' + ID('h') + '"] .lnk.dr.bad'), 10000)));
+    AIQ.quota = false;
+    // 이 Mac(서재)에 열쇠 넣기 — 화면
+    await pg.click('[data-act="menu"]'); await pg.click('[data-act="aikeypane"]'); await until(() => pg.$('#ai-key'), 10000);
+    await pg.fill('#ai-key', AI_KEY); await pg.click('#pane [data-act="aikeygive"]');
+    const stAi = await until(async () => { const d = await admin('plaud/' + UID + '/mac/서재'); return d && d.aik === true && d; }, 20000);
+    ok('⑲ 계기판 \'이 Mac 에 OpenAI 열쇠 넣기\' → 서재 Mac 에만(600) · 계정엔 있음 표시만', !!stAi && fs.existsSync(path.join(third.dir, 'ai.json')) && (fs.statSync(path.join(third.dir, 'ai.json')).mode & 0o777) === 0o600, [await pg.textContent('body').then(t => t.slice(-300)), third.log().slice(-600)]);
+    await until(() => pg.$('#pane [data-act="aikeyclear"]'), 10000); await pg.click('#pane [data-act="aikeyclear"]');
+    ok('⑲ 열쇠 지우기 → 파일 없음 · aik 거짓', !!(await until(async () => !fs.existsSync(path.join(third.dir, 'ai.json')) && (await admin('plaud/' + UID + '/mac/서재')).aik === false, 15000)));
+    await pg.keyboard.press('Escape'); await sleep(300);
     ok('⑨ 계기판 화면 오류 없음', errs.length === 0, errs);
   } finally { await browser.close(); }
 } catch (e) { bad++; console.log('  ✗ 도중에 멈춤', e && e.stack); }
-finally { kids.forEach(killGroup); site.close(); }
+finally { kids.forEach(killGroup); site.close(); aiSrv.close(); }
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
 fs.rmSync(tmp, { recursive: true, force: true });
 process.exit(bad ? 1 : 0);

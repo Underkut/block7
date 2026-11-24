@@ -25,6 +25,8 @@
 //  ㉓ (P3c) 녹음 목록 B2 · D1 — 탭 나누기 · 제목에서 날짜 떼기 · 시각 · 날짜 묶음(오늘 · 어제) · 지금 · txt 지우기 · 다시 전사 요청 · 드라이브에 없음(규모 상한) · 끝난 줄 · 그림 단추 · 버전 단추
 //  ㉔ (P3d) 온라인 전용 드라이브 파일 — 머리말을 못 읽어도 이름으로 찾기(기억한 이름 · 녹음번호.txt · 제목 이름) · 남의 파일은 안 집음 · 틀림없을 때만 이름 바꿈
 //  ㉕ (P3e) PLAUD 전사문 — file 의 transcript 줄 · 'MM-DD' 떼기 · 'p' 이름 · 6시간 기다림 · whisper 되풀이(-mc 0 · 의심) · 끝냄에 src · odd · P/W 알약
+//  ㉖ (P4) AI 초안 — 모델 목록 · 기본 모델 · 지침(기본 v2.2 · 고친 것) + 늘 붙는 답 꼴 · 받은 글 읽기 · 심방 노트 규격(care-core) 통과 · 저절로(키워드만) ·
+//      두 Mac 겹침 없이 집기 · 이미 보낸 것은 다시 안 만듦 · 대기함 한 줄(머리줄 차례) · 같은 녹음 확인 · 열쇠는 그 Mac 에만 · 까닭에 값 · 이름 없음
 //  ㉒ (P3b) 잠근 사본 — 암호 문구 → 키 · 맞는 암호만 열림 · 잠근 글에 평문이 없음 · 표지에 암호가 없음 · 계기판 복사(누른 자리에서 시작) · 받기 이름
 const fs = require('fs'), path = require('path'), vm = require('vm'), http = require('http'), os = require('os');
 const { makeScorer } = require('./_load');
@@ -237,15 +239,20 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const what = (/d\(\)\.what in \[([^\]]*)\]/.exec(rules) || [])[1] || '';
   sc.eq('⑪ 규칙이 받는 요청 이름 = 도우미가 아는 이름(INSTALLS)', what.split(',').map(s => s.trim().replace(/'/g, '')), J(A.CMD_WHAT));
   const jobKeys = (/match \/job\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd']);
+  sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd', 'dr', 'dre']);
   sc.eq('⑪ 녹음 번호 꼴 = 판단 덩어리와 같음', rules.includes("'^[A-Za-z0-9_]{8,64}$'") && String(A.ID_RE) === '/^[A-Za-z0-9_]{8,64}$/', true);
   sc.eq('⑪ 규칙은 plaud 칸만 (users 를 열지 않음)', /match \/users/.test(rules), false);
   const macKeys = (/match \/mac\/\{name\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed']);
+  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed', 'aik', 'aim']);
   const setKeys = (/allow create, update: if own\(\) && d\(\)\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ (P3b) 설정 칸: Mac 마다 자동 · 잠금 표지(암호 자체는 없음)', setKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['kw', 'days', 'model', 'auto', 'kdf']);
+  sc.eq('⑪ (P3b) 설정 칸: Mac 마다 자동 · 잠금 표지(암호 자체는 없음)', setKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['kw', 'days', 'model', 'auto', 'kdf', 'ai']);
   const txtKeys = (/match \/txt\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
   sc.eq('⑪ (P3b) 잠근 사본 칸: 잠근 글 · iv · 판뿐(평문 · 제목 칸 없음)', txtKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['c', 'iv', 'v']);
+  const drKeys = (/match \/draft\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '', cfgKeys = (/match \/cfg\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
+  sc.eq('⑪ (P4) 초안 · 지침 칸: 잠근 글뿐(평문 · 모델 열쇠 칸 없음)', [drKeys, cfgKeys].map(x => x.split(',').map(s => s.trim().replace(/'/g, ''))), [['c', 'iv', 'v', 'fc', 'fiv'], ['c', 'iv', 'v']]);
+  const aiKeys = (/d\(\)\.ai\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
+  sc.eq('⑪ (P4) 설정 ai 칸: 켜기 · 모델뿐(OpenAI 열쇠 자리 없음)', aiKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['on', 'model']);
+  sc.eq('⑪ (P4) 규칙의 초안 상태 = 판단 덩어리의 DR_ST', ((/d\(\)\.dr in \[([^\]]*)\]/.exec(rules) || [])[1] || '').split(',').map(s => s.trim().replace(/'/g, '')), J(A.DR_ST));
 }
 // ⑫ 도우미
 {
@@ -302,7 +309,8 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑬ 같은 줄을 다시 붙여도 됨(옛 것을 내리고 다시 켬)', /launchctl bootout[\s\S]*launchctl bootstrap/.test(SH), true);
   sc.eq('⑬ 지우기 한 줄이 있음', /"\$\{1:-\}" = "uninstall"/.test(SH), true);
   sc.eq('⑬ 계기판 설치 안내 = 실제 주소', HTML.includes("'curl -fsSL ' + SITE + 'install.sh | bash'") && A.SITE === 'https://block7.my/plaudhub/', true);
-  sc.eq('⑬ 계기판 · 도우미는 users/{uid} 를 건드리지 않음', /collection\('users'\)|\/users\//.test(HTML + fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8')), false);
+  // (P4) 계기판은 심방 노트가 고른 시트 id 를 읽으려고 users/{uid}/data/care 를 **읽기만** 한 곳 — 쓰기 · 다른 칸은 없다. 도우미는 아예 없음
+  sc.eq('⑬ 계기판 · 도우미는 users/{uid} 에 쓰지 않음(계기판은 심방 노트 설정 읽기 한 곳)', [(HTML.match(/collection\('users'\)/g) || []).length, /collection\('users'\)\.doc\(FB\.user\.uid\)\.collection\('data'\)\.doc\('care'\)\.get\(\)/.test(HTML), /\/users\//.test(HTML), /users/.test(fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'))], [1, true, false, false]);
 }
 // ⑭ Mac 카드
 {
@@ -549,7 +557,65 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉕ PLAUD 전사문 명령은 PIPE 표로 · -o 파일로', J(A.pipeArgv('tr', { id: ID('a'), out: '/w/a.plaud.txt' })), ['plaud', 'transcript', ID('a'), '-o', '/w/a.plaud.txt']);
   sc.eq('㉕ 기다림은 [지금] 누른 녹음만 건너뜀', /filter\(id => id === kick \|\| !PH\.waitPlaud\(st\.recs\[id\], now\)\)/.test(HELPER), true);
   sc.eq('㉕ whisper 로 만든 것에 PLAUD 전사가 생기면 바꿈 — 한 차례 2개 · 드라이브에서 지운 것 · 뺀 것 · 이미 p 는 그대로', /j\.src === 'p' \|\| j\.gone \|\| j\.pick === 'out'/.test(HELPER) && /if \(n\+\+ >= 2\) break;/.test(HELPER) && /dropTxt\(id, true\)/.test(HELPER), true);
-  sc.eq('㉕ 계기판: 보기 단추 앞 P · W 알약(W 빨강 = 의심)', /'<span class="pill p" title="PLAUD 전사문을 가져옴">P<\/span>'/.test(HTML) && /'<span class="pill w' \+ \(r\.odd \? ' odd' : ''\)/.test(HTML) && /if \(done\) right = pill \+ '<span class="ibs">' \+ ib\('view'/.test(HTML), true);
+  sc.eq('㉕ 계기판: 보기 단추 앞 P · W 알약(W 빨강 = 의심)', /'<span class="pill p" title="PLAUD 전사문을 가져옴">P<\/span>'/.test(HTML) && /'<span class="pill w' \+ \(r\.odd \? ' odd' : ''\)/.test(HTML) && /if \(done\) right = drb \+ pill \+ '<span class="ibs">' \+ ib\('view'/.test(HTML), true);
+}
+// ㉖ (P4) AI 초안
+{
+  const now = 1.8e12, H = 3600e3;
+  sc.eq('㉖ 모델 목록: 글 모델만(소리 · 그림 · 임베딩 · 날짜 사본 · 미세조정 빼고)', J(A.aiModels(['gpt-9', 'gpt-9-mini', 'gpt-9-audio-preview', 'text-embedding-3-large', 'dall-e-3', 'gpt-9-2026-01-01', 'ft:gpt-9:x', 'o7', 'whisper-1', 'gpt-image-1', 'gpt-9-transcribe'])), ['gpt-9', 'gpt-9-mini', 'o7']);
+  sc.eq('㉖ 기본 모델 = 가장 높은 번호의 본판(mini · nano 아님)', [A.aiPick(['gpt-8', 'gpt-9-mini', 'gpt-9', 'gpt-8.5', 'o7']), A.aiPick(['gpt-9-mini', 'o7']), A.aiPick([])], ['gpt-9', 'gpt-9-mini', '']);
+  sc.eq('㉖ HB 가 고른 모델이 먼저 · 없으면 Mac 목록에서', [A.aiModelOf({ ai: { model: 'gpt-8' } }, [{ aim: ['gpt-9'] }]), A.aiModelOf({}, [{ aim: ['gpt-9'] }, { aim: ['gpt-10'] }])], ['gpt-8', 'gpt-10']);
+  sc.eq('㉖ 설정 ai 기본 = 저절로 켜짐(HB \'가\')', [A.aiOf({}).on, A.aiOf({ ai: { on: false } }).on], [true, false]);
+  const meta = { id: ID('a'), n: '2026-11-22 15:05:00 김하늘 집사 심방', t: Date.UTC(2026, 10, 22, 6, 5), d: 3600 };
+  let msgs = A.aiMessages(meta, '전사 글', '', null, '');
+  sc.eq('㉖ 기본 지침 = 운영 지침 v2.2 의 초안 꼴(①~⑧) · 추측 금지', /① 핵심 한줄[\s\S]*⑧ 상세 기록/.test(msgs[0].content) && /추측하지 않는다/.test(msgs[0].content), true);
+  sc.eq('㉖ 답 꼴(hb-care.v1)은 늘 덧붙음 — 고친 지침에도', [/hb-care\.v1/.test(msgs[0].content), A.aiMessages(meta, 't', '내 지침: 짧게', null, '')[0].content.startsWith('내 지침: 짧게') && /hb-care\.v1/.test(A.aiMessages(meta, 't', '내 지침', null, '')[0].content), /추측하지 않는다/.test(A.aiMessages(meta, 't', '내 지침', null, '')[0].content)], [true, true, false]);
+  sc.eq('㉖ 보내는 말: 녹음 ID · 제목 · 한국 시각 · 길이 + 전사', /녹음 ID: f_a+[\s\S]*녹음 시각: 2026-11-22T15:05:00\+09:00[\s\S]*길이: 1시간[\s\S]*전사문:\n전사 글/.test(msgs[1].content), true);
+  const prev = { md: '앞 초안', packet: { a: 1 } }, m2 = A.aiMessages(meta, '전사 글', '', prev, '우선순위는 이번주로');
+  sc.eq('㉖ 다시 만들기: 앞 초안 + 고칠 점(이 부분만)', [m2.length, m2[2].role, /앞 초안/.test(m2[2].content), /이 부분만[\s\S]*우선순위는 이번주로/.test(m2[3].content)], [4, 'assistant', true, true]);
+  // 받은 글 → 묶음 → 심방 노트 규격(care-core 를 그대로)
+  const care = (() => { const h = fs.readFileSync(path.join(ROOT, 'care', 'index.html'), 'utf8'), code = /<script id="care-core">([\s\S]*?)<\/script>/.exec(h)[1];
+    const H2 = require('vm'), c = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, RegExp, Promise, Error, URL, Intl, encodeURIComponent, decodeURIComponent };
+    H2.createContext(c); H2.runInContext(code + '\n;this.__C = { pkValidate, PK_VER, INBOX_TAB, NX_TABS };', c); return c.__C; })();
+  const good = { draft_markdown: '기본 정보: …\n① 핵심 한줄 — 지어낸 내용', packet: { schema_version: 'x', event: { kind: 'visit', date: '2026-11-22', title: '김하늘 집사 심방', group_summary: '', details_markdown: '', location: null },
+    records: [{ person_name: '김하늘', person_confirmed: true, speaker_label: null, category: null, contact_method: '만남', depth: '중간', summary_line: '지어낸 한줄', brief_note: '지어낸 내용', detailed_note_markdown: '### 사실\n…', priority: '일반', long_term_watch: '', information_basis: '직접', tags: [], next_questions: ['지어낸 질문'],
+      actions: [{ text: '전화 드리기', authority: 'AI 제안', owner: null, due_date: null, priority: '일반', kind: '기타', target_person: null }] }], unknown_speakers: [], mentioned_people: [], import_notes: '' } };
+  let p = A.aiParse(JSON.stringify(good), meta);
+  sc.eq('㉖ 받은 글 읽기 · source 는 우리가 아는 값으로(녹음 ID · 시각 · 길이 · 날짜 뗀 제목)', [p.ok, p.packet.schema_version, J(p.packet.source)], [true, 'hb-care.v1', { kind: 'plaud', source_id: ID('a'), source_url: null, title: '김하늘 집사 심방', recorded_at: '2026-11-22T15:05:00+09:00', duration_ms: 3600000 }]);
+  sc.eq('㉖ 심방 노트 규격(care-core pkValidate) 통과 · 판단 덩어리의 칸 이름 = 심방 노트 탭', [J(care.pkValidate(p.packet)), care.PK_VER === A.PK_VERSION, care.INBOX_TAB === A.INBOX_TAB_NAME, J(care.NX_TABS['AI 입력대기'])], [[], true, true, J(A.INBOX_COLS)]);
+  const bad = J(good); bad.packet.records[0].priority = '높음'; p = A.aiParse('여기 있습니다:\n' + JSON.stringify(bad) + '\n끝', meta);
+  const errs = care.pkValidate(p.packet);
+  sc.eq('㉖ 앞뒤 말이 붙어도 읽음 · 규격에 걸리면 까닭을 붙여 한 번 더', [p.ok, errs.length > 0, /records\[0\]\.priority/.test(A.aiRetry([], 'x', errs)[1].content)], [true, true, true]);
+  sc.eq('㉖ JSON 이 아니거나 칸이 없으면 실패', [A.aiParse('죄송합니다', meta).ok, A.aiParse('{"draft_markdown":"x"}', meta).ok], [false, false]);
+  sc.eq('㉖ OpenAI 오류 → 짧은 까닭(열쇠 · 한도 · 모델)', [/열쇠가 맞지 않습니다/.test(A.aiErr(401, {})), /한도 · 결제/.test(A.aiErr(429, { error: { code: 'insufficient_quota' } })), /모델/.test(A.aiErr(404, {})), A.aiErr(500, {}).length <= 120], [true, true, true, true]);
+  // 저절로 · 집기
+  const rec = { id: ID('a'), n: '김하늘 집사 심방' };
+  sc.eq('㉖ 저절로는 키워드로 골라진 것만(직접 고른 것 · 뺀 것 · 꺼짐은 아님)', [A.drAuto(rec, null, { kw: ['심방'] }), A.drAuto({ n: '교역자 회의' }, { pick: 'in' }, { kw: ['심방'] }), A.drAuto(rec, { pick: 'out' }, { kw: ['심방'] }), A.drAuto(rec, null, { kw: ['심방'], ai: { on: false } })], [true, false, false, false]);
+  sc.eq('㉖ 집을 수 있는 것: 끝난 녹음의 wait · 15분 넘게 멈춘 run', [A.drTake({ st: 'done', dr: 'wait' }, now, now), A.drTake({ st: 'done', dr: 'run' }, now - 5 * 60e3, now), A.drTake({ st: 'done', dr: 'run' }, now - 16 * 60e3, now), A.drTake({ st: 'work', dr: 'wait' }, now, now), A.drTake({ st: 'done', dr: 'ok' }, 0, now)], [true, false, true, false, false]);
+  const S3 = { docs: {} }, io3 = { read: async id => ({ job: S3.docs[id] ? J(S3.docs[id].v) : null, ver: S3.docs[id] ? S3.docs[id].ver : null, now: 1 }),
+    write: async (id, patch, ver) => { const cur = S3.docs[id]; if ((cur ? cur.ver : null) !== ver) return false; S3.docs[id] = { v: Object.assign({}, cur ? cur.v : {}, patch), ver: (cur ? cur.ver : 0) + 1 }; return true; } };
+  await A.tryClaim(io3, ID('a'), '집'); await A.finish(io3, ID('a'), '집', true, '', { src: 'w', dr: 'wait' });
+  S3.docs[ID('b')] = { v: { dr: 'sent', pick: 'in' }, ver: 7 }; await A.tryClaim(io3, ID('b'), '집'); await A.finish(io3, ID('b'), '집', true, '', { src: 'p', dr: 'wait' });
+  sc.eq('㉖ 끝냄에 초안 기다림 · 이미 대기함에 넣은 녹음(다시 전사)은 다시 만들지 않음', [S3.docs[ID('a')].v.dr, S3.docs[ID('b')].v.dr], ['wait', 'sent']);
+  // 대기함 한 줄 · 같은 녹음 확인
+  const head = ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태', '오류', '원본ID', '생성된 기록ID', '처리시각'];
+  const row = A.inboxRow({ a: 1 }, ID('a'), Date.UTC(2026, 10, 24, 8, 21), head);
+  sc.eq('㉖ 대기함 한 줄 = 지침 6항 5 (접수ID 비움 · 한국 시각 · 규격 · JSON · 대기 · 빈 오류 · 녹음 ID)', J(row), ['', '2026-11-24T17:21:00+09:00', 'hb-care.v1', '{"a":1}', '대기', '', ID('a'), '', '']);
+  sc.eq('㉖ 머리줄 차례가 달라도 이름대로', J(A.inboxRow({ a: 1 }, ID('a'), 0, ['상태', '원본ID', '패킷JSON'])), ['대기', ID('a'), '{"a":1}']);
+  const V = [head, ['k1', '', '', '{}', '오류', '', ID('a')], ['k2', '', '', '{}', '완료', '', ID('b')]];
+  sc.eq('㉖ 같은 녹음이 대기 · 완료면 넣지 않음(오류 줄은 다시 넣어도 됨 — 지침 7항)', [A.inboxHas(V, ID('a')).has, A.inboxHas(V, ID('b')).has, A.inboxHas(V, ID('b')).st, A.inboxHas([['이름']], ID('a')).ok], [false, true, '완료', false]);
+  // 도우미 · 계기판
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8');
+  sc.eq('㉖ OpenAI 열쇠는 그 Mac 의 ai.json(600)에만 — 계정 소식에는 있음 · 없음(aik)만', /writeJson\('ai\.json', \{ k \}, true\)/.test(HELPER) && /aik: !!st\.ai, aim: st\.aim/.test(HELPER) && !/upd\([^)]*\bai: st\.ai\b/.test(HELPER), true);
+  sc.eq('㉖ 열쇠는 모델 목록을 물어 맞는지 본 뒤에만 둠', /const list = await aiList\(k\);[\s\S]{0,140}writeJson\('ai\.json'/.test(HELPER), true);
+  sc.eq('㉖ 초안은 잠가서만 계정에 · 시트에는 쓰지 않음(도우미에 sheets 주소 없음)', /PH\.encText\(st\.key, JSON\.stringify\(\{ md: got\.md/.test(HELPER) && !/sheets\.googleapis/.test(HELPER) && !/docName\('draft', id\), fields: \{ md/.test(HELPER), true);
+  sc.eq('㉖ 규격은 심방 노트 파일에서 떼어 씀(두 벌 아님)', /new URL\('\.\.\/care\/index\.html', SITE\)/.test(HELPER) && !/function pkValidate/.test(HELPER), true);
+  sc.eq('㉖ 실패 까닭에는 칸 자리만(값 · 이름 없음)', /split\(' — '\)\[0\]/.test(HELPER), true);
+  sc.eq('㉖ 집기 · 적기는 조건부 쓰기(두 Mac 겹침 · 그 사이 [다시 만들기])', /upd\(\['job', id\], \{ dr: 'run' \}, \{ pre: \{ updateTime: js\[id\]\._ut \}/.test(HELPER) && /upd\(\['job', id\], \{ dr: 'ok' \}, Object\.assign\(\{ del: \['dre'\] \}, ver \? \{ pre: \{ updateTime: ver \} \}/.test(HELPER), true);
+  sc.eq('㉖ 다시 전사해도 보낸 것(sent)은 남기고, 아니면 낡은 초안을 지움', /const sent = [\s\S]{0,120}\.dr === 'sent'/.test(HELPER) && /sent \? \[\] : \[\{ delete: docName\('draft', id\) \}\]/.test(HELPER), true);
+  sc.eq('㉖ 계기판 승인: 같은 녹음 확인 → RAW 로 한 줄 → 다시 읽어 확인한 뒤에만 sent', /chk = await read\(\); if \(!chk\.ok\) throw[\s\S]*:append\?valueInputOption=RAW&insertDataOption=INSERT_ROWS[\s\S]*chk = await read\(\); if \(!chk\.ok \|\| !chk\.has\) throw[\s\S]*dr: 'sent'/.test(HTML), true);
+  sc.eq('㉖ 계기판: 고칠 점 · 지침은 잠가서 계정에', /encText\(k, fb\.slice\(0, FB_MAX\)\); await dref\.set\(\{ fc: e\.c, fiv: e\.iv \}/.test(HTML) && /collection\('cfg'\)\.doc\('guide'\)\.set\(\{ c: e\.c, iv: e\.iv, v: 1 \}\)/.test(HTML), true);
+  sc.eq('㉖ 열쇠 넣기 자리는 이 Mac(127.0.0.1)뿐 — 계정에 열쇠를 쓰지 않음', /helperCall\('\/aikey', \{ k \}/.test(HTML) && !/ai: \{[^}]*\bk\b/.test(HTML), true);
 }
 // ㉒ (P3b) 잠근 사본
 {
