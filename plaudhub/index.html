@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1124-1 -->
+<!-- PLAUDHUB v. 26-1124-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -159,9 +159,9 @@ h2 small{font-weight:400;color:var(--dim)}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1124-1";
+const APP_VERSION = "v. 26-1124-2";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
-const HELPER_LATEST = 'h. 26-1124-1';
+const HELPER_LATEST = 'h. 26-1124-2';
 const PROJECT = 'block7-8f24e';
 const SITE = 'https://block7.my/plaudhub/';
 const PAIR_PORT = 47211;
@@ -597,6 +597,18 @@ function dayLabel(ms, nowMs) {
 const LONG_SEC = 3600;   // 1시간 넘는 녹음은 길이를 진하게
 // 드라이브에서 지운 것 알아채기: 끝난 녹음인데 폴더에 파일이 없음 → gone. 한 번에 많이 사라지면(드라이브 앱이 잠깐 비어 보임) 적지 않고 알림
 const GONE_CAP = 3;
+// 드라이브에서 이 녹음의 txt 찾기(P3d) — 구글 드라이브가 '온라인 전용' 으로 둔 파일은 내용(머리말 첫 줄)을 못 읽는다.
+// 그래서 이름으로도 찾는다: ① 머리말 ID ② 이 Mac 이 쓴 이름 기억(map) ③ P3 때 이름 '녹음번호.txt' ④ 지금 PLAUD 제목으로 만든 이름(+ ' (2)').
+// sure = 이 녹음이 틀림없음(①②③) → 이름을 바꿔도 됨. ④ 는 이미 맞는 이름이라 바꿀 일이 없다. heads = { 파일: 머리말에서 읽은 ID }(읽힌 것만)
+function locateTxt(id, rec, files, heads, map) {
+  const F = files || [], H = heads || {}, M = map || {}, mine = f => !H[f] || H[f] === id;
+  const h = F.find(f => H[f] === id); if (h) return { file: h, sure: true };
+  if (M[id] && F.includes(M[id]) && mine(M[id])) return { file: M[id], sure: true };
+  if (F.includes(id + '.txt') && mine(id + '.txt')) return { file: id + '.txt', sure: true };
+  if (rec) { const base = txtBase(Object.assign({ id }, rec)), ex = base + '.txt';
+    const f = F.includes(ex) && mine(ex) ? ex : F.find(x => x !== ex && nameFits(x, base) && mine(x)); if (f) return { file: f, sure: false }; }
+  return null;
+}
 function gonePlan(missing, cap) { const m = (missing || []).slice(); return m.length > (cap || GONE_CAP) ? { set: [], held: m.length } : { set: m, held: 0 }; }
 
 var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS, RENEW_MS, ALIVE_MS, DEFAULT_KW, KW_MAX, KW_LEN, DAY_CHOICES, DEFAULT_DAYS,
@@ -607,7 +619,7 @@ var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS
   WORK_NEEDS, workBlock, txtName, kstIso, cleanText, txtOf, workLabel, TEST_SEC, speedsOf, perMinLabel, testView, FAIL_WAIT_MS,
   NAME_MAX, safeName, txtBase, uniqueName, nameFits, idFromTxt, txtBody, autoOn, canRemoveModel,
   KDF_IT, KEY_CHECK, TXT_MAX, PASS_MIN, b64e, b64d, deriveKey, encText, decText, newKdf, checkKey, unlockKey, bytesLabel, workSizes,
-  TABS, tabOf, inTab, titleRest, hhmm, dayKey, dayLabel, LONG_SEC, GONE_CAP, gonePlan };
+  TABS, tabOf, inTab, titleRest, hhmm, dayKey, dayLabel, LONG_SEC, GONE_CAP, gonePlan, locateTxt };
 </script>
 
 <header class="top">
@@ -956,7 +968,7 @@ const IB_NAME = { view: '보기', copy: '복사', save: '받기', more: '다시 
 function ib(act, id) { return '<button class="ib" data-act="' + act + '" data-id="' + esc(id) + '" title="' + IB_NAME[act] + '" aria-label="' + IB_NAME[act] + '">' + ICON[act] + '</button>'; }
 // 녹음 한 줄 — 시안 B2 · D1. 끝난 것은 왼쪽 동그라미가 빈 채(눌러도 고름이 바뀌지 않음, HB 11/24) · 오른쪽에 상태 · 단추
 function recHtml(r) {
-  const done = r.job === 'done' && !r.gone, rec = S.recs[r.id] || {}, isNew = S.seenPrev && Number.isFinite(rec.c) && rec.c > S.seenPrev;
+  const done = r.job === 'done' && !r.gone, fin = r.job === 'done', rec = S.recs[r.id] || {}, isNew = S.seenPrev && Number.isFinite(rec.c) && rec.c > S.seenPrev;
   const stepName = { get: '받는 중', stt: '전사 중', drive: '드라이브에 쓰는 중' };
   const len = '<span class="len' + (r.d >= LONG_SEC ? ' long' : '') + '">' + esc(r.dur) + '</span>';
   let right = '', sub = '';
@@ -966,7 +978,8 @@ function recHtml(r) {
   else if (r.picked) { right = (r.job === 'fail' ? '<span class="s fail">실패</span>' : len) + '<button class="btn ghost sm" data-act="kick" data-id="' + esc(r.id) + '" title="켜진 Mac 이 30초 안에 시작">지금</button>';
     sub = (r.job === 'fail' ? '실패: ' + esc(r.err || '') + ' — 한 시간 뒤 다시 합니다 · ' : '') + '전사 어림 ' + durLabel(r.est * 60) + ' · ' + (r.st === 'auto' ? '키워드 \'' + esc(r.hit) + '\'' : '직접 고름'); }
   else right = (r.st === 'out' ? '<span class="s out">뺌</span>' : '') + len;
-  return '<div class="rec' + (r.picked && !done ? ' pick' : '') + (done ? ' done' : '') + '"' + (done ? '' : ' data-act="pick" data-st="' + r.st + '"') + ' data-id="' + esc(r.id) + '">'
+  // 끝난 것(드라이브에 없음 포함)은 왼쪽 동그라미가 빈 채 · 눌러도 고름이 안 바뀜(HB 11/24)
+  return '<div class="rec' + (r.picked && !fin ? ' pick' : '') + (fin ? ' done' : '') + '"' + (fin ? '' : ' data-act="pick" data-st="' + r.st + '"') + ' data-id="' + esc(r.id) + '">'
     + '<span class="nw' + (isNew ? '' : ' off') + '"' + (isNew ? ' title="새로 들어온 녹음"' : '') + '></span><span class="chk"></span><span class="tm">' + esc(r.tm) + '</span>'
     + '<div class="body"><div class="ttl' + (r.rest ? '' : ' none') + '">' + esc(r.rest || '제목 없음') + '</div>' + (sub ? '<div class="meta' + (r.job === 'fail' || r.gone ? ' bad' : '') + '">' + sub + '</div>' : '') + '</div>'
     + '<div class="right">' + right + '</div></div>';
