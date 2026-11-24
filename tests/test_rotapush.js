@@ -138,7 +138,7 @@ const doc = (alerts, x) => Object.assign({ team: 'HBUID000001', email: 'ga@ex.co
   sc.eq('⑧ 설정은 서버(rotapush 함수)에만 — 책 · ui · staff · 계정 문서에 안 씀', [/saveBook|cloudSave|saveUi|staffWrite|FB\.db\.collection|\.set\(|\.update\(/.test(ui), /cloudfunctions\.net\/rotapush'/.test(ui)], [false, true]);
   sc.eq('⑧ 워커 /rotation/sw.js · 범위 /rotation/ · 같은 프로젝트 키 · BLOCK7 워커와 따로', [/register\('\/rotation\/sw\.js', \{ scope: '\/rotation\/' \}\)/.test(ui), /firebase-messaging-sw/.test(ui)], [true, false]);
   sc.eq('⑧ 워커: 누르기 처리가 importScripts 보다 먼저 · /rotation/ 밖 주소는 안 엶', [SW.indexOf("addEventListener('notificationclick'") < SW.indexOf('importScripts('), /indexOf\('\/rotation\/'\) < 0\) url = '\/rotation\/'/.test(SW)], [true, true]);
-  sc.eq('⑧ 교역자도 씀(staffOk · STAFF_ACTS) · 허락은 누른 자리에서 바로(앞에 기다림 없음)', [/S\.pane\.kind === 'rpush'\)\) return true/.test(HTML), /'gsback', 'rpopen'\]\);/.test(HTML), /RP\.busy = true; RP\.msg = ''; rpPaint\(\);\n  try \{\n    if \(!\('serviceWorker' in navigator\)[^\n]*\n    const perm = await Notification\.requestPermission\(\)/.test(ui)], [true, true, true]);
+  sc.eq('⑧ 교역자도 씀(staffOk · STAFF_ACTS) · 허락은 누른 자리에서 바로(앞에 기다림 없음)', [/S\.pane\.kind === 'rpush'\)\) return true/.test(HTML), /'gsback', 'rpopen'[^\]]*\]\);/.test(HTML), /RP\.busy = true; RP\.msg = ''; rpPaint\(\);\n  try \{\n    if \(!\('serviceWorker' in navigator\)[^\n]*\n    const perm = await Notification\.requestPermission\(\)/.test(ui)], [true, true, true]);
   sc.eq('⑧ 미리보기는 core rpMsg 로(서버와 한 벌) · 글자 막대 제목 20 · 본문 80', [/rpPreview\(a, \{ team: T, serve: V/.test(ui) && /rpMsg\(a, \{ team: T/.test(ui), /\/ 20자/.test(ui) && /\/ 80자/.test(ui)], [true, true]);
   sc.done();
 })();

@@ -55,7 +55,7 @@ console.log('② 교역자 — 빈 기기에서 구글 로그인');
 const ga = await device('교역자');
 await google(ga, 'ga-sub-1', 'ga@example.com');
 await until(() => ga.evaluate(() => FB.role === 'staff' && FB.synced));
-ok('② 교역자(staff) · 사람 탭 없음 · HB 자료가 보인다', await state(ga), { role: 'staff', synced: true, tabs: ['week', 'month', 'busan'], people: 2, err: '' });
+ok('② 교역자(staff) · 사람 탭 없음(예배위원 탭은 있음 — 1122-V S2) · HB 자료가 보인다', await state(ga), { role: 'staff', synced: true, tabs: ['week', 'month', 'busan', 'serve'], people: 2, err: '' });
 ok('② 처음 화면은 달력표 · 내 일정 · 나는 가나다', await ga.evaluate(() => [PREF.tab, PREF.mview, myPid()]), ['month', 'mine', 'pa']);
 const GA = await ga.evaluate(() => FB.user.uid);
 ok('② 교역자 기기는 자기 책 문서를 만들지 않았다', await getDoc('rota/' + GA), null);
@@ -833,6 +833,30 @@ console.log('㉗ 시트와 맞춰 보기 (1121-G G4) — 지어낸 이름');
     await ga.evaluate(() => { gsChkOpen(); const b = document.createElement('button'); b.dataset.gsfix = 'x'; return [alertData().items.filter(y => y.kind === 'gs').length, !!(S.pane && S.pane.kind === 'gscheck'), staffOk(b, b.dataset), staffOk(b, { gsskip: 'k' })]; }), [0, false, false, false]);
 }
 
+console.log('㉘ 분당 예배위원 열람 (1122-V S2) — 지어낸 이름');
+{
+  const ym = await hb.evaluate(() => todayYmd().slice(0, 7)), sun = await hb.evaluate((y) => monthSundays(y)[0], ym);
+  const board = { ym, st: 'open', at: 5, cells: { [sun + '|1|of|']: { id: sun + '|1|of|', date: sun, svc: '1', role: 'of', pl: '', w: [{ p: 'pz1', n: '하늘빛' }, { p: '', n: '바람결' }], at: 5, by: 'hb' },
+    [sun + '|1|gd|1층']: { id: sun + '|1|gd|1층', date: sun, svc: '1', role: 'gd', pl: '1층', w: [{ p: 'pz2', n: '새벽별' }], at: 5, by: 'hb' } } };
+  await admin(db => db.doc('rota/' + HB + '/svm/' + ym).set(board));
+  await hb.evaluate(() => { closePane(); PREF.tab = 'people'; PREF.pv = 'serve'; PREF.svv = 'board'; S.svym = ''; S.svc = '1'; renderShell(); });
+  const hbSt = () => hb.evaluate(() => [PREF.tab, PREF.pv, SVV.team === FB.user.uid, Object.keys(SVV.boards).length, SVV.err, [...document.querySelectorAll('.svtbl tbody th.rl')].map(x => x.textContent).join(','), !!document.querySelector('.svtbl') && document.querySelector('.svtbl').textContent.includes('바람결')]);
+  await until(async () => { const v = await hbSt(); return v[5] === '안내 1층,헌금' && v[6]; });
+  ok('㉘ HB: 교역자들 탭 알약 → 배치표(팀 문서 svm 읽음 · 이름 · 자리 줄)', await hbSt(), ['people', 'serve', true, 3, '', '안내 1층,헌금', true]);
+  await hb.evaluate(() => openPane({ kind: 'svcfg' }));
+  await hb.fill('#sv-lead', '가나다 목사'); await hb.fill('#sv-t-1', '09:30'); await hb.click('[data-act="svcfgsave"]');
+  await until(async () => { const d = await getDoc('rota/' + HB + '/sv/cfg'); return d && d.lead; });
+  const cfg = await getDoc('rota/' + HB + '/sv/cfg');
+  ok('㉘ HB 설정 → sv/cfg (담당 교역자 · 시각만)', [cfg.lead, cfg.times, Object.keys(cfg).sort()], ['가나다 목사', { '1': '09:30' }, ['at', 'lead', 'times']]);
+  await hb.evaluate(() => { PREF.svv = 'me'; S.svme = 'n:바람결'; render(); });
+  ok("㉘ HB 성도 화면 틀: 카드 · 내 섬김 · '담당 교역자 (이름)'", await hb.evaluate(() => [!!document.querySelector('.svcard'), document.querySelectorAll('.mrow[data-svday]').length, document.querySelector('#panel').textContent.includes('담당 교역자 (가나다 목사)께')]), [true, 1, true]);
+  await ga.evaluate(() => { closePane(); refreshTabs(); PREF.tab = 'serve'; PREF.svv = 'board'; S.svym = ''; S.svc = '1'; renderShell(); });
+  ok("㉘ 교역자: 넷째 탭 '예배위원' · 같은 배치표(HB 문서를 읽기만)", await until(() => ga.evaluate(() => TABS.map(t => t.id).join() === 'week,month,busan,serve' && !!document.querySelector('.svtbl') && document.querySelector('.svtbl').textContent.includes('하늘빛'))), true);
+  ok('㉘ 교역자 화면: 설정 단추 · 교역자 알약 없음 · 설정(sv/cfg)은 안 읽음 → 담당 교역자만', await ga.evaluate(() => { PREF.svv = 'me'; S.svme = 'pz1'; render(); return [!!document.querySelector('[data-act="svcfg"]'), !!document.querySelector('[data-pv]'), SVV.cfg, document.querySelector('#panel').textContent.includes('담당 교역자께')]; }), [false, false, null, true]);
+  const w1 = await ga.evaluate(async () => { try { await FB.db.collection('rota').doc(FB.team).collection('sv').doc('cfg').get(); return 'read'; } catch (e) { return e.code; } });
+  ok('㉘ 교역자는 sv/cfg 를 못 읽는다(규칙 그대로)', w1, 'permission-denied');
+  ok('㉘ 월 판은 그대로(아무도 안 씀)', (await getDoc('rota/' + HB + '/svm/' + ym)).at, 5);
+}
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
 await until(async () => { const d = await getDoc('rota/' + HB); return d.team && d.team.length === 0; });
