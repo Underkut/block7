@@ -19,7 +19,7 @@ import vm from 'node:vm';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const HELPER_VERSION = 'h. 26-1124-1';
+export const HELPER_VERSION = 'h. 26-1124-2';
 const HOME = os.homedir();
 const DIR = process.env.PLAUDHUB_DIR || path.join(HOME, 'Library', 'Application Support', 'plaudhub');
 const SITE = process.env.PLAUDHUB_SITE || 'https://block7.my/plaudhub/';
@@ -43,7 +43,7 @@ process.env.PLAUD_TELEMETRY_DISABLED = '1'; process.env.DO_NOT_TRACK = '1'; proc
 
 let PH = null;   // 판단 덩어리
 const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, models: [], err: '', warn: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, lastJob: 0,
-  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '' };
+  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '', okSeen: new Set() };
 
 function log(...a) { const s = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '); console.log(new Date().toISOString(), PH ? PH.clean(s, 2000) : s.replace(/https?:\/\/\S+/g, '[주소]')); }
 function readJson(f, d) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch (_) { return d; } }
@@ -218,7 +218,7 @@ function diskNow() {
   return { free: Number.isFinite(free) ? Math.round(free / 1e8) * 1e8 : -1, models, work };   // 소식이 1분마다 바뀌지 않게 남은 공간은 0.1GB 단위
 }
 async function beat(force) {
-  const doing = doingNow(), err = [st.err, st.warn, st.goneWarn].filter(Boolean).join('\n'), disk = diskNow();
+  const doing = doingNow(), err = [st.err, st.warn, st.goneWarn, st.unread && st.key ? '드라이브 txt ' + st.unread + '개를 이 Mac 에서 읽지 못해 폰용 사본을 못 올렸습니다 — Finder 에서 HB-심방-전사 폴더를 오른쪽 클릭 › \'오프라인 사용 가능\' 으로 바꿔 주세요' : ''].filter(Boolean).join('\n'), disk = diskNow();
   const key = JSON.stringify([doing, st.ready, err, st.cli, st.models, st.listed, disk.free, disk.models, Object.entries(disk.work).map(([k, b]) => k + Math.round(b / 1e6))]);
   if (!force && key === st.sentKey && Date.now() - st.lastBeat < BEAT_MS) return;
   if (!force && key !== st.sentKey && Date.now() - st.lastBeat < 50e3) return;   // 전사 중 'n분째' 는 1분에 한 번만
@@ -369,21 +369,28 @@ async function stt(J, m, wav, outBase, secs) {
 /* ---------- 드라이브 폴더 (P3b — 이름 = PLAUD 제목, 같은 녹음인지는 머리말 첫 줄의 녹음 ID) ---------- */
 // { 녹음번호: 파일 이름 } — 폴더의 txt 머리를 읽는다(작은 글이라 매번 훑어도 가볍다). 숨은 · 임시 파일은 뺀다
 function driveIndex(drive) {
-  const idx = {}, names = new Set(), hdr = new Set();
-  let fl = []; try { fl = fs.readdirSync(drive); } catch (_) { return { idx, names, hdr }; }
+  const files = [], heads = {}, names = new Set();
+  let fl = []; try { fl = fs.readdirSync(drive); } catch (_) { return { files, heads, names, map: {} }; }
+  const evict = process.env.PLAUDHUB_EVICT ? new RegExp(process.env.PLAUDHUB_EVICT) : null;   // 시험: '온라인 전용' 파일 흉내(내용을 못 읽음)
   for (const f of fl) {
     names.add(f.toLowerCase());
     if (f.startsWith('.') || !f.toLowerCase().endsWith('.txt')) continue;
+    files.push(f);
+    if (evict && evict.test(f)) continue;
     let head = ''; try { const fd = fs.openSync(path.join(drive, f), 'r'), b = Buffer.alloc(160); const n = fs.readSync(fd, b, 0, 160, 0); fs.closeSync(fd); head = b.slice(0, n).toString('utf8'); } catch (_) { }
-    const id = PH.idFromTxt(f, head); if (id && !idx[id]) { idx[id] = f; if (head.startsWith('PLAUD 녹음 ID: ' + id)) hdr.add(id); }
+    const m = /^PLAUD 녹음 ID: ([A-Za-z0-9_]{8,64})\s/.exec(head + '\n'); if (m) heads[f] = m[1];
   }
-  return { idx, names, hdr };   // hdr = 머리말에 녹음 ID 가 있는 것(이름을 바꿔도 같은 녹음인 줄 앎)
+  return { files, heads, names, map: readJson('names.json', {}) };
 }
+// 이 녹음의 드라이브 txt — 머리말을 못 읽어도(온라인 전용) 이름으로 찾는다(core locateTxt)
+const locate = (D, id) => PH.locateTxt(id, st.recs && st.recs[id], D.files, D.heads, D.map);
+function rememberName(id, file) { const m = readJson('names.json', {}); if (file) m[id] = file; else delete m[id]; writeJson('names.json', m); }
 // 다 쓴 일 폴더 파일을 드라이브로 한 번에 옮김(반쯤 쓴 파일이 동기화되지 않게) — 같은 이름이 있으면 ' (2)'
 function placeTxt(drive, part, rec, id) {
   const { names } = driveIndex(drive), name = PH.uniqueName(PH.txtBase(Object.assign({ id }, rec)), names), final = path.join(drive, name);
   try { fs.renameSync(part, final); }
   catch (e) { if (e.code !== 'EXDEV') throw e; const tmp = path.join(drive, '.' + id + '.txt.part'); fs.copyFileSync(part, tmp); fs.renameSync(tmp, final); }
+  rememberName(id, name);
   return name;
 }
 // 잠근 사본 올리기(폰 · 패드에서 복사 · 받기) — 키가 이 Mac 에 있을 때만. 글은 잠근 채로만 나간다
@@ -401,42 +408,53 @@ async function uploadTxt(id, body) {
 async function syncDrive(drive) {
   st.lastSync = Date.now();
   if (!drive || !st.recs) return;
-  const { idx, names, hdr } = driveIndex(drive), up = st.key ? upDone() : null; let renamed = 0, sent = 0;
-  for (const id of Object.keys(idx)) {
-    const rec = st.recs[id]; if (!rec) continue;   // 목록 기간 밖 · 모르는 녹음은 그대로
-    const base = PH.txtBase(Object.assign({ id }, rec)), cur = idx[id];
-    // 머리말에 녹음 ID 가 없는 파일(이름만 f_….txt)은 이름을 바꾸면 어느 녹음인지 잃는다 → 그대로 둔다
-    if (hdr.has(id) && !PH.nameFits(cur, base) && renamed < 20) {
-      names.delete(cur.toLowerCase()); const to = PH.uniqueName(base, names);
-      try { fs.renameSync(path.join(drive, cur), path.join(drive, to)); names.add(to.toLowerCase()); idx[id] = to; renamed++; } catch (_) { names.add(cur.toLowerCase()); }
-    }
+  const D = driveIndex(drive), up = st.key ? upDone() : null, evict = process.env.PLAUDHUB_EVICT ? new RegExp(process.env.PLAUDHUB_EVICT) : null;
+  let renamed = 0, sent = 0, unread = 0; const found = {};
+  for (const id of Object.keys(st.recs)) {
+    const loc = locate(D, id); if (!loc) continue;
+    found[id] = loc.file;
+    const base = PH.txtBase(Object.assign({ id }, st.recs[id])), cur = loc.file;
+    // 이름 바꾸기: 이 녹음이 틀림없을 때만(머리말 · 기억한 이름 · 녹음번호.txt). 바꾼 이름은 기억해 둔다(머리말을 못 읽어도 다음에 찾게)
+    if (loc.sure && !PH.nameFits(cur, base) && renamed < 20) {
+      D.names.delete(cur.toLowerCase()); const to = PH.uniqueName(base, D.names);
+      try { fs.renameSync(path.join(drive, cur), path.join(drive, to)); D.names.add(to.toLowerCase()); D.files.splice(D.files.indexOf(cur), 1, to); if (D.heads[cur]) { D.heads[to] = D.heads[cur]; delete D.heads[cur]; } found[id] = to; rememberName(id, to); renamed++; }
+      catch (_) { D.names.add(cur.toLowerCase()); }
+    } else if (loc.sure && D.map[id] !== cur) rememberName(id, cur);
     if (up && !up.has(id) && sent < 5) {
-      let body = ''; try { body = PH.txtBody(fs.readFileSync(path.join(drive, idx[id]), 'utf8')); } catch (_) { continue; }
+      let body = ''; try { if (evict && evict.test(found[id])) throw new Error('온라인 전용'); body = PH.txtBody(fs.readFileSync(path.join(drive, found[id]), 'utf8')); } catch (_) { unread++; continue; }
       if (body.trim() && await uploadTxt(id, body)) sent++;
     }
   }
   if (renamed || sent) log('드라이브 정리', '이름 ' + renamed + ' · 잠근 사본 ' + sent);
-  // 드라이브에서 지운 것: 끝난 녹음인데 폴더에 그 ID 파일이 없음 → 일감에 gone(다시 전사하지 않음 — HB 가 일부러 지웠을 수 있다). 다시 생기면 지움
-  const missing = [...st.done].filter(id => st.recs[id] && !idx[id] && !st.gone.has(id));
+  st.unread = unread;   // 내용을 못 읽은 파일(구글 드라이브 '온라인 전용') — 폰 사본을 못 올림 → Mac 카드에 알림
+  // 드라이브에서 지운 것: 끝난 녹음인데 어떤 길로도 파일을 못 찾음 → gone(다시 전사하지 않음). 다시 생기면 지움
+  const missing = [...st.done].filter(id => st.recs[id] && !found[id] && !st.gone.has(id));
   if (missing.length) {
     const js = await getMany('job', missing), real = missing.filter(id => js[id] && js[id].st === 'done' && !js[id].gone);
-    missing.forEach(id => { if (js[id] && js[id].gone) st.gone.add(id); });   // 이미 적힌 것은 기억만
+    missing.forEach(id => { if (js[id] && js[id].gone) st.gone.add(id); });
     const p = PH.gonePlan(real);
     st.goneWarn = p.held ? '드라이브 폴더에서 끝난 전사 파일 ' + p.held + '개가 한꺼번에 안 보여 \'드라이브에 없음\' 으로 적지 않았습니다 — 드라이브 앱을 확인해 주세요' : '';
     if (p.set.length) { const r = await commit(p.set.map(id => upd(['job', id], { gone: true }))); if (r.ok) { p.set.forEach(id => st.gone.add(id)); log('드라이브에 없음', p.set.length + '개'); } }
   } else st.goneWarn = '';
-  const back = [...st.gone].filter(id => idx[id]);
-  if (back.length) { const r = await commit(back.map(id => upd(['job', id], { gone: false }))); if (r.ok) back.forEach(id => st.gone.delete(id)); }
+  // 있는데 '없음' 으로 적힌 것 지우기 — 이 Mac 이 적은 것 · 처음 보는 끝난 녹음은 한 번 읽어 확인(전 판이 잘못 적은 것도 풀림)
+  const check = [...st.done].filter(id => found[id] && (st.gone.has(id) || !st.okSeen.has(id)));
+  if (check.length) {
+    const js = await getMany('job', check), back = check.filter(id => js[id] && js[id].gone === true);
+    check.forEach(id => st.okSeen.add(id));
+    if (back.length) { const r = await commit(back.map(id => upd(['job', id], { gone: false }))); if (r.ok) { back.forEach(id => st.gone.delete(id)); log('드라이브에 있음으로 되돌림', back.length + '개'); } }
+    check.forEach(id => { if (!back.includes(id)) st.gone.delete(id); });
+  }
 }
 // txt 지우기 · 다시 전사(P3c) — 드라이브 파일(머리말 ID) · 잠근 사본을 지우고 일감을 새로 씀(지우기 = 뺌, 다시 = 고름). PLAUD 원본은 그대로
 async function dropTxt(id, again) {
   if (!PH.ID_RE.test(String(id || ''))) return { ok: false, log: '녹음 번호가 이상합니다' };
   const drive = driveFolder(); if (!drive) return { ok: false, log: '이 Mac 에서 드라이브 폴더를 찾지 못했습니다' };
-  const { idx } = driveIndex(drive);
-  if (idx[id]) { try { fs.rmSync(path.join(drive, idx[id])); } catch (e) { return { ok: false, log: '드라이브 파일을 지우지 못했습니다' }; } }
+  const loc = locate(driveIndex(drive), id);
+  if (loc) { try { fs.rmSync(path.join(drive, loc.file)); } catch (e) { return { ok: false, log: '드라이브 파일을 지우지 못했습니다' }; } }
+  rememberName(id, '');
   const r = await commit([{ delete: docName('txt', id) }, { update: { name: docName('job', id), fields: { pick: PH.fsEnc(again ? 'in' : 'out') } } }]);   // 일감은 통째로 새로(단계 · 맡은 Mac · gone 을 지움)
   if (!r.ok) return { ok: false, log: '계정에 적지 못했습니다 ' + r.status };
-  st.done.delete(id); st.gone.delete(id);
+  st.done.delete(id); st.gone.delete(id); st.okSeen.delete(id);
   const u = upDone(); if (u.delete(id)) writeJson('uploaded.json', [...u]);
   if (again) { st.lastJob = 0; st.kickId = id; }
   log(again ? '다시 전사 — 지움' : '전사 txt 지움', id);
@@ -477,7 +495,7 @@ const STOP_WHY = { out: '목록에서 뺌', clean: '임시 파일을 비움' };
 async function workOne(J, rec, m, drive) {
   const w = WORK(), ogg = path.join(w, J.id + '.ogg'), wav = path.join(w, J.id + '.wav'), out = path.join(w, J.id + '.whisper'), part = path.join(w, J.id + '.txt.part');
   const timer = setInterval(() => { keep(J); }, RENEW_MS());
-  const already = () => driveIndex(drive).idx[J.id];
+  const already = () => locate(driveIndex(drive), J.id);
   try {
     fs.mkdirSync(w, { recursive: true });
     // 겹 둘: 드라이브에 이 녹음 ID 의 파일이 이미 있으면 만들지 않는다(다른 Mac 이 먼저 했음)

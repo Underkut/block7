@@ -23,6 +23,7 @@
 //  ⑳ (P3b) 파일 이름 — PLAUD 제목 날짜 'YYYY-MM-DD HH:MM:SS 글' → 'YY-MMDD HH;MM 글' · 날짜 없으면 녹음 시각 · ':' '/' 걷기 · 같은 이름 (2) · 머리말 ID 로 같은 녹음 찾기
 //  ㉑ (P3b) Mac 마다 자동 전사 · 쓰는 모델은 못 지움 · 임시 파일 크기 합계 · 비우기는 전사 중에도
 //  ㉓ (P3c) 녹음 목록 B2 · D1 — 탭 나누기 · 제목에서 날짜 떼기 · 시각 · 날짜 묶음(오늘 · 어제) · 지금 · txt 지우기 · 다시 전사 요청 · 드라이브에 없음(규모 상한) · 끝난 줄 · 그림 단추 · 버전 단추
+//  ㉔ (P3d) 온라인 전용 드라이브 파일 — 머리말을 못 읽어도 이름으로 찾기(기억한 이름 · 녹음번호.txt · 제목 이름) · 남의 파일은 안 집음 · 틀림없을 때만 이름 바꿈
 //  ㉒ (P3b) 잠근 사본 — 암호 문구 → 키 · 맞는 암호만 열림 · 잠근 글에 평문이 없음 · 표지에 암호가 없음 · 계기판 복사(누른 자리에서 시작) · 받기 이름
 const fs = require('fs'), path = require('path'), vm = require('vm'), http = require('http'), os = require('os');
 const { makeScorer } = require('./_load');
@@ -499,12 +500,27 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉓ 드라이브에 없음 — 셋까지는 적고 · 넷 넘게 한꺼번에면 적지 않고 알림(드라이브 앱이 잠깐 비어 보일 때)', [J(A.gonePlan(['x', 'y'])), J(A.gonePlan(['1', '2', '3', '4']))], [{ set: ['x', 'y'], held: 0 }, { set: [], held: 4 }]);
   sc.eq('㉓ 드라이브에서 지운 것은 저절로 다시 전사하지 않음(끝남 그대로)', A.claimCheck({ st: 'done', gone: true }, '집', 0).why, 'done');
   const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), dt = /async function dropTxt[\s\S]*?\n}\n/.exec(HELPER)[0];
-  sc.eq('㉓ txt 지우기 · 다시 전사 — 머리말 ID 파일 · 잠근 사본을 지우고 일감을 새로(뺌 · 고름)', /driveIndex\(drive\)/.test(dt) && /fs\.rmSync\(path\.join\(drive, idx\[id\]\)\)/.test(dt) && /\{ delete: docName\('txt', id\) \}/.test(dt) && /pick: PH\.fsEnc\(again \? 'in' : 'out'\)/.test(dt), true);
+  sc.eq('㉓ txt 지우기 · 다시 전사 — 머리말 ID 파일 · 잠근 사본을 지우고 일감을 새로(뺌 · 고름)', /locate\(driveIndex\(drive\), id\)/.test(dt) && /fs\.rmSync\(path\.join\(drive, loc\.file\)\)/.test(dt) && /\{ delete: docName\('txt', id\) \}/.test(dt) && /pick: PH\.fsEnc\(again \? 'in' : 'out'\)/.test(dt), true);
   sc.eq('㉓ 지금 — 누른 녹음부터 맡음', /if \(st\.kickId && want\.includes\(st\.kickId\)\) want = \[st\.kickId\]/.test(HELPER), true);
-  sc.eq('㉓ 끝난 줄: 왼쪽 동그라미는 빈 채 · 눌러도 고름이 안 바뀜(data-act 없음) · 보기 · 복사 · 받기 · ⋯ 차례', /\(done \? '' : ' data-act="pick"/.test(HTML) && /ib\('view', r\.id\) \+ ib\('copy', r\.id\) \+ ib\('save', r\.id\) \+ ib\('more', r\.id\)/.test(HTML), true);
+  sc.eq('㉓ 끝난 줄: 왼쪽 동그라미는 빈 채 · 눌러도 고름이 안 바뀜(data-act 없음) · 보기 · 복사 · 받기 · ⋯ 차례', /\(fin \? '' : ' data-act="pick"/.test(HTML) && /ib\('view', r\.id\) \+ ib\('copy', r\.id\) \+ ib\('save', r\.id\) \+ ib\('more', r\.id\)/.test(HTML), true);
   sc.eq('㉓ 보기 아이콘 = HB 가 준 모양(둥근 네모 안 세 줄, 마지막이 짧음)', /view: '<svg viewBox="0 0 24 24"><rect x="3\.5" y="3\.5" width="17" height="17" rx="2\.5"\/><path d="M7\.5 9h9M7\.5 12\.5h9M7\.5 16h5"\/><\/svg>'/.test(HTML), true);
   sc.eq('㉓ Mac 카드: 모두 ✓ 면 접고(기기마다 펼친 것 기억) · ✕ 가 있으면 저절로 펼침 · 꺼진 Mac 은 한 줄', /open = bad \|\| S\.open\.has\(v\.name\)/.test(HTML) && /\(open \? '<ul class="ready">'/.test(HTML) && /if \(!v\.alive\) return '<div class="card mac off">' \+ head \+ '<\/div>'/.test(HTML), true);
   sc.eq('㉓ 맨 위 버전 단추(새 버전이면 받기) · 다시 읽기 단추 설명', /id="verbtn" data-act="ver"/.test(HTML) && /title="녹음 목록 지금 다시 읽기"/.test(HTML), true);
+}
+// ㉔ (P3d) 온라인 전용 파일
+{
+  const id = ID('a'), other = ID('b'), rec = { n: '2026-11-16 12:56:00 이하늘 전화심방', t: 1 }, base = '26-1116 12;56 이하늘 전화심방';
+  sc.eq('㉔ 머리말을 읽은 파일이 먼저', J(A.locateTxt(id, rec, ['x.txt', base + '.txt'], { 'x.txt': id }, {})), { file: 'x.txt', sure: true });
+  sc.eq('㉔ 머리말을 못 읽어도(온라인 전용) 제목으로 만든 이름이면 찾음 — 드라이브에 없음으로 보지 않음', J(A.locateTxt(id, rec, [base + '.txt'], {}, {})), { file: base + '.txt', sure: false });
+  sc.eq('㉔ 같은 제목 (2) 이름도 찾음', A.locateTxt(id, rec, [base + ' (2).txt'], {}, {}).file, base + ' (2).txt');
+  sc.eq('㉔ 머리말을 못 읽는 P3 때 이름(녹음번호.txt)도 틀림없는 것으로 — 새 이름으로 바꿈', J(A.locateTxt(id, rec, [id + '.txt'], {}, {})), { file: id + '.txt', sure: true });
+  sc.eq('㉔ 이 Mac 이 쓴 이름 기억(PLAUD 제목을 고친 뒤에도 옛 이름 파일을 찾음)', J(A.locateTxt(id, { n: '고친 제목', t: 1 }, ['옛 이름.txt'], {}, { [id]: '옛 이름.txt' })), { file: '옛 이름.txt', sure: true });
+  sc.eq('㉔ 머리말이 다른 녹음인 파일은 이름이 같아도 집지 않음', A.locateTxt(id, rec, [base + '.txt'], { [base + '.txt']: other }, {}), null);
+  sc.eq('㉔ 아무 길로도 없으면 없음', A.locateTxt(id, rec, ['메모.txt'], {}, {}), null);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), sd = /async function syncDrive[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('㉔ 이름 바꾸기는 틀림없을 때만(sure) · 바꾼 이름은 기억', /if \(loc\.sure && !PH\.nameFits\(cur, base\)/.test(sd) && /rememberName\(id, to\)/.test(sd), true);
+  sc.eq('㉔ 있는데 \'드라이브에 없음\' 으로 적힌 것은 되돌림(gone: false)', /upd\(\['job', id\], \{ gone: false \}\)/.test(sd), true);
+  sc.eq('㉔ 끝난 줄 · 드라이브에 없음 줄 모두 왼쪽 동그라미가 빈 채(눌러도 고름이 안 바뀜)', /fin = r\.job === 'done'/.test(HTML), true);
 }
 // ㉒ (P3b) 잠근 사본
 {

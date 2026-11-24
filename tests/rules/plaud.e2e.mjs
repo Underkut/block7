@@ -14,6 +14,7 @@
 // ⑭ (P3) 맡김을 잃으면 바로 멈춤: 전사 중 다른 Mac 이 맡은 것으로 바꾸면 whisper 를 멈추고 txt 를 쓰지 않음 → 풀린 뒤 이어 함 · txt 하나.
 // (P3b) 파일 이름 = PLAUD 제목('YY-MMDD HH;MM 글') · 옛 f_….txt 를 새 이름으로 · PLAUD 에서 제목을 고치면 이름도 따라감 · Mac 마다 자동 전사(계기판 스위치)
 //   · 잠근 사본(계기판에서 암호 정하기 → 이 Mac 도우미에 저절로 · 틀린 키 거절 → 복사 · 받기 = 드라이브 본문) · 안 쓰는 모델 지우기 · ⑮ 임시 파일 크기(줄 · 합계) → 비우기.
+// ⑰ (P3d) 구글 드라이브 '온라인 전용'(내용을 못 읽음) — 이름으로 찾아 잘못된 '드라이브에 없음' 을 되돌리고 · 옛 녹음번호.txt 를 새 이름으로 · 새로 '없음' 으로 적지 않음
 // ⑯ (P3c) 접는 Mac 카드 · 탭 · 버전 단추 · 목록 읽은 때 · 드라이브에서 지운 것 알아채기 → 다시 전사 · txt 지우기(뺌, 다시 안 함) · 보기 판 · 모두 지금 시작. 이름은 모두 지어낸 것.
 import fs from 'fs';
 import os from 'os';
@@ -111,12 +112,12 @@ const DRIVE = path.join(driveRoot, PH.DRIVE_DIR);
 const kids = [];
 const startHelper = (name, port, o = {}) => {
   const dir = path.join(tmp, name); fs.mkdirSync(dir, { recursive: true });
-  if (o.drive) { const cs = path.join(dir, 'Library', 'CloudStorage', 'GoogleDrive-hb@example.com'); fs.mkdirSync(cs, { recursive: true }); fs.symlinkSync(driveRoot, path.join(cs, o.drive)); }
+  if (o.drive) { const cs = path.join(dir, 'Library', 'CloudStorage', 'GoogleDrive-hb@example.com'); fs.mkdirSync(cs, { recursive: true }); if (!fs.existsSync(path.join(cs, o.drive))) fs.symlinkSync(driveRoot, path.join(cs, o.drive)); }
   for (const id of o.models || []) { const m = PH.MODELS.find(x => x.id === id), md = path.join(dir, 'models'); fs.mkdirSync(md, { recursive: true });
     const fd = fs.openSync(path.join(md, m.file), 'w'); fs.ftruncateSync(fd, m.mb * 1e6); fs.closeSync(fd); }   // 빈 큰 파일(실제 공간은 안 씀)
   const env = Object.assign({}, process.env, { PATH: bin + (o.tools ? ':' + tools : '') + ':' + process.env.PATH, PLAUDHUB_DIR: dir, PLAUDHUB_PORT: String(port), PLAUDHUB_SITE: 'http://127.0.0.1:' + SITE_PORT + '/plaudhub/',
     PLAUDHUB_TOKEN_URL: AUTH + '/securetoken.googleapis.com/v1/token', PLAUDHUB_FS_HOST: FS, PLAUDHUB_DEV_ORIGIN: 'http://127.0.0.1:8765', HOME: dir,
-    PLAUDHUB_TICK_MS: '1000', PLAUDHUB_JOB_MS: '1500', PLAUDHUB_RENEW_MS: '2000', PLAUDHUB_FAKE_FREE_FILE: path.join(dir, 'fakefree'), no_proxy: '127.0.0.1,localhost', NO_PROXY: '127.0.0.1,localhost' });
+    PLAUDHUB_TICK_MS: '1000', PLAUDHUB_EVICT: o.evict || '', PLAUDHUB_JOB_MS: '1500', PLAUDHUB_RENEW_MS: '2000', PLAUDHUB_FAKE_FREE_FILE: path.join(dir, 'fakefree'), no_proxy: '127.0.0.1,localhost', NO_PROXY: '127.0.0.1,localhost' });
   const ch = spawn(process.execPath, [path.join(ROOT, 'plaudhub', 'helper.mjs')], { env, detached: true }); let logs = '';
   ch.stdout.on('data', d => logs += d); ch.stderr.on('data', d => logs += d); kids.push(ch);
   return { dir, port, name, ch, log: () => logs, free: v => fs.writeFileSync(path.join(dir, 'fakefree'), String(v)) };
@@ -455,8 +456,20 @@ try {
     // 모두 지금 시작 — g 는 비우기로 실패(고른 채 기다림)
     await until(() => pg.$('[data-act="kickall"]'), 10000);
     await pg.click('[data-act="kickall"]');
-    const kc = await until(async () => { const d = await admin('plaud/' + UID + '/cmd'); const x = d && Object.values(d).find(c => c.what === 'kick'); return x && x.st === 'ok' && x; }, 20000);
+    const kc = await until(async () => { const d = await admin('plaud/' + UID + '/cmd'); const x = d && Object.values(d).find(c => c.what === 'kick' && c.mac === '집'); return x && x.st === 'ok' && x; }, 20000);
     ok('⑯ 모두 지금 시작 → 켜지고 자동 전사가 켜진 Mac(집)이 요청을 받음', !!kc && kc.mac === '집', kc);
+    // ⑰ (P3d) 온라인 전용
+    killGroup(home.ch); await sleep(500);
+    fs.renameSync(path.join(DRIVE, NAME.f), path.join(DRIVE, ID('f') + '.txt'));   // P3 때 이름으로 되돌려 둠
+    try { fs.rmSync(path.join(home.dir, 'names.json')); } catch (_) { }   // 이름 기억 없이 — 제목 · 녹음번호 이름만으로 찾아야 함
+    await adminPatch('plaud/' + UID + '/job/' + ID('e'), { gone: true });   // 전 판이 잘못 적은 '드라이브에 없음' 흉내
+    const home2 = startHelper('home', 47931, { tools: true, drive: '내 드라이브', evict: '\\.txt$' });
+    const ev = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('e')); return d && d.gone === false && driveTxts().includes(NAME.f) && d; }, 40000);
+    ok('⑰ 내용을 못 읽어도 제목 이름으로 찾아 잘못된 \'드라이브에 없음\' 을 되돌림 · 옛 녹음번호.txt 는 새 이름으로', !!ev, [ev, driveTxts(), home2.log().slice(-400)]);
+    await sleep(3000);
+    const jobsNow = await admin('plaud/' + UID + '/job');
+    ok('⑰ 온라인 전용이어도 있는 파일을 \'드라이브에 없음\' 으로 적지 않음', [ID('a'), ID('c'), ID('e'), ID('f')].every(id => jobsNow[id] && jobsNow[id].st === 'done' && !jobsNow[id].gone), Object.fromEntries([ID('a'), ID('c'), ID('e'), ID('f')].map(id => [id.slice(0, 4), jobsNow[id] && jobsNow[id].gone])));
+    ok('⑰ 내용이 그대로(이름만 바뀜)', fs.readFileSync(path.join(DRIVE, NAME.f), 'utf8').startsWith('PLAUD 녹음 ID: ' + ID('f')));
     ok('⑨ 계기판 화면 오류 없음', errs.length === 0, errs);
   } finally { await browser.close(); }
 } catch (e) { bad++; console.log('  ✗ 도중에 멈춤', e && e.stack); }
