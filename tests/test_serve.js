@@ -13,6 +13,8 @@
 //  ⑧ '지금' / '다가올 섬김'(HB 11/22): 오늘 섬김이 남았으면 지금 · 끝났거나 없으면 다음 날 · 때를 모르면 그 날 끝까지
 //  ⑨ 담당 교역자 표시(HB 11/22): 설정 이름이 있으면 '담당 교역자 (이름)' · 없으면 '담당 교역자' · 코드에 실제 이름 없음
 //  ⑩ 한 예배 판(함께 섬기는 분들) · 칸 이름
+//  ⑫ 열람(S2): 사람 열쇠(p 없으면 'n:이름') · 월 배치표(줄 = 역할 · 자리 시트 차례, 칸 = 그 달 그 예배 날 · 빈 주도 열) · 예배 알약 · 사람별 · 지금 걸린 예배 · 모이는 때 · 시작까지 · 설정 다듬기
+//  ⑬ 열람 화면(S2) — 코드에서 지킬 것: 계정에 쓰는 곳은 설정(sv/cfg) 하나 · 명단(sv/people) 안 읽음 · 교역자는 팀 문서 읽기만 · 실시간 듣기 없음
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -24,7 +26,8 @@ const ctx = { console, Math, JSON, Number, Object, Array, String, Date, Map, Set
 vm.createContext(ctx);
 vm.runInContext(core[1] + '\n' + serve[1] + `
 this.A = { SV_SVC, SV_ROLE, svId, svLabel, svLeadLabel, svTabYm, svPickTabs, svRoleOf, svBlockSvc, svNames, svReadTab,
-  svNormBoard, svMergeBoard, svSame, svSet, svLive, svNormPeople, svMergePeople, svNameMap, svImport, svMine, svNow, svService };`, ctx);
+  svNormBoard, svMergeBoard, svSame, svSet, svLive, svNormPeople, svMergePeople, svNameMap, svImport, svMine, svNow, svService,
+  svKeyOf, svHas, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 탭 이름
@@ -159,6 +162,45 @@ const svB = [bd('2026-11', [cell('2026-11-22', '1', 'rd', '', ['가람'], 1), ce
 sc.eq('⑩ 한 예배 판: 그 예배만 · 안내 · 헌금 · 봉독 차례', A.svService(svB, '2026-11-22', '1').map(c => c.role + (c.pl ? ':' + c.pl : '')), ['gd:1층', 'gd:2층 입구', 'of', 'rd']);
 sc.eq('⑩ 칸 이름', [A.svLabel({ date: '2026-11-22', svc: 'LL', role: 'of', pl: '비전홀' }, true), A.svLabel({ date: '2026-11-27', svc: 'F', role: 'gd', pl: '' })], ['11/22 라이프라인 헌금 · 비전홀', '금요 안내']);
 
+// ⑫ 열람(S2) — 배치표 · 사람별 · 성도 화면
+const vB = [bd('2026-11', [
+  cell('2026-11-01', '1', 'gd', '2층 입구', [], 1, { w: [{ p: 'pa', n: '가람' }] }), cell('2026-11-01', '1', 'gd', '1층', [], 1, { w: [{ p: 'pb', n: '나래' }, { p: '', n: '다온' }] }),
+  cell('2026-11-01', '1', 'rd', '', [], 1, { w: [{ p: 'pa', n: '가람' }] }), cell('2026-11-01', '1', 'of', '비전홀', [], 1, { w: [{ p: 'pc', n: '라온' }] }), cell('2026-11-01', '1', 'of', '', [], 1, { w: [{ p: 'pc', n: '라온' }] }),
+  cell('2026-11-15', '1', 'gd', '1층', [], 1, { w: [{ p: 'pa', n: '가람' }] }), cell('2026-11-15', '1', 'cm', '1조 빵', [], 1, { w: [{ p: 'pb', n: '나래' }] }),
+  cell('2026-11-22', '2', 'rd', '', [], 1, { w: [{ p: 'pb', n: '나래' }] }), cell('2026-11-27', 'F', 'gd', '', [], 1, { w: [{ p: '', n: '다온' }] }),
+  cell('2026-11-22', '1', 'gd', '1층', [], 1, { del: true, w: [] })]), bd('2026-12', [cell('2026-12-02', 'W', 'gd', '', [], 1, { w: [{ p: 'pa', n: '가람' }] })])];
+sc.eq('⑫ 사람 열쇠: p 가 있으면 p · 없으면 n:이름', [A.svKeyOf({ p: 'pa', n: '가람' }), A.svKeyOf({ p: '', n: '다온' })], ['pa', 'n:다온']);
+sc.eq('⑫ svHas: 열쇠로 · 빈 열쇠는 아무도 아님', [A.svHas({ w: [{ p: '', n: '다온' }] }, 'n:다온'), A.svHas({ w: [{ p: 'pa', n: '가람' }] }, 'n:가람'), A.svHas({ w: [{ p: '', n: '' }] }, '')], [true, false, false]);
+sc.eq('⑫ 그 달 그 예배 날(요일로): 11월 주일 다섯 · 수요 넷 · 모르는 예배는 없음', [A.svDays('2026-11', '1'), A.svDays('2026-11', 'W').length, A.svDays('2026-11', 'X')], [['2026-11-01', '2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29'], 4, []]);
+const g1 = A.svGrid(vB, '2026-11', '1');
+sc.eq('⑫ 배치표 열: 배치 없는 주도 빈 열', g1.cols, ['2026-11-01', '2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29']);
+sc.eq('⑫ 배치표 줄: 안내(1층 → 2층 입구) · 헌금(빈 자리 → 비전홀) · 봉독 · 성찬 — 지운 칸은 줄을 안 만듦', g1.rows.map(A.svRowLabel), ['안내 1층', '안내 2층 입구', '헌금', '헌금 비전홀', '봉독', '성찬 1조 빵']);
+sc.eq('⑫ 배치표 칸: 날짜로 · 이름 차례 그대로 · 없는 날은 비움', [g1.rows[0].at['2026-11-01'].w.map(x => x.n), g1.rows[0].at['2026-11-15'].w.map(x => x.n), !!g1.rows[0].at['2026-11-22'], !!g1.rows[0].at['2026-11-08']], [['나래', '다온'], ['가람'], false, false]);
+sc.eq('⑫ 다른 예배 · 다른 달 칸은 안 섞임', [A.svGrid(vB, '2026-11', '2').rows.length, A.svGrid(vB, '2026-11', 'W').rows.length, A.svGrid(vB, '2026-12', 'W').rows.length], [1, 0, 1]);
+sc.eq('⑫ 예배 알약: 여섯(옛 화요는 배치 있을 때만) · 배치 있음 표시', A.svSvcsIn(vB, '2026-11').map(x => x.k + (x.has ? '*' : '')), ['1*', '2*', '3', 'LL', 'W', 'F*']);
+sc.eq('⑫ 옛 화요 배치가 있는 달은 화요 알약도', A.svSvcsIn([bd('2025-03', [cell('2025-03-04', 'T', 'gd', '', ['가람'], 1)])], '2025-03').map(x => x.k), ['1', '2', '3', 'LL', 'W', 'F', 'T']);
+sc.eq('⑫ 사람별: 이름 차례 · 몇 번 · 명단 없는 분도 · 그 달만', J(A.svWho(vB, '2026-11')).map(x => x.n + ':' + x.k + ':' + x.cnt), ['가람:pa:3', '나래:pb:3', '다온:n:다온:2', '라온:pc:2']);
+sc.eq('⑫ 사람별: 달을 안 주면 판 전부', A.svWho(vB).find(x => x.k === 'pa').cnt, 4);
+sc.eq('⑫ 내 섬김: 명단 없는 분도 열쇠로', A.svMine(vB, 'n:다온').map(c => c.date.slice(8) + c.svc + c.role), ['011gd', '27Fgd']);
+const T2 = { '1': '09:30', '2': '11:30', F: '20:00' };
+const fo = n => { const r = A.svFocus(vB, n, T2); return r ? r.date + ':' + r.svc : null; };
+sc.eq('⑫ 지금 걸린 예배: 주일 아침 → 그 날 1부', fo({ date: '2026-11-01', min: 8 * 60 }), '2026-11-01:1');
+sc.eq('⑫ 1부 시작 + 2시간 안은 여전히 1부(진행 중)', fo({ date: '2026-11-01', min: 11 * 60 + 29 }), '2026-11-01:1');
+sc.eq('⑫ 1부가 끝나면 다음 배치(2부가 없는 날은 다음 주 1부)', fo({ date: '2026-11-01', min: 11 * 60 + 30 }), '2026-11-15:1');
+sc.eq('⑫ 같은 날 둘이면 이른 시각(1부 9:30 다음 2부 11:30)', fo({ date: '2026-11-22', min: 0 }), '2026-11-22:2');
+sc.eq('⑫ 때를 모르는 예배는 그 날 끝까지', A.svFocus(vB, { date: '2026-11-27', min: 23 * 60 + 50 }, {}).svc, 'F');
+sc.eq('⑫ 남은 예배가 없으면 null', A.svFocus(vB, { date: '2027-01-01', min: 0 }, T2), null);
+sc.eq('⑫ 모이는 때: 주일 20 · 15분 전 / LL · 금요 30 · 20분 전 / 수요 20분 전 안내 · 때 모르면 null',
+  [J(A.svPrep('1', '09:30')), J(A.svPrep('F', '20:00')), J(A.svPrep('W', '10:00')), A.svPrep('2', '')],
+  [{ start: '9:30', pray: '9:10', guide: '9:15' }, { start: '20:00', pray: '19:30', guide: '19:40' }, { start: '10:00', pray: '', guide: '9:40' }, null]);
+const c1 = { date: '2026-11-01', svc: '1' };
+sc.eq('⑫ 시작까지: 18분 뒤 · 1시간 넘으면 시간 · 진행 중 · 끝남 · 다른 날 · 때 모름은 빈칸',
+  [A.svUntil(c1, { date: '2026-11-01', min: 9 * 60 + 12 }, T2), A.svUntil(c1, { date: '2026-11-01', min: 8 * 60 }, T2), A.svUntil(c1, { date: '2026-11-01', min: 10 * 60 }, T2), A.svUntil(c1, { date: '2026-11-01', min: 12 * 60 }, T2), A.svUntil(c1, { date: '2026-10-31', min: 0 }, T2), A.svUntil(c1, { date: '2026-11-01', min: 0 }, {})],
+  ['18분 뒤 시작', '1시간 30분 뒤 시작', '진행 중', '끝남', '', '']);
+sc.eq('⑫ 설정 다듬기: 이름 20자 · 때는 HH:MM 로 · 틀린 때 · 모르는 예배는 버림',
+  J(A.svNormCfg({ lead: '  가나다   목사  ', times: { '1': '9:30', '2': '25:00', LL: '17:00 ', X: '10:00', F: 'x' }, at: 5, more: 1 })), { lead: '가나다 목사', times: { '1': '09:30', LL: '17:00' }, at: 5 });
+sc.eq('⑫ 설정이 없으면 빈 설정', J(A.svNormCfg(null)), { lead: '', times: {}, at: 0 });
+
 // ⑪ 가져오기 판(S1b) — 코드에서 지킬 것
 const ui = HTML.slice(HTML.indexOf('/* ---------- 분당 예배위원 가져오기 (1122-V S1b)'), HTML.indexOf('/* ---------- 구글 자료 (1121-G G1'));
 sc.eq('⑪ 판 구역을 찾음', ui.length > 1000, true);
@@ -167,5 +209,18 @@ sc.eq('⑪ 계정에 쓰는 곳: svmRef · svRef 의 set 뿐 · update · delete
   [(ui.match(/\.(set|update|delete)\(/g) || []).length === (ui.match(/(svmRef\([^)]*\)|svRef\([^)]*\))\.set\(/g) || []).length, /\.update\(|\.delete\(/.test(ui), /WRITE_FIELD|saveBook|cloudSave|collection\('staff'\)/.test(ui)], [true, false, false]);
 sc.eq('⑪ HB 만(svCan = 미리보기 또는 주인)', /function svCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(ui), true);
 sc.eq('⑪ 메뉴 단추는 svCan 일 때만', /svCan\(\) \? '<button class="btn ghost" data-act="svopen">/.test(HTML), true);
+
+// ⑬ 열람 화면(S2) — 코드에서 지킬 것
+const v2 = HTML.slice(HTML.indexOf('/* ---------- 분당 예배위원 열람 (1122-V S2)'), HTML.indexOf('/* ---------- 구글 자료 (1121-G G1'));
+sc.eq('⑬ 열람 구역을 찾음', v2.length > 1000, true);
+sc.eq('⑬ 계정에 쓰는 곳은 설정 저장 하나(sv/cfg · 정한 칸만) · update · delete 없음 · 월 판 · 책 · 교역자 칸 안 씀',
+  [(v2.match(/\.(set|update|delete|add)\(/g) || []).length, /svRef\('cfg'\)\.set\(c, \{ mergeFields: \['lead', 'times', 'at'\] \}\)/.test(v2), /svmRefT\([^)]*\)\.set|saveBook|cloudSave|collection\('staff'\)|WRITE_FIELD/.test(v2)], [1, true, false]);
+sc.eq('⑬ 설정 저장은 HB(미리보기)만', /async function svCfgSave\(\) \{\n  if \(!svCan\(\)\) return;/.test(v2), true);
+sc.eq("⑬ 명단(sv/people) · 고른 파일(sv/src)은 읽지 않음 · 실시간 듣기(onSnapshot) 없음", [/svRef\('people'\)|svRef\('src'\)/.test(v2), /onSnapshot/.test(v2)], [false, false]);
+sc.eq('⑬ 월 판은 팀 문서에서(교역자 = FB.team · HB = 자기 uid)', [/FB\.role === 'staff' \? \(FB\.team \|\| ''\) : FB\.role === 'owner' \? FB\.user\.uid/.test(v2), /collection\('rota'\)\.doc\(SVV\.team\)\.collection\('svm'\)/.test(v2)], [true, true]);
+sc.eq('⑬ 설정(sv/cfg)은 HB 만 읽음(교역자는 규칙이 막음)', /cfg = FB\.role === 'owner' && /.test(v2), true);
+sc.eq("⑬ 탭: 교역자 = '예배위원' 탭(교역자들 탭 없음) · HB = 교역자들 탭 안 알약", [/TABS = ALL_TABS\.filter\(t => t\.id !== \(isStaff\(\) \? 'people' : 'serve'\)\)/.test(HTML), /let TABS = ALL_TABS\.filter\(t => t\.id !== 'serve'\);/.test(HTML), /if \(PREF\.pv === 'serve'\) return viewServe\(true\);/.test(HTML)], [true, true, true]);
+sc.eq('⑬ 교역자 누름 허락(staffOk)에 보기 단추만 · 설정 단추는 없음', [/d\.svv \|\| d\.svm \|\| d\.svp \|\| d\.svk \|\| d\.svday \|\| d\.svboard\) return true;/.test(HTML), /STAFF_ACTS = new Set\(\[[^\]]*'svcfg/.test(HTML)], [true, false]);
+sc.eq('⑬ 열람 구역 화면 글에 HB 없음(성도 화면 = 담당 교역자)', /['"`][^'"`\n]*\bHB\b[^'"`\n]*['"`]/.test(v2.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')), false);
 
 sc.done();
