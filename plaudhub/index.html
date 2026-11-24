@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1124-2 -->
+<!-- PLAUDHUB v. 26-1124-3 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -83,6 +83,12 @@ h2 small{font-weight:400;color:var(--dim)}
 .ibs{display:inline-flex;gap:0}
 .ib{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;color:var(--ac);border-radius:8px}
 .ib svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pill{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 5px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.02em;margin-right:2px}
+.pill.p{color:var(--chip-ink);background:var(--chip)}
+.pill.w{color:var(--sub);background:color-mix(in srgb,var(--sub) 14%,transparent)}
+.pill.w.odd{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+/* 폰 폭: 끝난 줄의 알약 · 단추를 제목 아래 줄로(제목이 눌려 잘리지 않게) */
+@media (max-width:480px){ .rec.done{flex-wrap:wrap;row-gap:0} .rec.done .body{flex:1 1 calc(100% - 100px)} .rec.done .right{width:100%;justify-content:flex-end;margin-top:-2px} }
 .ib[data-act="more"]{color:var(--dim)} .ib[data-act="more"] svg{fill:currentColor}
 .s{font-size:11.5px;padding:1px 8px;border-radius:9px;white-space:nowrap}
 .s.work{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
@@ -159,9 +165,9 @@ h2 small{font-weight:400;color:var(--dim)}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1124-2";
+const APP_VERSION = "v. 26-1124-3";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
-const HELPER_LATEST = 'h. 26-1124-2';
+const HELPER_LATEST = 'h. 26-1124-3';
 const PROJECT = 'block7-8f24e';
 const SITE = 'https://block7.my/plaudhub/';
 const PAIR_PORT = 47211;
@@ -231,7 +237,8 @@ const PIPE = {
   get: ['curl', '-fL', '--retry', '2', '-sS', '-K', '-', '-o', '{ogg}'],
   wav: ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-i', '{ogg}', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '{wav}'],
   cut: ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-i', '{ogg}', '-t', '{sec}', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '{wav}'],
-  stt: ['{bin}', '-m', '{model}', '-l', 'ko', '-f', '{wav}', '-otxt', '-of', '{out}', '-pp'],
+  stt: ['{bin}', '-m', '{model}', '-l', 'ko', '-mc', '0', '-f', '{wav}', '-otxt', '-of', '{out}', '-pp'],   // -mc 0 = 앞 글에 끌려 같은 말을 되풀이하지 않게(P3e)
+  tr: ['plaud', 'transcript', '{id}', '-o', '{out}'],   // PLAUD 전사문(있으면 파일을 만들고, 없으면 안 만듦 — CLI 0.3.15 원본 확인)
   model: ['curl', '-fL', '--retry', '2', '-sS', '-o', '{part}', '{url}'],   // INSTALLS.model (전사 모델 설치 — 공개 주소)
 };
 function pipeArgv(key, v) {
@@ -267,7 +274,7 @@ function cleanText(raw) { return String(raw == null ? '' : raw).replace(/\r/g, '
 function txtOf(meta, text) {
   const m = meta || {};
   return ['PLAUD 녹음 ID: ' + m.id, '제목: ' + (m.n || '(제목 없음)'), '녹음 시각: ' + (kstIso(m.t) || '모름'), '길이: ' + durLabel(m.d),
-    '전사: whisper.cpp ' + (m.model || '') + ' · ' + (m.mac || '') + ' Mac · ' + (kstIso(m.at) || ''), '---', '', cleanText(text), ''].join('\n');
+    (m.src === 'p' ? '전사: PLAUD 전사문 가져옴' : '전사: whisper.cpp ' + (m.model || '')) + ' · ' + (m.mac || '') + ' Mac · ' + (kstIso(m.at) || ''), '---', '', cleanText(text), ''].join('\n');
 }
 // Mac 카드 '하는 일' 글
 function workLabel(J, nowMs) {
@@ -336,7 +343,7 @@ function parseFileDetail(text) {
     return { ok: false, err: '녹음 정보 글 모양이 바뀌었습니다' };
   const c = apiMs(kv.created_at), s = kv.start_at && kv.start_at !== '-' ? apiMs(kv.start_at) : null;
   if (c == null) return { ok: false, err: '녹음 시각을 읽지 못했습니다' };
-  return { ok: true, id: kv.id, name: kv.name.trim(), c, t: s == null ? c : s, d: durSec(kv.duration) };
+  return { ok: true, id: kv.id, name: kv.name.trim(), c, t: s == null ? c : s, d: durSec(kv.duration), p: /^available\b/.test(String(kv.transcript || '')) };
 }
 // CLI 와 같은 규칙: 시각이 있는데 시간대가 없으면 세계 표준시(Z)로 읽는다
 function apiMs(v) {
@@ -404,7 +411,8 @@ function listView(recs, jobs, settings, nowMs, speeds) {
   return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && Number.isFinite(r.c) && r.c >= from)
     .map(r => { const j = J[r.id] || null, st = pickState(r, j, s.kw);
       return { id: r.id, name: r.n || '', when: kstLabel(r.t, nowMs), t: r.t, dur: durLabel(r.d), d: r.d || 0, st, picked: isPicked(st), hit: kwHit(r.n, s.kw),
-        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', err: j && j.st === 'fail' && j.err ? j.err : '', gone: !!(j && j.st === 'done' && j.gone), est: estMin(r.d, s.model, speeds) }; })
+        job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', err: j && j.st === 'fail' && j.err ? j.err : '', gone: !!(j && j.st === 'done' && j.gone), src: j && j.st === 'done' ? (j.src === 'p' ? 'p' : 'w') : '', odd: !!(j && j.odd), p: !!r.p,
+        wait: !(j && j.st) && isPicked(st) && waitPlaud(r, nowMs) ? plaudWaitUntil(r) : 0, est: estMin(r.d, s.model, speeds) }; })
     .map(x => Object.assign(x, { tab: tabOf(x), rest: titleRest(x.name), tm: hhmm(x.t), day: dayKey(x.t) }))
     .sort((a, b) => (b.t || 0) - (a.t || 0) || (a.id < b.id ? -1 : 1));
 }
@@ -425,8 +433,8 @@ function normMac(s) {
 const DEL_CAP = 5;
 function recPlan(old, rows, fromMs) {
   const O = old || {}, put = [], want = new Set();
-  for (const r of rows || []) { want.add(r.id); const o = O[r.id], v = { n: r.name || '', t: r.t, c: r.c, d: r.d };
-    if (!o || o.n !== v.n || o.t !== v.t || o.c !== v.c || o.d !== v.d) put.push({ id: r.id, v }); }
+  for (const r of rows || []) { want.add(r.id); const o = O[r.id], v = { n: r.name || '', t: r.t, c: r.c, d: r.d, p: !!r.p };
+    if (!o || o.n !== v.n || o.t !== v.t || o.c !== v.c || o.d !== v.d || !!o.p !== v.p) put.push({ id: r.id, v }); }
   const gone = Object.values(O).filter(o => o && Number.isFinite(o.c) && o.c >= fromMs && !want.has(o.id)).map(o => o.id);
   const inWin = Object.values(O).filter(o => o && Number.isFinite(o.c) && o.c >= fromMs).length;
   if (gone.length > Math.max(DEL_CAP, Math.floor(inWin * 0.3))) return { put, del: [], held: gone.length };
@@ -466,10 +474,12 @@ async function renew(io, id, mac, step) {
   if (job.pick === 'out') return { ok: false, why: 'out' };   // 하는 동안 HB 가 목록에서 뺌 → 멈춘다
   return { ok: await io.write(id, { st: 'work', step: step || job.step || 'get', mac }, ver) };
 }
-async function finish(io, id, mac, ok, err) {
+// extra(끝났을 때) = { src: 'p' | 'w', odd: 참 · 거짓 } — 어디서 온 전사인지 · 전사 의심(P3e)
+async function finish(io, id, mac, ok, err, extra) {
   const { job, ver } = await io.read(id);
   if (!job || job.st !== 'work' || job.mac !== mac) return { ok: false, why: 'lost' };
-  return { ok: await io.write(id, ok ? { st: 'done', step: 'drive', mac } : { st: 'fail', step: job.step || 'get', mac, err: String(err || '').slice(0, 120) }, ver) };
+  const x = extra || {}, done = { st: 'done', step: 'drive', mac }; if (x.src === 'p' || x.src === 'w') done.src = x.src; if (typeof x.odd === 'boolean') done.odd = x.odd;
+  return { ok: await io.write(id, ok ? done : { st: 'fail', step: job.step || 'get', mac, err: String(err || '').slice(0, 120) }, ver) };
 }
 // 맡을 차례: 골랐고 · 끝나지 않았고 · 지금 맡을 수 있는 것, 오래된 녹음부터
 function wantedJobs(recs, jobs, settings, mac, now) {
@@ -518,16 +528,22 @@ function fsDoc(doc) {
    제목에 날짜가 없으면 녹음 시작 시각(한국)을 앞에. 같은 이름이 있으면 ' (2)'. 녹음 번호는 파일 머리말 첫 줄에(같은 녹음인지는 그것으로 본다). */
 const NAME_MAX = 120;
 function safeName(s) { return String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/:/g, ';').replace(/[\/\\]/g, '-').replace(/\s+/g, ' ').trim().replace(/^\.+/, ''); }
-function txtBase(rec) {
+// src 'p' = PLAUD 전사문 → 'YY-MMDD HH;MM p 글'(HB 11/24). PLAUD 가 전사하며 붙인 제목 앞 'MM-DD ' 는 뗀다
+function txtBase(rec, src) {
   const r = rec || {}, n = String(r.n || '').trim(), p = x => String(x).padStart(2, '0');
   const m = /^(\d{4})-(\d{2})-(\d{2})[ T_]+(\d{1,2})[:;.](\d{2})(?:[:;.]\d{2})?(?=\s|$)\s*([\s\S]*)$/.exec(n);
   let head, rest;
   if (m) { head = m[1].slice(2) + '-' + m[2] + m[3] + ' ' + p(m[4]) + ';' + m[5]; rest = m[6]; }
   else { const ms = Number.isFinite(r.t) ? r.t : r.c; if (!Number.isFinite(ms)) return safeName(r.id || '녹음'); const a = kst(ms);
     head = String(a.y).slice(2) + '-' + p(a.mo) + p(a.d) + ' ' + p(a.h) + ';' + p(a.mi); rest = n; }
-  const b = safeName(head + (String(rest).trim() ? ' ' + rest : ''));
+  rest = stripMd(rest);
+  const b = safeName(head + (src === 'p' ? ' p' : '') + (String(rest).trim() ? ' ' + rest : ''));
   return b.length > NAME_MAX ? b.slice(0, NAME_MAX).trim() : b;
 }
+// PLAUD 가 전사할 때 제목 앞에 붙이는 'MM-DD ' (예: '11-13 김하늘 전화심방') — 날짜는 묶음 · 파일 이름 앞에 따로 있으니 뗀다(HB 11/24)
+function stripMd(t) { return String(t || '').trim().replace(/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])(?=\s)\s+/, '').trim(); }
+// 파일 이름이 PLAUD 전사문 꼴인가('YY-MMDD HH;MM p …')
+function isPName(file) { return /^\d{2}-\d{4} \d{2};\d{2} p(?: |\.txt$| \()/.test(String(file || '')); }
 // 이미 쓰인 이름(소문자 — Mac 은 대소문자를 안 가림)을 피해 '이름.txt' · '이름 (2).txt' …
 function uniqueName(base, taken) { const T = taken || new Set(); for (let i = 1; i < 1000; i++) { const f = base + (i > 1 ? ' (' + i + ')' : '') + '.txt'; if (!T.has(f.toLowerCase())) return f; } return base + ' (' + Date.now() + ').txt'; }
 function nameFits(file, base) { const f = String(file || ''); return f === base + '.txt' || (f.startsWith(base + ' (') && /^ \(\d+\)\.txt$/.test(f.slice(base.length))); }
@@ -585,7 +601,7 @@ function tabOf(x) {
 }
 function inTab(x, tab) { return tab === 'all' || x.tab === tab; }
 // 제목 앞의 PLAUD 날짜 · 시각('2026-11-23 16:55:33 ')을 뗀 덧붙인 글 — 날짜 · 시각은 묶음 · 시각 칸에 따로 보인다
-function titleRest(n) { return String(n || '').trim().replace(/^\d{4}-\d{2}-\d{2}[ T_]+\d{1,2}[:;.]\d{2}(?:[:;.]\d{2})?(?=\s|$)\s*/, '').trim(); }
+function titleRest(n) { return stripMd(String(n || '').trim().replace(/^\d{4}-\d{2}-\d{2}[ T_]+\d{1,2}[:;.]\d{2}(?:[:;.]\d{2})?(?=\s|$)\s*/, '').trim()); }
 function hhmm(ms) { if (!Number.isFinite(ms)) return ''; const a = kst(ms); return String(a.h).padStart(2, '0') + ':' + String(a.mi).padStart(2, '0'); }
 function dayKey(ms) { if (!Number.isFinite(ms)) return ''; const a = kst(ms); return a.y + '-' + String(a.mo).padStart(2, '0') + '-' + String(a.d).padStart(2, '0'); }
 function dayLabel(ms, nowMs) {
@@ -597,6 +613,16 @@ function dayLabel(ms, nowMs) {
 const LONG_SEC = 3600;   // 1시간 넘는 녹음은 길이를 진하게
 // 드라이브에서 지운 것 알아채기: 끝난 녹음인데 폴더에 파일이 없음 → gone. 한 번에 많이 사라지면(드라이브 앱이 잠깐 비어 보임) 적지 않고 알림
 const GONE_CAP = 3;
+// PLAUD 전사를 기다림(HB 11/24 '나'): 고른 녹음에 PLAUD 전사가 없으면 녹음 뒤 6시간은 whisper 를 돌리지 않는다. [지금](kick) 은 바로
+const PLAUD_WAIT_MS = 6 * 3600e3;
+function plaudWaitUntil(rec) { const r = rec || {}, b = Number.isFinite(r.c) ? r.c : r.t; return r.p || !Number.isFinite(b) ? 0 : b + PLAUD_WAIT_MS; }
+function waitPlaud(rec, nowMs) { const u = plaudWaitUntil(rec); return !!u && nowMs < u; }
+// whisper 가 같은 말을 되풀이했나(말소리가 거의 없는 짧은 녹음 — '모델은 모델의 모델입니다' 수십 줄): 같은 줄이 6번 넘게 · 또는 줄의 절반 넘게가 한 줄
+function looksStuck(text) {
+  const ls = String(text || '').split('\n').map(l => l.trim().replace(/\s+/g, ' ')).filter(Boolean); if (ls.length < 6) return false;
+  const n = {}; let top = 0; for (const l of ls) { n[l] = (n[l] || 0) + 1; top = Math.max(top, n[l]); }
+  return top > 6 || top / ls.length > 0.5;
+}
 // 드라이브에서 이 녹음의 txt 찾기(P3d) — 구글 드라이브가 '온라인 전용' 으로 둔 파일은 내용(머리말 첫 줄)을 못 읽는다.
 // 그래서 이름으로도 찾는다: ① 머리말 ID ② 이 Mac 이 쓴 이름 기억(map) ③ P3 때 이름 '녹음번호.txt' ④ 지금 PLAUD 제목으로 만든 이름(+ ' (2)').
 // sure = 이 녹음이 틀림없음(①②③) → 이름을 바꿔도 됨. ④ 는 이미 맞는 이름이라 바꿀 일이 없다. heads = { 파일: 머리말에서 읽은 ID }(읽힌 것만)
@@ -605,7 +631,7 @@ function locateTxt(id, rec, files, heads, map) {
   const h = F.find(f => H[f] === id); if (h) return { file: h, sure: true };
   if (M[id] && F.includes(M[id]) && mine(M[id])) return { file: M[id], sure: true };
   if (F.includes(id + '.txt') && mine(id + '.txt')) return { file: id + '.txt', sure: true };
-  if (rec) { const base = txtBase(Object.assign({ id }, rec)), ex = base + '.txt';
+  if (rec) for (const src of ['w', 'p']) { const base = txtBase(Object.assign({ id }, rec), src), ex = base + '.txt';
     const f = F.includes(ex) && mine(ex) ? ex : F.find(x => x !== ex && nameFits(x, base) && mine(x)); if (f) return { file: f, sure: false }; }
   return null;
 }
@@ -619,7 +645,8 @@ var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS
   WORK_NEEDS, workBlock, txtName, kstIso, cleanText, txtOf, workLabel, TEST_SEC, speedsOf, perMinLabel, testView, FAIL_WAIT_MS,
   NAME_MAX, safeName, txtBase, uniqueName, nameFits, idFromTxt, txtBody, autoOn, canRemoveModel,
   KDF_IT, KEY_CHECK, TXT_MAX, PASS_MIN, b64e, b64d, deriveKey, encText, decText, newKdf, checkKey, unlockKey, bytesLabel, workSizes,
-  TABS, tabOf, inTab, titleRest, hhmm, dayKey, dayLabel, LONG_SEC, GONE_CAP, gonePlan, locateTxt };
+  TABS, tabOf, inTab, titleRest, hhmm, dayKey, dayLabel, LONG_SEC, GONE_CAP, gonePlan, locateTxt,
+  stripMd, isPName, PLAUD_WAIT_MS, plaudWaitUntil, waitPlaud, looksStuck };
 </script>
 
 <header class="top">
@@ -679,7 +706,7 @@ function demoData() {
   const R = [rec('a', '김하늘 집사 심방', 3, 48), rec('b', '박소망 성도 전화심방', 27, 12), rec('c', '', 30, 6), rec('d', '이은혜 권사 상담', 50, 64),
     rec('e', '교역자 회의', 75, 245), rec('f', '최기쁨 가정 심방', 120, 95), rec('1', '', 160, 2)];
   S.recs = Object.fromEntries(R.map(r => [r.id, r]));
-  S.jobs = { [id('a')]: { id: id('a'), st: 'work', step: 'stt', mac: '집', at: n - 60e3 }, [id('b')]: { id: id('b'), st: 'done', step: 'drive', mac: '집', at: n - 20 * H },
+  S.jobs = { [id('a')]: { id: id('a'), st: 'work', step: 'stt', mac: '집', at: n - 60e3 }, [id('b')]: { id: id('b'), st: 'done', step: 'drive', mac: '집', at: n - 20 * H, src: 'p' },
     [id('d')]: { id: id('d'), pick: 'in', st: 'fail', step: 'get', mac: '집', at: n - 10 * 60e3, err: '소리를 받지 못함 (curl 22)' }, [id('f')]: { id: id('f'), pick: 'out' } };
   S.macs = { '집': { id: '집', at: n - 50e3, doing: '전사 중 6분째 (42%)', v: HELPER_LATEST, cli: 'plaud 0.3.15', models: ['large-v3-turbo-q5_0', 'medium-q5_0'],
     test: { at: n - 2 * H, len: 600, r: { 'large-v3-turbo-q5_0': { s: 130, x: 4.6 }, 'medium-q5_0': { s: 205, x: 2.9 } } },
@@ -972,11 +999,16 @@ function recHtml(r) {
   const stepName = { get: '받는 중', stt: '전사 중', drive: '드라이브에 쓰는 중' };
   const len = '<span class="len' + (r.d >= LONG_SEC ? ' long' : '') + '">' + esc(r.dur) + '</span>';
   let right = '', sub = '';
-  if (done) right = '<span class="ibs">' + ib('view', r.id) + ib('copy', r.id) + ib('save', r.id) + ib('more', r.id) + '</span>';
+  // P = PLAUD 전사문 가져옴 · W = whisper 전사(빨강 = 같은 말 되풀이 — 전사 의심) — 보기 단추 앞(HB 11/24)
+  const pill = r.src === 'p' ? '<span class="pill p" title="PLAUD 전사문을 가져옴">P</span>'
+    : '<span class="pill w' + (r.odd ? ' odd' : '') + '" title="' + (r.odd ? '전사 의심 — 같은 말이 되풀이됐습니다. ⋯ 에서 다시 전사를 권합니다' : 'Mac 의 whisper 로 전사') + '">W</span>';
+  if (done) right = pill + '<span class="ibs">' + ib('view', r.id) + ib('copy', r.id) + ib('save', r.id) + ib('more', r.id) + '</span>';
   else if (r.gone) { right = '<span class="s fail">드라이브에 없음</span><button class="lnk" data-act="redo" data-id="' + esc(r.id) + '">다시 전사</button>' + ib('more', r.id); sub = '드라이브에서 지운 것 같습니다 · 저절로 다시 하지 않습니다'; }
   else if (r.job === 'work') { right = '<span class="s work">' + (stepName[r.step] || '하는 중') + (r.mac ? ' · ' + esc(r.mac) : '') + '</span>'; if (S.ws && S.ws.by[r.id]) sub = '<span class="tmp">임시 파일 ' + bytesLabel(S.ws.by[r.id]) + '</span>'; }
   else if (r.picked) { right = (r.job === 'fail' ? '<span class="s fail">실패</span>' : len) + '<button class="btn ghost sm" data-act="kick" data-id="' + esc(r.id) + '" title="켜진 Mac 이 30초 안에 시작">지금</button>';
-    sub = (r.job === 'fail' ? '실패: ' + esc(r.err || '') + ' — 한 시간 뒤 다시 합니다 · ' : '') + '전사 어림 ' + durLabel(r.est * 60) + ' · ' + (r.st === 'auto' ? '키워드 \'' + esc(r.hit) + '\'' : '직접 고름'); }
+    sub = (r.job === 'fail' ? '실패: ' + esc(r.err || '') + ' — 한 시간 뒤 다시 합니다 · ' : '')
+      + (r.wait ? 'PLAUD 전사를 기다림 — ' + esc(kstLabel(r.wait, now()).replace(/^\d+\. \d+\. \(.\) /, '')) + ' 뒤 whisper · ' : r.p ? 'PLAUD 전사문을 가져옴 · ' : '전사 어림 ' + durLabel(r.est * 60) + ' · ')
+      + (r.st === 'auto' ? '키워드 \'' + esc(r.hit) + '\'' : '직접 고름'); }
   else right = (r.st === 'out' ? '<span class="s out">뺌</span>' : '') + len;
   // 끝난 것(드라이브에 없음 포함)은 왼쪽 동그라미가 빈 채 · 눌러도 고름이 안 바뀜(HB 11/24)
   return '<div class="rec' + (r.picked && !fin ? ' pick' : '') + (fin ? ' done' : '') + '"' + (fin ? '' : ' data-act="pick" data-st="' + r.st + '"') + ' data-id="' + esc(r.id) + '">'

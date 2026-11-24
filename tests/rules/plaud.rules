@@ -15,17 +15,20 @@ service cloud.firestore {
         && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['n', 't', 'c', 'd'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['n', 't', 'c', 'd', 'p'])
+          && (!('p' in d()) || d().p is bool)
           && (!('n' in d()) || (d().n is string && d().n.size() <= 300));
       }
       match /job/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd'])
           && (!('st' in d()) || d().st in ['work', 'done', 'fail'])
           && (!('step' in d()) || d().step in ['get', 'stt', 'drive'])
           && (!('pick' in d()) || d().pick in ['in', 'out'])
           && (!('err' in d()) || (d().err is string && d().err.size() <= 120))
           && (!('gone' in d()) || d().gone is bool)
+          && (!('src' in d()) || d().src in ['p', 'w'])
+          && (!('odd' in d()) || d().odd is bool)
           && atOk();
       }
       match /mac/{name} {

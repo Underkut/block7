@@ -4,6 +4,11 @@ PLAUD 도우미 자료는 HB 파이어베이스(block7-8f24e)의 `plaud/{HB uid}
 `rec`(녹음 제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계) · `mac`(두 Mac 소식 · 준비 상태 · 깔린 모델 · 모델 시험 시간) · `cmd`(설치 요청) · `txt`(HB 암호 문구로 잠근 전사 글 — 파이어베이스 · 구글 쪽에서는 풀 수 없음) 여섯 칸.
 BLOCK7 · Sweeter · 기도노트 · 셀 inside · 교역자 로테이션의 규칙은 건드리지 않고 **이 덩어리 하나만 더한다.**
 
+## 다시 붙이기 (2026-11-24 오후, 1122-P P3e — 도우미 h. 26-1124-3)
+
+P3e 에서 바뀐 곳: 녹음 줄에 **PLAUD 전사가 있는지(`p`)**, 일감에 **어디서 온 전사인지(`src` — p = PLAUD · w = whisper) · 전사 의심(`odd`)**.
+다시 붙이지 않으면 새 도우미가 녹음 목록 · 끝남 표시를 못 적어 목록이 멈춘다. 아래 '붙이는 순서' 5번 괄호(지우고 그 자리에)대로.
+
 ## 다시 붙이기 (2026-11-24, 1122-P P3c — 도우미 h. 26-1124-1)
 
 P3c 에서 바뀐 곳: 일감에 **드라이브에 없음 표시(`gone`)**, Mac 소식에 **목록 읽은 때(`listed`)**, 요청에 **`kick`(지금 시작) · `rmtxt`(전사 txt 지우기) · `redo`(다시 전사)**.
@@ -49,17 +54,20 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
         && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['n', 't', 'c', 'd'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['n', 't', 'c', 'd', 'p'])
+          && (!('p' in d()) || d().p is bool)
           && (!('n' in d()) || (d().n is string && d().n.size() <= 300));
       }
       match /job/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd'])
           && (!('st' in d()) || d().st in ['work', 'done', 'fail'])
           && (!('step' in d()) || d().step in ['get', 'stt', 'drive'])
           && (!('pick' in d()) || d().pick in ['in', 'out'])
           && (!('err' in d()) || (d().err is string && d().err.size() <= 120))
           && (!('gone' in d()) || d().gone is bool)
+          && (!('src' in d()) || d().src in ['p', 'w'])
+          && (!('odd' in d()) || d().odd is bool)
           && atOk();
       }
       match /mac/{name} {

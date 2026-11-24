@@ -36,6 +36,8 @@ await t('HB 는 녹음 줄을 읽는다', hb.collection('plaud/hb/rec').get(), t
 await t('녹음 줄에 전사문 칸(text)은 못 넣는다', hb.doc('plaud/hb/rec/' + ID2).set({ text: '…' }, { merge: true }), false);
 await t('녹음 번호 꼴이 아니면 못 쓴다', hb.doc('plaud/hb/rec/a.b').set({ n: 'x' }), false);
 await t('제목이 너무 길면(300자 넘게) 못 쓴다', hb.doc('plaud/hb/rec/' + ID2).set({ n: 'ㄱ'.repeat(301) }, { merge: true }), false);
+await t('(P3e) 녹음 줄에 PLAUD 전사 있음(p)', hb.doc('plaud/hb/rec/' + ID2).set({ n: '11-13 박소망 전화심방', t: 5, c: 6, d: 700, p: true }), true);
+await t('(P3e) p 는 참 · 거짓만', hb.doc('plaud/hb/rec/' + ID2).set({ p: '있음' }, { merge: true }), false);
 await t('남은 녹음 줄을 못 읽는다', out.doc('plaud/hb/rec/' + ID).get(), false);
 await t('HB 는 녹음 줄을 지운다(PLAUD 에서 지워진 것)', hb.doc('plaud/hb/rec/' + ID2).delete(), true);
 // 일감
@@ -53,6 +55,8 @@ await t('실패 까닭은 120자까지', hb.doc('plaud/hb/job/' + ID).set({ st: 
 await t('(P3c) 드라이브에 없음 표시(gone)', hb.doc('plaud/hb/job/' + ID).set({ gone: true }, { merge: true }), true);
 await t('(P3c) gone 은 참 · 거짓만', hb.doc('plaud/hb/job/' + ID).set({ gone: '지움' }, { merge: true }), false);
 await t('(P3c) 다시 전사 · txt 지우기 — 일감을 pick 하나로 새로 씀', hb.doc('plaud/hb/job/' + ID).set({ pick: 'in' }), true);
+await t('(P3e) 끝냄에 어디서 온 전사인지(src p · w) · 전사 의심(odd)', hb.doc('plaud/hb/job/' + ID).set({ src: 'p', odd: false }, { merge: true }), true);
+await t('(P3e) src 는 p · w 만', hb.doc('plaud/hb/job/' + ID).set({ src: 'gpt' }, { merge: true }), false);
 await t('남은 일감을 못 읽는다', out.doc('plaud/hb/job/' + ID).get(), false);
 await t('남은 일감을 못 집는다', out.doc('plaud/hb/job/' + ID).set({ st: 'work', mac: '남', at: ST }, { merge: true }), false);
 // 두 Mac 이 같은 녹음을 동시에 집기 — 트랜잭션이라 한 대만 된다(같은 계정 둘 = 집 · 사무실)

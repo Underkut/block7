@@ -19,7 +19,7 @@ import vm from 'node:vm';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const HELPER_VERSION = 'h. 26-1124-2';
+export const HELPER_VERSION = 'h. 26-1124-3';
 const HOME = os.homedir();
 const DIR = process.env.PLAUDHUB_DIR || path.join(HOME, 'Library', 'Application Support', 'plaudhub');
 const SITE = process.env.PLAUDHUB_SITE || 'https://block7.my/plaudhub/';
@@ -43,7 +43,7 @@ process.env.PLAUD_TELEMETRY_DISABLED = '1'; process.env.DO_NOT_TRACK = '1'; proc
 
 let PH = null;   // 판단 덩어리
 const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, models: [], err: '', warn: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, lastJob: 0,
-  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '', okSeen: new Set() };
+  busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '', okSeen: new Set(), pOk: new Set() };
 
 function log(...a) { const s = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '); console.log(new Date().toISOString(), PH ? PH.clean(s, 2000) : s.replace(/https?:\/\/\S+/g, '[주소]')); }
 function readJson(f, d) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch (_) { return d; } }
@@ -239,13 +239,13 @@ async function refreshList(settings) {
   let calls = 0;
   for (const r of p.rows) {
     let c = cache[r.id];
-    if (!c || c.d !== r.d) {
+    if (!c || c.d !== r.d || c.n !== r.name || typeof c.p !== 'boolean') {   // 제목이 바뀌면(PLAUD 가 전사하며 'MM-DD …' 로 고침) 전사가 생겼는지 다시 봄
       if (calls++ >= FILE_CALLS) continue;   // 한 번에 너무 많이 묻지 않는다 — 다음 차례에 마저
       const f = await run('plaud', ['file', r.id], 60e3), q = PH.parseFileDetail(f.out);
       if (f.code !== 0 || !q.ok || q.id !== r.id) { st.err = '멈춤: ' + (q.ok ? '녹음 정보를 읽지 못했습니다' : q.err) + (st.cli ? ' — ' + st.cli : ''); return; }
-      c = cache[r.id] = { t: q.t, c: q.c, d: q.d };
+      c = cache[r.id] = { t: q.t, c: q.c, d: q.d, n: r.name, p: !!q.p };
     }
-    rows.push({ id: r.id, name: r.name, t: c.t, c: c.c, d: r.d });
+    rows.push({ id: r.id, name: r.name, t: c.t, c: c.c, d: r.d, p: !!c.p });
   }
   writeJson('cache.json', cache);
   // 계정의 녹음 줄은 기간 안(+하루)만 읽는다 — 통째로 읽으면 쌓인 옛 줄까지 10분마다 읽게 된다
@@ -386,8 +386,8 @@ function driveIndex(drive) {
 const locate = (D, id) => PH.locateTxt(id, st.recs && st.recs[id], D.files, D.heads, D.map);
 function rememberName(id, file) { const m = readJson('names.json', {}); if (file) m[id] = file; else delete m[id]; writeJson('names.json', m); }
 // 다 쓴 일 폴더 파일을 드라이브로 한 번에 옮김(반쯤 쓴 파일이 동기화되지 않게) — 같은 이름이 있으면 ' (2)'
-function placeTxt(drive, part, rec, id) {
-  const { names } = driveIndex(drive), name = PH.uniqueName(PH.txtBase(Object.assign({ id }, rec)), names), final = path.join(drive, name);
+function placeTxt(drive, part, rec, id, src) {
+  const { names } = driveIndex(drive), name = PH.uniqueName(PH.txtBase(Object.assign({ id }, rec), src), names), final = path.join(drive, name);
   try { fs.renameSync(part, final); }
   catch (e) { if (e.code !== 'EXDEV') throw e; const tmp = path.join(drive, '.' + id + '.txt.part'); fs.copyFileSync(part, tmp); fs.renameSync(tmp, final); }
   rememberName(id, name);
@@ -413,13 +413,13 @@ async function syncDrive(drive) {
   for (const id of Object.keys(st.recs)) {
     const loc = locate(D, id); if (!loc) continue;
     found[id] = loc.file;
-    const base = PH.txtBase(Object.assign({ id }, st.recs[id])), cur = loc.file;
+    const cur = loc.file, base = PH.txtBase(Object.assign({ id }, st.recs[id]), PH.isPName(cur) ? 'p' : 'w');   // PLAUD 전사문 파일은 'p' 꼴 그대로
     // 이름 바꾸기: 이 녹음이 틀림없을 때만(머리말 · 기억한 이름 · 녹음번호.txt). 바꾼 이름은 기억해 둔다(머리말을 못 읽어도 다음에 찾게)
     if (loc.sure && !PH.nameFits(cur, base) && renamed < 20) {
       D.names.delete(cur.toLowerCase()); const to = PH.uniqueName(base, D.names);
       try { fs.renameSync(path.join(drive, cur), path.join(drive, to)); D.names.add(to.toLowerCase()); D.files.splice(D.files.indexOf(cur), 1, to); if (D.heads[cur]) { D.heads[to] = D.heads[cur]; delete D.heads[cur]; } found[id] = to; rememberName(id, to); renamed++; }
       catch (_) { D.names.add(cur.toLowerCase()); }
-    } else if (loc.sure && D.map[id] !== cur) rememberName(id, cur);
+    } else if (D.map[id] !== cur) rememberName(id, cur);   // 이름으로만 알아본 것도 기억 — PLAUD 가 제목을 바꿔도(전사하며 'MM-DD …') 계속 찾게
     if (up && !up.has(id) && sent < 5) {
       let body = ''; try { if (evict && evict.test(found[id])) throw new Error('온라인 전용'); body = PH.txtBody(fs.readFileSync(path.join(drive, found[id]), 'utf8')); } catch (_) { unread++; continue; }
       if (body.trim() && await uploadTxt(id, body)) sent++;
@@ -474,8 +474,18 @@ async function pickWork(settings) {
   if (!PH.autoOn(settings, st.mac)) { st.kickId = ''; if (st.warn) { st.warn = ''; await beat(true).catch(() => { }); } return; }   // 이 Mac 은 자동 전사 꺼짐(HB)
   if (PH.workBlock(st.ready).length) return;
   const s = PH.settingsOf(settings), m = PH.modelOf(s.model); if (!modelOk(m)) { st.ready.model = false; return; }
-  let want = PH.wantedJobs(st.recs, jobs, s, st.mac, serverNow());
-  if (st.kickId && want.includes(st.kickId)) want = [st.kickId].concat(want.filter(x => x !== st.kickId));   // '지금' 누른 녹음부터
+  // whisper 로 만든 것인데 PLAUD 전사가 생긴 것 → PLAUD 것으로 바꿈(HB 11/24 '가'). 한 차례 2개 · 드라이브에서 지운 것 · 뺀 것은 그대로
+  const up = Object.keys(st.recs).filter(id => st.recs[id].p && st.done.has(id) && !st.pOk.has(id));
+  if (up.length) {
+    const js = await getMany('job', up); let n = 0;
+    for (const id of up) { const j = js[id];
+      if (!j || j.st !== 'done' || j.src === 'p' || j.gone || j.pick === 'out') { st.pOk.add(id); continue; }
+      if (n++ >= 2) break;
+      const r = await dropTxt(id, true); log('PLAUD 전사로 바꿈', id, r.ok ? '' : PH.clean(r.log, 80)); }
+  }
+  const now = serverNow(), kick = st.kickId;
+  let want = PH.wantedJobs(st.recs, jobs, s, st.mac, now).filter(id => id === kick || !PH.waitPlaud(st.recs[id], now));   // PLAUD 전사를 기다리는 것은 건너뜀(6시간 · [지금] 은 바로)
+  if (kick && want.includes(kick)) want = [kick].concat(want.filter(x => x !== kick));   // '지금' 누른 녹음부터
   st.kickId = '';
   if (!want.length) { if (st.warn) { st.warn = ''; await beat(true).catch(() => { }); } return; }
   for (const id of want) {
@@ -491,26 +501,42 @@ async function pickWork(settings) {
     return;
   }
 }
+// PLAUD 전사문 받기 — 있으면 글, 없으면 ''(CLI 가 파일을 안 만듦). 로그인이 풀렸으면 멈춤
+async function plaudTxt(J, trf) {
+  rmQuiet(trf);
+  const r = await runP('tr', { id: J.id, out: trf }, 120e3, { job: J }); alive(J);
+  if (r.code === 2) throw new Fail('PLAUD 로그인이 풀림');
+  if (r.code !== 0) return '';   // 못 받으면 whisper 로
+  let t = ''; try { t = fs.readFileSync(trf, 'utf8'); } catch (_) { }
+  return PH.cleanText(t);
+}
 const STOP_WHY = { out: '목록에서 뺌', clean: '임시 파일을 비움' };
 async function workOne(J, rec, m, drive) {
-  const w = WORK(), ogg = path.join(w, J.id + '.ogg'), wav = path.join(w, J.id + '.wav'), out = path.join(w, J.id + '.whisper'), part = path.join(w, J.id + '.txt.part');
+  const w = WORK(), ogg = path.join(w, J.id + '.ogg'), wav = path.join(w, J.id + '.wav'), out = path.join(w, J.id + '.whisper'), part = path.join(w, J.id + '.txt.part'), trf = path.join(w, J.id + '.plaud.txt');
   const timer = setInterval(() => { keep(J); }, RENEW_MS());
   const already = () => locate(driveIndex(drive), J.id);
+  const doneAlready = async loc => { await PH.finish(jobIO, J.id, st.mac, true, '', { src: PH.isPName(loc.file) ? 'p' : 'w' }); st.done.add(J.id); log('이미 드라이브에 있음 — 만들지 않음', J.id); };
   try {
     fs.mkdirSync(w, { recursive: true });
     // 겹 둘: 드라이브에 이 녹음 ID 의 파일이 이미 있으면 만들지 않는다(다른 Mac 이 먼저 했음)
-    if (already()) { await PH.finish(jobIO, J.id, st.mac, true); st.done.add(J.id); log('이미 드라이브에 있음 — 만들지 않음', J.id); return; }
-    await fetchAudio(J, ogg, rec.d);
-    await setStep(J, 'stt');
-    const secs = await toWav(J, 'wav', { ogg, wav }); rmQuiet(ogg);
-    const text = await stt(J, m, wav, out, secs); rmQuiet(wav);
+    let loc = already(); if (loc) return await doneAlready(loc);
+    // PLAUD 전사문이 있으면 그것을(whisper 를 돌리지 않음, HB 11/24)
+    let text = await plaudTxt(J, trf), src = 'p', odd = false;
+    if (!text) {
+      src = 'w';
+      await fetchAudio(J, ogg, rec.d);
+      await setStep(J, 'stt');
+      const secs = await toWav(J, 'wav', { ogg, wav }); rmQuiet(ogg);
+      text = await stt(J, m, wav, out, secs); rmQuiet(wav);
+      odd = PH.looksStuck(text); if (odd) log('전사 의심 — 같은 말 되풀이', J.id);
+    }
     await setStep(J, 'drive');   // 쓰기 바로 앞에 맡김을 새로 확인(잃었으면 여기서 멈춤)
-    if (already()) { await PH.finish(jobIO, J.id, st.mac, true); st.done.add(J.id); log('이미 드라이브에 있음 — 만들지 않음', J.id); return; }
-    const content = PH.txtOf({ id: J.id, n: rec.n, t: rec.t, d: rec.d, model: m.id, mac: st.mac, at: serverNow() }, text);
+    loc = already(); if (loc) return await doneAlready(loc);
+    const content = PH.txtOf({ id: J.id, n: rec.n, t: rec.t, d: rec.d, model: m.id, mac: st.mac, at: serverNow(), src }, text);
     fs.writeFileSync(part, content);
-    placeTxt(drive, part, rec, J.id);
+    placeTxt(drive, part, rec, J.id, src);
     await uploadTxt(J.id, PH.txtBody(content)).catch(e => log('잠근 사본 오류', J.id, String(e.message || e)));
-    const f = await PH.finish(jobIO, J.id, st.mac, true); st.done.add(J.id);
+    const f = await PH.finish(jobIO, J.id, st.mac, true, '', { src, odd }); st.done.add(J.id); st.pOk.add(J.id);
     log('전사 끝', J.id, Math.round((Date.now() - J.t0) / 60e3) + '분 걸림', f.ok ? '' : '(끝 표시는 못 함 — 드라이브 파일이 있어 다시 하지 않음)');
   } catch (e) {
     if (J.stop === 'lost') { log('맡김을 잃어 멈춤 — 다른 Mac 이 이어 함', J.id); return; }
@@ -520,7 +546,7 @@ async function workOne(J, rec, m, drive) {
     log('전사 실패', J.id, PH.clean(why, 120));
   } finally {
     clearInterval(timer); stopJob(J, J.stop || 'end');
-    rmQuiet(ogg, wav, out + '.txt', part);   // 받은 소리 · WAV · 중간 글은 끝나면 지운다(디스크)
+    rmQuiet(ogg, wav, out + '.txt', part, trf);   // 받은 소리 · WAV · 중간 글은 끝나면 지운다(디스크)
   }
 }
 

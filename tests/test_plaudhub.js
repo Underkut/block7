@@ -24,6 +24,7 @@
 //  ㉑ (P3b) Mac 마다 자동 전사 · 쓰는 모델은 못 지움 · 임시 파일 크기 합계 · 비우기는 전사 중에도
 //  ㉓ (P3c) 녹음 목록 B2 · D1 — 탭 나누기 · 제목에서 날짜 떼기 · 시각 · 날짜 묶음(오늘 · 어제) · 지금 · txt 지우기 · 다시 전사 요청 · 드라이브에 없음(규모 상한) · 끝난 줄 · 그림 단추 · 버전 단추
 //  ㉔ (P3d) 온라인 전용 드라이브 파일 — 머리말을 못 읽어도 이름으로 찾기(기억한 이름 · 녹음번호.txt · 제목 이름) · 남의 파일은 안 집음 · 틀림없을 때만 이름 바꿈
+//  ㉕ (P3e) PLAUD 전사문 — file 의 transcript 줄 · 'MM-DD' 떼기 · 'p' 이름 · 6시간 기다림 · whisper 되풀이(-mc 0 · 의심) · 끝냄에 src · odd · P/W 알약
 //  ㉒ (P3b) 잠근 사본 — 암호 문구 → 키 · 맞는 암호만 열림 · 잠근 글에 평문이 없음 · 표지에 암호가 없음 · 계기판 복사(누른 자리에서 시작) · 받기 이름
 const fs = require('fs'), path = require('path'), vm = require('vm'), http = require('http'), os = require('os');
 const { makeScorer } = require('./_load');
@@ -212,7 +213,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const p = A.recPlan(old, rows, from);
   sc.eq('⑨ 같은 줄은 안 씀 · 새 줄만 씀', p.put.map(x => x.id), [ID('c')]);
   sc.eq('⑨ 기간 안에서 사라진 줄은 지움 · 기간 밖 옛것은 둠', [p.del, p.held], [[ID('b')], 0]);
-  sc.eq('⑨ 쓰는 칸은 제목 · 시작 · 만든 때 · 길이뿐', Object.keys(p.put[0].v).sort(), ['c', 'd', 'n', 't']);
+  sc.eq('⑨ 쓰는 칸은 제목 · 시작 · 만든 때 · 길이 · PLAUD 전사 있음(p)뿐', Object.keys(p.put[0].v).sort(), ['c', 'd', 'n', 'p', 't']);
   sc.eq('⑨ 제목이 바뀌면 씀', A.recPlan(old, [{ id: ID('a'), name: '김하늘 집사 심방', t: 5, c: 2000, d: 60 }, { id: ID('b'), name: '박소망 심방', t: 5, c: 2000, d: 60 }], from).put.length, 1);
   const many = {}; for (let i = 0; i < 20; i++) many['f_' + String(i).padStart(32, '0')] = { id: 'f_' + String(i).padStart(32, '0'), n: 'x', t: 1, c: 5000, d: 1 };
   const q = A.recPlan(many, [], from);
@@ -236,7 +237,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const what = (/d\(\)\.what in \[([^\]]*)\]/.exec(rules) || [])[1] || '';
   sc.eq('⑪ 규칙이 받는 요청 이름 = 도우미가 아는 이름(INSTALLS)', what.split(',').map(s => s.trim().replace(/'/g, '')), J(A.CMD_WHAT));
   const jobKeys = (/match \/job\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err', 'gone']);
+  sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err', 'gone', 'src', 'odd']);
   sc.eq('⑪ 녹음 번호 꼴 = 판단 덩어리와 같음', rules.includes("'^[A-Za-z0-9_]{8,64}$'") && String(A.ID_RE) === '/^[A-Za-z0-9_]{8,64}$/', true);
   sc.eq('⑪ 규칙은 plaud 칸만 (users 를 열지 않음)', /match \/users/.test(rules), false);
   const macKeys = (/match \/mac\/\{name\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
@@ -398,7 +399,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑰ 명령 표에 없는 이름 · 빈 칸은 거절', (() => { try { A.pipeArgv('rm', {}); return 'ran'; } catch (_) { } try { A.pipeArgv('wav', { ogg: '/a' }); return 'ran'; } catch (_) { return 'no'; } })(), 'no');
   sc.eq('⑰ 전사 도구 이름은 whisper-cli · whisper-cpp 만', (() => { try { A.pipeArgv('stt', { bin: 'sh', model: 'm', wav: 'w', out: 'o' }); return 'ran'; } catch (_) { return 'no'; } })(), 'no');
   sc.eq('⑰ 전사 명령: 계정 설정 모델 · 한국어 · 글 파일 · 진행 표시', A.pipeArgv('stt', { bin: 'whisper-cli', model: '/m/ggml-large-v3-turbo-q5_0.bin', wav: '/w/a.wav', out: '/w/a.whisper' }),
-    ['whisper-cli', '-m', '/m/ggml-large-v3-turbo-q5_0.bin', '-l', 'ko', '-f', '/w/a.wav', '-otxt', '-of', '/w/a.whisper', '-pp']);
+    ['whisper-cli', '-m', '/m/ggml-large-v3-turbo-q5_0.bin', '-l', 'ko', '-mc', '0', '-f', '/w/a.wav', '-otxt', '-of', '/w/a.whisper', '-pp']);
   sc.eq('⑰ 소리 바꾸기: 16kHz · 모노 · WAV', A.pipeArgv('wav', { ogg: 'a.ogg', wav: 'a.wav' }).join(' ').includes('-ar 16000 -ac 1 -c:a pcm_s16le a.wav'), true);
   const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8');
   sc.eq('⑰ 도우미는 받은 주소를 표준 입력으로만(curlConf → input)', /input: PH\.curlConf\(u\.url\)/.test(HELPER), true);
@@ -416,8 +417,8 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑱ 본문: 줄 앞뒤 빈칸 · 빈 줄을 걷음', t.split('\n---\n\n')[1], '안녕하세요.\n네 목사님.\n');
   sc.eq('⑱ 제목 없는 녹음', /제목: \(제목 없음\)/.test(A.txtOf({ id: ID('c'), n: '', t: 1, d: 6 }, 'x')), true);
   const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), w = /async function workOne[\s\S]*?\n}\n/.exec(HELPER)[0];
-  sc.eq('⑱ 맡은 뒤 드라이브에 그 녹음 ID 파일이 이미 있으면 받지도 않고 끝냄(겹 둘)', w.indexOf('if (already())') >= 0 && w.indexOf('if (already())') < w.indexOf('fetchAudio'), true);
-  sc.eq('⑱ 쓰기 바로 앞에 맡김을 다시 확인하고 · 또 있는지 봄', w.indexOf("setStep(J, 'drive')") < w.lastIndexOf('if (already())') && w.lastIndexOf('if (already())') < w.indexOf('writeFileSync(part'), true);
+  sc.eq('⑱ 맡은 뒤 드라이브에 그 녹음 ID 파일이 이미 있으면 받지도 않고 끝냄(겹 둘)', w.indexOf('let loc = already(); if (loc) return await doneAlready(loc);') >= 0 && w.indexOf('let loc = already()') < w.indexOf('fetchAudio'), true);
+  sc.eq('⑱ 쓰기 바로 앞에 맡김을 다시 확인하고 · 또 있는지 봄', w.indexOf("setStep(J, 'drive')") < w.lastIndexOf('loc = already(); if (loc) return await doneAlready(loc);') && w.lastIndexOf('loc = already(); if (loc)') < w.indexOf('writeFileSync(part'), true);
   const pt = /function placeTxt[\s\S]*?\n}\n/.exec(HELPER)[0];
   sc.eq('⑱ 임시 이름(일 폴더) → 이름 바꾸기로만 드라이브에 넣음', /writeFileSync\(part, content\)[\s\S]*placeTxt\(drive, part/.test(w) && /renameSync\(part, final\)/.test(pt) && !/writeFileSync\(final/.test(HELPER), true);
   sc.eq('⑱ 전사 글은 계정에 쓰지 않음(upd 에 text 가 없음)', /upd\([^)]*\btext\b/.test(HELPER), false);
@@ -481,7 +482,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
 // ㉓ (P3c) 녹음 목록 B2 · D1
 {
   const now = Date.UTC(2026, 10, 24, 3, 0), H = 3600e3;   // 한국 11-24 정오
-  sc.eq('㉓ 제목에서 PLAUD 날짜 · 시각 떼기', [A.titleRest('2026-11-23 16:55:33 솔빛마을'), A.titleRest('2026-11-23 16:55:33'), A.titleRest('11-16 부산 전화심방'), A.titleRest('')], ['솔빛마을', '', '11-16 부산 전화심방', '']);
+  sc.eq('㉓ 제목에서 PLAUD 날짜 · 시각 떼기', [A.titleRest('2026-11-23 16:55:33 솔빛마을'), A.titleRest('2026-11-23 16:55:33'), A.titleRest('11-16 부산 전화심방'), A.titleRest('')], ['솔빛마을', '', '부산 전화심방', '']);
   sc.eq('㉓ 시각 칸(한국)', A.hhmm(Date.UTC(2026, 10, 23, 7, 55)), '16:55');
   sc.eq('㉓ 날짜 묶음 이름 — 오늘 · 어제 · 그 전', [A.dayLabel(now - H, now), A.dayLabel(now - 24 * H, now), A.dayLabel(now - 72 * H, now), A.dayLabel(Date.UTC(2025, 11, 30, 3), now)],
     ['오늘 · 11. 24. (화)', '어제 · 11. 23. (월)', '11. 21. (토)', '2025. 12. 30. (화)']);
@@ -501,7 +502,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉓ 드라이브에서 지운 것은 저절로 다시 전사하지 않음(끝남 그대로)', A.claimCheck({ st: 'done', gone: true }, '집', 0).why, 'done');
   const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), dt = /async function dropTxt[\s\S]*?\n}\n/.exec(HELPER)[0];
   sc.eq('㉓ txt 지우기 · 다시 전사 — 머리말 ID 파일 · 잠근 사본을 지우고 일감을 새로(뺌 · 고름)', /locate\(driveIndex\(drive\), id\)/.test(dt) && /fs\.rmSync\(path\.join\(drive, loc\.file\)\)/.test(dt) && /\{ delete: docName\('txt', id\) \}/.test(dt) && /pick: PH\.fsEnc\(again \? 'in' : 'out'\)/.test(dt), true);
-  sc.eq('㉓ 지금 — 누른 녹음부터 맡음', /if \(st\.kickId && want\.includes\(st\.kickId\)\) want = \[st\.kickId\]/.test(HELPER), true);
+  sc.eq('㉓ 지금 — 누른 녹음부터 맡음', /if \(kick && want\.includes\(kick\)\) want = \[kick\]/.test(HELPER), true);
   sc.eq('㉓ 끝난 줄: 왼쪽 동그라미는 빈 채 · 눌러도 고름이 안 바뀜(data-act 없음) · 보기 · 복사 · 받기 · ⋯ 차례', /\(fin \? '' : ' data-act="pick"/.test(HTML) && /ib\('view', r\.id\) \+ ib\('copy', r\.id\) \+ ib\('save', r\.id\) \+ ib\('more', r\.id\)/.test(HTML), true);
   sc.eq('㉓ 보기 아이콘 = HB 가 준 모양(둥근 네모 안 세 줄, 마지막이 짧음)', /view: '<svg viewBox="0 0 24 24"><rect x="3\.5" y="3\.5" width="17" height="17" rx="2\.5"\/><path d="M7\.5 9h9M7\.5 12\.5h9M7\.5 16h5"\/><\/svg>'/.test(HTML), true);
   sc.eq('㉓ Mac 카드: 모두 ✓ 면 접고(기기마다 펼친 것 기억) · ✕ 가 있으면 저절로 펼침 · 꺼진 Mac 은 한 줄', /open = bad \|\| S\.open\.has\(v\.name\)/.test(HTML) && /\(open \? '<ul class="ready">'/.test(HTML) && /if \(!v\.alive\) return '<div class="card mac off">' \+ head \+ '<\/div>'/.test(HTML), true);
@@ -519,8 +520,36 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉔ 아무 길로도 없으면 없음', A.locateTxt(id, rec, ['메모.txt'], {}, {}), null);
   const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), sd = /async function syncDrive[\s\S]*?\n}\n/.exec(HELPER)[0];
   sc.eq('㉔ 이름 바꾸기는 틀림없을 때만(sure) · 바꾼 이름은 기억', /if \(loc\.sure && !PH\.nameFits\(cur, base\)/.test(sd) && /rememberName\(id, to\)/.test(sd), true);
+  sc.eq('㉔ 이름으로만 알아본 파일도 기억(제목이 바뀌어도 계속 찾음 — 온라인 전용 + PLAUD 제목 바꿈)', /else if \(D\.map\[id\] !== cur\) rememberName\(id, cur\)/.test(sd), true);
   sc.eq('㉔ 있는데 \'드라이브에 없음\' 으로 적힌 것은 되돌림(gone: false)', /upd\(\['job', id\], \{ gone: false \}\)/.test(sd), true);
   sc.eq('㉔ 끝난 줄 · 드라이브에 없음 줄 모두 왼쪽 동그라미가 빈 채(눌러도 고름이 안 바뀜)', /fin = r\.job === 'done'/.test(HTML), true);
+}
+// ㉕ (P3e) PLAUD 전사문
+{
+  const q = A.parseFileDetail(FILE.replace('transcript:   unavailable', 'transcript:   available'));
+  sc.eq('㉕ plaud file 의 transcript: available → p', [q.ok, q.p, A.parseFileDetail(FILE).p], [true, true, false]);
+  const t = Date.UTC(2026, 10, 13, 2, 42);   // 한국 11-13 오전 11:42
+  sc.eq('㉕ PLAUD 가 붙인 제목 앞 MM-DD 떼기(목록 · 파일 이름)', [A.stripMd('11-13 김하늘 전화심방: 면담'), A.stripMd('11-16'), A.stripMd('12-345 x'), A.titleRest('11-13 김하늘 전화심방')], ['김하늘 전화심방: 면담', '11-16', '12-345 x', '김하늘 전화심방']);
+  sc.eq('㉕ PLAUD 전사문 파일 이름 = YY-MMDD HH;MM p 글', A.txtBase({ n: '11-13 김하늘 전화심방: 면담 일정', t }, 'p'), '26-1113 11;42 p 김하늘 전화심방; 면담 일정');
+  sc.eq('㉕ whisper 파일 이름(MM-DD 도 뗌)', A.txtBase({ n: '11-13 김하늘 전화심방', t }), '26-1113 11;42 김하늘 전화심방');
+  sc.eq('㉕ p 이름 알아보기', [A.isPName('26-1113 11;42 p 김하늘.txt'), A.isPName('26-1113 11;42 p.txt'), A.isPName('26-1113 11;42 p (2).txt'), A.isPName('26-1113 11;42 박소망.txt'), A.isPName('26-1113 11;42 pd.txt')], [true, true, true, false, false]);
+  sc.eq('㉕ 이름으로 찾기에 p 꼴도', A.locateTxt(ID('a'), { n: '11-13 김하늘', t }, ['26-1113 11;42 p 김하늘.txt'], {}, {}).file, '26-1113 11;42 p 김하늘.txt');
+  const now = Date.UTC(2026, 10, 24, 3, 0), H = 3600e3;
+  sc.eq('㉕ PLAUD 전사가 없으면 녹음 뒤 6시간 기다림 · 있으면 안 기다림', [A.waitPlaud({ c: now - 2 * H }, now), A.waitPlaud({ c: now - 7 * H }, now), A.waitPlaud({ c: now - H, p: true }, now), A.plaudWaitUntil({ c: now - 2 * H })], [true, false, false, now + 4 * H]);
+  const recs = { [ID('a')]: { id: ID('a'), n: '김하늘 심방', t: now - H, c: now - H, d: 60 }, [ID('b')]: { id: ID('b'), n: '박소망 심방', t: now - H, c: now - H, d: 60, p: true } };
+  const v = A.listView(recs, {}, { kw: ['심방'] }, now);
+  sc.eq('㉕ 계기판: 기다리는 줄에 기다림 끝 시각 · PLAUD 전사가 있는 줄은 안 기다림', [v.find(x => x.id === ID('a')).wait, v.find(x => x.id === ID('b')).wait, v.find(x => x.id === ID('b')).p], [now + 5 * H, 0, true]);
+  sc.eq('㉕ whisper 되풀이 알아보기(말소리가 거의 없는 짧은 녹음 꼴)', [A.looksStuck(Array(20).fill('모델은 \'모델\'의 \'모델\'입니다.').join('\n')), A.looksStuck('안녕하세요.\n네 목사님.\n지난주 이야기요.\n네.\n감사합니다.\n기도할게요.\n네.')], [true, false]);
+  const S2 = { docs: {} }, io = { read: async id => ({ job: S2.docs[id] ? J(S2.docs[id].v) : null, ver: S2.docs[id] ? S2.docs[id].ver : null, now: 1 }),
+    write: async (id, patch, ver) => { const cur = S2.docs[id]; if ((cur ? cur.ver : null) !== ver) return false; S2.docs[id] = { v: Object.assign({}, cur ? cur.v : {}, patch), ver: (cur ? cur.ver : 0) + 1 }; return true; } };
+  await A.tryClaim(io, ID('a'), '집'); await A.finish(io, ID('a'), '집', true, '', { src: 'w', odd: true });
+  sc.eq('㉕ 끝냄에 어디서 온 전사인지 · 의심', [S2.docs[ID('a')].v.src, S2.docs[ID('a')].v.odd], ['w', true]);
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), wo = /async function workOne[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('㉕ PLAUD 전사문을 먼저 받고, 없을 때만 소리를 받아 whisper', wo.indexOf('plaudTxt(J, trf)') > 0 && wo.indexOf('plaudTxt(J, trf)') < wo.indexOf('fetchAudio'), true);
+  sc.eq('㉕ PLAUD 전사문 명령은 PIPE 표로 · -o 파일로', J(A.pipeArgv('tr', { id: ID('a'), out: '/w/a.plaud.txt' })), ['plaud', 'transcript', ID('a'), '-o', '/w/a.plaud.txt']);
+  sc.eq('㉕ 기다림은 [지금] 누른 녹음만 건너뜀', /filter\(id => id === kick \|\| !PH\.waitPlaud\(st\.recs\[id\], now\)\)/.test(HELPER), true);
+  sc.eq('㉕ whisper 로 만든 것에 PLAUD 전사가 생기면 바꿈 — 한 차례 2개 · 드라이브에서 지운 것 · 뺀 것 · 이미 p 는 그대로', /j\.src === 'p' \|\| j\.gone \|\| j\.pick === 'out'/.test(HELPER) && /if \(n\+\+ >= 2\) break;/.test(HELPER) && /dropTxt\(id, true\)/.test(HELPER), true);
+  sc.eq('㉕ 계기판: 보기 단추 앞 P · W 알약(W 빨강 = 의심)', /'<span class="pill p" title="PLAUD 전사문을 가져옴">P<\/span>'/.test(HTML) && /'<span class="pill w' \+ \(r\.odd \? ' odd' : ''\)/.test(HTML) && /if \(done\) right = pill \+ '<span class="ibs">' \+ ib\('view'/.test(HTML), true);
 }
 // ㉒ (P3b) 잠근 사본
 {
