@@ -13,7 +13,8 @@
 // ⑬ (P3) 꺼진 Mac 일감 이어받기: 전사 중 5분마다 renew(시험은 2초) → 그 Mac 을 죽이고 31분 전으로 → 다른 Mac 이 이어 해 txt 하나
 // ⑭ (P3) 맡김을 잃으면 바로 멈춤: 전사 중 다른 Mac 이 맡은 것으로 바꾸면 whisper 를 멈추고 txt 를 쓰지 않음 → 풀린 뒤 이어 함 · txt 하나.
 // (P3b) 파일 이름 = PLAUD 제목('YY-MMDD HH;MM 글') · 옛 f_….txt 를 새 이름으로 · PLAUD 에서 제목을 고치면 이름도 따라감 · Mac 마다 자동 전사(계기판 스위치)
-//   · 잠근 사본(계기판에서 암호 정하기 → 이 Mac 도우미에 저절로 · 틀린 키 거절 → 복사 · 받기 = 드라이브 본문) · 안 쓰는 모델 지우기 · ⑮ 임시 파일 크기(줄 · 합계) → 비우기. 이름은 모두 지어낸 것.
+//   · 잠근 사본(계기판에서 암호 정하기 → 이 Mac 도우미에 저절로 · 틀린 키 거절 → 복사 · 받기 = 드라이브 본문) · 안 쓰는 모델 지우기 · ⑮ 임시 파일 크기(줄 · 합계) → 비우기.
+// ⑯ (P3c) 접는 Mac 카드 · 탭 · 버전 단추 · 목록 읽은 때 · 드라이브에서 지운 것 알아채기 → 다시 전사 · txt 지우기(뺌, 다시 안 함) · 보기 판 · 모두 지금 시작. 이름은 모두 지어낸 것.
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -222,10 +223,14 @@ try {
     const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
     await pg.goto('https://block7.my/plaudhub/');
     await pg.waitForSelector('#fb-em'); await pg.fill('#fb-em', 'hb@example.com'); await pg.fill('#fb-pw', 'secret12'); await pg.click('[data-act="login"]');
+    await pg.waitForSelector('[data-act="tab"][data-k="all"]', { timeout: 20000 }).catch(() => null);
+    ok('⑨ (P3c) 처음 탭은 \'새 녹음\' · 키워드로 고른 녹음은 \'할 것\' 에', await pg.$eval('[data-act="tab"].on', e => e.dataset.k).catch(() => '') === 'new' && !(await pg.$('[data-id="' + ID('a') + '"]')));
+    await pg.click('[data-act="tab"][data-k="all"]');
     const listed = await until(async () => (await pg.textContent('#main')).includes('김하늘 집사 심방'));
     const main = await pg.textContent('#main');
     ok('⑨ 로그인하면 두 Mac 카드 · 녹음 목록', listed && main.includes('집') && main.includes('사무실') && main.includes('2 / 2 켜짐'), main.slice(0, 300));
-    ok('⑨ 한국 시각(06:05Z = 오후 3:05) · 길이', main.includes('11. 22. (일) 오후 3:05') && main.includes('48분'), main.slice(0, 600));
+    const rowA = await pg.textContent('[data-id="' + ID('a') + '"]');
+    ok('⑨ 한국 시각 — 날짜 묶음 \'11. 22. (일)\' · 시각 칸 15:05 · 제목은 날짜를 뗀 글 · 길이', main.includes('11. 22. (일)') && /^\s*15:05김하늘 집사 심방/.test(rowA) && rowA.includes('48분') && !rowA.includes('2026-11-22'), rowA);
     ok('⑨ 키워드 \'심방\' 녹음은 저절로 골라짐', await pg.$eval('[data-id="' + ID('a') + '"]', e => e.classList.contains('pick')));
     await pg.click('[data-id="' + ID('c') + '"]');
     const pk = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('c')); return d && d.pick === 'in' && d; });
@@ -313,8 +318,8 @@ try {
     ok('⑪ 전사 글이 기록 · 계정에 없음', !everything.includes('지어낸 전사 글'));
     const left = ['home', 'office'].flatMap(k => { try { return fs.readdirSync(path.join(tmp, k, 'work')); } catch (_) { return []; } });
     ok('⑪ 받은 소리 · WAV · 중간 글은 지움', left.length === 0, left);
-    const shown = await until(async () => { const t = await pg.textContent('[data-id="' + ID('a') + '"]'); return /드라이브에 있음/.test(t) && t; }, 10000);
-    ok('⑪ 계기판 줄: \'… Mac 전사 · 드라이브에 있음\' · 단계 셋 초록', !!shown && await pg.$$eval('[data-id="' + ID('a') + '"] .steps span.on', xs => xs.length) === 3, shown);
+    const shown = await until(() => pg.$('[data-id="' + ID('a') + '"] [data-act="view"]'), 10000);
+    ok('⑪ (P3c) 끝난 줄: 보기 · 복사 · 받기 · ⋯ 그림 단추 · 왼쪽 동그라미는 빈 채(눌러도 고름 안 바뀜)', !!shown && await pg.$eval('[data-id="' + ID('a') + '"]', e => !e.classList.contains('pick') && !e.dataset.act && [...e.querySelectorAll('.ib')].map(b => b.dataset.act).join() === 'view,copy,save,more'));
     // (P3b) 잠근 사본 — 키가 있는 집이 자기 것 · 사무실이 한 것까지 올림
     const txts = await until(async () => { const d = await admin('plaud/' + UID + '/txt'); return d && [ID('a'), ID('b'), ID('c')].every(id => d[id]) && d; }, 20000);
     ok('(P3b) 잠근 사본 셋(사무실이 전사한 것은 키가 있는 집이 올림) · 칸은 c · iv · v 뿐', txts && Object.keys(txts[ID('a')]).filter(k => !['id', '_ut'].includes(k)).sort().join() === 'c,iv,v', txts && Object.keys(txts));
@@ -337,6 +342,9 @@ try {
 
     // ⑫ (P3) 모델 시험 — 계기판에서
     await pg.mouse.click(5, 300); await sleep(300);
+    // 이 시험 기계엔 Homebrew 가 없어 집 카드에 ✕ 가 하나 있다 → 저절로 펼침 · 접힌 줄에 무엇이 ✕ 인지
+    const fold = await pg.$eval('[data-act="fold"][data-mac="집"]', e => [e.getAttribute('aria-expanded'), e.textContent]).catch(() => ['', '']);
+    ok('(P3c) ✕ 가 있는 Mac 카드는 저절로 펼침 · \'준비 7/8 — Homebrew ✕\'', fold[0] === 'true' && /준비 7\/8 — Homebrew ✕/.test(fold[1]), fold);
     await until(() => pg.$('[data-act="mtestpane"][data-mac="집"]'), 10000);
     await pg.click('[data-act="mtestpane"][data-mac="집"]'); await pg.waitForSelector('[data-act="mtrun"]');
     const mp = await pg.textContent('#pane');
@@ -417,6 +425,38 @@ try {
     ok('⑮ 비우기 → 하던 전사를 멈추고 실패 \'임시 파일을 비움\'(한 시간 뒤 다시)', gFail && gFail.err === '임시 파일을 비움' && lines('wcalls').some(l => l.includes(' ' + ID('g') + '.wav ') && / killed /.test(l)), gFail);
     const emptied = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && d.disk && Object.keys(d.disk.work || {}).length === 0 && !fs.existsSync(path.join(home.dir, 'work', ID('g') + '.wav')) && d; }, 30000);
     ok('⑮ 일 폴더가 비고 · 합계 0 · txt 는 안 생김', !!emptied && !driveTxts().some(x => x.startsWith('26-1117')) && await until(async () => /합계 0KB/.test(await pg.textContent('.tmpline')), 15000), emptied && emptied.disk);
+    // ⑯ (P3c)
+    fs.writeFileSync(path.join(tmp, 'wmode'), '400');
+    ok('⑯ 맨 위 버전 단추 = 지금 판', (await pg.textContent('#verbtn')).trim() === PH.APP_VERSION, await pg.textContent('#verbtn'));
+    const hm2 = await admin('plaud/' + UID + '/mac/집');
+    ok('⑯ 목록 읽은 때 — Mac 소식(listed) · 녹음 제목줄', hm2 && hm2.listed > 0 && /목록 읽은 때 .* · 집/.test(await pg.textContent('#main')), hm2 && hm2.listed);
+    // 드라이브에서 a 를 지움 → 드라이브에 없음 → 다시 전사
+    fs.rmSync(path.join(DRIVE, NAME.a));
+    const gone = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.gone === true && d; }, 20000);
+    ok('⑯ 드라이브에서 지운 것을 도우미가 알아챔(gone) · 저절로 다시 전사하지 않음', !!gone && gone.st === 'done' && wStarts(ID('a')).length === 1, gone);
+    await pg.click('[data-act="tab"][data-k="todo"]');
+    const goneRow = await until(async () => { const e = await pg.$('[data-id="' + ID('a') + '"]'); return e && /드라이브에 없음/.test(await e.textContent()) && e; }, 10000);
+    ok('⑯ 계기판 \'할 것\' 탭에 \'드라이브에 없음\' + 다시 전사', !!goneRow);
+    await pg.click('[data-id="' + ID('a') + '"] [data-act="redo"]');
+    const redone = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.st === 'done' && !d.gone && driveTxts().includes(NAME.a) && d; }, 40000);
+    ok('⑯ 다시 전사 → 드라이브에 새 txt · 끝남(gone 없음) · whisper 두 번째', !!redone && wStarts(ID('a')).length === 2, [redone, driveTxts()]);
+    // b: ⋯ → txt 지우기
+    await pg.click('[data-act="tab"][data-k="all"]'); await sleep(300);
+    await pg.click('[data-id="' + ID('b') + '"] [data-act="more"]'); await pg.waitForSelector('#pane [data-act="rmtxt"]'); await pg.click('#pane [data-act="rmtxt"]');
+    const rmd = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('b')); const tx = await admin('plaud/' + UID + '/txt/' + ID('b')); return d && d.pick === 'out' && !d.st && !tx && !driveTxts().includes(NAME.b) && d; }, 30000);
+    ok('⑯ txt 지우기 → 드라이브 파일 · 잠근 사본 없음 · 일감은 \'뺌\' 하나만', !!rmd, [rmd, driveTxts()]);
+    await sleep(4000);
+    ok('⑯ … 다시 전사하지 않음 · \'드라이브에 없음\' 으로도 안 바뀜', wStarts(ID('b')).length === 1 && !(await admin('plaud/' + UID + '/job/' + ID('b'))).gone && !driveTxts().includes(NAME.b));
+    // 보기
+    await pg.click('[data-id="' + ID('e') + '"] [data-act="view"]');
+    const vt = await until(async () => { const e = await pg.$('#pane .vtext'); return e && (await e.textContent()); }, 15000);
+    ok('⑯ 보기 → 아래 판에 전사 글(드라이브 본문과 같음) · 판 아래 복사 · 받기', vt === PH.txtBody(fs.readFileSync(path.join(DRIVE, NAME.e), 'utf8')) && !!(await pg.$('#pane [data-act="copy"]')) && !!(await pg.$('#pane [data-act="save"]')), vt);
+    await pg.keyboard.press('Escape'); await sleep(400);
+    // 모두 지금 시작 — g 는 비우기로 실패(고른 채 기다림)
+    await until(() => pg.$('[data-act="kickall"]'), 10000);
+    await pg.click('[data-act="kickall"]');
+    const kc = await until(async () => { const d = await admin('plaud/' + UID + '/cmd'); const x = d && Object.values(d).find(c => c.what === 'kick'); return x && x.st === 'ok' && x; }, 20000);
+    ok('⑯ 모두 지금 시작 → 켜지고 자동 전사가 켜진 Mac(집)이 요청을 받음', !!kc && kc.mac === '집', kc);
     ok('⑨ 계기판 화면 오류 없음', errs.length === 0, errs);
   } finally { await browser.close(); }
 } catch (e) { bad++; console.log('  ✗ 도중에 멈춤', e && e.stack); }

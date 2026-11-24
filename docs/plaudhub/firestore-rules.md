@@ -4,6 +4,11 @@ PLAUD 도우미 자료는 HB 파이어베이스(block7-8f24e)의 `plaud/{HB uid}
 `rec`(녹음 제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계) · `mac`(두 Mac 소식 · 준비 상태 · 깔린 모델 · 모델 시험 시간) · `cmd`(설치 요청) · `txt`(HB 암호 문구로 잠근 전사 글 — 파이어베이스 · 구글 쪽에서는 풀 수 없음) 여섯 칸.
 BLOCK7 · Sweeter · 기도노트 · 셀 inside · 교역자 로테이션의 규칙은 건드리지 않고 **이 덩어리 하나만 더한다.**
 
+## 다시 붙이기 (2026-11-24, 1122-P P3c — 도우미 h. 26-1124-1)
+
+P3c 에서 바뀐 곳: 일감에 **드라이브에 없음 표시(`gone`)**, Mac 소식에 **목록 읽은 때(`listed`)**, 요청에 **`kick`(지금 시작) · `rmtxt`(전사 txt 지우기) · `redo`(다시 전사)**.
+다시 붙이지 않으면 새 도우미의 소식 쓰기가 거절되어 Mac 이 '꺼짐' 으로 보이고, [지금] · txt 지우기 · 다시 전사가 '보내지 못했습니다' 가 된다. 아래 '붙이는 순서' 5번 괄호(지우고 그 자리에)대로.
+
 ## 다시 붙이기 (2026-11-23 저녁, 1122-P P3b — 도우미 h. 26-1123-3)
 
 P3b 에서 바뀐 곳: 설정에 **Mac 마다 자동 전사 켜기 · 끄기(`auto`) · 잠금 암호 표지(`kdf` — 소금 · 반복 수 · 맞는지 보는 표지뿐, 암호 자체는 없음)**,
@@ -49,16 +54,17 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
       }
       match /job/{id} {
         allow read, delete: if own();
-        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err'])
+        allow create, update: if own() && idOk(id) && d().keys().hasOnly(['st', 'step', 'mac', 'at', 'pick', 'err', 'gone'])
           && (!('st' in d()) || d().st in ['work', 'done', 'fail'])
           && (!('step' in d()) || d().step in ['get', 'stt', 'drive'])
           && (!('pick' in d()) || d().pick in ['in', 'out'])
           && (!('err' in d()) || (d().err is string && d().err.size() <= 120))
+          && (!('gone' in d()) || d().gone is bool)
           && atOk();
       }
       match /mac/{name} {
         allow read, delete: if own();
-        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk'])
+        allow create, update: if own() && name.size() <= 24 && d().keys().hasOnly(['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed'])
           && d().at == request.time
           && (!('models' in d()) || (d().models is list && d().models.size() <= 10))
           && (!('test' in d()) || d().test is map)
@@ -67,7 +73,7 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
       match /cmd/{id} {
         allow read, delete: if own();
         allow create, update: if own() && d().keys().hasOnly(['mac', 'what', 'st', 'at', 'arg', 'log'])
-          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest', 'rmmodel', 'clean']
+          && d().what in ['ffmpeg', 'whisper', 'plaud', 'model', 'login', 'update', 'refresh', 'check', 'mtest', 'rmmodel', 'clean', 'kick', 'rmtxt', 'redo']
           && d().st in ['new', 'run', 'ok', 'fail'];
       }
       // 잠근 사본(P3b) — HB 암호 문구로 잠근 전사 글만(c · iv). 평문 칸은 없다
@@ -87,7 +93,7 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
   녹음 제목은 `rec` 칸에만(HB 결정 11/23 — 폰에서도 보려고). 전사문은 **평문으로는 어느 칸에도 없다**(원본은 구글 드라이브) — `txt` 칸에는 HB 만 아는 암호 문구로 잠근 글자만 받는다(HB 결정 11/23 '가').
 - 녹음 번호 꼴(영문 · 숫자 · 밑줄 8 ~ 64자)이 아니면 받지 않는다.
 - 맡은 시각 · Mac 소식 시각은 **파이어베이스 시계로만** 찍힌다 — 두 Mac 시계가 달라도 '30분 지나면 풀림' 이 똑같이 셈해진다.
-- 설치 요청(`cmd`)은 정해 둔 열한 가지 이름만 받는다(ffmpeg · whisper · plaud · model · login · update · refresh · check · mtest · rmmodel · clean). Mac 도우미도 그 표에 있는 명령만 돌린다.
+- 설치 요청(`cmd`)은 정해 둔 열네 가지 이름만 받는다(ffmpeg · whisper · plaud · model · login · update · refresh · check · mtest · rmmodel · clean · kick · rmtxt · redo). Mac 도우미도 그 표에 있는 명령만 돌린다.
 - Mac 소식(`mac`)의 모델 시험 결과(`test`)에는 모델별 걸린 시간 · 빠르기만 — 시험 전사 글은 그 Mac 안(`~/Library/Application Support/plaudhub/test`)에만 있다.
 
 ### 시험

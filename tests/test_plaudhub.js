@@ -22,6 +22,7 @@
 //  ⑲ (P3) 전사 진행 · 모델 시험 — whisper 진행 % · '전사 중 n분째' · 잰 빠르기로 어림 고침 · 시험 요청 · 시험 글은 계정에 안 감
 //  ⑳ (P3b) 파일 이름 — PLAUD 제목 날짜 'YYYY-MM-DD HH:MM:SS 글' → 'YY-MMDD HH;MM 글' · 날짜 없으면 녹음 시각 · ':' '/' 걷기 · 같은 이름 (2) · 머리말 ID 로 같은 녹음 찾기
 //  ㉑ (P3b) Mac 마다 자동 전사 · 쓰는 모델은 못 지움 · 임시 파일 크기 합계 · 비우기는 전사 중에도
+//  ㉓ (P3c) 녹음 목록 B2 · D1 — 탭 나누기 · 제목에서 날짜 떼기 · 시각 · 날짜 묶음(오늘 · 어제) · 지금 · txt 지우기 · 다시 전사 요청 · 드라이브에 없음(규모 상한) · 끝난 줄 · 그림 단추 · 버전 단추
 //  ㉒ (P3b) 잠근 사본 — 암호 문구 → 키 · 맞는 암호만 열림 · 잠근 글에 평문이 없음 · 표지에 암호가 없음 · 계기판 복사(누른 자리에서 시작) · 받기 이름
 const fs = require('fs'), path = require('path'), vm = require('vm'), http = require('http'), os = require('os');
 const { makeScorer } = require('./_load');
@@ -234,11 +235,11 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const what = (/d\(\)\.what in \[([^\]]*)\]/.exec(rules) || [])[1] || '';
   sc.eq('⑪ 규칙이 받는 요청 이름 = 도우미가 아는 이름(INSTALLS)', what.split(',').map(s => s.trim().replace(/'/g, '')), J(A.CMD_WHAT));
   const jobKeys = (/match \/job\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err']);
+  sc.eq('⑪ 일감 칸에는 제목 · 전사문 자리가 없다', jobKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['st', 'step', 'mac', 'at', 'pick', 'err', 'gone']);
   sc.eq('⑪ 녹음 번호 꼴 = 판단 덩어리와 같음', rules.includes("'^[A-Za-z0-9_]{8,64}$'") && String(A.ID_RE) === '/^[A-Za-z0-9_]{8,64}$/', true);
   sc.eq('⑪ 규칙은 plaud 칸만 (users 를 열지 않음)', /match \/users/.test(rules), false);
   const macKeys = (/match \/mac\/\{name\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk']);
+  sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed']);
   const setKeys = (/allow create, update: if own\(\) && d\(\)\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
   sc.eq('⑪ (P3b) 설정 칸: Mac 마다 자동 · 잠금 표지(암호 자체는 없음)', setKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['kw', 'days', 'model', 'auto', 'kdf']);
   const txtKeys = (/match \/txt\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
@@ -363,7 +364,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
     sc.eq('⑮ 끝난 것은 맡을 차례에 다시 안 나옴', A.wantedJobs(recs, Object.fromEntries(Object.entries(S.docs).map(([k, d]) => [k, d.v])), { kw: ['심방'] }, '집', S.now).length, 0);
   }
   sc.eq('⑮ 요청 이름 mtest(모델 시험)는 녹음 번호를 실어야', [A.cmdFor({ mac: '집', what: 'mtest', st: 'new', arg: ID('a') }, '집', 0), A.cmdFor({ mac: '집', what: 'mtest', st: 'new', arg: 'x/y' }, '집', 0)], [true, false]);
-  sc.eq('⑮ 전사 · 시험 중에 미루지 않는 요청은 다시 보기 · 목록 읽기 · 비우기뿐', J(A.CMD_WHILE_BUSY), ['check', 'refresh', 'clean']);
+  sc.eq('⑮ 전사 · 시험 중에 미루지 않는 요청 — 다시 보기 · 목록 읽기 · 비우기 · 지금 · txt 지우기 · 다시 전사', J(A.CMD_WHILE_BUSY), ['check', 'refresh', 'clean', 'kick', 'rmtxt', 'redo']);
 }
 // ⑯ (P3) 공간 모자람
 {
@@ -475,6 +476,35 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉑ 크기 글', [A.bytesLabel(0), A.bytesLabel(800), A.bytesLabel(23.4e6), A.bytesLabel(41.25e9)], ['0KB', '1KB', '23MB', '41.3GB']);
   sc.eq('㉑ 비우기는 하던 전사를 멈추고(실패 \'임시 파일을 비움\') 일 폴더를 지움', /c\.what === 'clean'[\s\S]{0,300}stopJob\(J, 'clean'\)[\s\S]{0,200}rmQuiet\(WORK\(\)\)/.test(HELPER) && /clean: '임시 파일을 비움'/.test(HELPER), true);
   sc.eq('㉑ 계기판: 줄마다 임시 파일 · 맨 위 합계 · 비우기', HTML.includes("'<span class=\"tmp\">임시 파일 '") && HTML.includes('임시 소리 파일 합계') && HTML.includes('data-act="cleanask"'), true);
+}
+// ㉓ (P3c) 녹음 목록 B2 · D1
+{
+  const now = Date.UTC(2026, 10, 24, 3, 0), H = 3600e3;   // 한국 11-24 정오
+  sc.eq('㉓ 제목에서 PLAUD 날짜 · 시각 떼기', [A.titleRest('2026-11-23 16:55:33 솔빛마을'), A.titleRest('2026-11-23 16:55:33'), A.titleRest('11-16 부산 전화심방'), A.titleRest('')], ['솔빛마을', '', '11-16 부산 전화심방', '']);
+  sc.eq('㉓ 시각 칸(한국)', A.hhmm(Date.UTC(2026, 10, 23, 7, 55)), '16:55');
+  sc.eq('㉓ 날짜 묶음 이름 — 오늘 · 어제 · 그 전', [A.dayLabel(now - H, now), A.dayLabel(now - 24 * H, now), A.dayLabel(now - 72 * H, now), A.dayLabel(Date.UTC(2025, 11, 30, 3), now)],
+    ['오늘 · 11. 24. (화)', '어제 · 11. 23. (월)', '11. 21. (토)', '2025. 12. 30. (화)']);
+  const rec = (k, n, h) => ({ id: ID(k), n, t: now - h * H, c: now - h * H + 60e3, d: 600 });
+  const recs = Object.fromEntries([rec('a', '2026-11-24 10:00:00 솔빛마을', 2), rec('b', '김하늘 심방', 3), rec('c', '', 4), rec('d', '박소망 심방', 5), rec('e', '회의', 6), rec('f', '', 7), rec('g', '이은혜 심방', 8)].map(r => [r.id, r]));
+  const jobs = { [ID('c')]: { pick: 'in' }, [ID('d')]: { st: 'done', step: 'drive', mac: '집' }, [ID('e')]: { pick: 'out' }, [ID('f')]: { pick: 'in', st: 'fail', err: 'x', at: 1 }, [ID('g')]: { st: 'done', gone: true } };
+  const v = A.listView(recs, jobs, { kw: ['심방'], days: 14 }, now), tabOf = k => v.find(x => x.id === ID(k)).tab;
+  sc.eq('㉓ 탭 — 새 녹음(손대지 않음) · 할 것(고름 · 키워드 · 실패 · 드라이브에 없음) · 끝남 · 뺌', ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map(tabOf), ['new', 'todo', 'todo', 'done', 'out', 'todo', 'todo']);
+  sc.eq('㉓ 탭 세기 — 전체는 모두(뺀 것 포함)', A.TABS.map(([k]) => v.filter(x => A.inTab(x, k)).length), [1, 4, 1, 7]);
+  const a = v.find(x => x.id === ID('a'));
+  sc.eq('㉓ 줄 — 제목은 덧붙인 글만 · 시각 · 날짜 열쇠', [a.rest, a.tm, a.day], ['솔빛마을', '10:00', '2026-11-24']);
+  sc.eq('㉓ 끝난 것 중 드라이브에서 지운 것은 gone', [v.find(x => x.id === ID('g')).gone, v.find(x => x.id === ID('d')).gone], [true, false]);
+  sc.eq('㉓ 지금 · txt 지우기 · 다시 전사 요청 — 녹음 번호 꼴만(지금은 번호 없어도 됨)', [
+    A.cmdFor({ mac: '집', what: 'kick', st: 'new' }, '집', 0), A.cmdFor({ mac: '집', what: 'kick', st: 'new', arg: ID('a') }, '집', 0), A.cmdFor({ mac: '집', what: 'kick', st: 'new', arg: '../x' }, '집', 0),
+    A.cmdFor({ mac: '집', what: 'rmtxt', st: 'new', arg: ID('a') }, '집', 0), A.cmdFor({ mac: '집', what: 'rmtxt', st: 'new' }, '집', 0), A.cmdFor({ mac: '집', what: 'redo', st: 'new', arg: ID('a') }, '집', 0)], [true, true, false, true, false, true]);
+  sc.eq('㉓ 드라이브에 없음 — 셋까지는 적고 · 넷 넘게 한꺼번에면 적지 않고 알림(드라이브 앱이 잠깐 비어 보일 때)', [J(A.gonePlan(['x', 'y'])), J(A.gonePlan(['1', '2', '3', '4']))], [{ set: ['x', 'y'], held: 0 }, { set: [], held: 4 }]);
+  sc.eq('㉓ 드라이브에서 지운 것은 저절로 다시 전사하지 않음(끝남 그대로)', A.claimCheck({ st: 'done', gone: true }, '집', 0).why, 'done');
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8'), dt = /async function dropTxt[\s\S]*?\n}\n/.exec(HELPER)[0];
+  sc.eq('㉓ txt 지우기 · 다시 전사 — 머리말 ID 파일 · 잠근 사본을 지우고 일감을 새로(뺌 · 고름)', /driveIndex\(drive\)/.test(dt) && /fs\.rmSync\(path\.join\(drive, idx\[id\]\)\)/.test(dt) && /\{ delete: docName\('txt', id\) \}/.test(dt) && /pick: PH\.fsEnc\(again \? 'in' : 'out'\)/.test(dt), true);
+  sc.eq('㉓ 지금 — 누른 녹음부터 맡음', /if \(st\.kickId && want\.includes\(st\.kickId\)\) want = \[st\.kickId\]/.test(HELPER), true);
+  sc.eq('㉓ 끝난 줄: 왼쪽 동그라미는 빈 채 · 눌러도 고름이 안 바뀜(data-act 없음) · 보기 · 복사 · 받기 · ⋯ 차례', /\(done \? '' : ' data-act="pick"/.test(HTML) && /ib\('view', r\.id\) \+ ib\('copy', r\.id\) \+ ib\('save', r\.id\) \+ ib\('more', r\.id\)/.test(HTML), true);
+  sc.eq('㉓ 보기 아이콘 = HB 가 준 모양(둥근 네모 안 세 줄, 마지막이 짧음)', /view: '<svg viewBox="0 0 24 24"><rect x="3\.5" y="3\.5" width="17" height="17" rx="2\.5"\/><path d="M7\.5 9h9M7\.5 12\.5h9M7\.5 16h5"\/><\/svg>'/.test(HTML), true);
+  sc.eq('㉓ Mac 카드: 모두 ✓ 면 접고(기기마다 펼친 것 기억) · ✕ 가 있으면 저절로 펼침 · 꺼진 Mac 은 한 줄', /open = bad \|\| S\.open\.has\(v\.name\)/.test(HTML) && /\(open \? '<ul class="ready">'/.test(HTML) && /if \(!v\.alive\) return '<div class="card mac off">' \+ head \+ '<\/div>'/.test(HTML), true);
+  sc.eq('㉓ 맨 위 버전 단추(새 버전이면 받기) · 다시 읽기 단추 설명', /id="verbtn" data-act="ver"/.test(HTML) && /title="녹음 목록 지금 다시 읽기"/.test(HTML), true);
 }
 // ㉒ (P3b) 잠근 사본
 {
