@@ -57,6 +57,9 @@ await t('(P3c) gone 은 참 · 거짓만', hb.doc('plaud/hb/job/' + ID).set({ go
 await t('(P3c) 다시 전사 · txt 지우기 — 일감을 pick 하나로 새로 씀', hb.doc('plaud/hb/job/' + ID).set({ pick: 'in' }), true);
 await t('(P3e) 끝냄에 어디서 온 전사인지(src p · w) · 전사 의심(odd)', hb.doc('plaud/hb/job/' + ID).set({ src: 'p', odd: false }, { merge: true }), true);
 await t('(P3e) src 는 p · w 만', hb.doc('plaud/hb/job/' + ID).set({ src: 'gpt' }, { merge: true }), false);
+await t('(P4) 초안 상태(dr) · 실패 까닭(dre)', hb.doc('plaud/hb/job/' + ID).set({ dr: 'wait', dre: '고른 모델을 쓸 수 없습니다' }, { merge: true }), true);
+await t('(P4) dr 은 wait · run · ok · fail · sent 만', hb.doc('plaud/hb/job/' + ID).set({ dr: 'done' }, { merge: true }), false);
+await t('(P4) 초안 실패 까닭은 120자까지', hb.doc('plaud/hb/job/' + ID).set({ dre: 'x'.repeat(121) }, { merge: true }), false);
 await t('남은 일감을 못 읽는다', out.doc('plaud/hb/job/' + ID).get(), false);
 await t('남은 일감을 못 집는다', out.doc('plaud/hb/job/' + ID).set({ st: 'work', mac: '남', at: ST }, { merge: true }), false);
 // 두 Mac 이 같은 녹음을 동시에 집기 — 트랜잭션이라 한 대만 된다(같은 계정 둘 = 집 · 사무실)
@@ -112,6 +115,21 @@ await t('(P3b) 녹음 번호 꼴이 아니면 못 쓴다', hb.doc('plaud/hb/txt/
 await t('(P3b) 남은 잠근 사본을 못 읽는다', out.doc('plaud/hb/txt/' + ID).get(), false);
 await t('(P3b) 로그인 안 하면 못 읽는다', anon.doc('plaud/hb/txt/' + ID).get(), false);
 await t('(P3b) HB 는 잠근 사본을 지운다', hb.doc('plaud/hb/txt/' + ID).delete(), true);
+// AI 초안(P4) — 잠근 글만
+await t('(P4) 설정 ai(켜기 · 모델)', hb.doc('plaud/hb').set({ ai: { on: true, model: 'gpt-test' } }, { merge: true }), true);
+await t('(P4) 설정 ai 에 열쇠(key) 칸은 못 넣는다', hb.doc('plaud/hb').set({ ai: { on: true, key: 'sk-비밀' } }, { merge: true }), false);
+await t('(P4) Mac 소식에 AI 열쇠 있음(aik) · 모델 목록(aim)', hb.doc('plaud/hb/mac/집').set({ at: ST, aik: true, aim: ['gpt-a', 'gpt-b'] }, { merge: true }), true);
+await t('(P4) aik 는 참 · 거짓만(열쇠 글을 못 넣음)', hb.doc('plaud/hb/mac/집').set({ at: ST, aik: 'sk-비밀' }, { merge: true }), false);
+await t('(P4) HB 는 잠근 초안(c · iv · v)을 쓴다', hb.doc('plaud/hb/draft/' + ID).set({ c: 'QUJD', iv: 'aXY=', v: 1 }), true);
+await t('(P4) 잠근 고칠 점(fc · fiv)을 더한다', hb.doc('plaud/hb/draft/' + ID).set({ fc: 'QUJD', fiv: 'aXY=' }, { merge: true }), true);
+await t('(P4) 초안 칸에 평문(md · packet)은 못 넣는다', hb.doc('plaud/hb/draft/' + ID).set({ c: 'QUJD', iv: 'aXY=', md: '① 핵심 한줄' }), false);
+await t('(P4) 녹음 번호 꼴이 아니면 못 쓴다', hb.doc('plaud/hb/draft/a.b').set({ c: 'QUJD', iv: 'aXY=', v: 1 }), false);
+await t('(P4) 남은 초안을 못 읽는다', out.doc('plaud/hb/draft/' + ID).get(), false);
+await t('(P4) HB 는 초안을 지운다', hb.doc('plaud/hb/draft/' + ID).delete(), true);
+await t('(P4) 잠근 지침(cfg/guide)', hb.doc('plaud/hb/cfg/guide').set({ c: 'QUJD', iv: 'aXY=', v: 1 }), true);
+await t('(P4) 지침에 평문(text)은 못 넣는다', hb.doc('plaud/hb/cfg/guide').set({ c: 'QUJD', iv: 'aXY=', text: '지침' }), false);
+await t('(P4) cfg 에는 guide 한 장뿐', hb.doc('plaud/hb/cfg/other').set({ c: 'QUJD', iv: 'aXY=', v: 1 }), false);
+await t('(P4) 남은 지침을 못 읽는다', out.doc('plaud/hb/cfg/guide').get(), false);
 // 다른 앱 칸은 그대로 잠김(이 덩어리는 plaud 만)
 await t('이 규칙은 users/{uid} 를 열지 않는다', hb.doc('users/hb').get(), false);
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
