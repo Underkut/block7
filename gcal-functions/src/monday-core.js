@@ -10,13 +10,18 @@
  *     (HB: 글 내용 · '글' 열은 읽지 않는다)  '영상 사용' 은 따로 · '해당 없음' 은 뺌 · '확인 필요' 는 따로.
  *   '주일 영상 소식' — 방영일 = 그 주일인 아이템(제목 · 유튜브). 없으면 그 주엔 영상이 없다.
  *     '분당만 / 부산 다른 버전' 은 적는 칸이 없고 업데이트 · 댓글에 그때그때 적힌다(HB) → '부산' 이 든 묶음(업데이트 + 답글)만 골라 준다.
+ *   설교 본문 'Bible verse for worship service' (1123-B B3b, HB 11/23 · 실제 보드를 읽어 확인 11/24) — 카톡 글 프리셋의 {본문}.
+ *     열 'Date'(날짜) · 'Bible verse'(긴 글) 만 읽는다. 'Preacher'(사람) · 'Title' · 파일 열은 묻지 않는다.
+ *     예배 갈래는 칸이 없고 **아이템 이름**에만 있다('11/22 Sunday Morning' · '11/22 Lifeline' · '11/20 Encounter' · '11/13 리바이브드' · '11/18 수요'
+ *     · 'Sunday 1부,3부 Morning' · 'Sunday Morning (2부)' · '[America] Sunday Morning' …) — 보기(Sunday · Lifeline …)는 API 에 거르는 조건이 안 보인다.
+ *     본문 글은 영어 · 한글 · 줄임말이 섞여 있다(그대로 돌려주고, 한글로 바꾸기는 앱 rotation-core 의 verseKo).
  */
 "use strict";
 
 // 보드 id — 보드가 수백 개라 이름으로 훑지 않는다. 담당자가 새 보드를 만들면 여기를 고친다.
-const BOARDS = { busan: "3731160063", video: "1369332975" };
+const BOARDS = { busan: "3731160063", video: "1369332975", verse: "6353654594" };
 
-// 보내는 질문은 이 셋뿐 (모두 query — 읽기). 값은 변수로만 넣는다(글을 이어 붙이지 않는다).
+// 보내는 질문은 이 넷뿐 (모두 query — 읽기). 값은 변수로만 넣는다(글을 이어 붙이지 않는다).
 const QUERIES = {
   me: "query { me { id } }",
   meta: "query ($ids: [ID!]) { boards(ids: $ids) { id name columns { id title type } groups { id title } } }",
@@ -25,6 +30,8 @@ const QUERIES = {
     + " vid: boards(ids: $v) { items_page(limit: 20, query_params: { rules: $vr }) { items { id name url"
     + " column_values { id type text ... on LinkValue { url } }"
     + " updates(limit: 30) { id created_at text_body creator { name } replies { id created_at text_body creator { name } } } } } } }",
+  // 설교 본문 (B3b) — 날짜 열이 그 부산 주(월 ~ 주일) 안인 아이템의 이름 · 날짜 · 본문 열만
+  verses: "query ($b: [ID!], $c: [String!], $r: [ItemsQueryRule!]) { boards(ids: $b) { items_page(limit: 50, query_params: { rules: $r }) { items { id name column_values(ids: $c) { id text } } } } }",
 };
 
 const squash = (t) => String(t == null ? "" : t).replace(/\s+/g, "");
@@ -143,4 +150,51 @@ function weekOut(data, p, sun) {
   };
 }
 
-module.exports = { BOARDS, QUERIES, okSun, groupTitle, colBy, plan, spokenOf, busanNotes, videoOf, weekVars, weekOut };
+/* ---- 설교 본문 (1123-B B3b) ---- */
+// 하루 더하기 ('YYYY-MM-DD')
+function addDay(d, n) { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+// meta 의 답에서 본문 보드의 열 둘 — 없으면 { err }
+function versePlan(meta) {
+  const b = (meta || []).find(x => String(x.id) === BOARDS.verse);
+  if (!b) return { err: "board" };
+  const date = colBy(b.columns, "Date", "date"), verse = colBy(b.columns, "Bible verse");
+  if (!date || !verse) return { err: "vshape" };
+  return { dateCol: date.id, verseCol: verse.id };
+}
+// 그 주일의 부산 주 = 월 ~ 주일 (앱 visitSun 과 같은 주)
+function verseVars(p, sun) {
+  return { b: [BOARDS.verse], c: [p.dateCol, p.verseCol], r: [{ column_id: p.dateCol, compare_value: [addDay(sun, -6), sun], operator: "between" }] };
+}
+// 아이템 이름 → 예배 갈래. k: sun(주일 오전) · ll(라이프라인) · fri(금요 — 인카운터 · 리바이브드 · 어웨이크) · wed(수요) · tue(화요) · sp(특별 — 성탄 · 새해 …) · ''(모름 · 다른 나라)
+//   bu = 주일 오전이 부마다 다를 때만 그 부 ['1','3'] (없으면 [] = 모든 부)
+//   ⚠️ 'Lifeline-Great Awakening Movie' 처럼 라이프라인 이름에 다른 낱말이 붙으니 라이프라인을 먼저 본다.
+function verseKind(name) {
+  const n = String(name || "").replace(/^\s*\d{1,2}\s*\/\s*\d{1,2}\.?\s*/, "").trim(), low = n.toLowerCase();
+  if (!n || /america|미국|^\d+$|^새로운/i.test(n)) return { k: "", bu: [] };
+  if (/life\s*line|라이프\s*라인|^\(?ll\b/i.test(low)) return { k: "ll", bu: [] };
+  if (/sunday|주일/.test(low)) {
+    const bu = new Set();
+    for (const m of n.matchAll(/([1-3](?:\s*,\s*[1-3])*)\s*부/g)) for (const d of m[1].match(/[1-3]/g)) bu.add(d);
+    for (const m of low.matchAll(/\b([1-3])(?:st|nd|rd)\b/g)) bu.add(m[1]);
+    return { k: "sun", bu: [...bu].sort() };
+  }
+  if (/encounter|인카운터|revived|리바이브드|awake|어웨이크|friday|금요/.test(low)) return { k: "fri", bu: [] };
+  if (/wednesday|수요/.test(low)) return { k: "wed", bu: [] };
+  if (/tuesday|화요/.test(low)) return { k: "tue", bu: [] };
+  return { k: "sp", bu: [] };
+}
+const VERSE_LEN = 300, VNAME_LEN = 60;
+// 두 번째 질문의 답 → [{ d, k, bu, n, v }] 날짜 차례 · 본문이 빈 것 · 모르는 갈래는 뺌
+function verseOut(data, p, sun) {
+  const items = ((((data || {}).boards || [])[0] || {}).items_page || {}).items || [], lo = addDay(sun, -6), out = [];
+  for (const it of items) {
+    const cv = {}; for (const c of it.column_values || []) cv[c.id] = String(c.text == null ? "" : c.text);
+    const d = cv[p.dateCol].slice(0, 10), v = cv[p.verseCol].replace(/\r/g, "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < lo || d > sun || !v) continue;
+    const kd = verseKind(it.name); if (!kd.k) continue;
+    out.push({ d, k: kd.k, bu: kd.bu, n: String(it.name || "").replace(/\s+/g, " ").trim().slice(0, VNAME_LEN), v: v.slice(0, VERSE_LEN) });
+  }
+  return { sun, list: out.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0)) };
+}
+
+module.exports = { BOARDS, QUERIES, okSun, groupTitle, colBy, plan, spokenOf, busanNotes, videoOf, weekVars, weekOut, addDay, versePlan, verseVars, verseKind, verseOut };
