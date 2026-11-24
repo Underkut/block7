@@ -3,6 +3,7 @@
  * studyTick (1분마다, 서울)  sremind/{id} 중 시각이 된 것을 아이 폰에 푸시하고 지운다.
  *                           타이머(KAIROS) 잠금 화면 알림도 같은 틱에서 함께 돈다 (timer.js · timerDue).
  *                           BLOCK7·Sweeter 말씀 · 할일 알림도 (b7push.js · b7Due).
+ *                           교역자 로테이션 알림도 (rotapush.js · rotaDue — 1123-B B4).
  *                           알림에는 [시작] [미루기] 단추가 붙는다(안드로이드). 2시간 넘게 밀린 것은 보내지 않고 지운다.
  * studyPing (HTTP)
  *   POST /report  {fid, kidId, sid}  아이가 공부를 보냈다 → 부모님께
@@ -112,7 +113,8 @@ exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Se
   const b7 = require("./b7push").b7Due().catch((e) => console.warn("b7Due", e.message));
   const cell = require("./cellpush").cellDue().catch((e) => console.warn("cellDue", e.message));   // 셀 inside 새 코멘트 (10분에 한 번)
   const care = require("./carepush").careDue().catch((e) => console.warn("careDue", e.message));   // 심방 노트 대기함 (10분에 한 번)
-  try { await studyDue(); } finally { await timer; await b7; await cell; await care; }
+  const rota = require("./rotapush").rotaDue().catch((e) => console.warn("rotaDue", e.message));   // 교역자 로테이션 알림 (at <= 지금 인 사람만)
+  try { await studyDue(); } finally { await timer; await b7; await cell; await care; await rota; }
 });
 async function studyDue() {
   const now = Date.now();

@@ -237,6 +237,10 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 - **카톡 글 프리셋(1123-B B3, HB 11/23)**: 예배 순서 판 세 번째 알약. 문장 틀 `{2부 봉독}` 같은 칸을 그 주 시트 이름으로 채우고 빈 칸이 든 줄은 뺀다 — 판단은 `rotation-core` 의 `kt…`(`ktFill` · `ktList` · `ktPut`, `test_rotation` (70)).
   저장은 `rota/{HB}/kt/hb`(HB 것 전부 · HB 만) + `kt/share`(HB 가 '교역자와 함께 쓰기' 켠 것만 · 팀 읽기) + `kt/{교역자 uid}`(그분 것 · 그분만) — 규칙은 문서 안 칸을 못 가려서 나눴다. 책 · `ui` · `staff` 칸에 넣지 말 것.
   틀만 저장한다(성도 이름은 그때그때 시트 표에서). `{날}` = 복사하는 날 기준(HB D3). 손으로 적은 본문은 이 기기에만(`rota_ktx_v1`) — 적은 것이 Monday 본문(B3b)을 이긴다. `{본문}` = 그 줄 예배(없으면 틀의 첫 예배 · 그 주일 2부)의 Monday 본문 · `{2부 본문}` 처럼 예배를 집을 수도(`ktMonVerse`).
+- **알림(1123-B B4, HB 11/23 E1 ~ E3)**: 메뉴 → 계정 → '내 알림' — HB · 교역자마다 자기 알림(예배 · 갈래 · 모양 · 때 여러 줄 · 누르면 갈 곳). 정한 때에 서버 `wallet-functions/src/rotapush.js`(studyTick 에 얹음)가 그 주 시트 표로 글을 만들어 보낸다.
+  알림 글 · 보낼 때 · 설정 다듬기(`rp…`)는 `rotation-core` 한 곳 — 서버는 `tools/make-rotapush-core.sh` 가 뗀 `rotation-core.gen.js` 를 쓴다(**손으로 고치지 말 것** · core 를 고치면 다시 만들어 함께 커밋, `check.sh` 가 막음). 서버에 같은 판단을 두 벌 쓰지 말 것.
+  설정 · 등록 번호는 서버만 쓰는 `rotapush/{uid}`(보안 규칙에 없음) — 책 · `ui` · `staff` 칸에 넣지 말 것. BLOCK7 알림(`users/{uid}/pushTokens` · b7push)과 섞지 말 것 · 워커는 `/rotation/sw.js` 따로.
+  서버는 `at <= 지금` 인 사람만 묻고 **보낼 때만** 표 둘(`gs/bteam` · `gs/bserve`)을, 책은 '내 부산 주만' · 교역자 · 카톡 글일 때만 읽는다 — 1분마다 책을 읽게 하지 말 것. 순서는 `docs/rotation/push-setup.md` · 시험 `test_rotapush` · `tests/rules/rotapush.e2e.mjs`.
 - **부산 교역자는 `visits` 한 곳에만** 적는다. 예배 구성의 '부산 교역자' 줄은 거기서 읽어 보여 준다(두 시트가 어긋나던 까닭).
 - **예배팀 일정(R13)**: 서버 `gcal-functions/src/worship.js`(+ `worship-core.js` · `test_worship`)가 2시간마다 예배팀 API 를 **읽기만** 해 `rota/{HB}/ext/worship` 에 기간 통째로 바꿔 끼운다(쓰기 규칙 없음 = 서버만). 열쇠는 Secret Manager `SCHEDULE_API_KEY` — 값을 코드 · 저장소 · 로그 · 화면에 두지 말 것, 앱이 예배팀 API 를 직접 부르지 말 것.
   저장하는 사람은 **인도자 전원 + 우리 명단 분만**(나머지 팀원은 버림 — 예배팀 개발자께 한 약속). 이름 맞추기 명단은 HB 앱이 문서 맨 위 `wkeys`(+ `wpull`)에 적는다 — 책(`b10`)에 넣지 말 것. 겹침은 `worshipClash` (미정 = 노랑). 순서는 `docs/rotation/worship-setup.md`.
