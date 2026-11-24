@@ -180,3 +180,5 @@ exports.cellpush = require("./cellpush").cellpush;
 exports.carepush = require("./carepush").carepush;
 // BLOCK7 시리로 할일 넣기 — 아이폰 단축어가 부른다 (쪽지함 pray/{uid}/c/b7inbox 에 한 줄)
 exports.b7siri = require("./b7siri").b7siri;
+// 교역자 로테이션 알림 (sweeter.my/rotation/, 1123-B B4) — HTTP 하나 (보낼 때 셈은 studyTick 이 함께 돈다). BLOCK7 알림과 따로
+exports.rotapush = require("./rotapush").rotapush;

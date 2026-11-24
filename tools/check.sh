@@ -86,6 +86,20 @@ else
   rm -f "$_tmp3"
 fi
 
+# 교역자 로테이션 알림 서버가 쓰는 판단 덩어리(1123-B B4)도 rotation/index.html 에서 뗀다.
+# 낡으면 서버가 앱과 다른 글 · 다른 때로 알림을 보낸다 — 그래서 배포를 막는다.
+_tmp5=$(mktemp)
+cp wallet-functions/src/rotation-core.gen.js "$_tmp5" 2>/dev/null || : > "$_tmp5"
+./tools/make-rotapush-core.sh >/dev/null
+if diff -q "$_tmp5" wallet-functions/src/rotation-core.gen.js >/dev/null; then
+  echo "rotation-core.gen.js ↔ rotation/index.html 동기화됨 ✓"
+else
+  echo "wallet-functions/src/rotation-core.gen.js 가 rotation/index.html 보다 낡았습니다 ✗"
+  echo "   → ./tools/make-rotapush-core.sh 로 다시 만들고 함께 커밋하세요 (지금 다시 만들어 두었습니다)"
+  fail=1
+fi
+rm -f "$_tmp5"
+
 # Sweeter 운영본은 **커밋하지 않는다** (커밋하면 block7.my 에도 올라가 같은
 # 도메인에 로그인이 두 벌이 된다 — CLAUDE.md '절대 하지 말 것').
 # 그래서 낡았는지 견줄 대상이 없다. 대신 **지금 만들어 보고** 제대로 나오는지 본다.
