@@ -7,6 +7,7 @@
 //   ④ 보드 · 열이 바뀌면 짐작하지 않고 알린다
 //   ⑤ 서버: 로그인 필수 · 광고는 주인 본인이나 rota/{주인}.team 의 확인된 이메일만 · 주인의 열쇠로 · 결과를 저장하지 않는다
 //   ⑥ 열쇠는 mondayKeys/{uid} 에만 · Monday 에 맞는지 물어본 뒤에만 맡긴다
+//   ⑦ 설교 본문(1123-B B3b): 'Bible verse for worship service' 의 Date · Bible verse 열만 · 그 부산 주(월 ~ 주일) · 갈래는 아이템 이름에서 · 보드가 바뀌면 알림 · 서버 /verses
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -19,7 +20,7 @@ const J = (v) => JSON.parse(JSON.stringify(v));
 
 console.log('\n① 읽기만');
 {
-  sc.eq('① 질문은 셋뿐', Object.keys(C.QUERIES).sort(), ['me', 'meta', 'week']);
+  sc.eq('① 질문은 넷뿐 (B3b 에 verses 하나 더함)', Object.keys(C.QUERIES).sort(), ['me', 'meta', 'verses', 'week']);
   sc.eq('① 모두 읽기(query)로 시작', Object.values(C.QUERIES).every(q => /^query\b/.test(q)), true);
   sc.eq('① 쓰기 질문 모양이 코드에 없다', /mutation\s*[({]|["'`]\s*mutation/i.test(SRV + CORE), false);
   sc.eq('① 서버가 묻는 이름이 모두 목록 안', [...SRV.matchAll(/mon\(\w+, "(\w+)"/g)].map(m => m[1]).every(n => n in C.QUERIES), true);
@@ -110,6 +111,33 @@ console.log('\n④ 보드 · 열이 바뀌면');
   sc.eq('④ 그룹이 아직 없으면 found:false', J(C.weekOut({ bus: [{ groups: [] }], vid: [{ items_page: { items: [] } }] }, p2, '2026-11-22').busan), { found: false, group: '26-1122', spoken: [], video: [], check: [] });
 }
 
+console.log('\n⑦ 설교 본문 (B3b)');
+{
+  // 실제 보드(11/24)에서 본 아이템 이름 꼴 — 이름은 예배 이름뿐이다
+  const K = (n) => { const x = C.verseKind(n); return x.k + (x.bu.length ? x.bu.join('') : ''); };
+  sc.eq('⑦ 갈래: 주일 오전 · 라이프라인(이름에 다른 낱말이 붙어도 먼저) · 금요(인카운터 · 리바이브드 · 어웨이크) · 수요 · 화요 · 특별 · 다른 나라 · 빈 이름은 모름',
+    ['11/22 Sunday Morning', '11/22 Lifeline', '9/27 Lifeline-Great Awakening Movie', '10/11 SPECIAL LIFELINE SERVICE - 비전', '(Lifeline PM)', '11/20 Encounter', '11/13 리바이브드', '인카운터', '어웨이크', '11/18 수요', 'Tuesday', '12/24 Christmas', '리더임명예배', '[America] Sunday Morning', '새로운 worship service', '1', ''].map(K),
+    ['sun', 'll', 'll', 'll', 'll', 'fri', 'fri', 'fri', 'fri', 'wed', 'tue', 'sp', 'sp', '', '', '', '']);
+  sc.eq('⑦ 주일 오전이 부마다 다르면 그 부', ['8/16 Sunday 1부,3부 Morning', '8/16 Sunday  2부 Morning', 'Sunday Morning (1, 3부)', 'Sunday Morning (2부)', 'Sunday Morning 3rd.', 'Sunday Morning 1st.', '(Sunday AM)'].map(K),
+    ['sun13', 'sun2', 'sun13', 'sun2', 'sun3', 'sun1', 'sun']);
+  const V = [{ id: 'date4', title: 'Date', type: 'date' }, { id: 'long_text', title: 'Bible verse', type: 'long_text' }];
+  sc.eq('⑦ 열은 제목으로(Date 는 날짜 열) · 보드가 없으면 board · 열이 없으면 vshape',
+    [J(C.versePlan([{ id: C.BOARDS.verse, columns: V }])), C.versePlan([]).err, C.versePlan([{ id: C.BOARDS.verse, columns: [V[1]] }]).err, C.versePlan([{ id: C.BOARDS.verse, columns: [{ id: 'd', title: 'Date', type: 'text' }, V[1]] }]).err],
+    [{ dateCol: 'date4', verseCol: 'long_text' }, 'board', 'vshape', 'vshape']);
+  sc.eq('⑦ 그 부산 주(월 ~ 주일) 날짜 사이 · 읽는 열은 Date · Bible verse 둘(Preacher · Title · 파일 열은 묻지 않음)', J(C.verseVars({ dateCol: 'date4', verseCol: 'long_text' }, '2026-11-22')),
+    { b: [C.BOARDS.verse], c: ['date4', 'long_text'], r: [{ column_id: 'date4', compare_value: ['2026-11-16', '2026-11-22'], operator: 'between' }] });
+  sc.eq('⑦ 질문은 읽기 · 열은 변수로만 · 50개 상한', [/^query \(\$b: \[ID!\], \$c: \[String!\], \$r: \[ItemsQueryRule!\]\)/.test(C.QUERIES.verses), /column_values\(ids: \$c\)/.test(C.QUERIES.verses), /limit: 50/.test(C.QUERIES.verses), /person|people|updates/.test(C.QUERIES.verses)], [true, true, true, false]);
+  const it = (name, d, v) => ({ id: 'x', name, column_values: [{ id: 'date4', text: d }, { id: 'long_text', text: v }] });
+  const out = C.verseOut({ boards: [{ items_page: { items: [
+    it('11/22 Lifeline', '2026-11-22', '2 Samuel 3:1-39 (whole chapter)'), it('11/18 수요', '2026-11-18', '[약1:12-27]'), it('11/22 Sunday Morning', '2026-11-22', '  Matthew 9:14-17\r\n'),
+    it('11/15 Sunday Morning', '2026-11-15', '지난주'), it('11/23 Sunday Morning', '2026-11-23', '다음 주'), it('11/20 Encounter', '2026-11-20', ''), it('[America] Sunday Morning', '2026-11-22', 'Mark 1:1'),
+    it('11/21 ' + '가'.repeat(80), '2026-11-21', 'x'.repeat(400)), it('날짜 없음', '', 'John 3:16')] } }] }, { dateCol: 'date4', verseCol: 'long_text' }, '2026-11-22');
+  sc.eq('⑦ 결과: 그 주 안 · 본문이 있는 것 · 모르는 갈래(다른 나라) 뺌 · 날짜 차례 · 이름 60자 · 본문 300자(영어 그대로 — 한글은 앱이)',
+    [out.sun, out.list.map(x => [x.d, x.k, x.v.slice(0, 20)]), out.list[1].n.length, out.list[1].v.length],
+    ['2026-11-22', [['2026-11-18', 'wed', '[약1:12-27]'], ['2026-11-21', 'sp', 'xxxxxxxxxxxxxxxxxxxx'], ['2026-11-22', 'll', '2 Samuel 3:1-39 (who'], ['2026-11-22', 'sun', 'Matthew 9:14-17']], 60, 300]);
+  sc.eq('⑦ 서버 /verses 는 열쇠가 없으면 /ads 와 같게 nokey · 보드 모양이 바뀌면 vshape 글', [/path === "\/ads" \|\| path === "\/verses"/.test(SRV), /vshape: "Monday 본문 보드 모양이 바뀌었습니다/.test(SRV)], [true, true]);
+}
+
 console.log('\n⑤ ⑥ 서버');
 {
   // 파이어베이스 · fetch 를 흉내 내고 monday.js 를 그대로 돌린다
@@ -137,6 +165,8 @@ console.log('\n⑤ ⑥ 서버');
     if (b.query === C.QUERIES.meta) data = { boards: [
       { id: C.BOARDS.busan, columns: [{ id: 'color1', title: '구두 광고', type: 'status' }], groups: [{ id: 'g1', title: '26-1122' }] },
       { id: C.BOARDS.video, columns: [{ id: 'date__1', title: '방영일', type: 'date' }, { id: 'rep1', title: '리포터', type: 'dropdown' }], groups: [] }] };
+    if (b.query === C.QUERIES.meta && b.variables.ids[0] === C.BOARDS.verse) data = { boards: [{ id: C.BOARDS.verse, columns: [{ id: 'date4', title: 'Date', type: 'date' }, { id: 'long_text', title: 'Bible verse', type: 'long_text' }, { id: 'person', title: 'Preacher', type: 'people' }], groups: [] }] };
+    if (b.query === C.QUERIES.verses) data = { boards: [{ items_page: { items: [{ id: '1', name: '11/22 Sunday Morning', column_values: [{ id: 'date4', text: '2026-11-22' }, { id: 'long_text', text: 'Matt. 9:9-13' }] }] } }] };
     if (b.query === C.QUERIES.week) data = { bus: [{ groups: [{ title: '26-1122', items_page: { items: [{ name: '새벽 기도회', column_values: [{ text: '1' }] }] } }] }],
       vid: [{ items_page: { items: [{ name: '가을 음악회 안내', column_values: [{ id: 'rep1', type: 'dropdown', text: '홍길동' }], updates: [] }] } }] };
     return { status: 200, ok: true, json: async () => ({ data }) };
@@ -169,6 +199,11 @@ console.log('\n⑤ ⑥ 서버');
     sc.eq('⑤ 결과 모양', st.body, { sun: '2026-11-22', busan: { found: true, group: '26-1122', spoken: [{ n: 1, title: '새벽 기도회' }], video: [], check: [] }, video: [{ title: '가을 음악회 안내', url: '', link: '', notes: [], rep: true }] });
     sc.eq('⑤ 보낸 질문은 목록 안의 것뿐 (meta · week)', sent.map(s => Object.keys(C.QUERIES).find(k => C.QUERIES[k] === s.query)), ['meta', 'week']);
     sc.eq('⑤ 결과를 저장하지 않는다', J(Object.keys(store)).sort(), before);
+    sent.length = 0;
+    const vs = await call('/verses', 'tokST', { owner: 'hbUID0001', sun: '2026-11-22' });
+    sc.eq('⑦ /verses: 교역자도 주인 열쇠로 · 결과 모양 · 질문은 meta(본문 보드만) · verses', [vs.code, vs.body, sent.map(s => Object.keys(C.QUERIES).find(k => C.QUERIES[k] === s.query)), sent[0].variables.ids, sent[1].variables.c],
+      [200, { sun: '2026-11-22', list: [{ d: '2026-11-22', k: 'sun', bu: [], n: '11/22 Sunday Morning', v: 'Matt. 9:9-13' }] }, ['meta', 'verses'], [C.BOARDS.verse], ['date4', 'long_text']]);
+    sc.eq('⑦ /verses: 팀 밖 · 주일 아님은 막음 · 결과를 저장하지 않는다', [(await call('/verses', 'tokXX', { owner: 'hbUID0001', sun: '2026-11-22' })).code, (await call('/verses', 'tokHB', { owner: 'hbUID0001', sun: '2026-11-20' })).code, J(Object.keys(store)).sort()], [403, 400, before]);
     sc.eq('⑤ 교역자는 주인 열쇠를 지우지 못한다 (자기 칸만)', ((await call('/off', 'tokST')), 'mondayKeys/hbUID0001' in store), true);
     await call('/off', 'tokHB');
     sc.eq('⑥ 끊기 = 자기 칸 지움', 'mondayKeys/hbUID0001' in store, false);

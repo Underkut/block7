@@ -45,6 +45,7 @@
 //  (71) 카톡 글 B3c(HB 사진 11/23): 예배 순서 판 높이 고정(알약 바꿔도) · 말풍선 아이콘 오른쪽 위(첫 줄 빈 듯 안 보이게, 광고 판도) · 생략 문구
 //  (72) 처음 열기 B3d(HB 11/23 '맞추는 중…' 오래): 한 주 모으기(weekPlan)는 책을 한 번만 훑고 예전과 같은 답 · 열 때 요청 먼저 · 그리기는 덜 · 개발자만 맞춘 시간 · 책 크기
 //  (73) 처음 열기 B3d-2(HB 아이패드 11/23 '오히려 오래' · 측정 줄 안 보임): 같은 이름 함수 없음(뒤의 것이 덮음) · 사파리 로그인이 구글 준비를 안 기다림(구글 로그인 복귀 중만) · 단계별 시각은 개발자만 · 이 기기에만
+//  (75) 설교 본문 B3b(HB 결정 D2): Monday 본문 글(영어 · 한글 · 줄임말) → '마태복음 9:9-13'(66권 표 · AI ✗ · 모르면 빈 글) · 예배마다 맞는 본문 · 손으로 적은 것이 이김 · 안내 줄 · 이 기기에만(책 · 계정 ✗)
 //  (74) 섬기는 분 불러오기 띠 B3e(HB 11/24): 표가 오기 전 문구 + 움직임 셋(등불 · 모여 한 몸 · 부르심) 무작위 · B 빠르게 · 동작 줄이기면 멈춤 · 오면 스르륵 · 표 없으면 접힘
 //  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
@@ -87,7 +88,8 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
   gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phSpans, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll,
-  KT_BASE, KT_MAX, ktTokens, ktSvc, ktNames, ktDay, ktFill, ktItem, ktDoc, ktList, ktPut, ktNextOrd, ktStaff };`, ctx);
+  KT_BASE, KT_MAX, ktTokens, ktSvc, ktNames, ktDay, ktFill, ktItem, ktDoc, ktList, ktPut, ktNextOrd, ktStaff,
+  BV_BOOKS, BV_KO_MORE, verseKo, ktMonVerse, ktVerses, ktVerseNote };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -2383,6 +2385,71 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(74) 표가 오면 그 한 번만 스르륵 들어옴(arrive) · 그 주 표가 없으면 접힘(gsband-gone) · 표가 오거나 못 읽어도 다시 그림',
     [/\$\{was \? ' arrive' : ''\}/.test(ui), /if \(!b\) return was \? '<div class="gsband-gone"><\/div>' : '';/.test(ui), /S\.gs\[k\] = null; seen\.add\(k\); if \(k === 'bteam' \|\| k === 'bserve'\) laterRender\(\);/.test(ui)],
     [true, true, true]);
+}
+
+
+// (75) 1123-B B3b — 설교 본문을 Monday 에서 (HB 결정 D2). 본문 글은 실제 보드(11/24)에서 본 꼴 — 이름은 지어낸 것.
+{
+  sc.eq('(75) 66권 · 한글 이름 · 줄임 모두 다름 · 번호 책은 같은 영어 이름을 번호로 가름',
+    [A.BV_BOOKS.length, new Set(A.BV_BOOKS.map(b => b[0])).size, new Set(A.BV_BOOKS.map(b => b[1])).size, A.BV_BOOKS.filter(b => b[3]).length], [66, 66, 66, 17]);
+  const K = t => A.verseKo(t);
+  sc.eq('(75) 영어 이름 · 줄임 · 번호(붙여 · 띄어 · 로마 숫자 · First) → 한글',
+    ['Matthew 9:14-17', 'Matt. 8:28-34', '2 Samuel 3:1-39 (whole chapter)', '1 Sam.28:1-25', '1Samuel 3 (whole chapter)', '1  Samuel 17:1-58', 'II Kings 5:1-14', 'First Corinthians 13', '1 Cor. 13:4-13', 'Eph. 6:1-9', 'Hebrew 4:1-16', 'Number 12:1-16 (Whole Chapter)', 'Psalm 52 (whole Psalm)', 'Song of Solomon 2:1-7', 'Rev. 3:1-22', 'judges 6:33-40; 7:1-25'].map(K),
+    ['마태복음 9:14-17', '마태복음 8:28-34', '사무엘하 3:1-39', '사무엘상 28:1-25', '사무엘상 3장', '사무엘상 17:1-58', '열왕기하 5:1-14', '고린도전서 13장', '고린도전서 13:4-13', '에베소서 6:1-9', '히브리서 4:1-16', '민수기 12:1-16', '시편 52편', '아가 2:1-7', '요한계시록 3:1-22', '사사기 6:33-40, 7:1-25']);
+  sc.eq('(75) 한글 이름 · 줄임 · 장 절 꼴 · 물결 · 긴 줄 → 같은 꼴',
+    ['[약1:12-27]', '갈 5:16-26', '요6:35-40', '요한복음 14:25~27', '마가복음 5장 25-41절', '요한복음 3장11절~21절', '시편 27편', '고린도후서 10장', '마태 16:13-19', '고린도 전서 15:45', '사무엘 상 3:1', '에베소서 1장 3–14절', '3부 : 마14:25~33', '대하30-31, 암9'].map(K),
+    ['야고보서 1:12-27', '갈라디아서 5:16-26', '요한복음 6:35-40', '요한복음 14:25-27', '마가복음 5:25-41', '요한복음 3:11-21', '시편 27편', '고린도후서 10장', '마태복음 16:13-19', '고린도전서 15:45', '사무엘상 3:1', '에베소서 1:3-14', '마태복음 14:25-33', '역대하 30-31장, 아모스 9장']);
+  sc.eq('(75) 여럿: 다른 책은 이름마다 · 같은 책은 이름 한 번 · 다음 책 앞 번호(1 John)는 장이 아님 · 장 넘는 범위 · 같은 장의 절 · 괄호 덧말 건너뜀',
+    ['이사야 6:1–8, 누가복음 5:37–39', '2 Tim. 1:6-12; 1 John 3:10-15; John 5:24', '고전 3:1-17, 고전 6:12-20', 'Galatians 2:15-3:9', '롬 7:19 ~ 8:17', 'Hebrew 11:1,2,8-10', 'Judges 10 (whole chapter); 11:1-28', '요일2:15-17 / 요이1:6-11', '1 Sam. \n21:10-15; 22:1-5; Psalm 34:1-22'].map(K),
+    ['이사야 6:1-8, 누가복음 5:37-39', '디모데후서 1:6-12, 요한일서 3:10-15, 요한복음 5:24', '고린도전서 3:1-17, 6:12-20', '갈라디아서 2:15-3:9', '로마서 7:19-8:17', '히브리서 11:1, 2, 8-10', '사사기 10장, 11:1-28', '요한일서 2:15-17, 요한이서 1:6-11', '사무엘상 21:10-15, 22:1-5, 시편 34:1-22']);
+  sc.eq('(75) 제목 · 설명 글 속 본문만 · 달 이름(Mar.) · 사람 말(I · 마음 · 수요)은 책이 아님',
+    ['Text: Matthew 5:1-12  (same passage as last week)', 'Sunday AM (October 6, 2024): Text: Psalm 29:1-2; Psalm 27:1-14', 'Lifeline (Mar. 3, 2025): Job 3', 'Isa 6:1-8', '제목: 마음과 목숨과 뜻\n마가복음 12:28~34', '수요 1:1'].map(K),
+    ['마태복음 5:1-12', '시편 29:1-2, 27:1-14', '욥기 3장', '이사야 6:1-8', '마가복음 12:28-34', '']);
+  sc.eq('(75) 모르면 빈 글(짐작하지 않음): 책 없음 · 번호 없는 번호 책 · 장 앞 다른 말 · 읽는 길이 둘 · 빈 글',
+    ['다니엘 무비', '(없음; 기도회)', '음악극', 'Samuel 3', 'Leviticus chapters 20-22', '신명기 10-12~11-1', 'John -15:1~17', '', null].map(K), ['', '', '', '', '', '', '', '', '']);
+  // 그 주 Monday 목록 (서버 /verses 꼴)
+  const VS = [{ d: '2026-11-27', k: 'fri', bu: [], n: 'Encounter', v: 'John 14:6-31' }, { d: '2026-11-29', k: 'sun', bu: [], n: 'Sunday Morning', v: 'Matt. 9:9-13' },
+    { d: '2026-11-29', k: 'll', bu: [], n: 'Lifeline', v: '2 Samuel 3:1-39 (whole chapter)' }, { d: '2026-11-25', k: 'wed', bu: [], n: '수요', v: '갈 5:16-26' }];
+  const S13 = [{ d: '2026-11-29', k: 'sun', bu: ['2'], n: 'Sunday 2부 Morning', v: '신명기 10:12-22' }, { d: '2026-11-29', k: 'sun', bu: ['1', '3'], n: 'Sunday 1부,3부 Morning', v: '에베소서 1장 3–14절' }];
+  const mv = (L, x) => { const r = A.ktMonVerse(L, x, '2026-11-29'); return r && r.ko; };
+  sc.eq('(75) 예배마다 본문: 주일 1 · 2 · 3부 = Sunday Morning · LL = Lifeline · 금요 = 그 금요(날짜) · 틀에 예배 없음 = 그 주일 2부 · 부마다 다르면 그 부 · 없으면 null',
+    [mv(VS, { side: 'sun', svc: '1', date: '2026-11-29' }), mv(VS, { side: 'sun', svc: 'LL', date: '2026-11-29' }), mv(VS, { side: 'fri', svc: '', date: '2026-11-27' }), mv(VS, null),
+      mv(S13, { side: 'sun', svc: '1', date: '2026-11-29' }), mv(S13, { side: 'sun', svc: '2', date: '2026-11-29' }), mv(S13, null), A.ktMonVerse([], null, '2026-11-29'), A.ktMonVerse(VS, { side: 'sun', svc: '2', date: '2026-11-22' }, '2026-11-29')],
+    ['마태복음 9:9-13', '사무엘하 3:1-39', '요한복음 14:6-31', '마태복음 9:9-13', '에베소서 1:3-14', '신명기 10:12-22', '신명기 10:12-22', null, null]);
+  const team = { sun: [{ date: '2026-11-29', svc: '2', relay: false, cells: { 봉독: ['고은결'] } }, { date: '2026-11-29', svc: 'LL', relay: false, cells: { 봉독: ['도하율'] } }],
+    fri: [{ date: '2026-11-27', name: '인카운터', relay: false, cells: { 예배인도: ['이목사'] } }], roles: { sun: [], fri: [] } };
+  const C = o => Object.assign({ team, serve: null, sun: '2026-11-29', today: '2026-11-28', txt: '', staff: [], verses: VS }, o || {});
+  const F = (t, o) => A.ktFill(t, C(o));
+  sc.eq('(75) {본문}: 손으로 적은 것이 없으면 Monday(봉독 틀 = 2부) · 적으면 그것이 이김 · Monday 도 없으면 그 줄 뺌',
+    [F(A.KT_BASE[0].t).text, F(A.KT_BASE[0].t, { txt: '요한복음 3:16' }).text, F(A.KT_BASE[0].t, { verses: [] }).drop],
+    ['내일 봉독위원은 고은결 성도님이십니다.\n\n본문은 마태복음 9:9-13입니다.', '내일 봉독위원은 고은결 성도님이십니다.\n\n본문은 요한복음 3:16입니다.', 1]);
+  sc.eq('(75) {본문} 은 그 줄의 예배(LL 줄 = Lifeline · 금요 줄 = 그 금요) · {2부 본문} · {LL 본문} · {금요 본문} = 그 예배(시트 표가 없어도) · 손으로 적은 칸은 {본문} 만',
+    [F('LL {LL 봉독} — {본문}\n{금요} {본문}').text, F('{2부 본문} / {LL 본문} / {금요 본문}', { txt: '손글' }).text, F('{LL 본문}', { team: null }).text],
+    ['LL 도하율 — 사무엘하 3:1-39\n인카운터 요한복음 14:6-31', '마태복음 9:9-13 / 사무엘하 3:1-39 / 요한복음 14:6-31', '사무엘하 3:1-39']);
+  sc.eq('(75) 한글로 못 바꾼 본문은 그 줄을 뺌(영어를 카톡에 보내지 않음) · 쓴 본문 기록(판 안내용: 예배 · 한글 · 원문)',
+    [F('본문 {본문}\n끝', { verses: [{ d: '2026-11-29', k: 'sun', bu: [], n: 'x', v: '다니엘 무비' }] }).text, J(F('{2부 봉독} {본문}\n{LL 본문}').verse)],
+    ['끝', [{ label: '2부', hand: '', ko: '마태복음 9:9-13', raw: 'Matt. 9:9-13', n: 'Sunday Morning' }, { label: 'LL', hand: '', ko: '사무엘하 3:1-39', raw: '2 Samuel 3:1-39 (whole chapter)', n: 'Lifeline' }]]);
+  sc.eq('(75) 끼울 칸 단추: Monday 에 본문이 있는 예배마다 \'예배 본문\'(목록을 줄 때만 — 예전 단추는 그대로)',
+    [A.ktTokens(team, null, '2026-11-29', VS).map(x => x.k).filter(k => /본문/.test(k)), A.ktTokens(team, null, '2026-11-29').map(x => x.k).filter(k => /본문/.test(k))],
+    [['본문', '금요 본문', '2부 본문', 'LL 본문'], ['본문']]);
+  sc.eq('(75) 서버 답 다듬기: 모르는 갈래 · 틀린 날짜 · 빈 본문 버림 · 부 표시는 1 ~ 3 만 · 글 자름',
+    J(A.ktVerses([{ d: '2026-11-29', k: 'sun', bu: ['2', '9', 3], n: 'x'.repeat(90), v: 'y'.repeat(400) }, { d: '2026-11-29', k: 'zz', v: 'a' }, { d: '11/29', k: 'sun', v: 'a' }, { d: '2026-11-29', k: 'll', v: '  ' }, null, 'x']).map(x => [x.k, x.bu, x.n.length, x.v.length])),
+    [['sun', ['2'], 60, 300]]);
+  const V0 = F('{2부 봉독} {본문}\n{LL 본문}').verse;
+  sc.eq('(75) 안내 줄: 읽는 중 · Monday 본문(예배별) · 손으로 적음(비우면 Monday) · 못 바꿈(원문 보여 손으로) · 아직 없음 · 연결 없음(HB · 교역자) · 서버 다시 올리기 전',
+    [A.ktVerseNote([{ label: '2부', hand: '', ko: '', raw: '', n: '' }], 'busy', true, false), A.ktVerseNote(V0, '', true, false), A.ktVerseNote(V0, '', true, true),
+      A.ktVerseNote(F('{본문}', { verses: [{ d: '2026-11-29', k: 'sun', bu: [], n: 'x', v: '다니엘 무비' }] }).verse, '', true, false), A.ktVerseNote(F('{본문}', { verses: [] }).verse, '', true, false),
+      A.ktVerseNote(V0, 'nokey', true, false), A.ktVerseNote(V0, 'nokey', false, false), A.ktVerseNote(V0, 'old', false, false)],
+    ['Monday 에서 본문을 읽는 중…', 'Monday 본문 — 2부 마태복음 9:9-13 · LL 사무엘하 3:1-39', '손으로 적은 본문을 씁니다\n비우면 Monday 본문 — 2부 마태복음 9:9-13 · LL 사무엘하 3:1-39',
+      'Monday 본문을 한글로 바꾸지 못했습니다 — 2부 \'다니엘 무비\' · 본문 칸에 적어 주세요', 'Monday 에 이 주 본문이 아직 없습니다 (2부)',
+      'Monday 연결이 없어 본문을 못 가져왔습니다 · 광고 판에서 연결할 수 있습니다', 'Monday 본문을 못 가져왔습니다 · 본문 칸에 적어 주세요', 'Monday 본문 가져오기는 서버를 다시 올린 뒤에 됩니다 · 그 전에는 본문 칸에 적어 주세요']);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const vl = ui.slice(ui.indexOf('async function vrsLoad('), ui.indexOf('function vrsPaint('));
+  sc.eq('(75) 읽기 길: 서버 monday /verses(광고와 같은 길 · 교역자는 HB 로테이션) · 앱이 api.monday.com 을 부르지 않음 · 이 기기 사본만(책 · 계정에 안 씀) · 같은 주 10분에 한 번 · AI 안 부름',
+    [/mfn\('\/verses', \{ owner: FB\.team \|\| FB\.user\.uid, sun \}\)/.test(vl), /api\.monday\.com/.test(HTML), /lsSet\(VRS_KEY,/.test(vl), /FB\.db\.|saveBook|cloudSave|\.set\(|\.update\(/.test(vl), /600e3/.test(vl), /gemini|generativelanguage|openai/i.test(vl + ui.slice(ui.indexOf('function ktLive('), ui.indexOf('function ktCopy(')))],
+    [true, false, true, false, true, false]);
+  sc.eq('(75) 화면: {본문} 이 든 틀만 읽음 · 본문 칸 빈 자리에 Monday 본문 · 안내 줄 · 본문을 적는 중에는 판을 다시 그리지 않음(글만)',
+    [/if \(vrsNeed\(tpl\)\) vrsLoad\(P\.sun\);/.test(ui), /placeholder="\$\{esc\(ktVerseHolder\(v0\)\)\}"/.test(ui), /id="kt-vh"/.test(ui), /if \(editing\(\) \|\| P\.ked\) return ktLive\(\);/.test(ui)], [true, true, true, true]);
 }
 
 sc.done();

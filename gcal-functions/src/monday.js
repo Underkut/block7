@@ -2,7 +2,7 @@
  *
  * 부산 주일예배의 영상 광고 · 구두 광고를 Monday 에서 **읽기만** 해 돌려준다. 판단은 monday-core.js.
  * HB 의 Monday 개인 토큰은 화면 · 기기 · 교역자에게 가지 않는다 — 여기 mondayKeys/{uid}(보안 규칙에 없음 = 서버만)에만.
- *   ⚠️ 그 토큰은 쓰기 권한까지 가진다. 보내는 질문은 core 의 QUERIES 셋(읽기)뿐이다 — 다른 질문을 더하지 말 것.
+ *   ⚠️ 그 토큰은 쓰기 권한까지 가진다. 보내는 질문은 core 의 QUERIES 넷(읽기)뿐이다 — 다른 질문을 더하지 말 것.
  *   ⚠️ 결과를 저장하지 않는다(로그에도 내용을 남기지 않는다).
  *
  * monday (HTTP, asia-northeast3) — 모두 Bearer 파이어베이스 ID 토큰
@@ -11,6 +11,7 @@
  *   POST /off                  맡긴 열쇠를 지운다
  *   POST /ads    {owner, sun}  그 주일 광고 — owner(로테이션 주인 = HB) 본인이거나, rota/{owner} 의 team 에 든 교역자만.
  *                              owner 의 열쇠로 읽는다.
+ *   POST /verses {owner, sun}  그 부산 주(월 ~ 주일) 설교 본문 — 'Bible verse for worship service' 보드 (1123-B B3b). 누가 · 열쇠는 /ads 와 같다.
  */
 const { onRequest } = require("firebase-functions/v2/https");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -60,6 +61,7 @@ const MSG = {
   nokey: "Monday 열쇠가 아직 없습니다",
   board: "Monday 보드를 찾지 못했습니다\n보드가 바뀌었는지 HB 가 확인해 주세요",
   shape: "Monday 보드 모양이 바뀌었습니다\n('구두 광고' · '방영일' 열을 찾지 못함)",
+  vshape: "Monday 본문 보드 모양이 바뀌었습니다\n('Date' · 'Bible verse' 열을 찾지 못함)",
   busy: "Monday 가 잠시 바쁩니다\n조금 뒤 다시 눌러 주세요",
   monday: "Monday 에서 읽지 못했습니다",
 };
@@ -90,13 +92,21 @@ exports.monday = onRequest({ region: REGION, cors: true }, async (req, res) => {
       res.json({ ok: true });
       return;
     }
-    if (path === "/ads") {
+    if (path === "/ads" || path === "/verses") {
       const owner = String(body.owner || ""), sun = String(body.sun || "");
       if (!/^[A-Za-z0-9]{6,128}$/.test(owner) || !C.okSun(sun)) { res.status(400).json({ error: "잘못된 요청" }); return; }
       if (owner !== t.uid && !(await inTeam(owner, t))) { res.status(403).json({ error: "이 로테이션의 교역자가 아닙니다" }); return; }
       const k = await keyDoc(owner).get();
       if (!k.exists || !k.data().token) { res.status(404).json({ error: MSG.nokey, code: "nokey" }); return; }
       const token = k.data().token;
+      if (path === "/verses") {
+        const vm = await mon(token, "meta", { ids: [C.BOARDS.verse] });
+        const vp = C.versePlan(vm.boards);
+        if (vp.err) { res.status(409).json({ error: MSG[vp.err], code: vp.err }); return; }
+        const vd = await mon(token, "verses", C.verseVars(vp, sun));
+        res.json(C.verseOut(vd, vp, sun));
+        return;
+      }
       const meta = await mon(token, "meta", { ids: [C.BOARDS.busan, C.BOARDS.video] });
       const p = C.plan(meta.boards, sun);
       if (p.err) { res.status(409).json({ error: MSG[p.err], code: p.err }); return; }
