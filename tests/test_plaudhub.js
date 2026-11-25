@@ -557,7 +557,18 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉕ PLAUD 전사문 명령은 PIPE 표로 · -o 파일로', J(A.pipeArgv('tr', { id: ID('a'), out: '/w/a.plaud.txt' })), ['plaud', 'transcript', ID('a'), '-o', '/w/a.plaud.txt']);
   sc.eq('㉕ 기다림은 [지금] 누른 녹음만 건너뜀', /filter\(id => id === kick \|\| !PH\.waitPlaud\(st\.recs\[id\], now\)\)/.test(HELPER), true);
   sc.eq('㉕ whisper 로 만든 것에 PLAUD 전사가 생기면 바꿈 — 한 차례 2개 · 드라이브에서 지운 것 · 뺀 것 · 이미 p 는 그대로', /j\.src === 'p' \|\| j\.gone \|\| j\.pick === 'out'/.test(HELPER) && /if \(n\+\+ >= 2\) break;/.test(HELPER) && /dropTxt\(id, true\)/.test(HELPER), true);
-  sc.eq('㉕ 계기판: 보기 단추 앞 P · W 알약(W 빨강 = 의심)', /'<span class="pill p" title="PLAUD 전사문을 가져옴">P<\/span>'/.test(HTML) && /'<span class="pill w' \+ \(r\.odd \? ' odd' : ''\)/.test(HTML) && /if \(done\) right = drb \+ pill \+ '<span class="ibs">' \+ ib\('view'/.test(HTML), true);
+  sc.eq('㉕ 계기판: 보기 단추 앞 P · W 알약(W 빨강 = 의심)', /'<span class="pill p" title="PLAUD 전사문을 가져옴">P<\/span>'/.test(HTML) && /'<span class="pill w' \+ \(r\.odd \? ' odd' : ''\)/.test(HTML) && /if \(done\) right = len \+ drb \+ pill \+ '<span class="ibs">' \+ ib\('view'/.test(HTML), true);
+  // (P4b) 화면 다듬기 — 로고 머리줄 · 알약 색 · 회색 단추 · 모든 줄 길이 · 성공한 요청의 옛 실패 감춤
+  const MAN = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'plaudhub', 'manifest.json'), 'utf8')), SW = fs.readFileSync(path.join(__dirname, '..', 'plaudhub', 'sw.js'), 'utf8');
+  sc.eq('㉗ 앱 이름 PLAUD HUB (title · manifest · 홈 화면 이름)', [/<title>PLAUD HUB<\/title>/.test(HTML), /apple-mobile-web-app-title" content="PLAUD HUB"/.test(HTML), MAN.name, MAN.short_name], [true, true, 'PLAUD HUB', 'PLAUD HUB']);
+  sc.eq('㉗ 로고 그림 — 파비콘 · apple-touch-icon · manifest 192/512 png · icon.svg 안 씀 · 서비스 워커 목록', [/rel="icon" href="favicon-32\.png"/.test(HTML), /rel="apple-touch-icon" href="apple-touch-icon\.png"/.test(HTML), MAN.icons.map(i => i.sizes + i.type).join(), /icon\.svg/.test(HTML + SW + JSON.stringify(MAN)), ['logo-192.png', 'logo-512.png', 'apple-touch-icon.png', 'favicon-32.png', 'manifest.json'].every(f => SW.includes("'" + f + "'") && fs.existsSync(path.join(__dirname, '..', 'plaudhub', f)))],
+    [true, true, true && '192x192image/png,512x512image/png,180x180image/png', false, true]);
+  sc.eq('㉗ 머리줄 차례: 로고 → PLAUD HUB → 버전 단추 … 새로 읽기 → 메뉴(맨 끝)', /<img class="logo"[^>]*>\s*<h1>PLAUD HUB<\/h1>\s*<button class="verb" id="verbtn" data-act="ver"><\/button>[\s\S]*data-act="reload"[\s\S]*data-act="menu"[\s\S]*<\/header>/.test(HTML), true);
+  sc.eq('㉗ 알약 색 — P 붉은 계열 · W 청록 #2BCFCF 계열 · W 빨강은 테두리로 구별', [/\.pill\.p\{color:var\(--bad\)/.test(HTML), /--teal:#2BCFCF/.test(HTML) && /\.pill\.w\{color:var\(--teal-ink\)/.test(HTML), /\.pill\.w\.odd\{[^}]*inset 0 0 0 1\.5px var\(--bad\)/.test(HTML)], [true, true, true]);
+  sc.eq('㉗ 줄 오른쪽 단추는 회색(초안 실패만 빨강)', [/\.ib\{[^}]*color:var\(--sub\)/.test(HTML), /\.lnk\{color:var\(--sub\)/.test(HTML), /\.lnk\.bad\{color:var\(--bad\)\}/.test(HTML), /\.ib\{[^}]*var\(--ac\)/.test(HTML)], [true, true, true, false]);
+  sc.eq('㉗ 모든 줄에 길이 — 끝남 · 드라이브에 없음 · 하는 중 · 고름 · 새 녹음', [/if \(done\) right = len \+/.test(HTML), /right = len \+ '<span class="s fail">드라이브에 없음/.test(HTML), /right = len \+ '<span class="s work">/.test(HTML), /\(r\.job === 'fail' \? '<span class="s fail">실패<\/span>' : len\)/.test(HTML), /else right = \(r\.st === 'out'[^;]*\+ len;/.test(HTML)], [true, true, true, true, true]);
+  sc.eq('㉗ 폰 폭에서 끝난 · 하는 중 줄은 두 줄(길이 왼쪽 · 단추 오른쪽)', /@media \(max-width:480px\)\{ \.rec\.wr\{flex-wrap:wrap/.test(HTML) && /\.rec\.wr \.right \.len\{margin-right:auto/.test(HTML), true);
+  sc.eq('㉗ Mac 카드의 빨간 실패 줄 — 같은 Mac · 같은 요청이 뒤에 성공(ok)했으면 감춤', /\.find\(f => !Object\.values\(S\.cmds\)\.some\(o => o\.mac === v\.name && o\.what === f\.what && o\.st === 'ok' && \(o\.at \|\| 0\) > \(f\.at \|\| 0\)\)\)/.test(HTML), true);
 }
 // ㉖ (P4) AI 초안
 {
