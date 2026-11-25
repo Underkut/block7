@@ -1,6 +1,6 @@
 // 심방 녹음(plaudhub) — 늘 새것을 먼저 받고, 못 받으면 저장해 둔 것을 쓴다. 도우미 파일(helper.mjs · install.sh)은 저장하지 않는다.
 const C = 'plaudhub-v1';
-const FILES = ['./', 'index.html', 'manifest.json', 'icon.svg'];
+const FILES = ['./', 'index.html', 'manifest.json', 'logo-192.png', 'logo-512.png', 'apple-touch-icon.png', 'favicon-32.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && k.startsWith('plaudhub-')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
