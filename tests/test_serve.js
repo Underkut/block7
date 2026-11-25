@@ -15,6 +15,8 @@
 //  ⑩ 한 예배 판(함께 섬기는 분들) · 칸 이름
 //  ⑫ 열람(S2): 사람 열쇠(p 없으면 'n:이름') · 월 배치표(줄 = 역할 · 자리 시트 차례, 칸 = 그 달 그 예배 날 · 빈 주도 열) · 예배 알약 · 사람별 · 지금 걸린 예배 · 모이는 때 · 시작까지 · 설정 다듬기
 //  ⑬ 열람 화면(S2) — 코드에서 지킬 것: 계정에 쓰는 곳은 설정(sv/cfg) 하나 · 명단(sv/people) 안 읽음 · 교역자는 팀 문서 읽기만 · 실시간 듣기 없음
+//  ⑭ 가져오기 바로잡기(S2c, HB 11/26): 그 달 탭이 있으면 그 달 날짜는 그 탭만(앞 달 탭의 11/1 '내부안내 · 내부주보' 안 씀) · 그 달 탭이 없으면 앞 · 뒤 달 탭에서 ·
+//     이미 들어간 칸 정리 = 그 달 탭에 없는 가져오기 칸만 '빼야 할 칸' · 앱에서 고친 칸 · 지운 칸은 그대로 · 누를 때만 지우기 표지 · 상한을 넘으면 멈춤 · 뺀 칸은 다시 안 들어옴
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -27,7 +29,8 @@ vm.createContext(ctx);
 vm.runInContext(core[1] + '\n' + serve[1] + `
 this.A = { SV_SVC, SV_ROLE, svId, svLabel, svLeadLabel, svTabYm, svPickTabs, svRoleOf, svBlockSvc, svNames, svReadTab,
   svNormBoard, svMergeBoard, svSame, svSet, svLive, svNormPeople, svMergePeople, svNameMap, svImport, svMine, svNow, svService,
-  svKeyOf, svHas, svFold, svNm, svGroup, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg };`, ctx);
+  svKeyOf, svHas, svFold, svNm, svGroup, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg,
+  svOwnTab, svImportTabs, svStale, svPrune, SV_IMP, SV_DEL_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 탭 이름
@@ -205,6 +208,42 @@ sc.eq('⑫ 시작까지: 18분 뒤 · 1시간 넘으면 시간 · 진행 중 · 
 sc.eq('⑫ 설정 다듬기: 이름 20자 · 때는 HH:MM 로 · 틀린 때 · 모르는 예배는 버림',
   J(A.svNormCfg({ lead: '  가나다   목사  ', times: { '1': '9:30', '2': '25:00', LL: '17:00 ', X: '10:00', F: 'x' }, at: 5, more: 1 })), { lead: '가나다 목사', times: { '1': '09:30', LL: '17:00' }, at: 5 });
 sc.eq('⑫ 설정이 없으면 빈 설정', J(A.svNormCfg(null)), { lead: '', times: {}, at: 0 });
+
+// ⑭ 가져오기 바로잡기(S2c, HB 11/26) — 지어낸 이름. 10월 탭에도 11/1 이 있고, 그 날 3부에 11월 탭에는 없는 '내부안내 · 내부주보' 칸이 있다
+const pc = (date, svc, role, pl, names) => ({ date, svc, role, pl, names });
+const P10 = { ym: '2026-10', cells: [pc('2026-10-25', '1', 'rd', '', ['가람']), pc('2026-11-01', '3', 'gd', '내부안내', ['나래']), pc('2026-11-01', '3', 'gd', '내부주보', ['다온']),
+  pc('2026-11-01', '1', 'gd', '1층', ['라온']), pc('2026-11-04', 'W', 'rd', '', ['마루'])] };
+const P11 = { ym: '2026-11', cells: [pc('2026-11-01', '1', 'gd', '1층', ['바다']), pc('2026-11-01', '3', 'gd', '1층', ['사랑']), pc('2026-11-08', '1', 'rd', '', ['아라']), pc('2026-12-02', 'W', 'rd', '', ['자람'])] };
+const ids = b => Object.keys(b.cells).sort();
+sc.eq('⑭ 그 달 탭이 있나: 그 달 칸을 하나라도 읽었을 때만', [A.svOwnTab({ '2026-11': P11 }, '2026-11'), A.svOwnTab({ '2026-11': P11 }, '2026-12'), A.svOwnTab({ '2026-11': { cells: [] } }, '2026-11'), A.svOwnTab({ '2026-11': { cells: [pc('2026-12-02', 'W', 'rd', '', ['자람'])] } }, '2026-11')], [true, false, false, false]);
+const t11 = A.svImportTabs(null, { people: {} }, { '2026-10': P10, '2026-11': P11 }, '2026-11', A.SV_IMP, 100);
+sc.eq('⑭ 그 달 탭이 있으면 그 달 날짜는 그 탭만 — 10월 탭의 11/1 내부안내 · 내부주보 · 11/4 는 안 들어옴', [ids(t11.board), t11.own, t11.filled],
+  [['2026-11-01|1|gd|1층', '2026-11-01|3|gd|1층', '2026-11-08|1|rd|'], true, 3]);
+sc.eq('⑭ 같은 칸은 그 달 탭 이름 · 앞 달 탭에만 있는 이름은 명단에도 안 들어감', [t11.board.cells['2026-11-01|1|gd|1층'].w[0].n, t11.added.includes('나래'), t11.added.includes('라온')], ['바다', false, false]);
+sc.eq('⑭ 가져오기 칸의 by = imp', t11.board.cells['2026-11-08|1|rd|'].by, 'imp');
+const t12 = A.svImportTabs(null, { people: {} }, { '2026-10': P10, '2026-11': P11 }, '2026-12', A.SV_IMP, 100);
+sc.eq('⑭ 그 달 탭이 아직 없으면(12월) 앞 달 탭에서 — 11월 탭의 12/2', [ids(t12.board), t12.own], [['2026-12-02|W|rd|'], false]);
+const P12 = { ym: '2026-12', cells: [pc('2026-12-06', '1', 'rd', '', ['차오름'])] };
+const t12b = A.svImportTabs(null, { people: {} }, { '2026-11': P11, '2026-12': P12 }, '2026-12', A.SV_IMP, 100);
+sc.eq('⑭ 다음 달 탭이 생기면 그 달 날짜는 그 탭만 — 11월 탭의 12/2 는 안 씀', [ids(t12b.board), t12b.own], [['2026-12-06|1|rd|'], true]);
+const t11x = A.svImportTabs(null, { people: {} }, { '2026-10': P10, '2026-11': { ym: '2026-11', cells: [] } }, '2026-11', A.SV_IMP, 100);
+sc.eq('⑭ 그 달 탭을 하나도 못 읽었으면(경고) 앞 달 탭에서', ids(t11x.board), ['2026-11-01|1|gd|1층', '2026-11-01|3|gd|내부안내', '2026-11-01|3|gd|내부주보', '2026-11-04|W|rd|']);
+// 이미 잘못 들어간 판: S1b 가져오기(by 'hb')가 10월 탭의 칸까지 넣었고, HB 가 앱에서 고친 칸 · 지운 칸도 있다
+const old11 = A.svImportTabs(null, { people: {} }, { '2026-11': P11 }, '2026-11', 'hb', 10).board;
+const bad11 = A.svImport(old11, { people: {} }, { ym: '2026-11', cells: P10.cells }, 'hb', 10).board;
+const hand = A.svSet(A.svSet(bad11, { date: '2026-11-04', svc: 'W', role: 'rd', pl: '' }, [{ p: '', n: '하람' }], 'hb-app', 20), { date: '2026-11-22', svc: '1', role: 'cm', pl: '1조 빵' }, [{ p: '', n: '누리' }], 'hb-app', 20);
+const st = A.svStale(hand, { '2026-10': P10, '2026-11': P11 }, '2026-11');
+sc.eq("⑭ 빼야 할 칸: 그 달 탭에 없는 가져오기 칸만(11/1 3부 내부안내 · 내부주보) — 앱에서 고친 칸(11/4 봉독 · 성찬)은 빼지 않음", st.map(c => c.id), ['2026-11-01|3|gd|내부안내', '2026-11-01|3|gd|내부주보']);
+sc.eq('⑭ 빼야 할 칸에 날짜 · 예배 · 역할 · 자리 · 이름(화면에만)', st.map(c => A.svLabel(c, true) + ' ' + c.w.map(x => x.n).join(',')), ['11/1 3부 안내 · 내부안내 나래', '11/1 3부 안내 · 내부주보 다온']);
+sc.eq('⑭ 그 달 탭이 없으면 빼야 할 칸 없음(정리하지 않음)', [A.svStale(hand, { '2026-10': P10 }, '2026-11').length, A.svStale(hand, { '2026-10': P10, '2026-11': { cells: [] } }, '2026-11').length], [0, 0]);
+sc.eq('⑭ 저절로 지우지 않음: 빼야 할 칸을 찾아도 판은 그대로 · 다시 가져와도 그대로', [A.svLive(hand).length, A.svLive(A.svImportTabs(hand, { people: {} }, { '2026-10': P10, '2026-11': P11 }, '2026-11', A.SV_IMP, 30).board).length], [A.svLive(hand).length, A.svLive(hand).length]);
+const pr = A.svPrune(hand, st.map(c => c.id), A.SV_IMP, 40);
+sc.eq('⑭ 누르면 지우기 표지(del · 그 때) · 다른 칸 그대로', [pr.n, pr.over, !!pr.board.cells['2026-11-01|3|gd|내부안내'].del, pr.board.cells['2026-11-01|3|gd|내부주보'].at, A.svLive(pr.board).length], [2, false, true, 40, A.svLive(hand).length - 2]);
+sc.eq('⑭ 뺀 칸은 다시 가져와도 안 살아남 · 빼야 할 칸 0', [A.svLive(A.svImportTabs(pr.board, { people: {} }, { '2026-10': P10, '2026-11': P11 }, '2026-11', A.SV_IMP, 50).board).length, A.svStale(pr.board, { '2026-11': P11 }, '2026-11').length], [A.svLive(hand).length - 2, 0]);
+sc.eq('⑭ 맞추기에서 지우기 표지가 이김(낡은 기기의 판이 못 살림)', A.svLive(A.svMergeBoard(hand, pr.board)).some(c => c.pl === '내부안내'), false);
+sc.eq('⑭ 앱에서 고친 칸 · 판에 없는 칸은 골라 보내도 안 지움', [A.svPrune(hand, ['2026-11-04|W|rd|', '2026-11-22|1|cm|1조빵', '2026-11-30|1|rd|'], A.SV_IMP, 40).n, A.svSame(A.svPrune(hand, ['2026-11-04|W|rd|'], A.SV_IMP, 40).board, hand)], [0, true]);
+const many = []; for (let i = 0; i <= A.SV_DEL_MAX; i++) many.push('2026-11-01|1|gd|x' + i);
+sc.eq('⑭ 상한을 넘으면 아무것도 안 바꾸고 멈춤', [A.SV_DEL_MAX, A.svPrune(hand, many, A.SV_IMP, 40).over, A.svSame(A.svPrune(hand, many, A.SV_IMP, 40).board, hand)], [30, true, true]);
 
 // ⑪ 가져오기 판(S1b) — 코드에서 지킬 것
 const ui = HTML.slice(HTML.indexOf('/* ---------- 분당 예배위원 가져오기 (1122-V S1b)'), HTML.indexOf('/* ---------- 구글 자료 (1121-G G1'));
