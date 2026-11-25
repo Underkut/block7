@@ -20,7 +20,7 @@ module.exports = (function () {
 //   visits[].issues : 특이사항 [{ cat:'예배팀', text }] — 메모(note)와 따로 (HB 11/14). visits[].hot : 메모 '중요'(빨강, 목록에도) · note : 메모 '일반'(판 안에서만, 1117-Z 5b). 나중에 교회 보고서의 부산 보고서를 여기에 잇는다(R7).
 // 모든 줄은 at(고친 때) · by(누가 — 처음엔 HB, R6 부터 교역자 각자)를 갖는다. 지우면 내용을 비우고 del:true 만 남긴다(표지).
 // 부산 교역자는 visits 한 곳에만 적는다. 예배 구성의 '부산 교역자' 줄은 visits 에서 읽어 보여 준다.
-const APP_VERSION = 'v. 26-1126-2';
+const APP_VERSION = 'v. 26-1126-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 // 보여 줄 때 일요일 **하루만** 쓸 땐 '주일' (HB 11/16) — '토일' · '금토일' 처럼 묶을 땐 '일' 그대로(1116-2 A). 자료(days 글자 · 교통 시각)는 '일'
 const DOWS = DOW.map(c => (c === '일' ? '주일' : c));
@@ -2354,14 +2354,32 @@ function phDoc(d) {
   const by = {}; let n = 0;
   if (d && typeof d === 'object' && d.v === PH_V && d.by && typeof d.by === 'object') for (const k of Object.keys(d.by)) { if (n >= PH_MAX) break;
     const x = d.by[k]; if (!x || typeof x.p !== 'string' || phNorm(x.p).length < 8 || !/^[^\s]{1,30}$/.test(k)) continue;
-    by[k] = { n: gsStr(x.n || k, 30), p: phFmt(x.p).slice(0, 20), src: gsStr(x.src || '', 40) }; n++; }
+    by[k] = Object.assign({ n: gsStr(x.n || k, 30), p: phFmt(x.p).slice(0, 20), src: gsStr(x.src || '', 40) }, x.how === 'pick' ? { how: 'pick' } : {}); n++; }   // how 'pick' = HB 가 손으로 고른 번호(1122-V S2d) — 저절로 맞춘 것이 덮지 않게 계정에 남긴다
   return { v: PH_V, at: (d && +d.at) || 0, by };
 }
-// 새로 맞춘 것을 계정 것에 더하기 — 같은 이름은 새것이 이긴다(지우지 않음). changed = 올릴 까닭이 있나
+// 새로 맞춘 것을 계정 것에 더하기 — 같은 이름은 새것이 이긴다(지우지 않음). changed = 올릴 까닭이 있나 · keys = 바뀌는 이름 열쇠
+//   ⚠️ 고른 것이 이긴다(1123-T 원칙 · 1122-V S2d, HB 11/26): 계정에 HB 가 고른 번호(how 'pick')가 있으면 저절로 맞춘 것은 덮지 않는다 — 다시 고른 것만 바꾼다.
+//   저절로 맞춘 번호(how 없음)는 연락처 번호가 바뀌면 따라간다.
 function phMerge(prev, hit, at) {
-  const a = phDoc(prev), by = Object.assign({}, a.by); let changed = false;
-  for (const k of Object.keys(hit || {})) { const x = hit[k]; if (!by[k] || by[k].p !== x.p || by[k].n !== x.n) { by[k] = { n: x.n, p: x.p, src: x.src || '' }; changed = true; } }
-  return { doc: phDoc({ v: PH_V, at, by }), changed };
+  const a = phDoc(prev), by = Object.assign({}, a.by), keys = [];
+  for (const k of Object.keys(hit || {})) { const x = hit[k], o = by[k], pk = x.how === 'pick';
+    if (o && o.how === 'pick' && !pk) continue;
+    if (!o || o.p !== x.p || o.n !== x.n || (o.how === 'pick') !== pk) { by[k] = Object.assign({ n: x.n, p: x.p, src: x.src || '' }, pk ? { how: 'pick' } : {}); keys.push(k); } }
+  return { doc: phDoc({ v: PH_V, at, by }), changed: keys.length > 0, keys };
+}
+// 연락처 판에 무엇을 보일까 (1122-V S2d, HB 11/26 '골라 저장해도 다시 열면 28명이 없음') — 맞춘 결과(R) + 계정 문서(doc) + 지금 고르는 것(pick)
+//   예전 판은 R 의 multi · miss 만 보고 '아직 번호가 없는 분' 을 그려, 계정에 둔 번호(손으로 고른 것)가 다시 열 때마다 · 새로 고침 · 다른 기기에서 '없음' 으로 돌아왔다.
+//   open = 계정에도 · 고르는 중에도 번호가 없는 분 [[이름, 까닭]] · near = 조금 달라 맞춘 분(계정에 고른 번호가 있으면 빼고) ·
+//   kept = 연락처 맞추기로는 못 정하거나 고른 번호가 이기는 분 — 계정 번호로 씀 { n, p, src, how } · all = 올릴 것 · newN = 계정과 달라질 이름 수
+function phPlan(R, doc, pick) {
+  const by = (doc && doc.by) || {}, pk = pick || {}, open = [], near = [], kept = [], kp = (n, o) => kept.push({ n, p: o.p, src: o.src || '', how: o.how || '' });
+  if (R) {
+    for (const [list, why] of [[R.multi, '번호가 여럿'], [R.miss, '못 찾음']]) for (const n of list || []) { const k = gsN(n); if (pk[k]) continue; if (by[k]) kp(n, by[k]); else open.push([n, why]); }
+    for (const h of Object.values(R.hit || {})) { const k = gsN(h.n), o = by[k]; if (pk[k]) continue;
+      if (o && o.how === 'pick' && o.p !== h.p) kp(h.n, o); else if (h.how === 'near') near.push(h); }
+  }
+  const all = Object.assign({}, R ? R.hit : {}, pk);
+  return { open, near, kept, all, newN: phMerge(doc, all, 0).keys.length };
 }
 // 글 한 조각에서 번호 있는 이름 자리들 — [[시작, 끝, 이름]] (긴 이름 먼저 · 겹치지 않게 · 앞뒤가 한글이면 다른 낱말로 보고 건너뜀 — nameSpans)
 function phSpans(text, names) {

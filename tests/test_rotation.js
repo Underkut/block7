@@ -50,6 +50,7 @@
 //  (69) 이름 누르기 어디서든(1123-T T3): 글 속 이름 자리(긴 이름 먼저 · 겹침 없음 · 낱말 경계) · 다른 자료 이름도 같은 길(more) · 바깥 누르면 닫힘(pointerdown) · 고르는 자리는 안 건드림
 //  (68) 연락처 성 · 이름 칸(1123-T T2b): 성 1 + 이름 2 · 거꾸로 · 한 칸에 세 글자 · 표시 이름 뒤집힘 · 끝 글자가 성 · 표시 이름이 딴 글이어도 N 칸으로
 //  (67) 연락처 고르기(1123-T T2): 후보(꼭 같음 · 든 것 · 한 글자 다름 · 번호 모두) · 내 연락처 찾기(이름 · 번호) · 메뉴 자리 · 손으로 고른 것이 이김
+//  (76) 연락처 1-1(1122-V S2d, HB 11/26 '골라 저장해도 28명이 다시 없음'): 계정에 둔 번호는 '아직 없는 분' 에서 빠짐(다시 열어도 · 새로 고침 · 다른 기기) · 고른 것이 저절로 맞춘 것을 이김(다음 저장에도) · 고름 표시는 계정에 남음 · 저장은 계정 최신 판에 더함
 //  (66) 연락처(1123-T): vcf 읽기(자모 · QP · 접힌 줄 · +82) · 이름 맞추기(꼭 같은 이름 · 번호 하나만 · 띄어 적은 직분 뗌) · 셀 inside 번호 · 계정 문서 다듬기 · 더하기(지우지 않음) · 화면 자리
 //  (65) 예배 순서 판 한 장 표 · 내 일정 명단 역할/이름 나눔(1123-B B2b, HB 시안 A2 · B1): 열 = 예배 · 묶음 둘 · 빈 줄 숨김 · 중계 접기 · 처음은 예배별(마지막 알약 기억)
 //  (64) 이번 주 부산 띠 · 내 일정 명단(1123-B B2): 예배마다 한 줄(여덟 갈래 · 싱어 하나로 · 중계 · 교역자 뺌) · 띠(표 있을 때만 · 내 주) · 카드 주 고르기(두 번 안 보임) · 화면 자리
@@ -87,7 +88,7 @@ this.A = { APP_VERSION, SVC, GRID, sunOf, busanFri, monthSundays, addMonths, svc
   AL_DEF, AL_PRESETS, normAlC, normAl, alCfg, alEnd, alLabel, monthEndOf, weekWindow, soonText,
   GS_SRC, GS_RELAY, gsTabInfo, gsPickTabs, gsFill, gsDate, gsDateRest, gsSvc, gsNames, gsReadTeam, gsReadServe, gsRead, gsJoin, gsCount, gsLine, gsDemo, gsCanon, gsHash, gsPack, gsUnpack, gsSaveCheck, gsSrcNorm, gsSrcPick, gsStale, GS_STALE_MS,
   gsWeek, gsMain, gsSum, gsKeys, gsMine, gsModes, gsMonthTeam, gsMonthServe, gsPeople, GS_NOCOUNT, HOMES,
-  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phSpans, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll,
+  gsWhoMap, gsPid, gsDiff, gsFix, gsSkipNorm, GS_SKIP_MAX, gsWeekPeople, gsPartsText, gsBrief, gsWeekBrief, gsInWeek, gsBand, gsMyWeeks, GS_BRIEF, gsBriefParts, gsWeekTable, phSpans, phParseVcf, phKey, phNames, phMatch, phFromCell, phDoc, phMerge, phOf, phFmt, PH_MAX, phCands, phSearch, phPrepAll, phPlan,
   KT_BASE, KT_MAX, ktTokens, ktSvc, ktNames, ktDay, ktFill, ktItem, ktDoc, ktList, ktPut, ktNextOrd, ktStaff,
   BV_BOOKS, BV_KO_MORE, verseKo, ktMonVerse, ktVerses, ktVerseNote };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
@@ -2450,6 +2451,38 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [true, false, true, false, true, false]);
   sc.eq('(75) 화면: {본문} 이 든 틀만 읽음 · 본문 칸 빈 자리에 Monday 본문 · 안내 줄 · 본문을 적는 중에는 판을 다시 그리지 않음(글만)',
     [/if \(vrsNeed\(tpl\)\) vrsLoad\(P\.sun\);/.test(ui), /placeholder="\$\{esc\(ktVerseHolder\(v0\)\)\}"/.test(ui), /id="kt-vh"/.test(ui), /if \(editing\(\) \|\| P\.ked\) return ktLive\(\);/.test(ui)], [true, true, true, true]);
+}
+
+
+// (76) 1122-V S2d — HB 11/26: 연락처 가져오기 판에서 후보 · 찾기로 골라 '계정에 저장' 했는데 다시 열면(새로 고침 · 다른 기기도) 28명이 다시 '없음'.
+//   까닭 둘: ① 판의 '아직 번호가 없는 분' 이 연락처 파일 맞추기(multi · miss)만 보고 계정에 둔 번호를 안 봄(저장 뒤 고른 것을 비우니 곧바로 다시 '없음')
+//            ② 다음 저장 때 저절로 맞춘 번호가 계정의 고른 번호를 덮음(같은 이름은 새것이 이김). 이름 · 번호는 모두 지어낸 것.
+{
+  const C = [{ name: '가온누리', tels: ['010-0000-7001', '010-0000-7002'] }, { name: '다온 엄마', tels: ['010-0000-7003'] }, { name: '라희', tels: ['010-0000-7004'] }, { name: '아무개', tels: ['010-0000-7009'] }];
+  const names = ['가온누리', '다온', '라희', '마루', '바다'], R = A.phMatch(names, C);
+  sc.eq('(76) 바탕: 가온누리 = 번호 여럿 · 다온 = 이름 속에 든 것(near) · 라희 = 꼭 같음 · 마루 · 바다 = 못 찾음', [R.multi, Object.keys(R.hit).map(k => k + ':' + R.hit[k].how), R.miss], [['가온누리'], ['다온:near', '라희:same'], ['마루', '바다']]);
+  const pick = { 가온누리: { n: '가온누리', p: '010-0000-7002', src: '가온누리', how: 'pick' }, 마루: { n: '마루', p: '010-0000-7009', src: '아무개', how: 'pick' }, 다온: { n: '다온', p: '010-0000-7010', src: '찾음', how: 'pick' } };
+  const s1 = A.phMerge(null, Object.assign({}, R.hit, pick), 1);
+  const cloud = A.phDoc(JSON.parse(JSON.stringify(s1.doc)));   // 계정에 갔다 온 것(다시 열기 · 새로 고침 · 다른 기기)
+  sc.eq('(76) 저장: 고른 셋 · 맞춘 하나 · 고름 표시는 계정에 갔다 와도 남음', [A.phOf(cloud, '가온누리'), A.phOf(cloud, '마루'), A.phOf(cloud, '다온'), A.phOf(cloud, '라희'), cloud.by['다온'].how, cloud.by['라희'].how],
+    ['010-0000-7002', '010-0000-7009', '010-0000-7010', '010-0000-7004', 'pick', undefined]);
+  const P = A.phPlan(A.phMatch(names, C), cloud, {});   // 판을 닫고 다시 열기 — 고른 것(PH.pick)은 비었고 같은 파일로 다시 맞춤
+  sc.eq('(76) 다시 열기: 계정에 번호가 있는 분은 \'아직 번호가 없는 분\' 에 없음(바다만) · 계정 번호로 보임 · 고친 것 없음',
+    [P.open, P.kept.map(x => [x.n, x.p]).sort(), P.near.map(x => x.n), P.newN], [[['바다', '못 찾음']], [['가온누리', '010-0000-7002'], ['다온', '010-0000-7010'], ['마루', '010-0000-7009']], [], 0]);
+  const s2 = A.phMerge(cloud, Object.assign({}, A.phMatch(names, C).hit), 2);
+  sc.eq('(76) 다음 저장: 저절로 맞춘 번호가 고른 번호를 덮지 않음(다온 그대로) · 올릴 것 없음', [s2.changed, A.phOf(s2.doc, '다온'), s2.keys], [false, '010-0000-7010', []]);
+  const Pc = A.phPlan(A.phMatch(names, A.phFromCell({ c1: { n: '라희', p: '010-0000-7004' } })), cloud, {});   // 다른 기기 — 연락처 파일 없이 셀 inside 번호만
+  sc.eq('(76) 다른 기기(파일 없이 셀 번호만): 계정에 둔 분은 \'없음\' 이 아님 · 번호 없는 바다만', [Pc.open.map(x => x[0]), Pc.kept.map(x => x.n).sort()], [['바다'], ['가온누리', '다온', '마루']]);
+  const s3 = A.phMerge(cloud, { 다온: { n: '다온', p: '010-0000-7011', src: '다시', how: 'pick' }, 라희: { n: '라희', p: '010-0000-7005', src: '라희', how: 'same' } }, 3);
+  sc.eq('(76) 다시 고르면 새로 고른 것 · 저절로 맞춘 분은 연락처 번호가 바뀌면 따라감 · 다른 분은 지우지 않음', [A.phOf(s3.doc, '다온'), A.phOf(s3.doc, '라희'), s3.keys.sort(), Object.keys(s3.doc.by).length], ['010-0000-7011', '010-0000-7005', ['다온', '라희'], 4]);
+  const Pp = A.phPlan(R, cloud, { 바다: { n: '바다', p: '010-0000-7012', src: 'x', how: 'pick' } });
+  sc.eq('(76) 고르는 중: 고른 분은 \'없음\' 에서 빠지고 새로 올릴 것 1', [Pp.open, Pp.newN], [[], 1]);
+  sc.eq('(76) 계정 문서 다듬기: 고름 표시는 pick 만 남김(모르는 값 버림)', [A.phDoc({ v: 1, by: { 가: { n: '가', p: '010-0000-1111', how: 'zz' } } }).by['가'].how, A.phDoc({ v: 1, by: { 가: { n: '가', p: '010-0000-1111', how: 'pick' } } }).by['가'].how], [undefined, 'pick']);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const sv = ui.slice(ui.indexOf('async function phSave('), ui.indexOf('function phCandHtml('));
+  sc.eq('(76) 화면: 판은 phPlan 으로 그림(계정 번호를 봄) · 저장은 계정 최신 판을 다시 읽어 더함(못 읽으면 안 씀 — 덮어쓰지 않게)',
+    [/phPlan\(PH\.res, doc, PH\.pick\)/.test(ui), /gsRef\('phones'\)\.get\(\)/.test(sv), sv.indexOf("gsRef('phones').get()") < sv.indexOf("gsRef('phones').set("), /data-phopen="/.test(ui.slice(ui.indexOf('function panePhones('), ui.indexOf('function panePhones(') + 6000)) && /P\.kept/.test(ui)],
+    [true, true, true, true]);
 }
 
 sc.done();
