@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1125-1 -->
+<!-- PLAUDHUB v. 26-1125-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -82,7 +82,12 @@ h2 small{font-weight:400;color:var(--dim)}
 .rec .tm{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;width:42px;flex:none}
 .rec .right{display:flex;align-items:center;gap:6px;flex:none}
 .rec .len{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
-.rec .len.long{color:var(--warn);font-weight:600}
+.rec .len.long{color:var(--bad);font-weight:600}
+.lw{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.lb{display:inline-flex;align-items:center;gap:2px}
+.lb i{width:8px;height:8px;border-radius:2px;background:color-mix(in srgb,var(--dim) 35%,transparent)}
+.lb.t i.on{background:var(--teal)} .lb.y i.on{background:var(--warn)} .lb.r i.on{background:var(--bad)}
+.lb em{font-style:normal;font-size:10px;font-weight:700;color:var(--bad);margin-left:1px;line-height:1}
 .rec .meta.bad{color:var(--bad)}
 .ibs{display:inline-flex;gap:0}
 .ib{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;color:var(--sub);border-radius:8px}
@@ -92,14 +97,15 @@ h2 small{font-weight:400;color:var(--dim)}
 .pill.w{color:var(--teal-ink);background:color-mix(in srgb,var(--teal) 22%,transparent)}
 .pill.w.odd{color:var(--bad);background:transparent;box-shadow:inset 0 0 0 1.5px var(--bad)}
 /* 폰 폭: 끝난 줄의 알약 · 단추를 제목 아래 줄로(제목이 눌려 잘리지 않게) */
-@media (max-width:480px){ .rec.wr{flex-wrap:wrap;row-gap:0} .rec.wr .body{flex:1 1 calc(100% - 100px)} .rec.wr .right{width:100%;justify-content:flex-end;margin-top:-2px} .rec.wr .right .len{margin-right:auto;padding-left:62px} }
+@media (max-width:480px){ .rec.wr{flex-wrap:wrap;row-gap:0} .rec.wr .body{flex:1 1 calc(100% - 100px)} .rec.wr .right{width:100%;justify-content:flex-end;margin-top:-2px} .rec.wr .right .lw{margin-right:auto;padding-left:62px} }
 .ib[data-act="more"] svg{fill:currentColor}
 .s{font-size:11.5px;padding:1px 8px;border-radius:9px;white-space:nowrap}
 .s.work{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
 .s.fail{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .s.out{color:var(--dim)}
 .lnk{color:var(--sub);font-size:13px;white-space:nowrap}
-.lnk.dim{color:var(--dim)}.lnk.bad{color:var(--bad)}.lnk.dr{font-weight:600;margin-right:2px}
+.lnk.dim{color:var(--dim)}.lnk.bad{color:var(--bad)}.lnk.dr{font-weight:600;margin-right:2px;color:var(--ok)}
+.lnk.dr.dim{color:var(--dim)}.lnk.dr.bad{color:var(--bad)}.lnk.dr.sent{color:var(--ac)}
 .ta{height:auto;min-height:84px;padding:10px 12px;line-height:1.6;resize:vertical;font:inherit}
 .ta.big{min-height:300px;font-size:13.5px}
 details.pk{margin:12px 0 4px}details.pk summary{font-size:13px;color:var(--sub);cursor:pointer}details.pk .code{max-height:320px;overflow:auto;white-space:pre-wrap;margin-top:6px}
@@ -175,7 +181,7 @@ select.field{appearance:auto}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1125-1";
+const APP_VERSION = "v. 26-1125-2";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
 const HELPER_LATEST = 'h. 26-1124-4';
 const PROJECT = 'block7-8f24e';
@@ -1159,7 +1165,7 @@ function render() {
     for (const r of vis) { if (r.day !== day) { day = r.day; out += '<div class="day">' + esc(dayLabel(r.t, t)) + '<small>' + vis.filter(x => x.day === day).length + '개</small></div>'; } out += recHtml(r); }
     h += '<div class="recs">' + out + '</div>';
   }
-  h += '<div class="ver">고른 녹음은 자동 전사가 켜진 Mac 이 하나씩 받아 전사해 드라이브 \'' + esc(DRIVE_DIR) + '\' 에 \'26-1122 15;05 제목.txt\' 꼴로 둡니다</div>';
+  h += '<div class="ver">길이 칸: 청록 · 노랑은 한 칸 15분(네 칸 = 1시간), 빨강은 한 칸 1시간(4시간 넘으면 +)<br>고른 녹음은 자동 전사가 켜진 Mac 이 하나씩 받아 전사해 드라이브 \'' + esc(DRIVE_DIR) + '\' 에 \'26-1122 15;05 제목.txt\' 꼴로 둡니다</div>';
   m.innerHTML = h;
 }
 function loginHtml() {
@@ -1223,6 +1229,13 @@ function hereHtml() {
   if (S.hereErr) return '<div class="card msg bad" style="margin-top:10px">' + esc(S.hereErr) + '</div>';
   return '';
 }
+// 길이 그림(HB 11/25 D안): 1시간 이하 = 4칸 · 칸 하나 15분(30분까지 청록 2칸 · 넘으면 노랑 3 ~ 4칸), 1시간 넘으면 빨강 · 칸 하나 1시간(4시간 넘으면 넷째 칸 옆 '+')
+function lenBars(d) {
+  if (!(d > 0)) return '';
+  const hour = d > 3600, n = Math.min(4, Math.ceil(d / (hour ? 3600 : 900))), cls = hour ? 'r' : d <= 1800 ? 't' : 'y', plus = hour && d > 4 * 3600;
+  let h = ''; for (let k = 0; k < 4; k++) h += '<i' + (k < n ? ' class="on"' : '') + '></i>';
+  return '<span class="lb ' + cls + '" title="' + (hour ? '칸 하나 = 1시간 (4시간을 넘으면 +)' : '칸 하나 = 15분 (4칸 = 1시간)') + '">' + h + (plus ? '<em>+</em>' : '') + '</span>';
+}
 // 그림 단추 — 보기(HB 가 준 모양: 둥근 네모 안 세 줄) · 복사 · 받기 · 더 보기
 const ICON = {
   view: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/></svg>',
@@ -1236,14 +1249,14 @@ function ib(act, id) { return '<button class="ib" data-act="' + act + '" data-id
 function recHtml(r) {
   const done = r.job === 'done' && !r.gone, fin = r.job === 'done', rec = S.recs[r.id] || {}, isNew = S.seenPrev && Number.isFinite(rec.c) && rec.c > S.seenPrev;
   const stepName = { get: '받는 중', stt: '전사 중', drive: '드라이브에 쓰는 중' };
-  const len = '<span class="len' + (r.d >= LONG_SEC ? ' long' : '') + '">' + esc(r.dur) + '</span>';
+  const len = '<span class="lw">' + lenBars(r.d) + '<span class="len' + (r.d >= LONG_SEC ? ' long' : '') + '">' + esc(r.dur) + '</span></span>';
   let right = '', sub = '';
   // P = PLAUD 전사문 가져옴 · W = whisper 전사(빨강 = 같은 말 되풀이 — 전사 의심) — 보기 단추 앞(HB 11/24)
   const pill = r.src === 'p' ? '<span class="pill p" title="PLAUD 전사문을 가져옴">P</span>'
     : '<span class="pill w' + (r.odd ? ' odd' : '') + '" title="' + (r.odd ? '전사 의심 — 같은 말이 되풀이됐습니다. ⋯ 에서 다시 전사를 권합니다' : 'Mac 의 whisper 로 전사') + '">W</span>';
   // (P4) AI 초안 — 초안 · 보냄(대기함에 넣음) · 빨강 = 실패 · 만드는 중
   const drb = !r.dr ? '' : r.dr === 'wait' || r.dr === 'run' ? '<span class="lnk dim dr" title="' + drLabel(r.dr) + '">초안…</span>'
-    : '<button class="lnk dr' + (r.dr === 'sent' ? ' dim' : r.dr === 'fail' ? ' bad' : '') + '" data-act="draft" data-id="' + esc(r.id) + '" title="' + esc(drLabel(r.dr) + (r.dre ? ' — ' + r.dre : '')) + '">' + (r.dr === 'sent' ? '보냄' : '초안') + '</button>';
+    : '<button class="lnk dr' + (r.dr === 'sent' ? ' sent' : r.dr === 'fail' ? ' bad' : '') + '" data-act="draft" data-id="' + esc(r.id) + '" title="' + esc(drLabel(r.dr) + (r.dre ? ' — ' + r.dre : '')) + '">' + (r.dr === 'sent' ? '보냄' : '초안') + '</button>';
   if (done) right = len + drb + pill + '<span class="ibs">' + ib('view', r.id) + ib('copy', r.id) + ib('save', r.id) + ib('more', r.id) + '</span>';
   else if (r.gone) { right = len + '<span class="s fail">드라이브에 없음</span><button class="lnk" data-act="redo" data-id="' + esc(r.id) + '">다시 전사</button>' + ib('more', r.id); sub = '드라이브에서 지운 것 같습니다 · 저절로 다시 하지 않습니다'; }
   else if (r.job === 'work') { right = len + '<span class="s work">' + (stepName[r.step] || '하는 중') + (r.mac ? ' · ' + esc(r.mac) : '') + '</span>'; if (S.ws && S.ws.by[r.id]) sub = '<span class="tmp">임시 파일 ' + bytesLabel(S.ws.by[r.id]) + '</span>'; }
