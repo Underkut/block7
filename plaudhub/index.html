@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1125-2 -->
+<!-- PLAUDHUB v. 26-1125-3 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -87,6 +87,7 @@ h2 small{font-weight:400;color:var(--dim)}
 .lb{display:inline-flex;align-items:center;gap:2px}
 .lb i{width:8px;height:8px;border-radius:2px;background:color-mix(in srgb,var(--dim) 35%,transparent)}
 .lb.t i.on{background:var(--teal)} .lb.y i.on{background:var(--warn)} .lb.r i.on{background:var(--bad)}
+.lb.t i.pl{background:color-mix(in srgb,var(--teal) 40%,transparent)} .lb.y i.pl{background:color-mix(in srgb,var(--warn) 40%,transparent)} .lb.r i.pl{background:color-mix(in srgb,var(--bad) 40%,transparent)}
 .lb em{font-style:normal;font-size:10px;font-weight:700;color:var(--bad);margin-left:1px;line-height:1}
 .rec .meta.bad{color:var(--bad)}
 .ibs{display:inline-flex;gap:0}
@@ -181,7 +182,7 @@ select.field{appearance:auto}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1125-2";
+const APP_VERSION = "v. 26-1125-3";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
 const HELPER_LATEST = 'h. 26-1124-4';
 const PROJECT = 'block7-8f24e';
@@ -1165,7 +1166,7 @@ function render() {
     for (const r of vis) { if (r.day !== day) { day = r.day; out += '<div class="day">' + esc(dayLabel(r.t, t)) + '<small>' + vis.filter(x => x.day === day).length + '개</small></div>'; } out += recHtml(r); }
     h += '<div class="recs">' + out + '</div>';
   }
-  h += '<div class="ver">길이 칸: 청록 · 노랑은 한 칸 15분(네 칸 = 1시간), 빨강은 한 칸 1시간(4시간 넘으면 +)<br>고른 녹음은 자동 전사가 켜진 Mac 이 하나씩 받아 전사해 드라이브 \'' + esc(DRIVE_DIR) + '\' 에 \'26-1122 15;05 제목.txt\' 꼴로 둡니다</div>';
+  h += '<div class="ver">길이 칸: 청록 · 노랑은 한 칸 15분(네 칸 = 1시간), 빨강은 한 칸 1시간(4시간 넘으면 +) · 마지막 칸이 반보다 짧으면 옅게<br>고른 녹음은 자동 전사가 켜진 Mac 이 하나씩 받아 전사해 드라이브 \'' + esc(DRIVE_DIR) + '\' 에 \'26-1122 15;05 제목.txt\' 꼴로 둡니다</div>';
   m.innerHTML = h;
 }
 function loginHtml() {
@@ -1232,9 +1233,10 @@ function hereHtml() {
 // 길이 그림(HB 11/25 D안): 1시간 이하 = 4칸 · 칸 하나 15분(30분까지 청록 2칸 · 넘으면 노랑 3 ~ 4칸), 1시간 넘으면 빨강 · 칸 하나 1시간(4시간 넘으면 넷째 칸 옆 '+')
 function lenBars(d) {
   if (!(d > 0)) return '';
-  const hour = d > 3600, n = Math.min(4, Math.ceil(d / (hour ? 3600 : 900))), cls = hour ? 'r' : d <= 1800 ? 't' : 'y', plus = hour && d > 4 * 3600;
-  let h = ''; for (let k = 0; k < 4; k++) h += '<i' + (k < n ? ' class="on"' : '') + '></i>';
-  return '<span class="lb ' + cls + '" title="' + (hour ? '칸 하나 = 1시간 (4시간을 넘으면 +)' : '칸 하나 = 15분 (4칸 = 1시간)') + '">' + h + (plus ? '<em>+</em>' : '') + '</span>';
+  const hour = d > 3600, u = hour ? 3600 : 900, full = Math.floor(d / u), rem = d - full * u, up = rem >= u / 2;   // 마지막 조각이 칸의 반보다 짧으면 옅은 칸 하나
+  const solid = Math.min(4, full + (up ? 1 : 0)), pale = rem > 0 && !up && solid < 4 ? 1 : 0, cls = hour ? 'r' : d <= 1800 ? 't' : 'y', plus = hour && d > 4 * 3600;
+  let h = ''; for (let k = 0; k < 4; k++) h += '<i' + (k < solid ? ' class="on"' : k < solid + pale ? ' class="pl"' : '') + '></i>';
+  return '<span class="lb ' + cls + '" title="' + (hour ? '칸 하나 = 1시간 (4시간을 넘으면 +)' : '칸 하나 = 15분 (4칸 = 1시간)') + ' · 마지막 칸이 반보다 짧으면 옅게">' + h + (plus ? '<em>+</em>' : '') + '</span>';
 }
 // 그림 단추 — 보기(HB 가 준 모양: 둥근 네모 안 세 줄) · 복사 · 받기 · 더 보기
 const ICON = {

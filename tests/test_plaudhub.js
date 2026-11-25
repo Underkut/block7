@@ -569,10 +569,14 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉗ 모든 줄에 길이 — 끝남 · 드라이브에 없음 · 하는 중 · 고름 · 새 녹음', [/if \(done\) right = len \+/.test(HTML), /right = len \+ '<span class="s fail">드라이브에 없음/.test(HTML), /right = len \+ '<span class="s work">/.test(HTML), /\(r\.job === 'fail' \? '<span class="s fail">실패<\/span>' : len\)/.test(HTML), /else right = \(r\.st === 'out'[^;]*\+ len;/.test(HTML)], [true, true, true, true, true]);
   sc.eq('㉗ 폰 폭에서 끝난 · 하는 중 줄은 두 줄(길이 왼쪽 · 단추 오른쪽)', /@media \(max-width:480px\)\{ \.rec\.wr\{flex-wrap:wrap/.test(HTML) && /\.rec\.wr \.right \.lw\{margin-right:auto/.test(HTML), true);
   { const lb = new Function('return ' + /function lenBars[\s\S]*?\n}\n/.exec(HTML)[0].replace(/^function lenBars/, 'function'))(), M = 60;
-    const f = d => { const h = lb(d * M), c = /class="lb (\w)"/.exec(h); return h ? [c[1], (h.match(/<i class="on"/g) || []).length, /<em>\+<\/em>/.test(h)] : null; };
-    sc.eq('㉘ 길이 칸 — 1시간 이하는 한 칸 15분 · 30분까지 청록 · 넘으면 노랑', [f(1), f(15), f(16), f(30), f(31), f(45), f(46), f(60)], [['t', 1, false], ['t', 1, false], ['t', 2, false], ['t', 2, false], ['y', 3, false], ['y', 3, false], ['y', 4, false], ['y', 4, false]]);
-    sc.eq('㉘ 길이 칸 — 1시간 넘으면 빨강 · 한 칸 1시간 · 4시간 넘으면 +', [f(61), f(77), f(120), f(121), f(240), f(241), f(332)], [['r', 2, false], ['r', 2, false], ['r', 2, false], ['r', 3, false], ['r', 4, false], ['r', 4, true], ['r', 4, true]]);
-    sc.eq('㉘ 길이를 모르면(0) 칸을 그리지 않음', lb(0), ''); }
+    const f = d => { const h = lb(d * M), c = /class="lb (\w)"/.exec(h); return h ? [c[1], (h.match(/<i class="on"/g) || []).length, (h.match(/<i class="pl"/g) || []).length, /<em>\+<\/em>/.test(h)] : null; };
+    sc.eq('㉘ 길이 칸 — 1시간 이하: 한 칸 15분 · 마지막 조각이 반(7.5분)보다 짧으면 옅은 칸(HB 예: 6분 · 18분 · 35분 · 40분)',
+      [6, 8, 15, 18, 22, 23, 30, 35, 40, 46, 53, 60].map(f),
+      [['t', 0, 1, false], ['t', 1, 0, false], ['t', 1, 0, false], ['t', 1, 1, false], ['t', 1, 1, false], ['t', 2, 0, false], ['t', 2, 0, false], ['y', 2, 1, false], ['y', 3, 0, false], ['y', 3, 1, false], ['y', 4, 0, false], ['y', 4, 0, false]]);
+    sc.eq('㉘ 길이 칸 — 1시간 넘으면 빨강 · 한 칸 1시간 · 반(30분)보다 짧은 조각은 옅게 · 4시간 넘으면 +(HB 예: 1시간 20분 · 1시간 40분)',
+      [61, 80, 100, 120, 121, 200, 240, 241, 250, 332].map(f),
+      [['r', 1, 1, false], ['r', 1, 1, false], ['r', 2, 0, false], ['r', 2, 0, false], ['r', 2, 1, false], ['r', 3, 1, false], ['r', 4, 0, false], ['r', 4, 0, true], ['r', 4, 0, true], ['r', 4, 0, true]]);
+    sc.eq('㉘ 길이를 모르면(0) 칸을 그리지 않음 · 옅은 칸 색은 각 색의 옅은 것', [lb(0), /\.lb\.t i\.pl\{[^}]*var\(--teal\)/.test(HTML), /\.lb\.y i\.pl\{[^}]*var\(--warn\)/.test(HTML), /\.lb\.r i\.pl\{[^}]*var\(--bad\)/.test(HTML)], ['', true, true, true]); }
   sc.eq('㉘ 초안 글자 — 정상 초안 = 앱 초록(--ok) · 보냄 = 파랑(--ac) · 실패 = 빨강 · 만드는 중 = 흐림', [/\.lnk\.dr\{[^}]*color:var\(--ok\)/.test(HTML), /\.lnk\.dr\.sent\{color:var\(--ac\)\}/.test(HTML), /\.lnk\.dr\.bad\{color:var\(--bad\)\}/.test(HTML), /r\.dr === 'sent' \? ' sent'/.test(HTML)], [true, true, true, true]);
   sc.eq('㉗ Mac 카드의 빨간 실패 줄 — 같은 Mac · 같은 요청이 뒤에 성공(ok)했으면 감춤', /\.find\(f => !Object\.values\(S\.cmds\)\.some\(o => o\.mac === v\.name && o\.what === f\.what && o\.st === 'ok' && \(o\.at \|\| 0\) > \(f\.at \|\| 0\)\)\)/.test(HTML), true);
 }
