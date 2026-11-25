@@ -128,6 +128,19 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑥ 제목 없는 녹음도 직접 넣음', A.pickState(r(''), { pick: 'in' }, ['심방']), 'in');
   sc.eq('⑥ 키워드가 있어도 직접 빼면 뺌', A.pickState(r('김하늘 집사 심방'), { pick: 'out' }, ['심방']), 'out');
   sc.eq('⑥ 누르면 뒤집힘', [A.tapPick('auto'), A.tapPick('in'), A.tapPick('out'), A.tapPick('none')], ['out', 'out', 'in', 'in']);
+  // (P4c) 짧게 = 전사까지 · 길게 = 초안까지 — 쓸 칸(dr: wait 적기 · del 지우기 · '' 그대로)
+  sc.eq('⑥ P4c 짧게 누르면 전사까지(pick in · dr 건드리지 않음)', [A.tapPick2('none', false, null), A.tapPick2('none', false, { id: 'x' })], [{ pick: 'in', dr: '' }, { pick: 'in', dr: '' }]);
+  sc.eq('⑥ P4c 길게 누르면 pick in + dr wait(전사 전에 미리 적음)', [A.tapPick2('none', true, null), A.tapPick2('out', true, { pick: 'out' })], [{ pick: 'in', dr: 'wait' }, { pick: 'in', dr: 'wait' }]);
+  sc.eq('⑥ P4c 짧게 다시 고르면 앞서 적은 dr wait 를 지움', A.tapPick2('out', false, { pick: 'out', dr: 'wait' }), { pick: 'in', dr: 'del' });
+  sc.eq('⑥ P4c 골라진 줄은 길게든 짧게든 뺀다 · 미리 적은 wait 는 함께 지움 · 다른 dr(ok · sent)은 그대로', [A.tapPick2('in', false, { pick: 'in', dr: 'wait' }), A.tapPick2('auto', true, null), A.tapPick2('in', true, { pick: 'in', dr: 'sent' })], [{ pick: 'out', dr: 'del' }, { pick: 'out', dr: '' }, { pick: 'out', dr: '' }]);
+  {
+    const NOW = Date.parse('2026-11-25T03:00:00Z'), rc = (id, n) => ({ id, n, t: NOW - 7200e3, c: NOW - 7200e3, d: 600 }), RS = { f_a: rc('f_' + 'a'.repeat(32).slice(0, 32), '심방 하나'), f_b: rc('f_' + 'b'.repeat(32).slice(0, 32), '회의'), f_c: rc('f_' + 'c'.repeat(32).slice(0, 32), '심방 둘'), f_d: rc('f_' + 'd'.repeat(32).slice(0, 32), '회의 둘') };
+    const ia = RS.f_a.id, ib = RS.f_b.id, ic = RS.f_c.id, id_ = RS.f_d.id;
+    const rows = A.listView(RS, { [ib]: { id: ib, pick: 'in' }, [id_]: { id: id_, pick: 'in', dr: 'wait' }, [ic]: { id: ic, pick: 'out', dr: 'wait' } }, { kw: ['심방'] }, NOW);
+    const by = Object.fromEntries(rows.map(x => [x.id, x]));
+    sc.eq('⑥ P4c 모양: 키워드(초안 저절로) · 직접 + wait = 가득(full) · 직접만 = 테두리', [by[ia].full, by[ib].full, by[id_].full, by[ic].full], [true, false, true, false]);
+    sc.eq('⑥ P4c 모양: AI 초안을 끄면 키워드 줄도 테두리(전사까지)', A.listView(RS, {}, { kw: ['심방'], ai: { on: false } }, NOW).find(x => x.id === ia).full, false);
+  }
   sc.eq('⑥ 5시간 회의도 키워드면 고름 (길이로 빼지 않음)', A.pickState(r('구역 심방 모임', 5 * 3600), null, ['심방']), 'auto');
   sc.eq('⑥ 5시간 회의를 직접 넣을 수 있음', A.isPicked(A.pickState(r('교역자 회의', 5 * 3600), { pick: 'in' }, ['심방'])), true);
   sc.eq('⑥ 설정 다듬기 (모르는 기간 · 모델은 기본 = 터보, HB 11/23)', J(A.settingsOf({ kw: ['상담'], days: 99, model: 'tiny' })), { kw: ['상담'], days: 14, model: 'large-v3-turbo-q5_0' });
@@ -321,6 +334,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const w = A.macView({ id: '사무실', at: now - 7 * 60e3, doing: '목록 읽는 중', v: 'h. 26-1101-1' }, now);
   sc.eq('⑭ 7분 소식 없음 = 꺼짐 · 낡은 도우미', [w.alive, w.doing, w.old], [false, '꺼짐', true]);
   sc.eq('⑭ 이름 다듬기', [A.normMac(' 집 '), A.normMac('a/b'), A.normMac(''), A.normMac('가'.repeat(13)), A.normMac('__x__')], ['집', '', '', '', '']);
+  sc.eq('⑭ P4c 길게 누르기(0.45초 · 움직이면 취소 · 오른쪽 클릭)와 되돌리기 줄 · 전환은 동작 줄이기면 바로', /LONG_MS = 450/.test(HTML) && /Math\.hypot\(e\.clientX - LP\.x, e\.clientY - LP\.y\) > 8\) lpClear\(\)/.test(HTML) && /addEventListener\('contextmenu'/.test(HTML) && /data-act="unmove"/.test(HTML) && /lvStart\(id, prev, !el \|\| quiet\(\)\)/.test(HTML), true);
   sc.eq('⑭ 버전 형식 · 2번째 줄 주석', [/^v\. \d{2}-\d{4}-\d+$/.test(A.APP_VERSION), HTML.split('\n')[1]], [true, '<!-- PLAUDHUB ' + A.APP_VERSION + ' -->']);
   sc.eq('⑭ 미리보기 녹음 제목은 지어낸 이름(실제 이름 목록과 따로)', /김하늘|박소망|이은혜|최기쁨/.test(HTML), true);
 }
