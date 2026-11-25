@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PLAUDHUB v. 26-1125-5 -->
+<!-- PLAUDHUB v. 26-1125-6 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -136,6 +136,14 @@ select.field{appearance:auto}
 .rec.pick.full .chk{background:var(--ok)}
 .rec.pick.full .chk::after{border-color:#fff}
 .mdt{color:var(--warn);font-weight:600} .mdd{color:var(--ok);font-weight:600}
+/* (P4e) 이번 달 AI 금액 한 줄(머리줄 아래 · 작게 · 무채색) · 단가 칸 · 키워드 두 갈래 */
+.useline{display:block;width:100%;text-align:left;font-size:12px;color:var(--dim);margin:2px 4px 6px;padding:0;background:none}
+.prow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:6px 0;font-size:13px}
+.prow .pm{flex:1 1 100%;color:var(--ink)} .prow .pm small{color:var(--dim)} .prow label{display:inline-flex;align-items:center;gap:4px;color:var(--sub)}
+.field.num{width:88px;height:34px;margin:0;display:inline-block}
+.msg.tip{margin-top:8px;font-size:12px;color:var(--sub)}
+.chip.kd{box-shadow:inset 0 0 0 1px var(--ok)} .chip.kt{box-shadow:inset 0 0 0 1px var(--warn)}
+.kv.use{grid-template-columns:minmax(0,max-content) 1fr} .kv.use .bad{color:var(--bad)}
 .btn.bt{background:var(--warn)} .btn.bd{background:var(--ok)}
 .bar.selbar{background:color-mix(in srgb,var(--ac) 10%,var(--card))}
 .rec[data-act="pick"]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
@@ -190,9 +198,9 @@ select.field{appearance:auto}
 <!-- 판단은 모두 이 덩어리 한 곳 — 화면 없이 돈다. 계기판과 Mac 도우미(helper.mjs)가 함께 쓴다(도우미는 이 파일을 받아 이 덩어리만 떼어 씀).
      tests/test_plaudhub.js 가 이것만 떼어 시험한다 — 고치면 시험부터 고친다. -->
 <script id="plaudhub-core">
-const APP_VERSION = "v. 26-1125-5";
+const APP_VERSION = "v. 26-1125-6";
 // 도우미의 지금 판 — plaudhub/helper.mjs 의 HELPER_VERSION 과 같아야 한다(test_plaudhub ⑫). 다르면 계기판이 '새로 받기' 를 권한다
-const HELPER_LATEST = 'h. 26-1124-4';
+const HELPER_LATEST = 'h. 26-1125-1';
 const PROJECT = 'block7-8f24e';
 const SITE = 'https://block7.my/plaudhub/';
 const PAIR_PORT = 47211;
@@ -422,11 +430,21 @@ function addKw(list, w) {
 }
 function removeKw(list, w) { const k = cleanKw(w).toLowerCase(); return normKw(list).filter(x => x.toLowerCase() !== k); }
 function kwHit(name, kw) { const n = String(name || '').toLowerCase(); return normKw(kw).find(w => n.includes(w.toLowerCase())) || ''; }
-// 'in' = HB 가 넣음 · 'out' = HB 가 뺌 · 'auto' = 키워드로 저절로 · 'none' = 안 고름
-function pickState(rec, job, kw) {
+// (P4e) 키워드 두 갈래 — kw = 초안까지(전사 뒤 AI 초안도 저절로) · kwt = 전사까지만. 둘 다 걸리면 초안까지가 이긴다
+function kwtOf(list) { return Array.isArray(list) ? normKw(list) : []; }   // 전사까지만은 기본값 없음(빈 목록)
+// 한쪽에 더하기 — 다른 쪽에 같은 말이 있으면 알림(which = 'kw' | 'kwt')
+function kwAdd(settings, which, w) {
+  const s = settingsOf(settings), other = which === 'kwt' ? s.kw : s.kwt, c = cleanKw(w);
+  if (c && other.some(x => x.toLowerCase() === c.toLowerCase())) return { list: which === 'kwt' ? s.kwt : s.kw, err: '\'' + c + '\' 은 이미 ' + (which === 'kwt' ? '\'초안까지 자동\'' : '\'전사까지만 자동\'') + ' 에 있습니다\n한쪽에만 둘 수 있습니다' };
+  return addKw(which === 'kwt' ? s.kwt : s.kw, w);
+}
+// 녹음 제목이 어느 갈래에 걸리나 → { w: 걸린 말, d: 초안까지인가 } | null
+function kwWhich(name, kw, kwt) { const a = kwHit(name, kw); if (a) return { w: a, d: true }; const b = kwHit(name, kwt || []); return b ? { w: b, d: false } : null; }
+// 'in' = HB 가 넣음 · 'out' = HB 가 뺌 · 'auto' = 키워드로 저절로(kw 또는 kwt) · 'none' = 안 고름
+function pickState(rec, job, kw, kwt) {
   if (job && job.pick === 'in') return 'in';
   if (job && job.pick === 'out') return 'out';
-  return kwHit(rec && rec.n, kw) ? 'auto' : 'none';
+  return kwWhich(rec && rec.n, kw, kwt) ? 'auto' : 'none';
 }
 function isPicked(st) { return st === 'in' || st === 'auto'; }
 // 줄을 누르면: 골라져 있으면 빼고, 아니면 넣는다
@@ -440,7 +458,8 @@ function tapPick2(st, long, job) {
 }
 function settingsOf(doc) {
   const d = doc && typeof doc === 'object' ? doc : {};
-  return { kw: normKw(d.kw), days: DAY_CHOICES.includes(d.days) ? d.days : DEFAULT_DAYS, model: modelOf(d.model).id };
+  const kw = normKw(d.kw), lo = new Set(kw.map(w => w.toLowerCase()));
+  return { kw, kwt: kwtOf(d.kwt).filter(w => !lo.has(w.toLowerCase())), days: DAY_CHOICES.includes(d.days) ? d.days : DEFAULT_DAYS, model: modelOf(d.model).id };
 }
 // 전사 어림(분) — 그 모델을 잰 빠르기(speeds, 모델 시험)가 있으면 그것, 없으면 어림값
 function estMin(sec, modelId, speeds) { const m = modelOf(modelId), x = speeds && +speeds[m.id] > 0 ? +speeds[m.id] : m.speed; return Math.max(1, Math.ceil((+sec || 0) / 60 / x) + 1); }
@@ -449,8 +468,8 @@ function estMin(sec, modelId, speeds) { const m = modelOf(modelId), x = speeds &
 function listView(recs, jobs, settings, nowMs, speeds) {
   const s = settingsOf(settings), from = nowMs - s.days * 86400e3, J = jobs || {};
   return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && Number.isFinite(r.c) && r.c >= from)
-    .map(r => { const j = J[r.id] || null, st = pickState(r, j, s.kw);
-      return { id: r.id, name: r.n || '', when: kstLabel(r.t, nowMs), t: r.t, dur: durLabel(r.d), d: r.d || 0, st, picked: isPicked(st), hit: kwHit(r.n, s.kw),
+    .map(r => { const j = J[r.id] || null, st = pickState(r, j, s.kw, s.kwt), kh = kwWhich(r.n, s.kw, s.kwt);
+      return { id: r.id, name: r.n || '', when: kstLabel(r.t, nowMs), t: r.t, dur: durLabel(r.d), d: r.d || 0, st, picked: isPicked(st), hit: kh ? kh.w : '',
         job: j && j.st ? j.st : '', step: j && j.step ? j.step : '', mac: j && j.mac ? j.mac : '', err: j && j.st === 'fail' && j.err ? j.err : '', gone: !!(j && j.st === 'done' && j.gone), src: j && j.st === 'done' ? (j.src === 'p' ? 'p' : 'w') : '', odd: !!(j && j.odd), p: !!r.p, dr: j && DR_ST.includes(j.dr) ? j.dr : '', dre: j && j.dre ? String(j.dre) : '',
         full: st === 'in' ? !!(j && DR_ST.includes(j.dr)) : st === 'auto' ? drAuto(r, j, settings) : false,   // 초안까지 고른 줄(가득 찬 체크)
         wait: !(j && j.st) && isPicked(st) && waitPlaud(r, nowMs) ? plaudWaitUntil(r) : 0, est: estMin(r.d, s.model, speeds) }; })
@@ -526,7 +545,7 @@ async function finish(io, id, mac, ok, err, extra) {
 // 맡을 차례: 골랐고 · 끝나지 않았고 · 지금 맡을 수 있는 것, 오래된 녹음부터
 function wantedJobs(recs, jobs, settings, mac, now) {
   const s = settingsOf(settings), J = jobs || {};
-  return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && isPicked(pickState(r, J[r.id], s.kw)) && claimCheck(J[r.id] || null, mac, now).ok)
+  return Object.values(recs || {}).filter(r => r && ID_RE.test(r.id || '') && isPicked(pickState(r, J[r.id], s.kw, s.kwt)) && claimCheck(J[r.id] || null, mac, now).ok)
     .sort((a, b) => (a.t || 0) - (b.t || 0)).map(r => r.id);
 }
 
@@ -690,19 +709,66 @@ const DR_LEASE_MS = 15 * 60e3;          // 'run' 인 채 15분 넘게 그대로�
 const DRAFT_MAX = 400000, GUIDE_MAX = 30000, FB_MAX = 4000, AI_KEY_RE = /^sk-[A-Za-z0-9_\-]{20,300}$/;
 const INBOX_TAB_NAME = 'AI 입력대기', PK_VERSION = 'hb-care.v1';
 const INBOX_COLS = ['접수ID', '접수시각', '스키마버전', '패킷JSON', '상태', '오류', '원본ID', '생성된 기록ID', '처리시각'];   // 심방 노트 TABS['AI 입력대기'] 와 같게
-// 설정 ai = { on: 키워드로 골라진 녹음은 저절로(기본 켜짐 — HB '가'), model: 고른 모델('' = Mac 이 고른 기본) }
-function aiOf(settings) { const a = settings && settings.ai && typeof settings.ai === 'object' ? settings.ai : {}; return { on: a.on !== false, model: typeof a.model === 'string' ? a.model.slice(0, 80) : '' }; }
+// 설정 ai(P4e) = { on: 키워드(초안까지)로 골라진 녹음은 저절로(기본 켜짐 — HB '가'), auto: 저절로 · 첫 초안 모델, big: [다시 만들기] 모델,
+//   price: { 모델 이름: [입력 $/1M, 출력 $/1M] }, krw: 환율(원/달러) } — 모델 · 단가는 HB 가 메뉴에서 적는다. 코드에 이름 · 값을 박지 않고 저절로 고르지도 않는다
+//   옛 ai.model(P4 — 모델 하나)은 읽을 때 big 으로 옮긴다(낡은 기기가 아직 model 만 적어도)
+const AI_NEED = '메뉴 › AI 초안에서 모델을 골라 주세요', PRICE_MAX = 30;
+function aiName(x) { return typeof x === 'string' ? x.trim().slice(0, 80) : ''; }
+function priceOf(p) {
+  const out = {}; if (!p || typeof p !== 'object' || Array.isArray(p)) return out;
+  for (const k of Object.keys(p).slice(0, PRICE_MAX)) { const v = p[k], m = aiName(k), a = Array.isArray(v) ? v.map(Number) : [];
+    if (m && a.length === 2 && a.every(x => Number.isFinite(x) && x >= 0 && x <= 10000)) out[m] = a; }
+  return out;
+}
+function aiOf(settings) {
+  const a = settings && settings.ai && typeof settings.ai === 'object' ? settings.ai : {}, krw = +a.krw;
+  return { on: a.on !== false, auto: aiName(a.auto), big: 'big' in a ? aiName(a.big) : aiName(a.model), price: priceOf(a.price), krw: Number.isFinite(krw) && krw > 0 && krw < 100000 ? krw : 0 };
+}
+// 이 차례에 쓸 모델 — 고칠 점(fb)이 있을 때만 big(비면 auto), 그 밖은 auto. '' = 골라 둔 모델이 없음 → 초안을 만들지 않는다(AI_NEED)
+function aiModelFor(settings, fb) { const a = aiOf(settings); return fb ? (a.big || a.auto) : a.auto; }
 // OpenAI 모델 목록에서 글을 쓰는 모델만(소리 · 그림 · 임베딩 · 검색 · 검열 · 미세조정 사본 · 날짜 붙은 사본은 뺌)
 function aiModels(ids) {
   return [...new Set((ids || []).map(String))].filter(id => /^(gpt-|o\d)/i.test(id) && !/audio|realtime|tts|transcribe|image|embed|search|moderation|whisper|dall|instruct|codex|ft:|\d{4}-\d{2}-\d{2}/i.test(id)).sort().slice(0, 60);
 }
-// '좋은 모델' 기본값(HB '4'): 가장 높은 번호의 gpt-N(.M) 본판(mini · nano 가 아닌 것) → 없으면 목록 첫 것
-function aiPick(list) {
-  const L = aiModels(list), ver = id => { const m = /^gpt-(\d+(?:\.\d+)?)(o?)$/.exec(id); return m ? +m[1] + (m[2] ? 0.05 : 0) : -1; };
-  const top = L.filter(id => ver(id) >= 0).sort((a, b) => ver(b) - ver(a))[0];
-  return top || L[0] || '';
+/* ---------- (P4e) 이번 달 AI 사용량 — plaud/{uid}/use/{YYYY-MM}(한국 시각 달) = { 모델 이름: { i: 입력 토큰, o: 출력 토큰, n: 부른 횟수, c: 그중 캐시 입력 } }
+   숫자만(글 · 녹음 번호 · 이름 없음). 도우미가 파이어베이스 increment 로 더한다 — 두 Mac 이 겹쳐도 맞게 */
+function monthKey(ms) { const k = kst(ms); return k.y + '-' + String(k.mo).padStart(2, '0'); }
+const MONTH_RE = /^20\d\d-(0[1-9]|1[0-2])$/;
+// OpenAI 응답의 usage → { i, o, c } (없으면 0)
+function useOf(j) {
+  const u = j && j.usage || {}, n = x => (Number.isFinite(+x) && +x > 0 ? Math.round(+x) : 0);
+  return { i: n(u.prompt_tokens != null ? u.prompt_tokens : u.input_tokens), o: n(u.completion_tokens != null ? u.completion_tokens : u.output_tokens),
+    c: n(((u.prompt_tokens_details || u.input_tokens_details || {}).cached_tokens)) };
 }
-function aiModelOf(settings, macs) { const want = aiOf(settings).model; if (want) return want; const all = [].concat(...(macs || []).map(m => Array.isArray(m && m.aim) ? m.aim : [])); return aiPick(all); }
+// 파이어베이스 칸 길 — 모델 이름에 점 · 줄표가 있어 `…` 로 감싼다
+function fieldKey(k) { return '`' + String(k).replace(/\\/g, '\\\\').replace(/`/g, '\\`') + '`'; }
+// commit 한 줄(REST): 칸을 바꾸지 않고 숫자만 더한다(없으면 문서를 만든다)
+function useWrite(docPath, model, u) {
+  const m = aiName(model); if (!m) return null; const f = fieldKey(m), inc = (k, v) => ({ fieldPath: f + '.' + k, increment: { integerValue: String(v) } });
+  const t = [inc('i', u.i || 0), inc('o', u.o || 0), inc('n', 1)]; if (u.c > 0) t.push(inc('c', u.c));
+  return { update: { name: docPath, fields: {} }, updateMask: { fieldPaths: [] }, updateTransforms: t };
+}
+// 계기판 맨 위 한 줄 · 판 — rows = 모델마다 { m, i, o, c, n, usd(단가 없으면 null) }
+function useView(doc, settings) {
+  const a = aiOf(settings), d = doc && typeof doc === 'object' ? doc : {}, rows = [];
+  for (const m of Object.keys(d).sort()) { const v = d[m]; if (!v || typeof v !== 'object' || m === 'id') continue;
+    const i = +v.i || 0, o = +v.o || 0, n = +v.n || 0, c = +v.c || 0, p = a.price[m];
+    rows.push({ m, i, o, c, n, usd: p ? (i * p[0] + o * p[1]) / 1e6 : null }); }
+  const n = rows.reduce((s, r) => s + r.n, 0), miss = rows.filter(r => r.usd == null && (r.i || r.o)).map(r => r.m), usd = rows.reduce((s, r) => s + (r.usd || 0), 0);
+  return { rows, n, usd, miss, krw: a.krw ? usd * a.krw : null };
+}
+function usdLabel(x) { return '$' + (x < 10 ? x.toFixed(2) : x.toFixed(1)); }
+function krwLabel(x) { return '₩' + Math.round(x).toLocaleString('ko-KR'); }
+function tokLabel(x) { return x >= 1e6 ? (x / 1e6).toFixed(2) + 'M' : x >= 1e3 ? Math.round(x / 1e3) + 'K' : String(Math.round(x)); }
+function useLine(v) {
+  if (!v || !v.rows.length) return '';
+  if (v.miss.length) return '이번 달 AI 초안 ' + v.n + '건 · 단가를 적으면 금액이 보입니다';
+  return '이번 달 AI 초안 ' + v.n + '건 · 약 ' + (v.krw != null ? krwLabel(v.krw) + ' (' + usdLabel(v.usd) + ')' : usdLabel(v.usd) + ' (환율을 적으면 원으로)');
+}
+// (P4e) 보안 규칙이 옛 판일 때(도우미 소식 · 사용량 쓰기가 403) — Mac 카드에 이 한 줄
+const RULES_OLD = '보안 규칙이 옛 판입니다 — 다시 붙여 주세요';
+// 옛 규칙(P4 앞)이 모르는 Mac 소식 칸 — 403 이면 이것을 빼고 한 번 더 적는다
+const MAC_NEW = ['aik', 'aim'];
 // 고칠 수 있는 지침(HB [지침] — 계정에는 잠가서). 기본은 ChatGPT 운영 지침 v2.2 의 역할 · 초안 꼴 · 수정 · 안전
 const AI_GUIDE = [
   '# 역할',
@@ -780,9 +846,11 @@ function aiErr(status, j) {
 // 저절로 만들 녹음: AI 초안이 켜져 있고(기본) · 키워드로 골라진 것(직접 고른 것은 줄의 [초안 만들기] 로만 — HB '3')
 function drAuto(rec, job, settings) { return aiOf(settings).on && !(job && job.pick === 'out') && !!kwHit(rec && rec.n, settingsOf(settings).kw); }
 // 이 Mac 이 지금 초안을 만들어도 되나 — wait 이거나, run 인 채 오래 멈춘 것(utMs = 일감 문서가 마지막으로 바뀐 때)
-function drTake(job, utMs, now) {
+// (P4e) 모델을 안 골라 실패한 것(dre = AI_NEED)은 HB 가 '저절로 · 첫 초안' 모델을 고르면 다시 집는다(settings 를 줄 때만)
+function drTake(job, utMs, now, settings) {
   if (!job || job.st !== 'done') return false;
   if (job.dr === 'wait') return true;
+  if (job.dr === 'fail' && job.dre === AI_NEED) return !!(settings && aiOf(settings).auto);
   return job.dr === 'run' && Number.isFinite(utMs) && now - utMs > DR_LEASE_MS;
 }
 // 'AI 입력대기' 한 줄 — 머리줄 이름 차례대로: 접수ID(빈 — 앱이 붙임) · 접수시각(+09:00) · 스키마버전 · 패킷JSON · 상태 '대기' · 오류(빈) · 원본ID(녹음 번호) — 지침 v2.2 6항 5
@@ -803,7 +871,7 @@ function drLabel(dr) { return { wait: '초안 기다림', run: '초안 만드는
 
 var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS, RENEW_MS, ALIVE_MS, DEFAULT_KW, KW_MAX, KW_LEN, DAY_CHOICES, DEFAULT_DAYS,
   MODELS, DEFAULT_MODEL, modelOf, modelUrl, READY, INSTALLS, CMD_WHAT, stripAnsi, durSec, parseRecent, parseFileDetail, apiMs, kst, kstLabel, durLabel, agoLabel,
-  cleanKw, normKw, addKw, removeKw, kwHit, pickState, isPicked, tapPick, tapPick2, sttInfo, sttLabel, settingsOf, estMin, listView, macView, normMac, DEL_CAP, recPlan,
+  cleanKw, normKw, addKw, removeKw, kwHit, kwtOf, kwAdd, kwWhich, pickState, isPicked, tapPick, tapPick2, sttInfo, sttLabel, settingsOf, estMin, listView, macView, normMac, DEL_CAP, recPlan,
   claimCheck, tryClaim, renew, finish, wantedJobs, CMD_STALE_MS, cmdFor, clean, fsEnc, fsDec, fsDoc,
   CMD_WHILE_BUSY, DRIVE_DIR, WHISPER_BINS, PIPE, pipeArgv, parseAudioUrl, curlConf, parseProgress, SPACE_SPARE, needBytes, gbLabel, spaceCheck, spaceMsg,
   WORK_NEEDS, workBlock, txtName, kstIso, cleanText, txtOf, workLabel, TEST_SEC, speedsOf, perMinLabel, testView, FAIL_WAIT_MS,
@@ -811,7 +879,7 @@ var PH = { APP_VERSION, HELPER_LATEST, PROJECT, SITE, PAIR_PORT, ID_RE, LEASE_MS
   KDF_IT, KEY_CHECK, TXT_MAX, PASS_MIN, b64e, b64d, deriveKey, encText, decText, newKdf, checkKey, unlockKey, bytesLabel, workSizes,
   TABS, tabOf, inTab, titleRest, hhmm, dayKey, dayLabel, LONG_SEC, GONE_CAP, gonePlan, locateTxt,
   stripMd, isPName, PLAUD_WAIT_MS, plaudWaitUntil, waitPlaud, looksStuck,
-  AI_URL, DR_ST, DR_LEASE_MS, DRAFT_MAX, GUIDE_MAX, FB_MAX, AI_KEY_RE, INBOX_TAB_NAME, PK_VERSION, INBOX_COLS, aiOf, aiModels, aiPick, aiModelOf, AI_GUIDE, AI_PACKET, aiSystem,
+  AI_URL, DR_ST, DR_LEASE_MS, DRAFT_MAX, GUIDE_MAX, FB_MAX, AI_KEY_RE, INBOX_TAB_NAME, PK_VERSION, INBOX_COLS, aiOf, aiModels, AI_NEED, PRICE_MAX, priceOf, aiModelFor, monthKey, MONTH_RE, useOf, fieldKey, useWrite, useView, usdLabel, krwLabel, tokLabel, useLine, RULES_OLD, MAC_NEW, AI_GUIDE, AI_PACKET, aiSystem,
   aiMessages, aiRetry, aiParse, aiErr, drAuto, drTake, inboxRow, inboxHas, drLabel };
 </script>
 
@@ -834,7 +902,7 @@ const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 
   storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
 const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
 const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsubs: [] };
-const S = { settings: null, recs: {}, jobs: {}, macs: {}, cmds: {}, pane: null, here: null, hereErr: '', pairBusy: false, tab: 'new', sel: new Set(), open: new Set(), seenPrev: 0, newVer: '' };
+const S = { settings: null, recs: {}, jobs: {}, macs: {}, cmds: {}, pane: null, here: null, hereErr: '', pairBusy: false, tab: 'new', sel: new Set(), open: new Set(), seenPrev: 0, newVer: '', use: null, useMonth: '' };
 // 이 기기에 기억하는 화면 취향(P3c): 마지막 탭 · 펼친 Mac 카드 · 지난번 연 때(새 녹음 파란 점)
 const UI_LS = 'plaudhub_ui_v1';
 (function () { try { const o = JSON.parse(localStorage.getItem(UI_LS) || '{}'); if (TABS.some(t => t[0] === o.tab)) S.tab = o.tab; if (Array.isArray(o.open)) S.open = new Set(o.open); S.seenPrev = +o.seen || 0;
@@ -879,9 +947,11 @@ function demoData() {
   S.macs = { '집': { id: '집', at: n - 50e3, doing: '전사 중 6분째 (42%)', v: HELPER_LATEST, cli: 'plaud 0.3.15', models: ['large-v3-turbo-q5_0', 'medium-q5_0'],
     test: { at: n - 2 * H, len: 600, r: { 'large-v3-turbo-q5_0': { s: 130, x: 4.6 }, 'medium-q5_0': { s: 205, x: 2.9 } } },
     disk: { free: 41.2e9, models: 1.06e9, work: { [id('a')]: 23.4e6 } },
-    ready: { brew: true, node: true, ffmpeg: true, whisper: true, model: true, plaud: true, login: true, drive: true }, aik: true, aim: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-5', 'gpt-5-mini'] },
+    ready: { brew: true, node: true, ffmpeg: true, whisper: true, model: true, plaud: true, login: true, drive: true }, aik: true, aim: ['gpt-9', 'gpt-9-mini', 'gpt-9-nano'] },
     '사무실': { id: '사무실', at: n - 5 * H, doing: '쉼', v: 'h. 26-1120-1', ready: { brew: false, node: false } } };
-  S.settings = { kw: ['심방'], days: 14, model: DEFAULT_MODEL, auto: { '사무실': false }, kdf: { s: 'ZGVtbw==', it: 600000, iv: '', c: '' } };
+  S.settings = { kw: ['심방'], kwt: ['회의'], days: 14, model: DEFAULT_MODEL, auto: { '사무실': false }, kdf: { s: 'ZGVtbw==', it: 600000, iv: '', c: '' },
+    ai: { on: true, auto: 'gpt-9-mini', big: 'gpt-9', price: { 'gpt-9-mini': [0.1, 0.5], 'gpt-9': [1, 5] }, krw: 1400 } };   // 미리보기는 지어낸 모델 이름
+  S.use = { 'gpt-9-mini': { i: 41200, o: 9800, n: 9 }, 'gpt-9': { i: 5200, o: 1900, n: 1 } };
   FB.user = { email: '미리보기 (저장 안 됨)', uid: 'demo' }; FB.ready = true;
 }
 
@@ -910,6 +980,15 @@ function listen(uid) {
   coll('job', 'jobs', x => Object.assign(x, { at: ts(x.at) }));
   coll('mac', 'macs', x => Object.assign(x, { at: ts(x.at) }));
   coll('cmd', 'cmds', x => Object.assign(x, { at: ts(x.at) }));
+  useListen();
+}
+// (P4e) 이번 달 AI 사용량 한 장 — 달이 바뀌면 새 달 문서로. 규칙이 옛 판이라 못 읽어도 화면은 그대로(맨 위 줄만 안 보임)
+var USE_UN = null;
+function useListen() {
+  if (DEMO || !FB.user) return; const mk = monthKey(now()); if (mk === S.useMonth && USE_UN) return;
+  if (USE_UN) { try { USE_UN(); } catch (_) { } } S.useMonth = mk; S.use = null;
+  USE_UN = base().collection('use').doc(mk).onSnapshot(d => { S.use = d.exists ? d.data() : {}; render(); if (S.pane && S.pane.kind === 'use') renderPane(); }, () => { S.use = null; render(); });
+  FB.unsubs.push(() => { if (USE_UN) USE_UN(); USE_UN = null; S.useMonth = ''; });
 }
 async function fbLogin() {
   const em = ($('#fb-em') || {}).value, pw = ($('#fb-pw') || {}).value;
@@ -930,7 +1009,7 @@ async function saveSettings(patch) {
   S.settings = next; render(); renderPane();
   if (DEMO) return true;
   try { await base().set(patch, { merge: true }); return true; }
-  catch (e) { toast('저장하지 못했습니다\n' + (e.message || '')); return false; }
+  catch (e) { toast(/permission/i.test(e.code || e.message || '') ? '저장하지 못했습니다\n' + RULES_OLD + ' (docs/plaudhub/firestore-rules.md)' : '저장하지 못했습니다\n' + (e.message || '')); return false; }
 }
 function setAuto(mac, on) { saveSettings({ auto: { [mac]: !!on } }); toast(mac + ' Mac 자동 전사 ' + (on ? '켬\n고른 녹음을 저절로 이어 합니다' : '끔\n지금 하던 전사만 끝내고 멈춥니다')); }
 
@@ -1185,6 +1264,8 @@ function render() {
   const rows = listView(S.recs, S.jobs, settings(), t, speedsOf(Object.values(S.macs)));
   const ws = workSizes(Object.values(S.macs).filter(d => macView(d, t).alive)); S.ws = ws;   // 꺼진 Mac 의 마지막 소식은 빼고(그 Mac 은 다시 켜질 때 스스로 비움)
   let h = FB.err ? '<div class="card msg bad">' + esc(FB.err) + '</div>' : '';
+  const uv = useView(S.use, S.settings), ul = useLine(uv);   // (P4e) 머리줄 아래 이번 달 AI 금액 한 줄
+  if (ul) h += '<button class="useline" data-act="' + (uv.miss.length ? 'menu' : 'usepane') + '">' + esc(ul) + '</button>';
   h += '<h2>Mac <small>' + (macs.filter(x => x.alive).length) + ' / ' + macs.length + ' 켜짐</small></h2>';
   h += macs.length ? '<div class="macs">' + macs.map(macHtml).join('') + '</div>' : '<div class="card msg">아직 연결된 Mac 이 없습니다.\nMac 크롬에서 이 화면을 열고 메뉴 › \'이 Mac 연결\' 을 눌러 주세요.</div>';
   h += hereHtml();
@@ -1307,7 +1388,7 @@ function recHtml(r) {
   else if (r.picked) { right = (r.job === 'fail' ? '<span class="s fail">실패</span>' : len) + '<button class="btn ghost sm" data-act="kick" data-id="' + esc(r.id) + '" title="켜진 Mac 이 30초 안에 시작">지금</button>';
     sub = (r.job === 'fail' ? '실패: ' + esc(r.err || '') + ' — 한 시간 뒤 다시 합니다 · ' : '')
       + (r.wait ? 'PLAUD 전사를 기다림 — ' + esc(kstLabel(r.wait, now()).replace(/^\d+\. \d+\. \(.\) /, '')) + ' 뒤 whisper · ' : r.p ? 'PLAUD 전사문을 가져옴 · ' : '전사 어림 ' + durLabel(r.est * 60) + ' · ')
-      + (r.full ? '<b class="mdd">초안까지</b>' : '<b class="mdt">전사까지</b>') + (r.st === 'auto' ? '(키워드 \'' + esc(r.hit) + '\')' : ' · 직접 고름'); }
+      + (r.st === 'auto' ? '키워드 \'' + esc(r.hit) + '\' · ' : '') + (r.full ? '<b class="mdd">초안까지</b>' : '<b class="mdt">전사까지</b>') + (r.st === 'auto' ? '' : ' · 직접 고름'); }
   else right = (r.st === 'out' ? '<span class="s out">뺌</span>' : '') + len;
   // 끝난 것(드라이브에 없음 포함)은 왼쪽 동그라미가 빈 채 · 눌러도 고름이 안 바뀜(HB 11/24)
   return '<div class="rec' + (r.picked && !fin ? ' pick' : '') + (r.full ? ' full' : '') + (S.sel.has(r.id) ? ' sel' : '') + (fin ? ' done' : '') + (fin || r.job === 'work' ? ' wr' : '') + '"' + (fin ? '' : ' data-act="pick" data-st="' + r.st + '"') + ' data-id="' + esc(r.id) + '">'
@@ -1342,9 +1423,11 @@ function renderPane() {
   if (P.kind === 'menu') {
     const s = settings();
     title = '설정';
-    body = '<h3>자동으로 고를 키워드</h3><div class="msg">제목에 이 글자가 있으면 저절로 고릅니다. 긴 회의도 빼지 않습니다 — 목록에서 눌러 넣고 뺍니다.</div>'
-      + '<div class="chips">' + (s.kw.length ? s.kw.map(w => '<button class="chip" data-act="kwdel" data-w="' + esc(w) + '">' + esc(w) + '<span class="x">×</span></button>').join('') : '<span class="msg">키워드 없음 — 직접 고른 것만 합니다</span>') + '</div>'
-      + '<div style="display:flex;gap:8px"><input class="field" id="kw-in" maxlength="' + KW_LEN + '" placeholder="예: 상담" style="margin:0"><button class="btn ghost" data-act="kwadd">더하기</button></div>'
+    const kwBox = (k, list, ph, none) => '<div class="chips">' + (list.length ? list.map(w => '<button class="chip' + (k === 'kw' ? ' kd' : ' kt') + '" data-act="kwdel" data-k="' + k + '" data-w="' + esc(w) + '">' + esc(w) + '<span class="x">×</span></button>').join('') : '<span class="msg">' + none + '</span>') + '</div>'
+      + '<div style="display:flex;gap:8px"><input class="field" id="kw-in-' + k + '" maxlength="' + KW_LEN + '" placeholder="' + ph + '" style="margin:0"><button class="btn ghost" data-act="kwadd" data-k="' + k + '">더하기</button></div>';
+    body = '<h3>키워드 — 제목에 있으면 저절로 고름</h3><div class="msg">긴 회의도 빼지 않습니다 — 목록에서 눌러 넣고 뺍니다. 같은 말은 한쪽에만 둡니다(둘 다 걸리면 초안까지).</div>'
+      + '<h3 class="kh"><span class="mdd">초안까지 자동</span></h3><div class="msg">전사 뒤 AI 초안까지 저절로 만듭니다(아래 \'AI 초안\' 의 저절로가 켜져 있을 때).</div>' + kwBox('kw', s.kw, '예: 심방', '없음 — 초안은 직접 고른 것만')
+      + '<h3 class="kh"><span class="mdt">전사까지만 자동</span></h3><div class="msg">전사만 하고 초안은 만들지 않습니다(필요하면 줄의 ⋯ › 초안 만들기).</div>' + kwBox('kwt', s.kwt, '예: 회의', '없음')
       + '<h3>목록 기간</h3><div class="chips">' + DAY_CHOICES.map(d => '<button class="chip' + (d === s.days ? ' sel' : '') + '" data-act="days" data-d="' + d + '">' + d + '일</button>').join('') + '</div>'
       + '<h3>전사 모델</h3>' + MODELS.map(m => { const x = speedsOf(Object.values(S.macs))[m.id];
         return '<div class="opt' + (m.id === s.model ? ' sel' : '') + '" data-act="model" data-m="' + m.id + '"><span class="r"></span><span>' + esc(m.label) + ' · ' + m.mb + 'MB<small>' + esc(m.note) + (x ? ' · 잰 빠르기: ' + esc(perMinLabel(x)) : '') + '</small></span></div>'; }).join('')
@@ -1357,6 +1440,14 @@ function renderPane() {
       + '<h3>설치 · 지우기</h3>' + installHelp()
       + '<h3>계정</h3><div class="msg">' + esc(FB.user ? FB.user.email : '') + '</div>' + (DEMO ? '' : '<div style="margin-top:8px"><button class="btn ghost" data-act="logout">로그아웃</button></div>')
       + '<div class="ver">' + esc(APP_VERSION) + ' · 도우미 ' + esc(HELPER_LATEST) + '</div>';
+  } else if (P.kind === 'use') {   // (P4e) 이번 달 AI 사용량 — 모델별 토큰 · 금액
+    const v = useView(S.use, S.settings), a = aiOf(S.settings);
+    title = '이번 달 AI 초안 — ' + esc(S.useMonth || monthKey(now()));
+    body = (v.rows.length ? '<div class="kv use">' + v.rows.map(r => '<b>' + esc(r.m) + '</b><span>' + r.n + '번 · 입력 ' + tokLabel(r.i) + (r.c ? '(캐시 ' + tokLabel(r.c) + ')' : '') + ' · 출력 ' + tokLabel(r.o) + ' 토큰<br>'
+        + (r.usd == null ? '<span class="bad">단가 없음</span>' : (a.krw ? '약 ' + krwLabel(r.usd * a.krw) + ' · ' : '') + usdLabel(r.usd)) + '</span>').join('') + '<b>합계</b><span>' + v.n + '번 · ' + (v.krw != null ? '약 ' + krwLabel(v.krw) + ' · ' : '') + usdLabel(v.usd) + (v.miss.length ? ' (단가 없는 모델 빼고)' : '') + '</span></div>'
+      : '<div class="msg">이번 달에는 아직 부른 적이 없습니다.</div>')
+      + '<div class="msg" style="margin-top:10px">금액은 메뉴 › AI 초안에 적은 단가 × 토큰으로 어림한 값입니다(캐시 할인 · 세금은 빼지 않음). 다시 만들기 · 규격에 걸려 한 번 더 부른 것도 한 번씩 셉니다.\n정확한 금액은 OpenAI Usage 화면(platform.openai.com › Usage)에서 봅니다.</div>';
+    foot = '<button class="btn ghost" data-act="menu">단가 · 환율 고치기</button>';
   } else if (P.kind === 'pair') {
     title = '이 Mac 연결';
     if (!S.here) body = '<div class="msg">이 Mac 의 도우미를 찾는 중…</div>' + (S.hereErr ? '<div class="msg bad" style="margin-top:8px">' + esc(S.hereErr) + '</div>' + installHelp() : '');
@@ -1415,7 +1506,7 @@ function renderPane() {
     title = '전사 txt';
     const jd = (S.jobs[P.id] || {}).dr || '';
     body = '<div class="msg">' + esc(nm) + '</div>'
-      + '<h3>AI 초안</h3><div class="msg">' + (jd ? drLabel(jd) : '아직 없음 — 만들면 OpenAI 로 ①~⑧ 초안을 만듭니다(녹음 한 시간에 백 원 남짓)') + '</div><div class="pairbox"><button class="btn ghost" data-act="' + (jd ? 'draft' : 'drnew') + '" data-id="' + esc(P.id) + '">' + (jd ? '초안 보기' : '초안 만들기') + '</button></div>'
+      + '<h3>AI 초안</h3><div class="msg">' + (jd ? drLabel(jd) : '아직 없음 — 만들면 OpenAI 로 ①~⑧ 초안을 만듭니다(메뉴 › AI 초안에서 고른 \'저절로 · 첫 초안\' 모델)') + '</div><div class="pairbox"><button class="btn ghost" data-act="' + (jd ? 'draft' : 'drnew') + '" data-id="' + esc(P.id) + '">' + (jd ? '초안 보기' : '초안 만들기') + '</button></div>'
       + '<h3>다시 전사</h3><div class="msg">드라이브 txt 와 잠근 사본을 지우고 처음부터 다시 전사합니다(모델을 바꾼 뒤 등).</div><div class="pairbox"><button class="btn ghost" data-act="redo" data-id="' + esc(P.id) + '">다시 전사</button></div>'
       + '<h3>txt 지우기</h3><div class="msg">드라이브 \'' + esc(DRIVE_DIR) + '\' 의 이 녹음 txt 와 폰에서 보던 잠근 사본을 지우고, 이 녹음을 목록에서 뺍니다(다시 저절로 전사하지 않음).\nPLAUD 의 녹음 원본은 그대로입니다.</div>'
       + '<div class="pairbox"><button class="btn" style="background:var(--bad)" data-act="rmtxt" data-id="' + esc(P.id) + '">txt 지우기</button></div>';
@@ -1480,15 +1571,32 @@ function renderPane() {
   el.innerHTML = '<div class="phead">' + esc(title) + '<button class="modal-x" data-act="closepane" aria-label="닫기">' + XSVG + '</button></div><div class="pbody">' + body + '</div>' + (foot ? '<div class="pfoot">' + foot + '</div>' : '');
   const nb = el.querySelector('.pbody'); if (nb) nb.scrollTop = top;
 }
-// 메뉴 'AI 초안' — 저절로 · 모델 · Mac 마다 열쇠 · 지침
+// 메뉴 'AI 초안' — 저절로 · 모델 두 칸(저절로 · 첫 초안 / 다시 만들기) · 단가 · 환율 · Mac 마다 열쇠 · 지침 (P4e)
+// 권장 · 쓰지 말 것 · 종료 예정은 안내 글과 '권장' 표시에만 쓴다(HB 리서치 11/25, platform.openai.com/pricing) — 기본값으로 고르지 않는다
+const AI_TIP = { auto: 'gpt-6-luna', big: 'gpt-6.1-terra', avoid: 'gpt-5.5', gone: ['gpt-5-nano', 'gpt-5-mini', 'gpt-5', 'o3'], goneAt: '2026-12-11',
+  price: { 'gpt-6-luna': [0.10, 0.50], 'gpt-6.1-terra': [1.00, 5.00], 'gpt-5.5': [5.00, 30.00] }, krw: 1400 };
 function aiMenuHtml() {
-  const a = aiOf(S.settings), macs = Object.values(S.macs), all = [...new Set([].concat(...macs.map(m => Array.isArray(m.aim) ? m.aim : [])))].sort(), cur = aiModelOf(S.settings, macs);
+  const a = aiOf(S.settings), macs = Object.values(S.macs), all = [...new Set([].concat(...macs.map(m => Array.isArray(m.aim) ? m.aim : []), [a.auto, a.big].filter(Boolean)))].sort();
+  const tag = m => m === AI_TIP.auto || m === AI_TIP.big ? ' — 권장' : AI_TIP.gone.includes(m) ? ' — ' + AI_TIP.goneAt + ' 종료 예정' : m === AI_TIP.avoid ? ' — 이 일엔 비쌈' : '';
+  const pick = (k, cur, label, none) => '<div class="msg" style="margin-top:10px">' + label + '</div>' + (all.length
+    ? '<select class="field" id="ai-' + k + '"><option value=""' + (cur ? '' : ' selected') + '>' + none + '</option>' + all.map(m => '<option value="' + esc(m) + '"' + (cur === m ? ' selected' : '') + '>' + esc(m + tag(m)) + '</option>').join('') + '</select>'
+      + (cur && !macs.some(m => Array.isArray(m.aim) && m.aim.includes(cur)) && macs.some(m => Array.isArray(m.aim) && m.aim.length) ? '<div class="msg bad">고른 모델(' + esc(cur) + ')이 지금 Mac 목록에 없습니다</div>' : '')
+    : '<div class="msg">' + (cur ? esc(cur) : 'OpenAI 열쇠를 넣으면 쓸 수 있는 모델이 나옵니다') + '</div>');
+  const pm = [...new Set([a.auto, a.big].filter(Boolean).concat(Object.keys(S.use || {}).filter(k => S.use[k] && typeof S.use[k] === 'object')))];
+  const num = (id, v, ph) => '<input class="field num" id="' + id + '" inputmode="decimal" value="' + (v == null ? '' : esc(String(v))) + '" placeholder="' + ph + '">';
+  const tipP = m => AI_TIP.price[m] ? ' <small>(11/25 공시: $' + AI_TIP.price[m][0].toFixed(2) + ' / $' + AI_TIP.price[m][1].toFixed(2) + ')</small>' : '';
   return '<h3>AI 초안</h3><div class="msg">전사가 끝나면 OpenAI 로 ①~⑧ 초안과 시트용 묶음을 만들어 잠가 둡니다. 녹음 줄의 \'초안\' 에서 보고 고쳐 [승인] 하면 심방 노트 \'' + esc(INBOX_TAB_NAME) + '\' 에 들어갑니다.</div>'
-    + '<div class="autorow"><span>키워드로 고른 녹음은 저절로</span><button class="sw' + (a.on ? ' on' : '') + '" role="switch" aria-checked="' + a.on + '" aria-label="AI 초안 저절로" data-act="aion" data-on="' + (a.on ? 1 : 0) + '"><i></i></button>'
+    + '<div class="autorow"><span>초안까지 키워드 녹음은 저절로</span><button class="sw' + (a.on ? ' on' : '') + '" role="switch" aria-checked="' + a.on + '" aria-label="AI 초안 저절로" data-act="aion" data-on="' + (a.on ? 1 : 0) + '"><i></i></button>'
     + '<span class="msg">' + (a.on ? '켜짐' : '꺼짐 — 줄의 ⋯ › 초안 만들기로만') + '</span></div>'
-    + '<div class="msg" style="margin-top:8px">모델</div>' + (all.length ? '<select class="field" id="ai-model"><option value=""' + (a.model ? '' : ' selected') + '>기본 — ' + esc(aiPick(all) || '') + '</option>'
-      + all.map(m => '<option value="' + esc(m) + '"' + (a.model === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('') + '</select>' + (a.model && !all.includes(a.model) ? '<div class="msg bad">고른 모델(' + esc(a.model) + ')이 지금 목록에 없습니다</div>' : '')
-      : '<div class="msg">' + (cur ? esc(cur) : 'OpenAI 열쇠를 넣으면 쓸 수 있는 모델이 나옵니다') + '</div>')
+    + pick('auto', a.auto, '모델 — 저절로 · 첫 초안', '고르지 않음 — 초안을 만들지 않습니다')
+    + pick('big', a.big, '모델 — 다시 만들기 (고칠 점을 적었을 때)', '고르지 않음 — 위 모델을 씁니다')
+    + '<div class="msg tip">권장(11/25 기준): 저절로 · 첫 초안 = ' + AI_TIP.auto + ' · 다시 만들기 = ' + AI_TIP.big + '. 쓰지 말 것: ' + AI_TIP.avoid + '(이 일에 쓰기엔 수십 배 비쌈 — 11/25 짧은 통화 9건에 0.86달러).\n'
+    + AI_TIP.gone.join(' · ') + ' 는 ' + AI_TIP.goneAt + ' 종료 예정입니다(대체 = ' + AI_TIP.auto + '). 모델은 저절로 고르지 않습니다 — 칸이 비면 초안을 만들지 않고 줄에 까닭을 띄웁니다.</div>'
+    + '<h3>단가 · 환율</h3><div class="msg">맨 위 \'이번 달 금액\' 줄에 씁니다. OpenAI 요금표(platform.openai.com/pricing › Standard)의 1M 토큰당 값을 적어 주세요.</div>'
+    + (pm.length ? pm.map(m => { const p = a.price[m] || [];
+        return '<div class="prow"><span class="pm">' + esc(m) + tipP(m) + '</span><label>입력 $' + num('pi', p[0], '0.10').replace('id="pi"', 'data-m="' + esc(m) + '" data-k="0"') + '</label><label>출력 $' + num('po', p[1], '0.50').replace('id="po"', 'data-m="' + esc(m) + '" data-k="1"') + '</label></div>'; }).join('')
+      : '<div class="msg">모델을 고르면 단가 칸이 나옵니다.</div>')
+    + '<div class="prow"><span class="pm">환율 (원 / 1달러)</span><label>₩' + num('ai-krw', a.krw || AI_TIP.krw, String(AI_TIP.krw)) + '</label>' + (a.krw ? '' : '<button class="act" style="color:var(--ac)" data-act="krwsave">이 값으로</button>') + '</div>'
     + '<div class="msg" style="margin-top:8px">' + (macs.length ? macs.map(m => esc(m.id) + ' Mac — OpenAI 열쇠 ' + (m.aik ? '✓' : '없음')).join('\n') : '') + '</div>'
     + '<div class="pairbox"><button class="btn ghost" data-act="aikeypane">이 Mac 에 OpenAI 열쇠 넣기</button><button class="btn ghost" data-act="guidepane">지침</button></div>';
 }
@@ -1597,8 +1705,11 @@ document.addEventListener('click', e => {
     case 'aion': return saveSettings({ ai: Object.assign(aiOf(S.settings), { on: d.on !== '1' }) }).then(() => toast('AI 초안 저절로 ' + (d.on !== '1' ? '켬\n키워드로 고른 녹음은 전사 뒤 저절로' : '끔\n줄의 ⋯ › 초안 만들기로만')));
     case 'pick': return setPick(d.id, d.st);
     case 'commit': return commitSel(d.d === '1');
-    case 'kwadd': { const inp = $('#kw-in'), r = addKw(settings().kw, inp && inp.value); if (r.err) return toast(r.err); saveSettings({ kw: r.list }); toast('\'' + cleanKw(inp.value) + '\' 을 더했습니다\n제목에 있으면 저절로 고릅니다'); return; }
-    case 'kwdel': saveSettings({ kw: removeKw(settings().kw, d.w) }); return toast('\'' + d.w + '\' 을 뺐습니다');
+    case 'kwadd': { const k = d.k === 'kwt' ? 'kwt' : 'kw', inp = $('#kw-in-' + k), r = kwAdd(S.settings, k, inp && inp.value); if (r.err) return toast(r.err);
+      saveSettings({ [k]: r.list }); toast('\'' + cleanKw(inp.value) + '\' 을 더했습니다\n제목에 있으면 저절로 ' + (k === 'kw' ? '골라 초안까지' : '골라 전사까지만') + ' 합니다'); return; }
+    case 'kwdel': { const k = d.k === 'kwt' ? 'kwt' : 'kw'; saveSettings({ [k]: removeKw(settings()[k], d.w) }); return toast('\'' + d.w + '\' 을 뺐습니다'); }
+    case 'usepane': return openPane({ kind: 'use' });
+    case 'krwsave': return aiSave({ krw: aiNum(($('#ai-krw') || {}).value) }, '환율을 적었습니다');
     case 'days': return saveSettings({ days: +d.d });
     case 'model': return saveSettings({ model: d.m });
     case 'pairpane': openPane({ kind: 'pair' }); return probeHere(true);
@@ -1610,14 +1721,27 @@ document.addEventListener('click', e => {
   }
 });
 document.addEventListener('input', e => { const t = e.target; if (!t || !S.pane) return; if (t.id === 'dr-fb') S.pane.fb = t.value; if (t.id === 'gd-tx') S.pane.text = t.value; });
-document.addEventListener('change', e => { const t = e.target; if (t && t.id === 'ai-model') { saveSettings({ ai: Object.assign(aiOf(S.settings), { model: t.value }) }); toast('AI 초안 모델: ' + (t.value || '기본') + '\n다음 초안부터 씁니다'); } });
+// (P4e) AI 초안 설정 — 모델 두 칸 · 단가 · 환율. ai 를 통째로 다시 적는다(옛 model 은 big 으로 옮겨 적힘)
+function aiNum(v) { const x = parseFloat(String(v == null ? '' : v).replace(/[,$₩\s]/g, '')); return Number.isFinite(x) && x >= 0 ? x : NaN; }
+function aiSave(patch, msg) {
+  if (Object.values(patch).some(v => typeof v === 'number' && !Number.isFinite(v))) return toast('숫자로 적어 주세요');
+  const a = aiOf(S.settings), next = { on: a.on, auto: a.auto, big: a.big, price: a.price, krw: a.krw };
+  Object.assign(next, patch); return saveSettings({ ai: next }).then(ok => { if (ok && msg) toast(msg); });
+}
+document.addEventListener('change', e => { const t = e.target; if (!t) return;
+  if (t.id === 'ai-auto') return aiSave({ auto: t.value }, t.value ? '저절로 · 첫 초안 모델: ' + t.value + '\n다음 초안부터 씁니다' : '저절로 · 첫 초안 모델을 비웠습니다\n초안을 만들지 않습니다');
+  if (t.id === 'ai-big') return aiSave({ big: t.value }, t.value ? '다시 만들기 모델: ' + t.value : '다시 만들기 모델을 비웠습니다\n저절로 · 첫 초안 모델을 씁니다');
+  if (t.id === 'ai-krw') return aiSave({ krw: aiNum(t.value) }, '환율을 적었습니다');
+  if (t.dataset && t.dataset.m && (t.dataset.k === '0' || t.dataset.k === '1')) { const a = aiOf(S.settings), m = t.dataset.m, p = (a.price[m] || [0, 0]).slice(), x = aiNum(t.value);
+    if (!Number.isFinite(x)) return toast('숫자로 적어 주세요'); p[+t.dataset.k] = x; return aiSave({ price: Object.assign({}, a.price, { [m]: p }) }, m + ' 단가를 적었습니다'); }
+});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.pane) { e.preventDefault(); closePane(); }
   if (e.key === 'Enter' && e.target && e.target.id === 'fb-pw') fbLogin();
   if (e.key === 'Enter' && e.target && /^pw[12]$/.test(e.target.id)) lockSubmit();
-  if (e.key === 'Enter' && e.target && e.target.id === 'kw-in') { e.preventDefault(); $('[data-act="kwadd"]').click(); }
+  if (e.key === 'Enter' && e.target && /^kw-in-/.test(e.target.id)) { e.preventDefault(); $('[data-act="kwadd"][data-k="' + e.target.id.slice(6) + '"]').click(); }
 });
-setInterval(() => { if (!S.pane) render(); sweepCmds(); }, 30000);   // 켜짐 · 'n분 전' 을 새로
+setInterval(() => { if (!S.pane) render(); sweepCmds(); if (FB.user && !DEMO) useListen(); }, 30000);   // 켜짐 · 'n분 전' 을 새로
 if (DEMO) { demoData(); render(); verPaint(); }
 else { render(); verPaint(); verCheck(false); setInterval(() => verCheck(false), 10 * 60e3); fbInit(); let p = ''; try { p = localStorage.getItem(PROBE_KEY); } catch (_) { } if (p) probeHere(false); }
 if ('serviceWorker' in navigator && !DEMO) navigator.serviceWorker.register('sw.js').catch(() => { });

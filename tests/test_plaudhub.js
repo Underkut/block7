@@ -147,7 +147,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('⑥ P4d 전사 중이 아닌 글 · 모델 시험 글은 건드리지 않음', [A.sttInfo('쉼'), A.sttInfo('녹음 받는 중'), A.sttInfo('모델 시험 — 터보 전사 중 (50%)'), A.sttInfo('')], [null, null, null, null]);
   sc.eq('⑥ 5시간 회의도 키워드면 고름 (길이로 빼지 않음)', A.pickState(r('구역 심방 모임', 5 * 3600), null, ['심방']), 'auto');
   sc.eq('⑥ 5시간 회의를 직접 넣을 수 있음', A.isPicked(A.pickState(r('교역자 회의', 5 * 3600), { pick: 'in' }, ['심방'])), true);
-  sc.eq('⑥ 설정 다듬기 (모르는 기간 · 모델은 기본 = 터보, HB 11/23)', J(A.settingsOf({ kw: ['상담'], days: 99, model: 'tiny' })), { kw: ['상담'], days: 14, model: 'large-v3-turbo-q5_0' });
+  sc.eq('⑥ 설정 다듬기 (모르는 기간 · 모델은 기본 = 터보, HB 11/23)', J(A.settingsOf({ kw: ['상담'], days: 99, model: 'tiny' })), { kw: ['상담'], kwt: [], days: 14, model: 'large-v3-turbo-q5_0' });
   sc.eq('⑥ 고른 모델은 그대로', A.settingsOf({ model: 'medium-q5_0' }).model, 'medium-q5_0');
 }
 // ⑦ 계기판 목록
@@ -262,13 +262,15 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const macKeys = (/match \/mac\/\{name\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
   sc.eq('⑪ Mac 소식 칸: 깔린 모델 · 모델 시험 결과가 더해짐(글 자리는 없음)', macKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['at', 'doing', 'ready', 'v', 'err', 'cli', 'models', 'test', 'disk', 'listed', 'aik', 'aim']);
   const setKeys = (/allow create, update: if own\(\) && d\(\)\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ (P3b) 설정 칸: Mac 마다 자동 · 잠금 표지(암호 자체는 없음)', setKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['kw', 'days', 'model', 'auto', 'kdf', 'ai']);
+  sc.eq('⑪ (P3b) 설정 칸: Mac 마다 자동 · 잠금 표지(암호 자체는 없음)', setKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['kw', 'kwt', 'days', 'model', 'auto', 'kdf', 'ai']);
   const txtKeys = (/match \/txt\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
   sc.eq('⑪ (P3b) 잠근 사본 칸: 잠근 글 · iv · 판뿐(평문 · 제목 칸 없음)', txtKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['c', 'iv', 'v']);
   const drKeys = (/match \/draft\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '', cfgKeys = (/match \/cfg\/\{id\}[\s\S]*?hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
   sc.eq('⑪ (P4) 초안 · 지침 칸: 잠근 글뿐(평문 · 모델 열쇠 칸 없음)', [drKeys, cfgKeys].map(x => x.split(',').map(s => s.trim().replace(/'/g, ''))), [['c', 'iv', 'v', 'fc', 'fiv'], ['c', 'iv', 'v']]);
   const aiKeys = (/d\(\)\.ai\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules) || [])[1] || '';
-  sc.eq('⑪ (P4) 설정 ai 칸: 켜기 · 모델뿐(OpenAI 열쇠 자리 없음)', aiKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['on', 'model']);
+  sc.eq('⑪ (P4 · P4e) 설정 ai 칸: 켜기 · 옛 모델 · 모델 두 칸 · 단가 · 환율뿐(OpenAI 열쇠 자리 없음)', aiKeys.split(',').map(s => s.trim().replace(/'/g, '')), ['on', 'model', 'auto', 'big', 'price', 'krw']);
+  sc.eq('⑪ (P4e) 전사까지만 키워드 목록 ≤ 20 · 사용량 칸은 달 이름(YYYY-MM)만 = MONTH_RE', [/d\(\)\.kwt is list && d\(\)\.kwt\.size\(\) <= 20/.test(rules), /match \/use\/\{m\}[\s\S]*?m\.matches\('\^20\[0-9\]\{2\}-\(0\[1-9\]\|1\[0-2\]\)\$'\)/.test(rules), ['2026-11', '2026-13', '26-11', '2026-1'].map(x => A.MONTH_RE.test(x))], [true, true, [true, false, false, false]]);
+  sc.eq('⑪ (P4e) 문서 맨 위 장 = 다시 붙이기 (P4e)', /^# [^\n]*\n[\s\S]*?\n## ([^\n]*)/.exec(doc)[1].startsWith('다시 붙이기 (P4e'), true);
   sc.eq('⑪ (P4) 규칙의 초안 상태 = 판단 덩어리의 DR_ST', ((/d\(\)\.dr in \[([^\]]*)\]/.exec(rules) || [])[1] || '').split(',').map(s => s.trim().replace(/'/g, '')), J(A.DR_ST));
 }
 // ⑫ 도우미
@@ -604,8 +606,7 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
 {
   const now = 1.8e12, H = 3600e3;
   sc.eq('㉖ 모델 목록: 글 모델만(소리 · 그림 · 임베딩 · 날짜 사본 · 미세조정 빼고)', J(A.aiModels(['gpt-9', 'gpt-9-mini', 'gpt-9-audio-preview', 'text-embedding-3-large', 'dall-e-3', 'gpt-9-2026-01-01', 'ft:gpt-9:x', 'o7', 'whisper-1', 'gpt-image-1', 'gpt-9-transcribe'])), ['gpt-9', 'gpt-9-mini', 'o7']);
-  sc.eq('㉖ 기본 모델 = 가장 높은 번호의 본판(mini · nano 아님)', [A.aiPick(['gpt-8', 'gpt-9-mini', 'gpt-9', 'gpt-8.5', 'o7']), A.aiPick(['gpt-9-mini', 'o7']), A.aiPick([])], ['gpt-9', 'gpt-9-mini', '']);
-  sc.eq('㉖ HB 가 고른 모델이 먼저 · 없으면 Mac 목록에서', [A.aiModelOf({ ai: { model: 'gpt-8' } }, [{ aim: ['gpt-9'] }]), A.aiModelOf({}, [{ aim: ['gpt-9'] }, { aim: ['gpt-10'] }])], ['gpt-8', 'gpt-10']);
+  sc.eq('㉖ (P4e) 기본 모델을 저절로 고르지 않음 — aiPick · aiModelOf 없음', [typeof A.aiPick, typeof A.aiModelOf], ['undefined', 'undefined']);
   sc.eq('㉖ 설정 ai 기본 = 저절로 켜짐(HB \'가\')', [A.aiOf({}).on, A.aiOf({ ai: { on: false } }).on], [true, false]);
   const meta = { id: ID('a'), n: '2026-11-22 15:05:00 김하늘 집사 심방', t: Date.UTC(2026, 10, 22, 6, 5), d: 3600 };
   let msgs = A.aiMessages(meta, '전사 글', '', null, '');
@@ -657,6 +658,51 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉖ 계기판 승인: 같은 녹음 확인 → RAW 로 한 줄 → 다시 읽어 확인한 뒤에만 sent', /chk = await read\(\); if \(!chk\.ok\) throw[\s\S]*:append\?valueInputOption=RAW&insertDataOption=INSERT_ROWS[\s\S]*chk = await read\(\); if \(!chk\.ok \|\| !chk\.has\) throw[\s\S]*dr: 'sent'/.test(HTML), true);
   sc.eq('㉖ 계기판: 고칠 점 · 지침은 잠가서 계정에', /encText\(k, fb\.slice\(0, FB_MAX\)\); await dref\.set\(\{ fc: e\.c, fiv: e\.iv \}/.test(HTML) && /collection\('cfg'\)\.doc\('guide'\)\.set\(\{ c: e\.c, iv: e\.iv, v: 1 \}\)/.test(HTML), true);
   sc.eq('㉖ 열쇠 넣기 자리는 이 Mac(127.0.0.1)뿐 — 계정에 열쇠를 쓰지 않음', /helperCall\('\/aikey', \{ k \}/.test(HTML) && !/ai: \{[^}]*\bk\b/.test(HTML), true);
+}
+// ㉙ (P4e) 모델 두 칸 · 요금 · 키워드 두 갈래
+{
+  // A — 모델 두 칸
+  sc.eq('㉙ 설정 ai: auto · big 칸 · 옛 model 은 big 으로 옮겨 읽음 · big 을 일부러 비우면 옛 model 이 되살아나지 않음', [J(A.aiOf({ ai: { model: 'gpt-8' } })), A.aiOf({ ai: { model: 'gpt-8', big: '' } }).big, A.aiOf({ ai: { auto: 'gpt-9-mini', big: 'gpt-9' } }).auto],
+    [{ on: true, auto: '', big: 'gpt-8', price: {}, krw: 0 }, '', 'gpt-9-mini']);
+  sc.eq('㉙ 첫 초안 = auto · 고칠 점이 있으면 big(비면 auto) · 둘 다 비면 \'\'(만들지 않음)', [A.aiModelFor({ ai: { auto: 'm-a', big: 'm-b' } }, false), A.aiModelFor({ ai: { auto: 'm-a', big: 'm-b' } }, true), A.aiModelFor({ ai: { auto: 'm-a' } }, true), A.aiModelFor({ ai: { big: 'm-b' } }, false), A.aiModelFor({}, true)], ['m-a', 'm-b', 'm-a', '', '']);
+  sc.eq('㉙ 모델이 없어 실패한 것은 HB 가 첫 초안 모델을 고르면 다시 집음(다른 실패 · 모델 없음은 아님)', [A.drTake({ st: 'done', dr: 'fail', dre: A.AI_NEED }, 0, 1, { ai: { auto: 'm-a' } }), A.drTake({ st: 'done', dr: 'fail', dre: A.AI_NEED }, 0, 1, { ai: { big: 'm-b' } }), A.drTake({ st: 'done', dr: 'fail', dre: '한도' }, 0, 1, { ai: { auto: 'm-a' } }), A.drTake({ st: 'done', dr: 'fail', dre: A.AI_NEED }, 0, 1)], [true, false, false, false]);
+  sc.eq('㉙ 까닭 글 = 메뉴 › AI 초안에서 모델을 골라 주세요(120자 안)', [A.AI_NEED, A.AI_NEED.length <= 120], ['메뉴 › AI 초안에서 모델을 골라 주세요', true]);
+  const CORE = /<script id="plaudhub-core">([\s\S]*?)<\/script>/.exec(HTML)[1];
+  sc.eq('㉙ 판단 덩어리에 모델 이름 · 단가를 박지 않음(권장 이름은 화면 안내에만)', [/gpt-6|luna|terra|gpt-5\.5/.test(CORE), /AI_TIP = \{ auto: 'gpt-6-luna', big: 'gpt-6\.1-terra'/.test(HTML)], [false, true]);
+  // B — 요금
+  sc.eq('㉙ 한국 시각 달: 11/30 15:30 UTC = 12월 · 12/31 14:59 UTC = 12월 · 15:00 = 다음 해 1월', [A.monthKey(Date.UTC(2026, 10, 30, 15, 30)), A.monthKey(Date.UTC(2026, 11, 31, 14, 59)), A.monthKey(Date.UTC(2026, 11, 31, 15, 0))], ['2026-12', '2026-12', '2027-01']);
+  sc.eq('㉙ 응답 usage 읽기(chat · responses 꼴 · 캐시 · 없음)', [J(A.useOf({ usage: { prompt_tokens: 3100, completion_tokens: 900, prompt_tokens_details: { cached_tokens: 1024 } } })), J(A.useOf({ usage: { input_tokens: 10, output_tokens: 4 } })), J(A.useOf({}))],
+    [{ i: 3100, o: 900, c: 1024 }, { i: 10, o: 4, c: 0 }, { i: 0, o: 0, c: 0 }]);
+  const w = A.useWrite('X/use/2026-11', 'gpt-9.1-mini', { i: 3100, o: 900, c: 0 });
+  sc.eq('㉙ 사용량 쓰기 = 칸은 그대로 · 숫자만 increment(점 · 줄표 있는 이름은 `…`) · 횟수 1', [J(w.updateMask), J(w.update.fields), J(w.updateTransforms)],
+    [{ fieldPaths: [] }, {}, [{ fieldPath: '`gpt-9.1-mini`.i', increment: { integerValue: '3100' } }, { fieldPath: '`gpt-9.1-mini`.o', increment: { integerValue: '900' } }, { fieldPath: '`gpt-9.1-mini`.n', increment: { integerValue: '1' } }]]);
+  sc.eq('㉙ 사용량 쓰기에는 글 · 녹음 번호가 없음(모델 이름과 숫자뿐) · 캐시가 있으면 c 도', [JSON.stringify(A.useWrite('X/use/2026-11', 'gpt-9', { i: 1, o: 2, c: 3 }).updateTransforms.map(t => t.fieldPath)), A.useWrite('X', '', { i: 1, o: 1 })], ['["`gpt-9`.i","`gpt-9`.o","`gpt-9`.n","`gpt-9`.c"]', null]);
+  const U = { 'gpt-9-mini': { i: 2000000, o: 400000, n: 9 }, 'gpt-9': { i: 100000, o: 20000, n: 1 } };
+  const st1 = { ai: { price: { 'gpt-9-mini': [0.1, 0.5], 'gpt-9': [1, 5] }, krw: 1400 } }, v1 = A.useView(U, st1);
+  sc.eq('㉙ 금액 = 토큰 × 단가($/1M) · 합계 · 원화', [v1.n, Math.round(v1.usd * 100) / 100, Math.round(v1.krw), J(v1.rows.map(r => [r.m, Math.round(r.usd * 1000) / 1000]))], [10, 0.6, 840, [['gpt-9', 0.2], ['gpt-9-mini', 0.4]]]);
+  sc.eq('㉙ 맨 위 한 줄: 금액 · 환율 없음 · 단가 없는 모델이 섞임 · 이번 달 기록 없음', [A.useLine(v1), A.useLine(A.useView(U, { ai: { price: st1.ai.price } })), A.useLine(A.useView(U, { ai: { price: { 'gpt-9': [1, 5] }, krw: 1400 } })), A.useLine(A.useView({}, st1)), A.useLine(A.useView(null, st1))],
+    ['이번 달 AI 초안 10건 · 약 ₩840 ($0.60)', '이번 달 AI 초안 10건 · 약 $0.60 (환율을 적으면 원으로)', '이번 달 AI 초안 10건 · 단가를 적으면 금액이 보입니다', '', '']);
+  sc.eq('㉙ 단가 읽기: 숫자 둘만 · 음수 · 글 · 셋은 버림 · 환율은 양수만', [J(A.priceOf({ a: [0.1, 0.5], b: [-1, 2], c: ['x', 1], d: [1, 2, 3], e: '1,2' })), A.aiOf({ ai: { krw: -5 } }).krw, A.aiOf({ ai: { krw: 1385.5 } }).krw], [{ a: [0.1, 0.5] }, 0, 1385.5]);
+  sc.eq('㉙ 11/25 실사용 어림이 맞음: 2.7만 토큰을 비싼 모델($5 / $30)로 ≈ $0.2 이상 · 권장 싼 모델($0.10 / $0.50)로는 1센트 안', (() => { const u = { x: { i: 21000, o: 6000, n: 9 } };
+    return [A.useView(u, { ai: { price: { x: [5, 30] } } }).usd > 0.2, A.useView(u, { ai: { price: { x: [0.1, 0.5] } } }).usd < 0.01]; })(), [true, true]);
+  // C — 키워드 두 갈래
+  const S2 = { kw: ['심방'], kwt: ['회의', '심방'] };
+  sc.eq('㉙ 설정: kwt 없으면 빈 목록(기본값 없음) · kw 와 같은 말은 kwt 에서 뺌', [J(A.settingsOf({}).kwt), J(A.settingsOf(S2).kwt)], [[], ['회의']]);
+  sc.eq('㉙ 고르기: kw · kwt 어느 쪽이든 auto(전사) · 둘 다 아니면 none', [A.pickState({ n: '김하늘 심방' }, null, S2.kw, S2.kwt), A.pickState({ n: '교역자 회의' }, null, S2.kw, S2.kwt), A.pickState({ n: '점심' }, null, S2.kw, S2.kwt), A.pickState({ n: '교역자 회의' }, { pick: 'out' }, S2.kw, S2.kwt)], ['auto', 'auto', 'none', 'out']);
+  sc.eq('㉙ 저절로 초안은 kw 만 · 둘 다 걸리면 초안까지가 이김', [A.drAuto({ n: '교역자 회의' }, null, S2), A.drAuto({ n: '김하늘 심방' }, null, S2), A.drAuto({ n: '회의 뒤 심방' }, null, S2), J(A.kwWhich('회의 뒤 심방', S2.kw, S2.kwt))], [false, true, true, { w: '심방', d: true }]);
+  const NOW = Date.UTC(2026, 10, 25, 3), rr = (k, n) => ({ id: ID(k), n, t: NOW - 3600e3, c: NOW - 3600e3, d: 600 }), RS = { [ID('a')]: rr('a', '김하늘 심방'), [ID('b')]: rr('b', '교역자 회의') };
+  const LV = Object.fromEntries(A.listView(RS, {}, S2, NOW).map(x => [x.id, x]));
+  sc.eq('㉙ 목록: 전사까지만 키워드 줄 = auto · 테두리(전사까지) · 걸린 말 / 초안까지 키워드 = 가득', [[LV[ID('b')].st, LV[ID('b')].full, LV[ID('b')].hit], [LV[ID('a')].st, LV[ID('a')].full, LV[ID('a')].hit]], [['auto', false, '회의'], ['auto', true, '심방']]);
+  sc.eq('㉙ 도우미가 맡을 일감에 전사까지만 키워드 녹음도(core 한 곳 — wantedJobs)', A.wantedJobs(RS, {}, S2, '집', NOW).map(x => x.id || x).sort(), [ID('a'), ID('b')].sort());
+  sc.eq('㉙ 같은 말을 양쪽에 넣으려 하면 알림 · 아니면 더함', [/이미 '초안까지 자동' 에 있습니다/.test(A.kwAdd(S2, 'kwt', '심방').err), /이미 '전사까지만 자동' 에 있습니다/.test(A.kwAdd(S2, 'kw', '회의').err), J(A.kwAdd(S2, 'kwt', '상담'))], [true, true, { list: ['회의', '상담'], err: '' }]);
+  // 도우미 · 계기판
+  const HELPER = fs.readFileSync(path.join(ROOT, 'plaudhub', 'helper.mjs'), 'utf8');
+  sc.eq('㉙ 도우미: 고칠 점이 있을 때만 big · 비면 까닭(AI_NEED) — 전사 글을 읽기 전에', /model = PH\.aiModelFor\(settings, !!fb\); if \(!model\) throw new Fail\(PH\.AI_NEED\);\s*const text = await draftText/.test(HELPER), true);
+  sc.eq('㉙ 도우미: 부를 때마다 사용량 더함(core useWrite · 실패해도 초안 그대로) · 키워드 판단은 core 만', [/await useAdd\(model, r\.j\);/.test(HELPER), /PH\.useWrite\(docName\('use', PH\.monthKey\(serverNow\(\)\)\)/.test(HELPER), /kwHit|normKw\(/.test(HELPER)], [true, true, false]);
+  sc.eq('㉙ 도우미: 소식 쓰기 403 → 새 칸(aik · aim) 빼고 한 번 더 + 알림 · 사용량 403 → 알림만', [J(A.MAC_NEW), /tryFull && r\.status === 403\) \{ const r2 = await commit\(\[slimW\(\)\]\)/.test(HELPER) && /del: PH\.MAC_NEW/.test(HELPER), /r\.status === 403 \? PH\.RULES_OLD/.test(HELPER), /st\.rulesOld \|\| st\.useWarn \? PH\.RULES_OLD/.test(HELPER)], [['aik', 'aim'], true, true, true]);
+  sc.eq('㉙ 도우미: 기록에 사용량 숫자 · 글을 남기지 않음', /log\([^)]*useOf|log\([^)]*usage/.test(HELPER), false);
+  sc.eq('㉙ 계기판: 맨 위 금액 줄(단가 없으면 메뉴로) · 사용량 판(OpenAI Usage 안내) · 옛 \'백 원 남짓\' 어림 없음', [/data-act="' \+ \(uv\.miss\.length \? 'menu' : 'usepane'\)/.test(HTML), /정확한 금액은 OpenAI Usage 화면/.test(HTML), /백 원 남짓/.test(HTML)], [true, true, false]);
+  sc.eq('㉙ 계기판 메뉴: 모델 두 칸 · 권장 표시만(고르는 것은 HB) · 키워드 두 칸', [/id="ai-' \+ k \+ '"/.test(HTML) && /pick\('auto', a\.auto, '모델 — 저절로 · 첫 초안'/.test(HTML) && /pick\('big', a\.big, '모델 — 다시 만들기/.test(HTML), /' — 권장'/.test(HTML), /kwBox\('kw', s\.kw/.test(HTML) && /kwBox\('kwt', s\.kwt/.test(HTML)], [true, true, true]);
 }
 // ㉒ (P3b) 잠근 사본
 {

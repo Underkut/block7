@@ -21,7 +21,7 @@ import vm from 'node:vm';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const HELPER_VERSION = 'h. 26-1124-4';
+export const HELPER_VERSION = 'h. 26-1125-1';
 const HOME = os.homedir();
 const DIR = process.env.PLAUDHUB_DIR || path.join(HOME, 'Library', 'Application Support', 'plaudhub');
 const SITE = process.env.PLAUDHUB_SITE || 'https://block7.my/plaudhub/';
@@ -49,7 +49,7 @@ process.env.PLAUD_TELEMETRY_DISABLED = '1'; process.env.DO_NOT_TRACK = '1'; proc
 let PH = null;   // 판단 덩어리
 const st = { tok: null, idTok: '', idExp: 0, mac: '', skew: 0, doing: '쉼', ready: {}, models: [], err: '', warn: '', cli: '', lastBeat: 0, lastList: 0, lastReady: 0, lastJob: 0,
   busy: false, needPair: false, sentKey: '', job: null, recs: null, done: new Set(), key: '', disk: {}, lastSync: 0, listed: 0, kickId: '', gone: new Set(), goneWarn: '', okSeen: new Set(), pOk: new Set(),
-  ai: '', aim: [], lastAim: 0, lastDraft: 0, drafting: '', aiWarn: '', CARE: null };
+  ai: '', aim: [], lastAim: 0, lastDraft: 0, drafting: '', aiWarn: '', CARE: null, rulesOld: 0, useWarn: '' };
 
 function log(...a) { const s = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' '); console.log(new Date().toISOString(), PH ? PH.clean(s, 2000) : s.replace(/https?:\/\/\S+/g, '[주소]')); }
 function readJson(f, d) { try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch (_) { return d; } }
@@ -237,12 +237,22 @@ function diskNow() {
   const free = freeBytes();
   return { free: Number.isFinite(free) ? Math.round(free / 1e8) * 1e8 : -1, models, work };   // 소식이 1분마다 바뀌지 않게 남은 공간은 0.1GB 단위
 }
+// (P4e) 보안 규칙이 옛 판이면(소식 쓰기 403) P4 뒤 새 칸(PH.MAC_NEW)을 빼고 한 번 더 적고 Mac 카드에 알린다 — 11/25 '꺼짐' 으로 보인 일.
+//   30분마다 다시 온전히 적어 본다(HB 가 규칙을 다시 붙이면 알림이 저절로 사라지게)
+const RULES_RETRY_MS = 30 * 60e3;
 async function beat(force) {
-  const doing = doingNow(), err = [st.err, st.warn, st.goneWarn, st.aiWarn, st.unread && st.key ? '드라이브 txt ' + st.unread + '개를 이 Mac 에서 읽지 못해 폰용 사본을 못 올렸습니다 — Finder 에서 HB-심방-전사 폴더를 오른쪽 클릭 › \'오프라인 사용 가능\' 으로 바꿔 주세요' : ''].filter(Boolean).join('\n'), disk = diskNow();
+  const doing = doingNow(), err = [st.rulesOld || st.useWarn ? PH.RULES_OLD : '', st.err, st.warn, st.goneWarn, st.aiWarn, st.unread && st.key ? '드라이브 txt ' + st.unread + '개를 이 Mac 에서 읽지 못해 폰용 사본을 못 올렸습니다 — Finder 에서 HB-심방-전사 폴더를 오른쪽 클릭 › \'오프라인 사용 가능\' 으로 바꿔 주세요' : ''].filter(Boolean).join('\n'), disk = diskNow();
   const key = JSON.stringify([doing, st.ready, err, st.cli, st.models, st.listed, disk.free, disk.models, Object.entries(disk.work).map(([k, b]) => k + Math.round(b / 1e6)), !!st.ai, st.aim]);
   if (!force && key === st.sentKey && Date.now() - st.lastBeat < BEAT_MS) return;
   if (!force && key !== st.sentKey && Date.now() - st.lastBeat < 50e3) return;   // 전사 중 'n분째' 는 1분에 한 번만
-  const r = await commit([upd(['mac', st.mac], { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models, disk, listed: st.listed, aik: !!st.ai, aim: st.aim }, { serverAt: true })]);
+  const full = { doing, ready: st.ready, v: HELPER_VERSION, err: PH.clean(err, 300), cli: st.cli, models: st.models, disk, listed: st.listed, aik: !!st.ai, aim: st.aim };
+  const slim = () => { const o = Object.assign({}, full, { err: PH.clean([PH.RULES_OLD].concat(err.split('\n').filter(x => x && x !== PH.RULES_OLD)).join('\n'), 300) }); for (const k of PH.MAC_NEW) delete o[k]; return o; };
+  const tryFull = !st.rulesOld || Date.now() - st.rulesOld > RULES_RETRY_MS;
+  const slimW = () => upd(['mac', st.mac], slim(), { serverAt: true, del: PH.MAC_NEW });   // 새 칸은 지운다(전에 적힌 aik 가 남아 있으면 옛 규칙이 문서째 거절)
+  let r = await commit([tryFull ? upd(['mac', st.mac], full, { serverAt: true }) : slimW()]);
+  if (tryFull && r.status === 403) { const r2 = await commit([slimW()]);
+    if (r2.ok) { if (!st.rulesOld) log('알림', PH.RULES_OLD); st.rulesOld = Date.now(); r = r2; } }
+  else if (tryFull && r.ok && st.rulesOld) { st.rulesOld = 0; st.sentKey = ''; log('보안 규칙 새 판 확인'); }
   if (!r.ok) throw new Error('소식 쓰기 ' + r.status + (r.status === 403 ? ' (보안 규칙을 붙였는지 확인)' : ''));
   st.lastBeat = Date.now(); st.sentKey = key;
 }
@@ -610,6 +620,14 @@ async function modelTest(J) {
    열쇠(ai.json, 600)는 이 Mac 안에만. 보내는 것: 지침 + 녹음 제목 · 시각 · 길이 + 전사 글(OpenAI API — HB '나').
    받은 초안은 HB 암호로 잠가 계정에만, 기록(helper.log)에는 녹음 번호 · 모델 · 짧은 까닭만. */
 const aiBase = () => AI_BASE || PH.AI_URL;
+// (P4e) 부른 만큼 이번 달 사용량에 더한다 — 숫자만(모델 이름 · 토큰 · 횟수), increment 라 두 Mac 이 겹쳐도 맞다.
+//   못 적어도 초안은 그대로(규칙이 옛 판이면 Mac 카드에 알림만)
+async function useAdd(model, j) {
+  const w = PH.useWrite(docName('use', PH.monthKey(serverNow())), model, PH.useOf(j)); if (!w) return;
+  const r = await commit([w]).catch(() => ({ ok: false, status: 0 }));
+  const warn = r.status === 403 ? PH.RULES_OLD : '';
+  if (warn !== st.useWarn) { st.useWarn = warn; st.sentKey = ''; if (warn) log('사용량 적기 403 — 알림', PH.RULES_OLD); }
+}
 async function aiFetch(p, body, key, ms) {
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), ms || 60e3);
   try {
@@ -651,8 +669,8 @@ async function draftTick(settings) {
   if (warn !== st.aiWarn) { st.aiWarn = warn; beat(true).catch(() => { }); }
   if (!st.ai || !st.key || st.drafting) return;
   if (Date.now() - st.lastAim > 24 * 3600e3) { st.lastAim = Date.now(); try { st.aim = await aiList(st.ai); } catch (e) { st.aiWarn = 'AI 초안: ' + String(e.message || e); } }
-  const js = await queryColl('job', 'dr', 'IN', ['wait', 'run']), now = serverNow();
-  const id = Object.keys(js).filter(k => PH.drTake(js[k], Date.parse(js[k]._ut), now)).sort((a, b) => (js[a].dr === 'wait' ? 0 : 1) - (js[b].dr === 'wait' ? 0 : 1))[0];
+  const js = await queryColl('job', 'dr', 'IN', ['wait', 'run', 'fail']), now = serverNow();
+  const id = Object.keys(js).filter(k => PH.drTake(js[k], Date.parse(js[k]._ut), now, settings)).sort((a, b) => (js[a].dr === 'wait' ? 0 : 1) - (js[b].dr === 'wait' ? 0 : 1))[0];
   if (!id) return;
   const took = await commit([upd(['job', id], { dr: 'run' }, { pre: { updateTime: js[id]._ut }, del: ['dre'] })]);
   if (!took.ok) return;   // 그 사이 다른 Mac 이 집었거나 HB 가 바꿈
@@ -664,17 +682,20 @@ async function draftOne(id, ver, settings) {
   const t0 = Date.now(); let model = '';
   try {
     const rec = (st.recs && st.recs[id]) || await getDoc('rec', id).catch(() => null) || {};
-    const text = await draftText(id); if (!text.trim()) throw new Fail('전사 글을 찾지 못함 (잠근 사본 · 드라이브 txt 가 없음)');
-    const guide = await readGuide(), d0 = await getDoc('draft', id).catch(() => null);
+    const d0 = await getDoc('draft', id).catch(() => null);
     let prev = null, fb = '';   // [다시 만들기] — HB 가 적은 고칠 점과 앞 초안
     if (d0 && d0.fc && d0.fiv) { try { fb = await PH.decText(st.key, { c: d0.fc, iv: d0.fiv }); if (d0.c) prev = JSON.parse(await PH.decText(st.key, d0)); } catch (_) { prev = null; } }
-    model = PH.aiModelOf(settings, [{ aim: st.aim }]); if (!model) throw new Fail('쓸 수 있는 모델이 없음');
+    // (P4e) 모델은 HB 가 메뉴에서 고른 두 칸 — 고칠 점이 있으면 big(다시 만들기), 그 밖은 auto. 비어 있으면 만들지 않는다(저절로 고르지 않음)
+    model = PH.aiModelFor(settings, !!fb); if (!model) throw new Fail(PH.AI_NEED);
+    const text = await draftText(id); if (!text.trim()) throw new Fail('전사 글을 찾지 못함 (잠근 사본 · 드라이브 txt 가 없음)');
+    const guide = await readGuide();
     const care = st.CARE || await loadCare(false).catch(() => null); if (!care) throw new Fail('심방 노트 규격을 불러오지 못함');
     const meta = { id, n: rec.n, t: rec.t, d: rec.d };
     let msgs = PH.aiMessages(meta, text, guide, prev, fb), got = null, errs = [];
     for (let i = 0; i < 2 && !got; i++) {   // 규격에 걸리면 까닭을 붙여 한 번 더
       const r = await aiFetch('/chat/completions', { model, messages: msgs, response_format: { type: 'json_object' } }, st.ai, AI_MS);
       if (!r.ok) throw new Fail(r.status ? PH.aiErr(r.status, r.j) : 'OpenAI 에 ' + (r.err || '닿지 못함'));
+      await useAdd(model, r.j);
       const content = String((((r.j.choices || [])[0] || {}).message || {}).content || ''), p = PH.aiParse(content, meta);
       errs = p.ok ? care.pkValidate(p.packet) : [p.err];
       if (p.ok && !errs.length) got = p; else msgs = PH.aiRetry(msgs, content, errs);

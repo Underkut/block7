@@ -18,6 +18,9 @@
 // ⑱ (P3e) PLAUD 전사문 — 있으면 whisper 대신 가져와 'p' 이름 · P 알약 · 없으면 녹음 뒤 6시간 기다림 → [지금] 이면 whisper · whisper 로 만든 것에 PLAUD 전사가 생기면 바꿈 · 되풀이 전사는 W 빨강
 // ⑲ (P4) AI 초안 — 가짜 OpenAI: 틀린 열쇠 거절 · 열쇠는 그 Mac 에만(600) · 키워드 녹음은 저절로 · 규격에 걸리면 한 번 더 · 잠근 초안만 계정에 · 기록에 글 · 열쇠 없음
 //        · 계기판 초안 판 · 고칠 점 → 다시 만들기 · [승인] → 가짜 시트 'AI 입력대기' 한 줄(같은 녹음 두 번 안 넣음) · 지침 고치기 · 한도 실패 · 이 Mac 에 열쇠 넣기(화면)
+// ㉑ (P4e) 모델 두 칸 · 요금 · 키워드 두 갈래 — 모델을 안 고르면 초안 안 만듦(까닭 · OpenAI 안 부름) → 메뉴에서 고르면 다시 집음 · 첫 초안 = auto · 다시 만들기 = big
+//        · 가짜 usage 가 이번 달 use 문서에 더해짐(동시에 열두 번 더해도 맞음) · 맨 위 금액 줄(단가 없으면 메뉴로 → 단가 · 환율 → 원 · 달러) · 사용량 판
+//        · 전사까지만 키워드 녹음은 전사만(dr 없음) · 같은 말을 양쪽에 넣으면 알림 · 규칙 옛 판 흉내(소식은 새 칸 빼고 다시 적고 Mac 카드에 알림 · 초안은 그대로)
 // ⑯ (P3c) 접는 Mac 카드 · 탭 · 버전 단추 · 목록 읽은 때 · 드라이브에서 지운 것 알아채기 → 다시 전사 · txt 지우기(뺌, 다시 안 함) · 보기 판 · 모두 지금 시작. 이름은 모두 지어낸 것.
 import fs from 'fs';
 import os from 'os';
@@ -75,7 +78,7 @@ const aiSrv = http.createServer((q, s) => {
     const packet = { schema_version: 'hb-care.v1', event: { kind: 'visit', date: '2026-11-22', title: '지어낸 심방', group_summary: '', details_markdown: '', location: null },
       records: [{ person_name: '김하늘', person_confirmed: true, speaker_label: null, category: null, contact_method: '만남', depth: '중간', summary_line: '지어낸 한줄 ' + id, brief_note: '지어낸 내용', detailed_note_markdown: '### 사실\n지어냄', priority: pr, long_term_watch: '', information_basis: '직접', tags: [], next_questions: ['지어낸 질문'], actions: [] }],
       unknown_speakers: [], mentioned_people: [], import_notes: '' };
-    send(200, { choices: [{ message: { role: 'assistant', content: JSON.stringify({ draft_markdown: '① 핵심 한줄 — 지어낸 초안 ' + id + (fb ? '\n고침: ' + fb : ''), packet }) } }] });
+    send(200, { usage: { prompt_tokens: 1000, completion_tokens: 200, prompt_tokens_details: { cached_tokens: 0 } }, choices: [{ message: { role: 'assistant', content: JSON.stringify({ draft_markdown: '① 핵심 한줄 — 지어낸 초안 ' + id + (fb ? '\n고침: ' + fb : ''), packet }) } }] });
   });
 }).listen(AI_PORT, '127.0.0.1');
 
@@ -264,7 +267,7 @@ try {
     await pg.click('[data-act="commit"][data-d="0"]');
     const pk = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('c')); return d && d.pick === 'in' && d; });
     ok('⑨ 제목 없는 녹음을 눌러 고르면 계정 job 에 pick:in (제목 없이)', pk && !('n' in pk), pk);
-    await pg.click('[data-act="menu"]'); await pg.fill('#kw-in', '전화'); await pg.click('[data-act="kwadd"]');
+    await pg.click('[data-act="menu"]'); await pg.fill('#kw-in-kw', '전화'); await pg.click('[data-act="kwadd"][data-k="kw"]');
     const kw = await until(async () => { const d = await admin('plaud/' + UID); return d && (d.kw || []).includes('전화') && d; });
     ok('⑨ 키워드 메뉴에서 더하면 계정 설정에', !!kw, kw);
     await pg.keyboard.press('Escape'); await sleep(400);
@@ -545,15 +548,28 @@ try {
     ok('⑲ 맞는 열쇠는 그 Mac 의 ai.json(600)에만', ak.status === 200 && (fs.statSync(path.join(home2.dir, 'ai.json')).mode & 0o777) === 0o600);
     const macAi = await until(async () => { const d = await admin('plaud/' + UID + '/mac/집'); return d && d.aik === true && Array.isArray(d.aim) && d; }, 15000);
     ok('⑲ Mac 소식: 열쇠 있음(aik) · 글 모델 목록(소리 · 임베딩 · 날짜 사본 빼고) · 열쇠 글은 없음', macAi && JSON.stringify(macAi.aim) === '["gpt-9","gpt-9-mini"]' && !JSON.stringify(await admin('plaud/' + UID)).includes('sk-test') && !JSON.stringify(macAi).includes('sk-test'), macAi);
+    // ㉑ (P4e) 모델을 안 고르면 초안을 만들지 않는다 — 까닭을 적고 OpenAI 를 부르지 않음
+    const needA = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.dr === 'fail' && d; }, 30000);
+    ok('㉑ 모델을 안 고르면 초안을 만들지 않음 — 일감 fail · 까닭 \'메뉴 › AI 초안에서 모델을 골라 주세요\' · OpenAI 를 부르지 않음', !!needA && needA.dre === PH.AI_NEED && AIQ.calls.length === 0, [needA, AIQ.calls.length]);
+    await pg.keyboard.press('Escape'); await sleep(300); await pg.click('[data-act="tab"][data-k="all"]');
+    const needBtn = await until(async () => { const e = await pg.$('[data-id="' + ID('a') + '"] .lnk.dr.bad'); return e && (await e.getAttribute('title')); }, 15000);
+    ok('㉑ 계기판 줄: 빨간 \'초안\' · 까닭(모델을 골라 주세요)', /모델을 골라 주세요/.test(needBtn || ''), needBtn);
+    await pg.click('[data-act="menu"]'); await until(() => pg.$('#ai-auto'), 10000);
+    const opts = await pg.$$eval('#ai-auto option', o => o.map(x => x.value + '|' + x.textContent));
+    ok('㉑ 메뉴 AI 초안: 고르기 칸 둘 · 처음엔 비어 있음(저절로 고르지 않음) · Mac 모델 목록 · 지어낸 이름엔 \'권장\' 없음', !!(await pg.$('#ai-big')) && (await pg.$eval('#ai-auto', e => e.value)) === '' && (await pg.$eval('#ai-big', e => e.value)) === '' && opts.some(x => x.startsWith('gpt-9-mini|')) && !opts.some(x => /권장/.test(x)) && /gpt-6-luna/.test(await pg.textContent('#pane')), opts);
+    await pg.selectOption('#ai-auto', 'gpt-9-mini'); await sleep(500); await pg.selectOption('#ai-big', 'gpt-9');
+    const aiSet = await until(async () => { const d = await admin('plaud/' + UID); return d && d.ai && d.ai.auto === 'gpt-9-mini' && d.ai.big === 'gpt-9' && d.ai; }, 10000);
+    ok('㉑ 고른 두 모델이 계정 설정 ai.auto · ai.big 에', !!aiSet, aiSet);
+    await pg.keyboard.press('Escape'); await sleep(300);
     const drA = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.dr === 'ok' && d; }, 40000);
     ok('⑲ 키워드 녹음 a 의 초안이 저절로 만들어짐(dr ok)', !!drA, [drA, home2.log().slice(-800)]);
     const call1 = AIQ.calls[0] || { messages: [{}, {}] };
-    ok('⑲ 보낸 것: 고른 모델(기본 = gpt-9) · 지침 v2.2 + 답 꼴 · 녹음 정보 + 전사 글 · JSON 으로', call1.model === 'gpt-9' && /① 핵심 한줄/.test(call1.messages[0].content) && /hb-care\.v1/.test(call1.messages[0].content) && /녹음 ID: f_/.test(call1.messages[1].content) && /전사문:\n/.test(call1.messages[1].content) && call1.response_format && call1.response_format.type === 'json_object', call1.model);
+    ok('⑲ 보낸 것: 고른 모델(㉑ 첫 초안 = auto gpt-9-mini) · 지침 v2.2 + 답 꼴 · 녹음 정보 + 전사 글 · JSON 으로', call1.model === 'gpt-9-mini' && /① 핵심 한줄/.test(call1.messages[0].content) && /hb-care\.v1/.test(call1.messages[0].content) && /녹음 ID: f_/.test(call1.messages[1].content) && /전사문:\n/.test(call1.messages[1].content) && call1.response_format && call1.response_format.type === 'json_object', call1.model);
     ok('⑲ 처음 답이 규격에 걸리면(우선순위 \'높음\') 까닭을 붙여 한 번 더', AIQ.calls.length >= 2 && /records\[0\]\.priority/.test(AIQ.calls[1].messages[AIQ.calls[1].messages.length - 1].content));
     const dA = await admin('plaud/' + UID + '/draft/' + ID('a'));
     ok('⑲ 계정의 초안은 잠근 글(c · iv · v)뿐 — 이름 · 초안 글이 없음', dA && Object.keys(dA).filter(k => !['id', '_ut'].includes(k)).sort().join() === 'c,iv,v' && !/김하늘|지어낸/.test(JSON.stringify(dA)), dA && Object.keys(dA));
     const DA = dA && JSON.parse(await PH.decText(KEY, dA));
-    ok('⑲ 풀면: 초안 글 · 묶음(source = 녹음 ID · 한국 시각 · 길이) · 모델', DA && /지어낸 초안 f_a/.test(DA.md) && DA.packet.source.source_id === ID('a') && DA.packet.source.recorded_at === '2026-11-22T15:05:00+09:00' && DA.packet.source.duration_ms === 2880000 && DA.model === 'gpt-9' && DA.packet.records[0].priority === '일반', DA && DA.packet.source);
+    ok('⑲ 풀면: 초안 글 · 묶음(source = 녹음 ID · 한국 시각 · 길이) · 모델', DA && /지어낸 초안 f_a/.test(DA.md) && DA.packet.source.source_id === ID('a') && DA.packet.source.recorded_at === '2026-11-22T15:05:00+09:00' && DA.packet.source.duration_ms === 2880000 && DA.model === 'gpt-9-mini' && DA.packet.records[0].priority === '일반', DA && DA.packet.source);
     ok('⑲ 도우미 기록에 전사 글 · 초안 글 · 열쇠가 없음', !/지어낸 전사 글|지어낸 초안|지어낸 PLAUD|sk-test/.test(home2.log()), home2.log().slice(-600));
     // 계기판 — 초안 판 · 고칠 점 · 다시 만들기 · 승인
     await adminSet('users/' + UID + '/data/care', { sheet: { id: 'sheetFAKE01', name: '지어낸 시트' } });
@@ -564,12 +580,12 @@ try {
       if (q.method() === 'GET') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ values: SHEET }) });
       if (/:append\?valueInputOption=RAW&insertDataOption=INSERT_ROWS/.test(u)) { const v = JSON.parse(q.postData()).values; appended.push(...v); SHEET.push(...v); return r.fulfill({ contentType: 'application/json', body: '{}' }); }
       return r.fulfill({ status: 400, body: '{}' }); });
-    await pg.click('[data-act="tab"][data-k="all"]');
     const drBtn = await until(() => pg.$('[data-id="' + ID('a') + '"] [data-act="draft"]'), 15000);
     ok('⑲ 계기판: 끝난 줄에 \'초안\' 단추', !!drBtn && (await drBtn.textContent()) === '초안');
     await drBtn.click();
     const paneMd = await until(async () => { const e = await pg.$('#pane .vtext'); return e && (await e.textContent()); }, 15000);
     ok('⑲ 초안 판: 초안 글 · 시트로 갈 묶음 · 고칠 점 · [승인]', /지어낸 초안 f_a/.test(paneMd || '') && !!(await pg.$('#pane details.pk')) && !!(await pg.$('#dr-fb')) && !!(await pg.$('#pane [data-act="drok"]')), paneMd);
+    await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('h')); return d && d.dr === 'ok'; }, 30000);   // ㉑ 모델을 고르자 함께 다시 집힌 h 가 끝난 뒤(동시에 돌면 마지막 부름이 h 것)
     const nCalls = AIQ.calls.length;
     await pg.fill('#dr-fb', '우선순위는 이번주로 바꿔 주세요'); await pg.click('#pane [data-act="drre"]');
     const fbDoc = await until(async () => { const d = await admin('plaud/' + UID + '/draft/' + ID('a')); return d && d.fc && d; }, 10000);
@@ -577,6 +593,38 @@ try {
     const re = await until(async () => { const e = await pg.$('#pane .vtext'); const t = e && (await e.textContent()); return t && /고침: 우선순위는 이번주로/.test(t) && t; }, 30000);
     const lastCall = AIQ.calls[AIQ.calls.length - 1] || { messages: [] };
     ok('⑲ 다시 만들기: 앞 초안 + 고칠 점을 보내고 새 초안이 판에 · 고칠 점 칸은 지워짐', !!re && AIQ.calls.length > nCalls && lastCall.messages.some(m => m.role === 'assistant' && /지어낸 초안 f_a/.test(m.content)) && !(await admin('plaud/' + UID + '/draft/' + ID('a'))).fc, re);
+    ok('㉑ 다시 만들기(고칠 점 있음) = big 모델 gpt-9 · 첫 초안 = auto gpt-9-mini', lastCall.model === 'gpt-9' && AIQ.calls.filter(c => /녹음 ID: f_a/.test(c.messages[1].content) && c.messages.length <= 3).every(c => c.model === 'gpt-9-mini'), AIQ.calls.map(c => c.model));
+    // ㉑ 이번 달 사용량 — 부른 만큼(가짜 usage 1000 · 200) 모델마다
+    const MK = PH.monthKey(Date.now()), want = m => AIQ.calls.filter(c => c.model === m).length;
+    const use1 = await until(async () => { const d = await admin('plaud/' + UID + '/use/' + MK); return d && d['gpt-9'] && d['gpt-9-mini'] && d['gpt-9'].n === want('gpt-9') && d['gpt-9-mini'].n === want('gpt-9-mini') && d; }, 15000);
+    ok('㉑ 이번 달(한국 시각) use 문서에 모델마다 부른 횟수 · 입력 · 출력 토큰이 더해짐 — 숫자만(글 · 녹음 번호 없음)', !!use1 && use1['gpt-9-mini'].i === 1000 * want('gpt-9-mini') && use1['gpt-9-mini'].o === 200 * want('gpt-9-mini') && use1['gpt-9'].i === 1000 * want('gpt-9') && !/f_|김하늘|지어낸/.test(JSON.stringify(use1)), [use1, want('gpt-9'), want('gpt-9-mini')]);
+    { const CM = FS + '/v1/projects/' + PROJECT + '/databases/(default)/documents:commit', name = 'projects/' + PROJECT + '/databases/(default)/documents/plaud/' + UID + '/use/2026-01';
+      const go = tok => fetch(CM, { method: 'POST', headers: { authorization: 'Bearer ' + tok, 'content-type': 'application/json' }, body: JSON.stringify({ writes: [PH.useWrite(name, 'gpt-x.1-mini', { i: 10, o: 2, c: 0 })] }) });
+      const rs = await Promise.all(Array.from({ length: 12 }, () => go(hb.idToken))), u2 = await admin('plaud/' + UID + '/use/2026-01'), x = u2 && u2['gpt-x.1-mini'];
+      ok('㉑ 두 Mac 이 겹쳐 동시에 열두 번 더해도 맞음(increment) · 점 있는 모델 이름도', rs.every(r => r.ok) && !!x && x.i === 120 && x.o === 24 && x.n === 12, x);
+      ok('㉑ 남은 HB 사용량에 더하지 못함', (await go(other.idToken)).status === 403); }
+    // ㉑ 맨 위 금액 줄 — 단가가 없으면 메뉴로 · 단가 · 환율을 적으면 원 · 달러
+    await pg.keyboard.press('Escape'); await sleep(400);
+    const ul1 = await until(async () => { const e = await pg.$('#main .useline'); return e && (await e.textContent()); }, 10000);
+    ok('㉑ 머리줄 아래 한 줄: \'이번 달 AI 초안 n건 · 단가를 적으면 금액이 보입니다\'', /^이번 달 AI 초안 \d+건 · 단가를 적으면 금액이 보입니다$/.test(ul1 || ''), ul1);
+    await pg.click('#main .useline'); await until(() => pg.$('#pane input[data-m="gpt-9-mini"][data-k="0"]'), 10000);
+    for (const [m, k, v] of [['gpt-9-mini', 0, '0.1'], ['gpt-9-mini', 1, '0.5'], ['gpt-9', 0, '1'], ['gpt-9', 1, '5']]) {
+      const q = '#pane input[data-m="' + m + '"][data-k="' + k + '"]'; await until(() => pg.$(q), 5000); await pg.fill(q, v); await pg.$eval(q, e => e.dispatchEvent(new Event('change', { bubbles: true }))); await sleep(400); }
+    ok('㉑ 환율 칸은 처음 1400(화면 기본값) · 저장 전엔 계정에 없음', (await pg.$eval('#ai-krw', e => e.value)) === '1400' && !(await admin('plaud/' + UID)).ai.krw);
+    await pg.click('#pane [data-act="krwsave"]');
+    const aiP = await until(async () => { const d = await admin('plaud/' + UID); return d && d.ai && d.ai.krw === 1400 && d.ai.price && d.ai.price['gpt-9'] && d.ai; }, 10000);
+    ok('㉑ 단가 · 환율이 계정 설정 ai.price · ai.krw 에(모델 두 칸은 그대로)', !!aiP && JSON.stringify(aiP.price['gpt-9-mini']) === '[0.1,0.5]' && JSON.stringify(aiP.price['gpt-9']) === '[1,5]' && aiP.auto === 'gpt-9-mini' && aiP.big === 'gpt-9', aiP);
+    await pg.keyboard.press('Escape'); await sleep(400);
+    const ul2 = await until(async () => { const t = await pg.textContent('#main .useline').catch(() => ''); return /약 ₩[\d,]+ \(\$\d+\.\d\d\)$/.test(t) && t; }, 10000);
+    const uv = PH.useView(await admin('plaud/' + UID + '/use/' + MK), { ai: aiP });
+    ok('㉑ 맨 위 줄: \'이번 달 AI 초안 n건 · 약 ₩○○○ ($0.00)\' = 토큰 × 단가 × 환율', !!ul2 && ul2 === PH.useLine(uv) && uv.usd > 0, [ul2, PH.useLine(uv)]);
+    ok('㉑ 맨 위 줄은 작게 · 무채색', await pg.$eval('#main .useline', e => { const c = getComputedStyle(e); return parseFloat(c.fontSize) <= 12.5 && !/rgb\((\d+), (?!\1)/.test(c.color); }));
+    await pg.click('#main .useline'); await until(() => pg.$('#pane .kv.use'), 10000);
+    const up = await pg.textContent('#pane');
+    ok('㉑ 누르면 모델별 토큰 · 금액 판 + \'정확한 금액은 OpenAI Usage 화면\' · ×', /gpt-9-mini/.test(up) && /gpt-9/.test(up) && /토큰/.test(up) && /정확한 금액은 OpenAI Usage 화면/.test(up) && !!(await pg.$('#pane .modal-x')), up.slice(0, 300));
+    await pg.keyboard.press('Escape'); await sleep(300);
+    await pg.click('[data-act="tab"][data-k="all"]');
+    await (await until(() => pg.$('[data-id="' + ID('a') + '"] [data-act="draft"]'), 10000)).click(); await until(() => pg.$('#pane [data-act="drok"]'), 15000);
     await pg.click('#pane [data-act="drok"]');
     const sent = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('a')); return d && d.dr === 'sent' && d; }, 15000);
     const row = appended[0] || [];
@@ -661,6 +709,38 @@ try {
     const no = await until(async () => { const d = await job('n'); return d && d.pick === 'out' && d; }, 8000);
     ok('⑳ 골라진 줄을 누르면 뺌(pick out) · 미리 적은 dr wait 도 지움', !!no && !('dr' in no), no);
     fs.writeFileSync(path.join(tmp, 'wmode'), '400');
+    // ㉑ (P4e) 전사까지만 키워드 — 메뉴 둘째 칸 · 같은 말을 양쪽에 넣으면 알림 · 그 녹음은 전사만(dr 없음)
+    await pg.click('[data-act="menu"]'); await until(() => pg.$('#kw-in-kwt'), 10000);
+    ok('㉑ 메뉴 키워드 칸 둘: \'초안까지 자동\' · \'전사까지만 자동\'', /초안까지 자동/.test(await pg.textContent('#pane')) && /전사까지만 자동/.test(await pg.textContent('#pane')) && !!(await pg.$('#kw-in-kw')));
+    await pg.fill('#kw-in-kwt', '심방'); await pg.click('#pane [data-act="kwadd"][data-k="kwt"]');
+    const dup = await until(async () => { const t = await pg.$('.toast'); return t && (await t.textContent()); }, 5000);
+    ok('㉑ 같은 말(심방)을 전사까지만에도 넣으려 하면 알림 · 계정엔 안 씀', /초안까지 자동/.test(dup || '') && /한쪽에만/.test(dup || '') && !(await admin('plaud/' + UID)).kwt, dup);
+    await sleep(3500);
+    await pg.fill('#kw-in-kwt', '회의'); await pg.click('#pane [data-act="kwadd"][data-k="kwt"]');
+    ok('㉑ 전사까지만 키워드가 계정 설정 kwt 에', !!(await until(async () => { const d = await admin('plaud/' + UID); return d && Array.isArray(d.kwt) && d.kwt.join() === '회의'; }, 8000)));
+    await pg.keyboard.press('Escape'); await sleep(300);
+    const R6 = JSON.parse(fs.readFileSync(RECF, 'utf8')); R6.push([ID('o'), '11-20 지어낸 교역자 회의', '2026-11-20T05:00:00', '4m00s', PT2]); fs.writeFileSync(RECF, JSON.stringify(R6));
+    await userAdd(hb.idToken, 'plaud/' + UID + '/cmd', { mac: '집', what: 'refresh', st: 'new', at: Date.now() });
+    // 줄 아래 글 — 전사가 곧 끝나 '할 것' 에 머무는 때가 짧아, 그 녹음 줄을 '아직 안 맡음' 으로 그려 본다(같은 recHtml)
+    const oSub = await until(() => pg.evaluate(id => { const r = listView(S.recs, {}, settings(), now()).find(x => x.id === id); if (!r) return ''; const d = document.createElement('div'); d.innerHTML = recHtml(r); return /키워드 '회의' · 전사까지/.test(d.textContent) && d.textContent; }, ID('o')), 40000);
+    const oDone = await until(async () => { const d = await job('o'); return d && d.st === 'done' && d; }, 60000);
+    await sleep(3000);
+    ok('㉑ 전사까지만 키워드 녹음: 저절로 골라 전사(줄 아래 \'키워드 회의 · 전사까지\') · 초안 없음(dr 없음 · draft 없음)', !!oDone && !('dr' in (await job('o'))) && !(await admin('plaud/' + UID + '/draft/' + ID('o'))), [oSub, oDone]);
+    ok('㉑ 할 것 줄 아래 작은 글자 \'키워드 회의 · 전사까지\'', !!oSub, oSub);
+    // ㉑ 규칙 옛 판 흉내(P4 앞 — Mac 소식에 aik · aim 이 없고 use 칸이 없음): 소식은 새 칸을 빼고 다시 적고 Mac 카드에 알림 · 초안은 그대로 · 사용량은 못 적음
+    const RULES_NOW = fs.readFileSync(path.join(HERE, 'plaud.rules'), 'utf8').replace('match /databases/{database}/documents {', 'match /databases/{database}/documents {\n    match /users/{uid}/data/care { allow read: if request.auth != null && request.auth.uid == uid; }');
+    const RULES_OLD_TXT = RULES_NOW.replace("'listed', 'aik', 'aim'])", "'listed'])").replace(/      \/\/ 이번 달 AI 사용량[\s\S]*?\n      \}\n/, '');
+    const putRules = t => fetch(FS + '/emulator/v1/projects/' + PROJECT + ':securityRules', { method: 'PUT', body: JSON.stringify({ rules: { files: [{ content: t }] } }) });
+    const pr = await putRules(RULES_OLD_TXT);
+    ok('㉑ (흉내) 옛 판 규칙을 실음', RULES_OLD_TXT !== RULES_NOW && !/match \/use\/\{m\}/.test(RULES_OLD_TXT) && pr.ok, [RULES_OLD_TXT !== RULES_NOW, pr.status, pr.ok ? '' : await pr.text()]);
+    const useBefore = JSON.stringify(await admin('plaud/' + UID + '/use/' + MK));
+    await adminPatch('plaud/' + UID + '/job/' + ID('j'), { dr: 'wait' });
+    const jOld = await until(async () => { const d = await job('j'); const m = await admin('plaud/' + UID + '/mac/집'); return d && d.dr === 'ok' && m && /보안 규칙이 옛 판입니다/.test(m.err || '') && [d, m]; }, 40000);
+    ok('㉑ 옛 판 규칙: 초안은 그대로 만들어짐 · Mac 소식은 새 칸(aik · aim)을 빼고 적힘(꺼짐 아님) · 알림 \'보안 규칙이 옛 판입니다 — 다시 붙여 주세요\'', !!jOld && !('aik' in jOld[1]) && !('aim' in jOld[1]) && jOld[1].at > Date.now() - 60e3, jOld && jOld[1]);
+    ok('㉑ 옛 판 규칙: 사용량은 못 적음(그대로) — 초안 흐름은 막히지 않음', JSON.stringify(await admin('plaud/' + UID + '/use/' + MK)) === useBefore);
+    const card = await until(async () => { const t = await pg.textContent('#main .macs').catch(() => ''); return /보안 규칙이 옛 판입니다 — 다시 붙여 주세요/.test(t) && /켜짐/.test(t) && t; }, 15000);
+    ok('㉑ 계기판 Mac 카드: 켜짐 + \'보안 규칙이 옛 판입니다 — 다시 붙여 주세요\'', !!card, (await pg.textContent('#main .macs').catch(() => '')).slice(0, 300));
+    await putRules(RULES_NOW);
     ok('⑨ 계기판 화면 오류 없음', errs.length === 0, errs);
   } finally { await browser.close(); }
 } catch (e) { bad++; console.log('  ✗ 도중에 멈춤', e && e.stack); }

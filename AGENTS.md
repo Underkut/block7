@@ -291,7 +291,7 @@ PLAUD 심방 녹음 → (집 · 사무실 Mac 중 켜진 쪽이) 받기 → whis
 **Mac 도우미(`plaudhub/helper.mjs`)는 이 덩어리를 계기판 파일에서 떼어 쓴다**(설치 · 새로 받기 때 `core.js`) — 도우미 안에 판단을 두 벌 만들지 말 것(⑫ 가 지킨다).
 도우미 판 `HELPER_VERSION` 을 올리면 core 의 `HELPER_LATEST` 도 같게(⑫). 설치 한 줄은 `plaudhub/install.sh`(launchd `my.block7.plaudhub`).
 
-- 저장은 HB 파이어베이스 `plaud/{uid}` — 설정(`kw` · `days` · `model`) · `rec`(제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계 · 파이어베이스 시계 `at`) · `mac`(소식 · 준비 ✓✗) · `cmd`(설치 요청 열쇠 이름).
+- 저장은 HB 파이어베이스 `plaud/{uid}` — 설정(`kw` 초안까지 키워드 · `kwt` 전사까지만 키워드(P4e — 둘 다 걸리면 초안까지, 판단은 core `pickState` · `drAuto` 한 곳) · `days` · `model`) · `rec`(제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계 · 파이어베이스 시계 `at`) · `mac`(소식 · 준비 ✓✗) · `cmd`(설치 요청 열쇠 이름).
   규칙 붙이기 `docs/plaudhub/firestore-rules.md`, 시험 `tests/rules/plaud.test.mjs` · `plaud.e2e.mjs`(실제 도우미 + 가짜 CLI · 음성 주소 · ffmpeg · whisper-cli · 함께 보는 드라이브 폴더 + 계기판 — 두 Mac 겹침 · 이어받기 · txt 하나를 실제로 돌림). `users/{uid}` 는 건드리지 않는다.
 - ⚠️ **녹음 제목은 `rec` 칸에만**(HB 결정 11/23 — 폰에서도 보려고). **일감 칸(`job`)에 제목 · 이름을, 어느 칸에도 전사문 · 심방 내용을 평문으로 두지 말 것** — 규칙이 칸 이름을 못 박았다(`hasOnly`). 전사문 원본은 HB 구글 드라이브에만(도우미 기록 `helper.log` 에도 두지 말 것 — 녹음 번호 · 걸린 시간 · 짧은 까닭만).
   **예외 하나: 잠근 사본(P3b, HB 결정 11/23 '가')** — 폰 · 패드에서 복사 · 받기 하려고 `plaud/{uid}/txt/{번호}` 에 **HB 암호 문구로 잠근 글(AES-GCM, 키 PBKDF2 60만 번)만**. 설정 `kdf` 에는 소금 · 반복 수 · 표지뿐 — 암호 · 키를 계정 · 저장소에 두지 말 것.
@@ -326,7 +326,12 @@ PLAUD 심방 녹음 → (집 · 사무실 Mac 중 켜진 쪽이) 받기 → whis
   ⚠️ HB 사진 속 녹음 제목(성도 이름)을 코드 · 시험 · 문서 · 커밋에 옮겨 적지 말 것 — 지어낸 이름으로 바꿔 쓴다(11/24 한 번 옮겨 적었다가 올리기 전에 막혔다).
 - **AI 초안(P4, HB 11/24 '나' — OpenAI API)**: 전사가 끝난 키워드 녹음(`drAuto`)과 HB 가 [초안 만들기] 를 누른 녹음은 일감에 `dr: 'wait'` → **OpenAI 열쇠가 있는 Mac** 이 조건부 쓰기로 `run` 을 잡아(`drTake`, 15분 뒤 풀림) 지침 + 녹음 정보 + 전사 글을 보내고,
   받은 묶음을 **심방 노트 `care-core` 의 `pkValidate`** 로 본다(도우미가 `/care/index.html` 에서 떼어 씀 — 두 벌 만들지 말 것). 초안은 HB 암호로 잠가 `draft/{번호}`(c · iv · v + 고칠 점 fc · fiv)에만 — 평문 칸을 더하지 말 것.
-  열쇠는 **그 Mac 의 `ai.json`(600)에만**(계기판 → 127.0.0.1 `/aikey`, 모델 목록을 물어 확인한 뒤) — 계정 · 폰 · 저장소에 두지 말 것. 계정엔 `aik`(있음) · `aim`(모델 목록)만. 모델 이름을 코드에 박지 말 것(`aiPick` · HB 가 메뉴에서).
+  열쇠는 **그 Mac 의 `ai.json`(600)에만**(계기판 → 127.0.0.1 `/aikey`, 모델 목록을 물어 확인한 뒤) — 계정 · 폰 · 저장소에 두지 말 것. 계정엔 `aik`(있음) · `aim`(모델 목록)만.
+  **모델 두 칸(P4e, HB 11/25 — 짧은 통화 9건에 0.86달러가 나온 뒤)**: 설정 `ai.auto`(저절로 · 첫 초안) · `ai.big`(고칠 점이 있는 [다시 만들기], 비면 auto) — `aiModelFor` 한 곳. 옛 `ai.model` 은 읽을 때 big 으로.
+  **모델을 저절로 고르지 말 것**(옛 `aiPick` '가장 높은 번호' 를 없앤 까닭) — 칸이 비면 초안을 만들지 않고 `dr: 'fail'` · 까닭 `AI_NEED`(고르면 도우미가 다시 집음). 모델 이름 · 단가를 **코드 기본값으로 박지 말 것** — 권장 이름 · 값은 메뉴 안내 글(`AI_TIP`, 판단 덩어리 밖)과 ROADMAP 에만.
+  **요금 표시**: 도우미가 OpenAI 응답의 usage 를 `use/{YYYY-MM}`(한국 시각 달) = { 모델: { i · o · n · c } } 에 **increment 로**(두 Mac 겹쳐도 맞게) — 숫자만, 글 · 이름 · 녹음 번호 · 기록(helper.log)에 두지 말 것. 단가(`ai.price`) · 환율(`ai.krw`)은 HB 가 메뉴에 적는다 → 계기판 맨 위 한 줄(`useView` · `useLine`).
+  OpenAI 관리자 열쇠(Admin key)로 실제 청구액을 읽지 말 것 — 결제 정보까지 열린다(정확한 금액은 HB 가 OpenAI Usage 화면에서).
+  **규칙이 옛 판이면**(11/25 소식 쓰기 403 → Mac '꺼짐'): 도우미는 새 칸(`MAC_NEW` — aik · aim)을 지우고 한 번 더 적고 Mac 카드에 `RULES_OLD` 알림, 사용량 403 도 알림만(초안은 그대로). 새 Mac 소식 칸을 더하면 `MAC_NEW` 에도.
   지침은 고칠 수 있다(`AI_GUIDE` 기본 v2.2 → 잠가서 `cfg/guide`), **답 꼴(`AI_PACKET` — hb-care.v1)은 고칠 수 없게 늘 덧붙인다**(심방 노트가 읽는 규격 — 바꾸면 `docs/care/gpt-project-guide.md` · 심방 노트와 함께).
   **승인 전에는 시트에 쓰지 않는다** — 계기판 [승인] 만 HB 구글 연결(`gcal /token`)로 심방 노트가 고른 시트('`users/{uid}/data/care`' 의 `sheet`, **읽기만**)의 'AI 입력대기' 에 한 줄(같은 녹음 대기 · 완료면 안 넣음 · 다시 읽어 확인한 뒤 `sent`). 도우미는 시트 · `users` 를 모른다.
   실패 까닭(`dre`) · 기록에는 칸 자리 · 짧은 까닭만(값 · 이름 · 글 없이). 이미 `sent` 인 녹음은 다시 전사해도 초안을 다시 만들지 않는다(`finish` · `dropTxt`).

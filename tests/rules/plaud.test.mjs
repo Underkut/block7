@@ -130,6 +130,23 @@ await t('(P4) 잠근 지침(cfg/guide)', hb.doc('plaud/hb/cfg/guide').set({ c: '
 await t('(P4) 지침에 평문(text)은 못 넣는다', hb.doc('plaud/hb/cfg/guide').set({ c: 'QUJD', iv: 'aXY=', text: '지침' }), false);
 await t('(P4) cfg 에는 guide 한 장뿐', hb.doc('plaud/hb/cfg/other').set({ c: 'QUJD', iv: 'aXY=', v: 1 }), false);
 await t('(P4) 남은 지침을 못 읽는다', out.doc('plaud/hb/cfg/guide').get(), false);
+// (P4e) 모델 두 칸 · 단가 · 환율 · 전사까지만 키워드 · 이번 달 사용량
+const INC = x => firebase.firestore.FieldValue.increment(x);
+await t('(P4e) 설정 ai 에 모델 두 칸(auto · big) · 단가 · 환율', hb.doc('plaud/hb').set({ ai: { on: true, auto: 'gpt-a-mini', big: 'gpt-a', price: { 'gpt-a-mini': [0.1, 0.5], 'gpt-a': [1, 5] }, krw: 1400 } }, { merge: true }), true);
+await t('(P4e) 옛 기기의 ai.model 도 그대로 받는다', hb.doc('plaud/hb').set({ ai: { on: true, model: 'gpt-a' } }, { merge: true }), true);
+await t('(P4e) 환율은 숫자만', hb.doc('plaud/hb').set({ ai: { krw: '천사백' } }, { merge: true }), false);
+await t('(P4e) 단가는 묶음(map) · 30개까지', hb.doc('plaud/hb').set({ ai: { price: Object.fromEntries(Array.from({ length: 31 }, (_, i) => ['m' + i, [1, 1]])) } }, { merge: true }), false);
+await t('(P4e) ai 에 열쇠 칸은 여전히 못 넣는다', hb.doc('plaud/hb').set({ ai: { auto: 'gpt-a', key: 'sk-비밀' } }, { merge: true }), false);
+await t('(P4e) 전사까지만 키워드(kwt)', hb.doc('plaud/hb').set({ kwt: ['회의'] }, { merge: true }), true);
+await t('(P4e) kwt 는 20개까지 · 목록만', hb.doc('plaud/hb').set({ kwt: Array.from({ length: 21 }, (_, i) => 'k' + i) }, { merge: true }), false);
+await t('(P4e) kwt 는 목록 꼴만', hb.doc('plaud/hb').set({ kwt: '회의' }, { merge: true }), false);
+await t('(P4e) HB 는 이번 달 사용량을 더한다(increment)', hb.doc('plaud/hb/use/2026-11').set({ 'gpt-a.1-mini': { i: INC(3100), o: INC(900), n: INC(1) } }, { merge: true }), true);
+await t('(P4e) 두 번 더하면 합쳐진다', hb.doc('plaud/hb/use/2026-11').set({ 'gpt-a.1-mini': { i: INC(100), o: INC(10), n: INC(1) } }, { merge: true }).then(() => hb.doc('plaud/hb/use/2026-11').get()).then(d => { const v = d.data()['gpt-a.1-mini']; if (v.i !== 3200 || v.o !== 910 || v.n !== 2) throw new Error(JSON.stringify(v)); }), true);
+await t('(P4e) 사용량 문서 이름은 달 꼴(YYYY-MM)만', hb.doc('plaud/hb/use/' + ID).set({ x: { n: INC(1) } }), false);
+await t('(P4e) 13월은 없다', hb.doc('plaud/hb/use/2026-13').set({ x: { n: INC(1) } }), false);
+await t('(P4e) 남은 사용량을 못 읽는다 · 못 쓴다', out.doc('plaud/hb/use/2026-11').get(), false);
+await t('(P4e) 남은 사용량에 못 더한다', out.doc('plaud/hb/use/2026-11').set({ x: { n: INC(1) } }, { merge: true }), false);
+await t('(P4e) 로그인 안 하면 못 읽는다', anon.doc('plaud/hb/use/2026-11').get(), false);
 // 다른 앱 칸은 그대로 잠김(이 덩어리는 plaud 만)
 await t('이 규칙은 users/{uid} 를 열지 않는다', hb.doc('users/hb').get(), false);
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
