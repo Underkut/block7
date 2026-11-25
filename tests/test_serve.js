@@ -30,7 +30,7 @@ vm.runInContext(core[1] + '\n' + serve[1] + `
 this.A = { SV_SVC, SV_ROLE, svId, svLabel, svLeadLabel, svTabYm, svPickTabs, svRoleOf, svBlockSvc, svNames, svReadTab,
   svNormBoard, svMergeBoard, svSame, svSet, svLive, svNormPeople, svMergePeople, svNameMap, svImport, svMine, svNow, svService,
   svKeyOf, svHas, svFold, svNm, svGroup, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg,
-  svOwnTab, svImportTabs, svStale, svPrune, SV_IMP, SV_DEL_MAX };`, ctx);
+  svOwnTab, svImportTabs, svStale, svPrune, SV_IMP, SV_DEL_MAX, svPhNames };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 탭 이름
@@ -266,5 +266,13 @@ sc.eq('⑬ 설정(sv/cfg)은 HB 만 읽음(교역자는 규칙이 막음)', /cfg
 sc.eq("⑬ 탭: 교역자 = '예배위원' 탭(교역자들 탭 없음) · HB = 교역자들 탭 안 알약", [/TABS = ALL_TABS\.filter\(t => t\.id !== \(isStaff\(\) \? 'people' : 'serve'\)\)/.test(HTML), /let TABS = ALL_TABS\.filter\(t => t\.id !== 'serve'\);/.test(HTML), /if \(PREF\.pv === 'serve'\) return viewServe\(true\);/.test(HTML)], [true, true, true]);
 sc.eq('⑬ 교역자 누름 허락(staffOk)에 보기 단추만 · 설정 단추는 없음', [/d\.svv \|\| d\.svm \|\| d\.svp \|\| d\.svk \|\| d\.svday \|\| d\.svboard\) return true;/.test(HTML), /STAFF_ACTS = new Set\(\[[^\]]*'svcfg/.test(HTML)], [true, false]);
 sc.eq('⑬ 열람 구역 화면 글에 HB 없음(성도 화면 = 담당 교역자)', /['"`][^'"`\n]*\bHB\b[^'"`\n]*['"`]/.test(v2.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')), false);
+
+// ⑯ 1122-V S2e — 연락처 맞추기에 더할 이름(계정 명단 sv/people). 이름은 지어낸 것
+{
+  const people = { people: { pa: { name: '한빛솔', pools: ['2|gd'] }, pb: { name: '이가람', pools: ['3|of'] }, pc: { name: '지운이', del: true }, pd: { name: '모아솔' } } };
+  sc.eq('⑯ 명단 이름(지운 분 빼고) · 빈 명단 · 이상한 id 는 버림', [A.svPhNames(people).sort(), A.svPhNames(null), A.svPhNames({ people: { 'x y': { name: '나쁜id' } } })], [['모아솔', '이가람', '한빛솔'], [], []]);
+  const x = A.svImport({ ym: '2026-12', st: 'open', cells: {} }, null, { ym: '2026-12', cells: [{ date: '2026-12-06', svc: '2', role: 'gd', pl: '내부안내', names: ['새솔', '한결'] }] }, 'imp', 1);
+  sc.eq('⑯ 가져오기가 만든 명단 그대로 쓸 수 있음', A.svPhNames(x.people).sort(), ['새솔', '한결']);
+}
 
 sc.done();
