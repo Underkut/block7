@@ -141,6 +141,10 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
     sc.eq('⑥ P4c 모양: 키워드(초안 저절로) · 직접 + wait = 가득(full) · 직접만 = 테두리', [by[ia].full, by[ib].full, by[id_].full, by[ic].full], [true, false, true, false]);
     sc.eq('⑥ P4c 모양: AI 초안을 끄면 키워드 줄도 테두리(전사까지)', A.listView(RS, {}, { kw: ['심방'], ai: { on: false } }, NOW).find(x => x.id === ia).full, false);
   }
+  // (P4d) 전사 중 줄 — Mac '하는 일' 글에서 진행 · 남은 시간
+  sc.eq('⑥ P4d 전사 진행: 6분째 42% → 약 8분 남음(지난 5.5분 기준)', [A.sttInfo('전사 중 6분째 (42%)'), A.sttLabel(A.sttInfo('전사 중 6분째 (42%)'))], [{ min: 6, pct: 42, left: 8 }, '전사 중 42% · 8분 남음']);
+  sc.eq('⑥ P4d 진행률이 아직 없으면 남은 시간 없이 · 끝에 가까우면 1분 · 1시간 넘으면 시간', [A.sttLabel(A.sttInfo('전사 중 1분째')), A.sttLabel(A.sttInfo('전사 중 30분째 (99%)')), A.sttLabel(A.sttInfo('전사 중 31분째 (20%)'))], ['전사 중', '전사 중 99% · 1분 남음', '전사 중 20% · 2시간 2분 남음']);
+  sc.eq('⑥ P4d 전사 중이 아닌 글 · 모델 시험 글은 건드리지 않음', [A.sttInfo('쉼'), A.sttInfo('녹음 받는 중'), A.sttInfo('모델 시험 — 터보 전사 중 (50%)'), A.sttInfo('')], [null, null, null, null]);
   sc.eq('⑥ 5시간 회의도 키워드면 고름 (길이로 빼지 않음)', A.pickState(r('구역 심방 모임', 5 * 3600), null, ['심방']), 'auto');
   sc.eq('⑥ 5시간 회의를 직접 넣을 수 있음', A.isPicked(A.pickState(r('교역자 회의', 5 * 3600), { pick: 'in' }, ['심방'])), true);
   sc.eq('⑥ 설정 다듬기 (모르는 기간 · 모델은 기본 = 터보, HB 11/23)', J(A.settingsOf({ kw: ['상담'], days: 99, model: 'tiny' })), { kw: ['상담'], days: 14, model: 'large-v3-turbo-q5_0' });
@@ -334,7 +338,9 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   const w = A.macView({ id: '사무실', at: now - 7 * 60e3, doing: '목록 읽는 중', v: 'h. 26-1101-1' }, now);
   sc.eq('⑭ 7분 소식 없음 = 꺼짐 · 낡은 도우미', [w.alive, w.doing, w.old], [false, '꺼짐', true]);
   sc.eq('⑭ 이름 다듬기', [A.normMac(' 집 '), A.normMac('a/b'), A.normMac(''), A.normMac('가'.repeat(13)), A.normMac('__x__')], ['집', '', '', '', '']);
-  sc.eq('⑭ P4c 길게 누르기(0.45초 · 움직이면 취소 · 오른쪽 클릭)와 되돌리기 줄 · 전환은 동작 줄이기면 바로', /LONG_MS = 450/.test(HTML) && /Math\.hypot\(e\.clientX - LP\.x, e\.clientY - LP\.y\) > 8\) lpClear\(\)/.test(HTML) && /addEventListener\('contextmenu'/.test(HTML) && /data-act="unmove"/.test(HTML) && /lvStart\(id, prev, !el \|\| quiet\(\)\)/.test(HTML), true);
+  sc.eq('⑭ P4d 동그라미는 체크만 · 위 [전사까지] · [초안까지] 로 확정(길게 누르기 · 옮김 전환 · 되돌리기 줄 없음)', /data-act="commit" data-d="0"/.test(HTML) && /data-act="commit" data-d="1"/.test(HTML) && /case 'commit': return commitSel\(d\.d === '1'\)/.test(HTML) && !/LONG_MS|lvStart|unmove|contextmenu/.test(HTML), true);
+  sc.eq('⑭ P4d 확정은 tapPick2(없음 · 초안이면 길게)로 pick + dr 만 쓴다', /tapPick2\('none', !!draft,/.test(HTML), true);
+  sc.eq('⑭ P4d 할 것 줄 글: 전사까지 = 누런색(mdt) · 초안까지 = 녹색(mdd)', /<b class="mdt">전사까지<\/b>/.test(HTML) && /<b class="mdd">초안까지<\/b>/.test(HTML) && /\.mdt\{color:var\(--warn\)/.test(HTML) && /\.mdd\{color:var\(--ok\)/.test(HTML), true);
   sc.eq('⑭ 버전 형식 · 2번째 줄 주석', [/^v\. \d{2}-\d{4}-\d+$/.test(A.APP_VERSION), HTML.split('\n')[1]], [true, '<!-- PLAUDHUB ' + A.APP_VERSION + ' -->']);
   sc.eq('⑭ 미리보기 녹음 제목은 지어낸 이름(실제 이름 목록과 따로)', /김하늘|박소망|이은혜|최기쁨/.test(HTML), true);
 }

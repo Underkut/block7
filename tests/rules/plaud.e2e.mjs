@@ -260,7 +260,8 @@ try {
     const rowA = await pg.textContent('[data-id="' + ID('a') + '"]');
     ok('⑨ 한국 시각 — 날짜 묶음 \'11. 22. (일)\' · 시각 칸 15:05 · 제목은 날짜를 뗀 글 · 길이', main.includes('11. 22. (일)') && /^\s*15:05김하늘 집사 심방/.test(rowA) && rowA.includes('48분') && !rowA.includes('2026-11-22'), rowA);
     ok('⑨ 키워드 \'심방\' 녹음은 저절로 골라짐', await pg.$eval('[data-id="' + ID('a') + '"]', e => e.classList.contains('pick')));
-    await pg.click('[data-id="' + ID('c') + '"]');
+    await pg.click('[data-id="' + ID('c') + '"]');   // (P4d) 동그라미는 체크만 — 위 [전사까지] 로 확정
+    await pg.click('[data-act="commit"][data-d="0"]');
     const pk = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('c')); return d && d.pick === 'in' && d; });
     ok('⑨ 제목 없는 녹음을 눌러 고르면 계정 job 에 pick:in (제목 없이)', pk && !('n' in pk), pk);
     await pg.click('[data-act="menu"]'); await pg.fill('#kw-in', '전화'); await pg.click('[data-act="kwadd"]');
@@ -614,59 +615,52 @@ try {
     await until(() => pg.$('#pane [data-act="aikeyclear"]'), 10000); await pg.click('#pane [data-act="aikeyclear"]');
     ok('⑲ 열쇠 지우기 → 파일 없음 · aik 거짓', !!(await until(async () => !fs.existsSync(path.join(third.dir, 'ai.json')) && (await admin('plaud/' + UID + '/mac/서재')).aik === false, 15000)));
     await pg.keyboard.press('Escape'); await sleep(300);
-    // ⑳ (P4c) 고르기 두 갈래 — 짧게 = 전사까지(dr 없음) · 길게(터치 0.45초) · 오른쪽 클릭 = 전사 뒤 초안까지(dr wait 를 전사 전에 미리 적음, 규칙 그대로) · 되돌리기 줄 · 다시 누르면 뺌(미리 적은 wait 도 지움)
-    await pg.emulateMedia({ reducedMotion: 'reduce' });   // 전환 없이 바로(시험은 이 길) — 접힘 모양은 영상으로 따로 봄
+    // ⑳ (P4d) 고르기 — 동그라미는 체크만(저장 안 함) · 위에 뜨는 [전사까지](누런색) · [초안까지](녹색) 로 확정(dr wait 를 전사 전에 미리 적음, 규칙 그대로) · 할 것 줄의 글 색 · 전사 중 진행 · 남은 시간
     const PT2 = '[00:01 - 00:05] Speaker 1: 지어낸 모임 전사 글입니다\n[00:06 - 00:09] Speaker 2: 네 목사님';
     const R5 = JSON.parse(fs.readFileSync(RECF, 'utf8'));
     for (const [k, h] of [['j', 3], ['k', 4], ['l', 5], ['m', 6]]) R5.push([ID(k), '11-1' + h + ' 지어낸 모임 ' + k, '2026-11-1' + h + 'T03:00:00', '4m00s', PT2]);
+    R5.push([ID('n'), '', '2026-11-12T03:00:00', '10m00s']);   // PLAUD 전사 없음 → whisper(전사 중 진행 보기)
     fs.writeFileSync(RECF, JSON.stringify(R5));
     await userAdd(hb.idToken, 'plaud/' + UID + '/cmd', { mac: '집', what: 'refresh', st: 'new', at: Date.now() });
     await pg.click('[data-act="tab"][data-k="new"]');
-    const sel = k => '#main .rec[data-id="' + ID(k) + '"]';
-    ok('⑳ 새 녹음 탭에 새 줄(아직 안 고름 · 동그라미 비어 있음)', !!(await until(() => pg.$(sel('j')), 40000)) && !!(await until(() => pg.$(sel('m')), 20000)) && !(await pg.$eval(sel('j'), e => e.classList.contains('pick'))));
-    await pg.$eval(sel('j'), e => e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 80, clientY: 80, button: 0 })));
-    await sleep(150);
-    ok('⑳ 길게 누르는 중(0.45초 전)에는 아직 안 고름', !(await admin('plaud/' + UID + '/job/' + ID('j'))));
-    const jl = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('j')); return d && d.pick === 'in' && d; }, 5000);
-    ok('⑳ 길게 누르면(손을 떼기 전에) 일감 { pick: in, dr: wait } — 전사 전에 미리 적음', !!jl && jl.dr === 'wait', jl);
-    await pg.$eval('#main', e => document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch', button: 0 })));
-    ok('⑳ 고른 줄은 새 녹음 탭에서 빠지고 \'할 것으로 옮김 · 되돌리기\' 한 줄(토스트 아님)', !!(await until(() => pg.$('#main .undo[data-id="' + ID('j') + '"] [data-act="unmove"]'), 5000)) && !(await pg.$(sel('j'))) && !(await pg.$('.toast')));
-    await pg.click(sel('m'));
-    const ml = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('m')); return d && d.pick === 'in' && d; }, 5000);
-    ok('⑳ 짧게 누르면 일감 { pick: in } 만 — dr 없음(전사까지)', !!ml && !('dr' in ml), ml);
-    // 모양 · 글 — 할 것 탭(Mac 이 다 전사하기 전에 봄)
+    const sel = k => '#main .rec[data-id="' + ID(k) + '"]', job = k => admin('plaud/' + UID + '/job/' + ID(k));
+    ok('⑳ 새 녹음 탭에 새 줄(아직 안 고름 · 체크 없음) · 위 버튼 줄 없음', !!(await until(() => pg.$(sel('j')), 40000)) && !!(await until(() => pg.$(sel('m')), 20000)) && !(await pg.$eval(sel('j'), e => e.classList.contains('pick') || e.classList.contains('sel'))) && !(await pg.$('.selbar')));
+    await pg.click(sel('j')); await pg.click(sel('k')); await sleep(800);
+    const selTxt = await pg.textContent('.selbar').catch(() => '');
+    ok('⑳ 동그라미를 누르면 체크만 — 줄은 그대로 · 계정엔 안 씀 · 위에 \'2개 체크\' + [전사까지] · [초안까지]', /2개 체크/.test(selTxt) && /전사까지/.test(selTxt) && /초안까지/.test(selTxt) && !(await job('j')) && !(await job('k')) && !!(await pg.$(sel('j') + '.sel')));
+    const bcol = await pg.evaluate(() => [...document.querySelectorAll('.selbar .btn')].map(b => getComputedStyle(b).backgroundColor));
+    ok('⑳ 두 버튼은 색이 다름(누런색 · 녹색)', bcol.length === 2 && bcol[0] !== bcol[1], bcol);
+    await pg.click(sel('k')); await sleep(300);
+    ok('⑳ 체크를 다시 누르면 풀림(1개 체크) · 모두 풀면 버튼 줄이 사라짐', /1개 체크/.test(await pg.textContent('.selbar')) && (await pg.click(sel('j')), await sleep(300), !(await pg.$('.selbar'))));
+    await pg.click(sel('j')); await pg.click(sel('k')); await pg.click('.selbar [data-act="commit"][data-d="1"]');
+    const jl = await until(async () => { const d = await job('j'); const e = await job('k'); return d && e && d.pick === 'in' && e.pick === 'in' && [d, e]; }, 8000);
+    ok('⑳ [초안까지] → 체크한 줄 모두 일감 { pick: in, dr: wait } — 전사 전에 미리 적음(체크는 지워지고 버튼 줄도 사라짐)', !!jl && jl[0].dr === 'wait' && jl[1].dr === 'wait' && !(await pg.$('.selbar')), jl);
+    await pg.click(sel('m')); await pg.click('.selbar [data-act="commit"][data-d="0"]');
+    const ml = await until(async () => { const d = await job('m'); return d && d.pick === 'in' && d; }, 8000);
+    ok('⑳ [전사까지] → 일감 { pick: in } 만 — dr 없음', !!ml && !('dr' in ml), ml);
+    // 할 것 탭 — 글 색 · 모양(Mac 이 다 전사하기 전에 봄)
     await pg.click('[data-act="tab"][data-k="todo"]');
-    const shapeJ = await until(async () => { const e = await pg.$(sel('j')); return e && (await e.evaluate(x => [x.classList.contains('pick'), x.classList.contains('full'), x.textContent])); }, 10000);
-    const shapeM = await until(async () => { const e = await pg.$(sel('m')); return e && (await e.evaluate(x => [x.classList.contains('pick'), x.classList.contains('full'), x.textContent])); }, 10000);
-    ok('⑳ 모양: 초안까지 = 가득 찬 체크 + \'초안까지\' · 전사까지 = 테두리 체크 + \'전사까지\'', shapeJ && shapeJ[0] && shapeJ[1] && /초안까지/.test(shapeJ[2]) && shapeM && shapeM[0] && !shapeM[1] && /전사까지/.test(shapeM[2]), [shapeJ, shapeM]);
+    const shape = k => until(async () => { const e = await pg.$(sel(k)); return e && (await e.evaluate(x => { const b = x.querySelector('.meta b'); return [x.classList.contains('pick'), x.classList.contains('full'), b ? b.textContent : '', b ? getComputedStyle(b).color : '', getComputedStyle(x.querySelector('.meta')).color]; })); }, 10000);
+    const shJ = await shape('j'), shM = await shape('m');
+    ok('⑳ 할 것 줄 글: 초안까지 = 녹색(가득 찬 체크) · 전사까지 = 누런색(테두리 체크) — 회색 글자 아님', shJ && shM && shJ[0] && shJ[1] && shJ[2] === '초안까지' && shM[0] && !shM[1] && shM[2] === '전사까지' && shJ[3] !== shM[3] && shJ[3] !== shJ[4] && shM[3] !== shM[4], [shJ, shM]);
     await pg.click('[data-act="tab"][data-k="new"]');
-    // 움직이면 길게 누르기가 취소됨(스크롤과 엉키지 않게)
-    await pg.$eval(sel('k'), e => { e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 80, clientY: 80, button: 0 })); document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'touch', clientX: 80, clientY: 130 })); });
-    await sleep(800);
-    ok('⑳ 누른 채 움직이면(스크롤) 길게 누르기가 취소됨', !(await admin('plaud/' + UID + '/job/' + ID('k'))) && !!(await pg.$(sel('k'))));
-    await pg.$eval('#main', () => document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch', button: 0 })));
-    await pg.click(sel('l'), { button: 'right' });
-    const ll = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('l')); return d && d.pick === 'in' && d; }, 5000);
-    ok('⑳ 마우스 오른쪽 클릭 = 길게 누르기(pick in + dr wait)', !!ll && ll.dr === 'wait', ll);
-    // 되돌리기 — 고름을 원래대로(칸을 지움)
-    await pg.click('#main .undo[data-id="' + ID('l') + '"] [data-act="unmove"]');
-    const lu = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('l')); return d && !('pick' in d) && !('dr' in d) && d; }, 5000);
-    ok('⑳ 되돌리기 → 그 녹음의 pick · 미리 적은 dr 이 지워지고 새 녹음 탭에 다시 나옴', !!lu && !!(await until(() => pg.$(sel('l')), 5000)), lu);
-    // 이어짐 — 전사가 끝나면 열쇠 있는 Mac 이 초안까지, 짧게 고른 것은 전사에서 끝
-    const jd = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('j')); return d && d.st === 'done' && d.dr === 'ok' && d; }, 90000);
-    ok('⑳ 길게 누른 녹음: 전사가 끝나자 초안까지 이어짐(dr wait → ok · 잠근 초안)', !!jd && !!(await admin('plaud/' + UID + '/draft/' + ID('j'))), [jd, home2.log().slice(-300)]);
-    const md = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('m')); return d && d.st === 'done' && d; }, 90000);
+    // 이어짐 — 전사가 끝나면 열쇠 있는 Mac 이 초안까지, 전사까지만 고른 것은 전사에서 끝
+    const jd = await until(async () => { const d = await job('j'); return d && d.st === 'done' && d.dr === 'ok' && d; }, 90000);
+    ok('⑳ 초안까지 고른 녹음: 전사가 끝나자 초안까지 이어짐(dr wait → ok · 잠근 초안)', !!jd && !!(await admin('plaud/' + UID + '/draft/' + ID('j'))), [jd, home2.log().slice(-300)]);
+    const md = await until(async () => { const d = await job('m'); return d && d.st === 'done' && d; }, 90000);
     await sleep(2500);
-    ok('⑳ 짧게 누른 녹음: 전사까지만 — 초안 없음', !!md && !('dr' in (await admin('plaud/' + UID + '/job/' + ID('m')))) && !(await admin('plaud/' + UID + '/draft/' + ID('m'))), md);
-    // 골라진 줄을 다시 누르면 뺌 — 미리 적은 wait 도 함께 지움(전사가 막 끝나기 전 시험은 N 으로)
-    await pg.click('[data-act="tab"][data-k="new"]'); await until(() => pg.$(sel('k')), 15000).catch(() => null);
-    await sleep(300);   // 탭 바뀜 뒤 그려짐을 기다림
-    await pg.click(sel('k')); await until(async () => (await admin('plaud/' + UID + '/job/' + ID('k'))).pick === 'in', 5000);
-    await pg.click('[data-act="tab"][data-k="todo"]'); await until(() => pg.$(sel('k')), 5000);
-    await pg.click(sel('k'), { button: 'right' });
-    const ko = await until(async () => { const d = await admin('plaud/' + UID + '/job/' + ID('k')); return d && d.pick === 'out' && d; }, 5000);
-    ok('⑳ 골라진 줄을 (오른쪽 클릭으로도) 누르면 뺌(pick out)', !!ko, ko);
-    await pg.emulateMedia({ reducedMotion: 'no-preference' });
+    ok('⑳ 전사까지 고른 녹음: 전사까지만 — 초안 없음', !!md && !('dr' in (await job('m'))) && !(await admin('plaud/' + UID + '/draft/' + ID('m'))), md);
+    // 오래 걸리는 전사(whisper) 한 건으로: 전사 중 줄의 진행 % · 남은 시간(Mac 이 알린 '전사 중 n분째 (p%)' 로) · 골라진 줄(할 것)을 누르면 뺌 — 미리 적은 dr wait 도 지움
+    fs.writeFileSync(path.join(tmp, 'wmode'), '90000');
+    await pg.click('[data-act="tab"][data-k="new"]'); await until(() => pg.$(sel('n')), 20000);
+    await pg.click(sel('n')); await pg.click('.selbar [data-act="commit"][data-d="1"]');
+    await pg.click('[data-act="tab"][data-k="todo"]');
+    const prog = await until(async () => { const t = await pg.textContent(sel('n')).catch(() => ''); return /전사 중 \d+% · .+ 남음/.test(t) && t; }, 90000);
+    ok('⑳ 전사 중인 줄에 진행 %와 남은 예상 시간(\'전사 중 25% · 1분 남음\' 꼴)', !!prog, prog);
+    await pg.click(sel('n'));
+    const no = await until(async () => { const d = await job('n'); return d && d.pick === 'out' && d; }, 8000);
+    ok('⑳ 골라진 줄을 누르면 뺌(pick out) · 미리 적은 dr wait 도 지움', !!no && !('dr' in no), no);
+    fs.writeFileSync(path.join(tmp, 'wmode'), '400');
     ok('⑨ 계기판 화면 오류 없음', errs.length === 0, errs);
   } finally { await browser.close(); }
 } catch (e) { bad++; console.log('  ✗ 도중에 멈춤', e && e.stack); }
