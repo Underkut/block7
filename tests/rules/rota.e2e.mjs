@@ -849,7 +849,7 @@ console.log('㉘ 분당 예배위원 열람 (1122-V S2) — 지어낸 이름');
   const cfg = await getDoc('rota/' + HB + '/sv/cfg');
   ok('㉘ HB 설정 → sv/cfg (담당 교역자 · 시각만)', [cfg.lead, cfg.times, Object.keys(cfg).sort()], ['가나다 목사', { '1': '09:30' }, ['at', 'lead', 'times']]);
   await hb.evaluate(() => { PREF.svv = 'me'; S.svme = 'n:바람결'; render(); });
-  ok("㉘ HB 성도 화면 틀: 카드 · 내 섬김 · '담당 교역자 (이름)'", await hb.evaluate(() => [!!document.querySelector('.svcard'), document.querySelectorAll('.mrow[data-svday]').length, document.querySelector('#panel').textContent.includes('담당 교역자 (가나다 목사)께')]), [true, 1, true]);
+  ok("㉘ HB 성도 화면 틀: 카드 · 지난 섬김은 접힘(펴기 단추) · '담당 교역자 (이름)'", await hb.evaluate(() => [!!document.querySelector('.svcard'), document.querySelectorAll('.mrow[data-svday]').length, !!document.querySelector('[data-act="svpast"]'), document.querySelector('#panel').textContent.includes('담당 교역자 (가나다 목사)께')]), [true, 0, true, true]);   // 지난 섬김은 접혀 있음(S2b C)
   await ga.evaluate(() => { closePane(); refreshTabs(); PREF.tab = 'serve'; PREF.svv = 'board'; S.svym = ''; S.svc = '1'; renderShell(); });
   ok("㉘ 교역자: 넷째 탭 '예배위원' · 같은 배치표(HB 문서를 읽기만)", await until(() => ga.evaluate(() => TABS.map(t => t.id).join() === 'week,month,busan,serve' && !!document.querySelector('.svtbl') && document.querySelector('.svtbl').textContent.includes('하늘빛'))), true);
   ok('㉘ 교역자 화면: 설정 단추 · 교역자 알약 없음 · 설정(sv/cfg)은 안 읽음 → 담당 교역자만', await ga.evaluate(() => { PREF.svv = 'me'; S.svme = 'pz1'; render(); return [!!document.querySelector('[data-act="svcfg"]'), !!document.querySelector('[data-pv]'), SVV.cfg, document.querySelector('#panel').textContent.includes('담당 교역자께')]; }), [false, false, null, true]);

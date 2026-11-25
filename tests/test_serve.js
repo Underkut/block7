@@ -27,7 +27,7 @@ vm.createContext(ctx);
 vm.runInContext(core[1] + '\n' + serve[1] + `
 this.A = { SV_SVC, SV_ROLE, svId, svLabel, svLeadLabel, svTabYm, svPickTabs, svRoleOf, svBlockSvc, svNames, svReadTab,
   svNormBoard, svMergeBoard, svSame, svSet, svLive, svNormPeople, svMergePeople, svNameMap, svImport, svMine, svNow, svService,
-  svKeyOf, svHas, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg };`, ctx);
+  svKeyOf, svHas, svFold, svNm, svGroup, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 탭 이름
@@ -174,7 +174,8 @@ sc.eq('⑫ svHas: 열쇠로 · 빈 열쇠는 아무도 아님', [A.svHas({ w: [{
 sc.eq('⑫ 그 달 그 예배 날(요일로): 11월 주일 다섯 · 수요 넷 · 모르는 예배는 없음', [A.svDays('2026-11', '1'), A.svDays('2026-11', 'W').length, A.svDays('2026-11', 'X')], [['2026-11-01', '2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29'], 4, []]);
 const g1 = A.svGrid(vB, '2026-11', '1');
 sc.eq('⑫ 배치표 열: 배치 없는 주도 빈 열', g1.cols, ['2026-11-01', '2026-11-08', '2026-11-15', '2026-11-22', '2026-11-29']);
-sc.eq('⑫ 배치표 줄: 안내(1층 → 2층 입구) · 헌금(빈 자리 → 비전홀) · 봉독 · 성찬 — 지운 칸은 줄을 안 만듦', g1.rows.map(A.svRowLabel), ['안내 1층', '안내 2층 입구', '헌금', '헌금 비전홀', '봉독', '성찬 1조 빵']);
+sc.eq('⑫ 배치표 줄: 안내(1층 → 2층 입구) · 헌금(비전홀은 따로 줄 없이 — HB 11/26 B) · 봉독 · 성찬 — 지운 칸은 줄을 안 만듦', g1.rows.map(A.svRowLabel), ['안내 1층', '안내 2층 입구', '헌금', '봉독', '성찬 1조 빵']);
+sc.eq('⑫ 헌금 줄에 비전홀 분을 이름(비전홀)로 — 자리 없는 분 먼저', g1.rows[2].at['2026-11-01'].w.map(A.svNm), ['라온', '라온(비전홀)']);
 sc.eq('⑫ 배치표 칸: 날짜로 · 이름 차례 그대로 · 없는 날은 비움', [g1.rows[0].at['2026-11-01'].w.map(x => x.n), g1.rows[0].at['2026-11-15'].w.map(x => x.n), !!g1.rows[0].at['2026-11-22'], !!g1.rows[0].at['2026-11-08']], [['나래', '다온'], ['가람'], false, false]);
 sc.eq('⑫ 다른 예배 · 다른 달 칸은 안 섞임', [A.svGrid(vB, '2026-11', '2').rows.length, A.svGrid(vB, '2026-11', 'W').rows.length, A.svGrid(vB, '2026-12', 'W').rows.length], [1, 0, 1]);
 sc.eq('⑫ 예배 알약: 여섯(옛 화요는 배치 있을 때만) · 배치 있음 표시', A.svSvcsIn(vB, '2026-11').map(x => x.k + (x.has ? '*' : '')), ['1*', '2*', '3', 'LL', 'W', 'F*']);
@@ -182,6 +183,10 @@ sc.eq('⑫ 옛 화요 배치가 있는 달은 화요 알약도', A.svSvcsIn([bd(
 sc.eq('⑫ 사람별: 이름 차례 · 몇 번 · 명단 없는 분도 · 그 달만', J(A.svWho(vB, '2026-11')).map(x => x.n + ':' + x.k + ':' + x.cnt), ['가람:pa:3', '나래:pb:3', '다온:n:다온:2', '라온:pc:2']);
 sc.eq('⑫ 사람별: 달을 안 주면 판 전부', A.svWho(vB).find(x => x.k === 'pa').cnt, 4);
 sc.eq('⑫ 내 섬김: 명단 없는 분도 열쇠로', A.svMine(vB, 'n:다온').map(c => c.date.slice(8) + c.svc + c.role), ['011gd', '27Fgd']);
+sc.eq('⑫ 헌금 비전홀만 있는 날도 헌금 줄 하나', J(A.svFold([cell('2026-11-06', 'F', 'of', '비전홀', ['가람'], 1)]).map(c => [c.role, c.pl, c.w.map(A.svNm)])), [['of', '', ['가람(비전홀)']]]);
+sc.eq('⑫ 한 예배 판도 헌금 자리를 붙임 · 자료(판)는 그대로', [A.svService(vB, '2026-11-01', '1').map(c => A.svRowLabel(c) + ':' + c.w.map(A.svNm).join(',')), Object.keys(vB[0].cells).some(k => k.endsWith('|of|비전홀'))],
+  [['안내 1층:나래,다온', '안내 2층 입구:가람', '헌금:라온,라온(비전홀)', '봉독:가람'], true]);
+sc.eq('⑫ 내 섬김 묶기: 같은 날 · 같은 예배는 한 줄(역할 차례)', A.svGroup(A.svMine(vB, 'pa')).map(g => g.date.slice(8) + g.svc + ':' + g.items.map(c => c.role).join('/')), ['011:gd/rd', '151:gd', '02W:gd']);
 const T2 = { '1': '09:30', '2': '11:30', F: '20:00' };
 const fo = n => { const r = A.svFocus(vB, n, T2); return r ? r.date + ':' + r.svc : null; };
 sc.eq('⑫ 지금 걸린 예배: 주일 아침 → 그 날 1부', fo({ date: '2026-11-01', min: 8 * 60 }), '2026-11-01:1');
