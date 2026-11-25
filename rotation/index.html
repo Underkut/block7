@@ -879,7 +879,7 @@ table.svtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13p
 .svlist > div{display:flex;gap:10px} .svlist > div > span:first-child{width:92px;flex:none;color:var(--tx3)}
 .svh{display:flex;align-items:baseline;gap:8px;margin:18px 2px 4px} .svh b{flex:1;font-size:15px;font-weight:500}
 .svh .txtbtn{color:var(--wed);padding:0}
-.mrow.past{color:var(--tx3)}
+.mrow.past{color:var(--tx3)} .mrow.svcont{border-bottom:0} .mrow.svsame{padding-top:0}
 .svpast{display:block;width:100%;padding:9px 2px;text-align:left;font-size:13px;color:var(--tx3);border-bottom:1px solid var(--line)}   /* 지난 섬김 펴기 · 접기 (HB 11/26 C) — 회색 글자 단추 */
 .svload{display:grid;justify-items:center;gap:10px;padding:26px 0;color:var(--tx3);font-size:14px} .svload p{margin:0}   /* 불러오는 중 + '이번 주 부산' 움직임(bandMark) */ .mrow.past .gchip{opacity:.6}
 .svtimes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -6690,12 +6690,15 @@ function svMeHtml(bs, now, cfg) {
   // 이번 달 내 섬김 — 같은 날 같은 예배는 한 줄('안내 / 헌금'), 지난 섬김은 접어 두고 맨 위 회색 글자로 펴기(HB 11/26 C)
   const groups = svGroup(svMine(bs, k, ym + '-01', ym + '-31'));
   const ended = g => { const c = g.items[0], m = svMin(c, times); return c.date < now.date || (c.date === now.date && m < 24 * 60 && m + SV_DUR <= now.min); };
-  const row = g => { const c = g.items[0], past = ended(g), t = svMin(c, times), lab = g.items.map(x => svRole(x.role).name + (x.pl ? ' · ' + x.pl : '')).join(' / ');
-    return `<button class="mrow${past ? ' past' : ''}" data-svday="${c.date}|${c.svc}"><span class="mdate"><b>${md(c.date)}</b><small>${c.date === now.date ? '오늘' : DOWS[dowOf(c.date)]}</small></span>
+  // 같은 날 다른 예배는 줄을 나누되 날짜는 첫 줄에만 · 사이 가로선 없음(HB 11/26)
+  const row = (g, i, arr) => { const c = g.items[0], past = ended(g), t = svMin(c, times), lab = g.items.map(x => svRole(x.role).name + (x.pl ? ' · ' + x.pl : '')).join(' / ');
+    const same = i > 0 && arr[i - 1].date === c.date, cont = i < arr.length - 1 && arr[i + 1].date === c.date;
+    return `<button class="mrow${past ? ' past' : ''}${cont ? ' svcont' : ''}${same ? ' svsame' : ''}" data-svday="${c.date}|${c.svc}"><span class="mdate">${same ? '' : `<b>${md(c.date)}</b><small>${c.date === now.date ? '오늘' : DOWS[dowOf(c.date)]}</small>`}</span>
       <span class="mtxt"><span class="gchip ${SV_CLS[c.svc] || 'sun'}">${esc(svName(c.svc))}</span><span>${esc(lab)}</span></span><span class="muted tiny">${!past && t < 24 * 60 ? svHm(t) : ''}</span></button>`; };
   const past = groups.filter(ended), next = groups.filter(g => !ended(g));
   const pastBtn = past.length ? `<button class="svpast" data-act="svpast">${S.svpast ? '지난 섬김 접기 ▲' : '지난 섬김 펴기 ▼'}</button>` : '';
-  const rows = pastBtn + (S.svpast ? past.map(row).join('') : '') + next.map(row).join('');
+  const shown = (S.svpast ? past : []).concat(next);
+  const rows = pastBtn + shown.map(row).join('');
   const goSvc = nx.mode !== 'none' ? nx.items[0].svc : groups.length ? groups[0].svc : '';
   return hello + nowLine + card
     + `<div class="svh"><b>${ym === now.date.slice(0, 7) ? '이번 달' : +ym.slice(5) + '월'} 내 섬김</b><button class="txtbtn" data-svboard="${goSvc || '1'}">전체 배치표</button></div>`
