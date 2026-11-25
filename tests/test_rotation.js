@@ -1872,7 +1872,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(60) 로그아웃 · 계정 바뀜이면 표 · 읽은 것 · 자동 시각을 비움(남의 표를 들고 있지 않게)', /function stopListen\(\) \{[^\n]*'unsubG'[^\n]*S\.gs = \{\}; GS\.res = \{\}; GS\.autoAt = 0; ktReset\(\); \}/.test(HTML), true);   // ktReset = 카톡 글 프리셋도(1123-B B3)
   sc.eq('(59) 열쇠: 캘린더 · 심방 노트와 한 벌(/token 메일 아님) · 연결은 care:true(고른 파일만) · 돌아올 자리 ?g=src · 드라이브 전체 권한 없음', [/gfn\('\/token'\)/.test(gs), /gfn\('\/start', \{ ret: GS_RET, care: true \}\)/.test(gs), /GS_RET = 'https:\/\/sweeter\.my\/rotation\/\?g=src'/.test(gs), /auth\/drive['"\s]|drive\.readonly|spreadsheets['"]\s*\]/.test(HTML)], [true, true, true, false]);
   sc.eq('(59) 고르기 창: 심방 노트와 같은 공개 키 · 프로젝트 번호 · 시트만', [/GS_PICKER_KEY = 'AIzaSyAOLbBCajy6vF33xN1PQWk1qnU7VoynuC8'/.test(gs), /GS_PICKER_APP = '517626689480'/.test(gs), /ViewId\.SPREADSHEETS/.test(gs)], [true, true, true]);
-  sc.eq('(59) HB 만: gsCan = 주인(owner) · 메뉴 개발 탭 단추 · 교역자 누름 목록에 없음', [/function gsCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(gs), /gsCan\(\) \? '<button class="btn ghost" data-act="gsopen">구글 자료/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('))), /'gsopen'|'gsread'|'gsconnect'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))], [true, true, false]);
+  sc.eq('(59) HB 만: gsCan = 주인(owner) · 메뉴 개발 탭 단추 · 교역자 누름 목록에 없음', [/function gsCan\(\) \{ return DEMO \|\| \(!!FB\.user && FB\.role === 'owner'\); \}/.test(gs), /gsCan\(\) \? '<button class="btn ghost" data-act="gsopen">부산 예배위원 \/ 예배팀 \/ 교역자/.test(HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('))), /'gsopen'|'gsread'|'gsconnect'/.test(HTML.slice(HTML.indexOf('const STAFF_ACTS'), HTML.indexOf('const STAFF_ACTS') + 800))], [true, true, false]);
   sc.eq('(59) 고른 파일은 이 기기(미리보기는 다른 칸) + 계정 src · 읽은 표는 이 기기에 안 둠(GS.res)', [/GS_KEY = DEMO \? 'rota_demo_gsrc_v1' : 'rota_gsrc_v1'/.test(gs), /lsSet\(GS_KEY/.test(gs), !/lsSet\([^)]*GS\.res/.test(gs), /gsCloudSrc\(o\)/.test(gs)], [true, true, true, true]);
   sc.eq('(59) 판: 판 목록에 gsrc · 돌아오면(?g=src) 구글 자료 판을 다시 엶 · 읽은 것 보기', [/gsrc: paneGsrc/.test(HTML), /const src = q\.get\('g'\) === 'src'/.test(HTML) && /gsOpen\(\); \} \}, 500\); return; \}/.test(HTML), /읽은 것 보기/.test(gs)], [true, true, true]);
 }
@@ -2195,7 +2195,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(67) 손으로 고른 것이 저절로 맞춘 것을 이김 · 시트 이름 그대로(김미선A) 저장', [A.phOf(m.doc, '김미선A'), A.phOf(m.doc, '김미선B')], ['051-200-0001', '']);
   const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
   sc.eq('(67) 화면: 메뉴 개발 탭 구글 자료 아래 \'연락처 가져오기\' · 구글 자료 판에서는 뺌 · 고르기 칸 · 찾기는 결과만 다시 그림 · 저장은 맞춘 것 + 고른 것',
-    [/data-act="gsopen">구글 자료[^\n]*\n\s*\$\{phCan\(\) \? '<button class="btn ghost" data-act="phones">연락처 가져오기/.test(ui), /class="gsline" data-act="phones"/.test(ui), /data-phopen="/.test(ui) && /data-phpick="/.test(ui), /r\.innerHTML = t\.value\.trim\(\) \? phCandHtml\(/.test(ui), /function phAll\(\) \{ return Object\.assign\(\{\}, PH\.res \? PH\.res\.hit : \{\}, PH\.pick\); \}/.test(ui)],
+    [/data-act="gsopen">부산 예배위원 \/ 예배팀 \/ 교역자[^\n]*\n\s*\$\{phCan\(\) \? '<button class="btn ghost" data-act="phones">전화번호/.test(ui), /class="gsline" data-act="phones"/.test(ui), /data-phopen="/.test(ui) && /data-phpick="/.test(ui), /r\.innerHTML = t\.value\.trim\(\) \? phCandHtml\(/.test(ui), /function phAll\(\) \{ return Object\.assign\(\{\}, PH\.res \? PH\.res\.hit : \{\}, PH\.pick\); \}/.test(ui)],
     [true, false, true, true, true]);
 }
 
@@ -2483,6 +2483,23 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   sc.eq('(76) 화면: 판은 phPlan 으로 그림(계정 번호를 봄) · 저장은 계정 최신 판을 다시 읽어 더함(못 읽으면 안 씀 — 덮어쓰지 않게)',
     [/phPlan\(PH\.res, doc, PH\.pick\)/.test(ui), /gsRef\('phones'\)\.get\(\)/.test(sv), sv.indexOf("gsRef('phones').get()") < sv.indexOf("gsRef('phones').set("), /data-phopen="/.test(ui.slice(ui.indexOf('function panePhones('), ui.indexOf('function panePhones(') + 6000)) && /P\.kept/.test(ui)],
     [true, true, true, true]);
+}
+
+// (77) 1122-V S2e ① — 분당 예배위원 이름도 연락처 맞추기에(HB 11/26). 계정 명단(sv/people)의 이름을 phNames 의 more 로 더하기만. 이름은 지어낸 것.
+{
+  const sv = ['한빛솔', '이가람', '모아솔'];   // svPhNames(계정 명단) 이 주는 꼴 — 명단 다듬기 시험은 test_serve ⑯
+  const book = { people: [{ id: 's1', name: '이가람', kind: 'staff' }] };
+  sc.eq('(77) phNames 에 more 로 — 사람 탭과 같은 이름은 한 번만', A.phNames(null, null, book, [sv]).sort(), ['모아솔', '이가람', '한빛솔']);
+  const R = A.phMatch(A.phNames(null, null, { people: [] }, [sv]), A.phPrepAll([{ name: '한빛솔', tels: ['010-0000-7101'] }, { name: '이가람 집사', tels: ['010-0000-7102'] }]));
+  sc.eq('(77) 같은 맞추기 길: 예배위원 이름이 연락처와 맞음 · 없는 분은 miss', [Object.values(R.hit).map(x => x.n + ' ' + x.p).sort(), R.miss], [['이가람 010-0000-7102', '한빛솔 010-0000-7101'], ['모아솔']]);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const run = ui.slice(ui.indexOf('function phRun('), ui.indexOf('function phAll('));
+  sc.eq('(77) 화면: phRun 이 예배위원 명단을 more 로 · 연락처 판을 열 때 명단을 읽음 · 예배위원 하루 판에도 이름 누르기',
+    [/S\.book, \[svPhNames\(SV\.people\)\]\)/.test(run), /svPhLoad\(\)/.test(ui.slice(ui.indexOf('async function phOpen('), ui.indexOf('function phRun('))), /P\.kind === 'svday'/.test(ui.slice(ui.indexOf('function phPaintPane('), ui.indexOf('function phPaintPane(') + 300))],
+    [true, true, true]);
+  sc.eq('(77) 개발 메뉴 이름(S2e ②, HB 11/26): 숙소 예약 · 전화번호 · 부산 예배위원/예배팀/교역자 · 분당 예배위원 · 분당 예배팀 — 하는 일(data-act)은 그대로',
+    ['mailscan">숙소 예약', 'phones">전화번호', 'gsopen">부산 예배위원 / 예배팀 / 교역자', 'svopen">분당 예배위원 <', 'wpull">분당 예배팀 <'].map(x => ui.slice(ui.indexOf('function menuPage('), ui.indexOf('function menuPage(') + 3000).includes('data-act="' + x)),
+    [true, true, true, true, true]);
 }
 
 sc.done();
