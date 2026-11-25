@@ -4,6 +4,13 @@ PLAUD 도우미 자료는 HB 파이어베이스(block7-8f24e)의 `plaud/{HB uid}
 `rec`(녹음 제목 · 시각 · 길이) · `job`(고름 · 맡은 Mac · 단계) · `mac`(두 Mac 소식 · 준비 상태 · 깔린 모델 · 모델 시험 시간) · `cmd`(설치 요청) · `txt`(HB 암호 문구로 잠근 전사 글 — 파이어베이스 · 구글 쪽에서는 풀 수 없음) · `draft`(잠근 AI 초안 · 고칠 점) · `cfg/guide`(잠근 초안 지침) 여덟 칸.
 BLOCK7 · Sweeter · 기도노트 · 셀 inside · 교역자 로테이션의 규칙은 건드리지 않고 **이 덩어리 하나만 더한다.**
 
+## 다시 붙이기 (P4e — 2026-11-25, 1122-P P4e — 도우미 h. 26-1125-1)
+
+P4e(모델 두 칸 · 요금 표시 · 키워드 두 갈래)에서 바뀐 곳: 설정에 **'전사까지만' 키워드(`kwt`)**, 설정 `ai` 에 **저절로 · 첫 초안 모델(`auto`) · 다시 만들기 모델(`big`) · 단가(`price`) · 환율(`krw`)**(옛 `model` 은 낡은 기기 위해 남김),
+새 칸 **`use/{YYYY-MM}`(이번 달 AI 사용량 — 모델 이름마다 토큰 · 부른 횟수 숫자만, 글 · 이름 · 녹음 번호 없음)**.
+다시 붙이지 않으면 메뉴의 모델 · 단가 · 키워드 저장이 '저장하지 못했습니다' 가 되고, 도우미가 사용량을 못 적어 Mac 카드에 '보안 규칙이 옛 판입니다 — 다시 붙여 주세요' 가 뜬다(초안은 그대로 만든다).
+아래 '붙이는 순서' 5번 괄호(지우고 그 자리에)대로.
+
 ## 다시 붙이기 (2026-11-24 밤, 1122-P P4 — 도우미 h. 26-1124-4)
 
 P4(AI 초안)에서 바뀐 곳: 설정에 **AI 초안 켜기 · 고른 모델(`ai`)**, 일감에 **초안 상태(`dr`) · 실패 까닭(`dre`)**, Mac 소식에 **OpenAI 열쇠가 있는지(`aik`) · 쓸 수 있는 모델 목록(`aim`)**,
@@ -54,9 +61,12 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
       // 맡은 시각(at)은 파이어베이스 시계로만 찍는다(두 Mac 시계가 달라도 맡김 판단이 같게) — 안 바꾸면 그대로 둬도 된다
       function atOk() { return !('at' in d()) || d().at == request.time || (resource != null && 'at' in resource.data && resource.data.at == d().at); }
       allow read, delete: if own();
-      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf', 'ai'])
+      allow create, update: if own() && d().keys().hasOnly(['kw', 'kwt', 'days', 'model', 'auto', 'kdf', 'ai'])
         && (!('kw' in d()) || (d().kw is list && d().kw.size() <= 20))
-        && (!('ai' in d()) || (d().ai is map && d().ai.keys().hasOnly(['on', 'model'])))
+        && (!('kwt' in d()) || (d().kwt is list && d().kwt.size() <= 20))
+        && (!('ai' in d()) || (d().ai is map && d().ai.keys().hasOnly(['on', 'model', 'auto', 'big', 'price', 'krw'])
+          && (!('price' in d().ai) || (d().ai.price is map && d().ai.price.size() <= 30))
+          && (!('krw' in d().ai) || d().ai.krw is number)))
         && (!('auto' in d()) || (d().auto is map && d().auto.size() <= 12))
         && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
@@ -110,6 +120,11 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
           && (!('fc' in d()) || (d().fc is string && d().fc.size() <= 20000))
           && (!('fiv' in d()) || (d().fiv is string && d().fiv.size() <= 40));
       }
+      // 이번 달 AI 사용량(P4e) — 문서 이름 = 'YYYY-MM'(한국 시각 달), 값 = { 모델 이름: { i, o, n, c } } 숫자만. 도우미가 increment 로 더한다
+      match /use/{m} {
+        allow read, delete: if own();
+        allow create, update: if own() && m.matches('^20[0-9]{2}-(0[1-9]|1[0-2])$') && d().size() <= 40;
+      }
       // 초안 지침(P4, HB [지침]) — 문서 하나(guide), 잠근 글만
       match /cfg/{id} {
         allow read, delete: if own();
@@ -128,6 +143,7 @@ P3 에서 두 곳이 바뀌었다: Mac 소식(`mac`)에 **깔린 모델 목록(`
 - 녹음 번호 꼴(영문 · 숫자 · 밑줄 8 ~ 64자)이 아니면 받지 않는다.
 - 맡은 시각 · Mac 소식 시각은 **파이어베이스 시계로만** 찍힌다 — 두 Mac 시계가 달라도 '30분 지나면 풀림' 이 똑같이 셈해진다.
 - 설치 요청(`cmd`)은 정해 둔 열네 가지 이름만 받는다(ffmpeg · whisper · plaud · model · login · update · refresh · check · mtest · rmmodel · clean · kick · rmtxt · redo). Mac 도우미도 그 표에 있는 명령만 돌린다.
+- 이번 달 AI 사용량(`use/{YYYY-MM}`)은 문서 이름이 달 꼴일 때만 받고, 안에는 모델 이름마다 숫자(입력 · 출력 토큰 · 부른 횟수)만 둔다 — 전사 글 · 초안 · 성도 이름 · 녹음 번호는 없다.
 - AI 초안(`draft`)과 초안 지침(`cfg/guide`)도 **잠근 글자만** 받는다 — 초안에는 성도 이름 · 심방 내용이 들어 있어서다. OpenAI 열쇠는 어느 칸에도 없다(쓰는 Mac 안 `ai.json` 에만).
 - Mac 소식(`mac`)의 모델 시험 결과(`test`)에는 모델별 걸린 시간 · 빠르기만 — 시험 전사 글은 그 Mac 안(`~/Library/Application Support/plaudhub/test`)에만 있다.
 

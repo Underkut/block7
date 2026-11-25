@@ -9,9 +9,12 @@ service cloud.firestore {
       // 맡은 시각(at)은 파이어베이스 시계로만 찍는다(두 Mac 시계가 달라도 맡김 판단이 같게) — 안 바꾸면 그대로 둬도 된다
       function atOk() { return !('at' in d()) || d().at == request.time || (resource != null && 'at' in resource.data && resource.data.at == d().at); }
       allow read, delete: if own();
-      allow create, update: if own() && d().keys().hasOnly(['kw', 'days', 'model', 'auto', 'kdf', 'ai'])
+      allow create, update: if own() && d().keys().hasOnly(['kw', 'kwt', 'days', 'model', 'auto', 'kdf', 'ai'])
         && (!('kw' in d()) || (d().kw is list && d().kw.size() <= 20))
-        && (!('ai' in d()) || (d().ai is map && d().ai.keys().hasOnly(['on', 'model'])))
+        && (!('kwt' in d()) || (d().kwt is list && d().kwt.size() <= 20))
+        && (!('ai' in d()) || (d().ai is map && d().ai.keys().hasOnly(['on', 'model', 'auto', 'big', 'price', 'krw'])
+          && (!('price' in d().ai) || (d().ai.price is map && d().ai.price.size() <= 30))
+          && (!('krw' in d().ai) || d().ai.krw is number)))
         && (!('auto' in d()) || (d().auto is map && d().auto.size() <= 12))
         && (!('kdf' in d()) || (d().kdf is map && d().kdf.keys().hasOnly(['s', 'it', 'iv', 'c'])));
       match /rec/{id} {
@@ -64,6 +67,11 @@ service cloud.firestore {
           && (!('iv' in d()) || (d().iv is string && d().iv.size() <= 40))
           && (!('fc' in d()) || (d().fc is string && d().fc.size() <= 20000))
           && (!('fiv' in d()) || (d().fiv is string && d().fiv.size() <= 40));
+      }
+      // 이번 달 AI 사용량(P4e) — 문서 이름 = 'YYYY-MM'(한국 시각 달), 값 = { 모델 이름: { i, o, n, c } } 숫자만. 도우미가 increment 로 더한다
+      match /use/{m} {
+        allow read, delete: if own();
+        allow create, update: if own() && m.matches('^20[0-9]{2}-(0[1-9]|1[0-2])$') && d().size() <= 40;
       }
       // 초안 지침(P4, HB [지침]) — 문서 하나(guide), 잠근 글만
       match /cfg/{id} {
