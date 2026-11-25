@@ -567,7 +567,13 @@ const FILE = '\nFile Details:\n\n  id:           ' + ID('a') + '\n  name:       
   sc.eq('㉗ 알약 색 — P 붉은 계열 · W 청록 #2BCFCF 계열 · W 빨강은 테두리로 구별', [/\.pill\.p\{color:var\(--bad\)/.test(HTML), /--teal:#2BCFCF/.test(HTML) && /\.pill\.w\{color:var\(--teal-ink\)/.test(HTML), /\.pill\.w\.odd\{[^}]*inset 0 0 0 1\.5px var\(--bad\)/.test(HTML)], [true, true, true]);
   sc.eq('㉗ 줄 오른쪽 단추는 회색(초안 실패만 빨강)', [/\.ib\{[^}]*color:var\(--sub\)/.test(HTML), /\.lnk\{color:var\(--sub\)/.test(HTML), /\.lnk\.bad\{color:var\(--bad\)\}/.test(HTML), /\.ib\{[^}]*var\(--ac\)/.test(HTML)], [true, true, true, false]);
   sc.eq('㉗ 모든 줄에 길이 — 끝남 · 드라이브에 없음 · 하는 중 · 고름 · 새 녹음', [/if \(done\) right = len \+/.test(HTML), /right = len \+ '<span class="s fail">드라이브에 없음/.test(HTML), /right = len \+ '<span class="s work">/.test(HTML), /\(r\.job === 'fail' \? '<span class="s fail">실패<\/span>' : len\)/.test(HTML), /else right = \(r\.st === 'out'[^;]*\+ len;/.test(HTML)], [true, true, true, true, true]);
-  sc.eq('㉗ 폰 폭에서 끝난 · 하는 중 줄은 두 줄(길이 왼쪽 · 단추 오른쪽)', /@media \(max-width:480px\)\{ \.rec\.wr\{flex-wrap:wrap/.test(HTML) && /\.rec\.wr \.right \.len\{margin-right:auto/.test(HTML), true);
+  sc.eq('㉗ 폰 폭에서 끝난 · 하는 중 줄은 두 줄(길이 왼쪽 · 단추 오른쪽)', /@media \(max-width:480px\)\{ \.rec\.wr\{flex-wrap:wrap/.test(HTML) && /\.rec\.wr \.right \.lw\{margin-right:auto/.test(HTML), true);
+  { const lb = new Function('return ' + /function lenBars[\s\S]*?\n}\n/.exec(HTML)[0].replace(/^function lenBars/, 'function'))(), M = 60;
+    const f = d => { const h = lb(d * M), c = /class="lb (\w)"/.exec(h); return h ? [c[1], (h.match(/<i class="on"/g) || []).length, /<em>\+<\/em>/.test(h)] : null; };
+    sc.eq('㉘ 길이 칸 — 1시간 이하는 한 칸 15분 · 30분까지 청록 · 넘으면 노랑', [f(1), f(15), f(16), f(30), f(31), f(45), f(46), f(60)], [['t', 1, false], ['t', 1, false], ['t', 2, false], ['t', 2, false], ['y', 3, false], ['y', 3, false], ['y', 4, false], ['y', 4, false]]);
+    sc.eq('㉘ 길이 칸 — 1시간 넘으면 빨강 · 한 칸 1시간 · 4시간 넘으면 +', [f(61), f(77), f(120), f(121), f(240), f(241), f(332)], [['r', 2, false], ['r', 2, false], ['r', 2, false], ['r', 3, false], ['r', 4, false], ['r', 4, true], ['r', 4, true]]);
+    sc.eq('㉘ 길이를 모르면(0) 칸을 그리지 않음', lb(0), ''); }
+  sc.eq('㉘ 초안 글자 — 정상 초안 = 앱 초록(--ok) · 보냄 = 파랑(--ac) · 실패 = 빨강 · 만드는 중 = 흐림', [/\.lnk\.dr\{[^}]*color:var\(--ok\)/.test(HTML), /\.lnk\.dr\.sent\{color:var\(--ac\)\}/.test(HTML), /\.lnk\.dr\.bad\{color:var\(--bad\)\}/.test(HTML), /r\.dr === 'sent' \? ' sent'/.test(HTML)], [true, true, true, true]);
   sc.eq('㉗ Mac 카드의 빨간 실패 줄 — 같은 Mac · 같은 요청이 뒤에 성공(ok)했으면 감춤', /\.find\(f => !Object\.values\(S\.cmds\)\.some\(o => o\.mac === v\.name && o\.what === f\.what && o\.st === 'ok' && \(o\.at \|\| 0\) > \(f\.at \|\| 0\)\)\)/.test(HTML), true);
 }
 // ㉖ (P4) AI 초안
