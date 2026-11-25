@@ -2502,5 +2502,20 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
     [true, true, true, true, true]);
 }
 
+// (78) 1122-V S2f — HB 11/26 사진: 연락처에 다 있는데 '못 찾음 · 후보가 없습니다'. 까닭 = 그 창에 연락처 파일이 안 들어가 있었음(셀 inside 번호만으로 맞춤).
+//   파일만 넣으면 맞는다(아래) — 화면이 '파일이 없다' 를 알려 주게. 이름 · 번호는 지어낸 것(사진의 꼴만 — 성 칸 비고 이름 칸에 띄어 씀 · 호칭 · 숫자 · 영문이 붙음)
+{
+  const vcf = 'BEGIN:VCARD\nVERSION:3.0\nN:;노 재희 형님;;;\nFN:노 재희 형님\nX-PHONETIC-FIRST-NAME:ㄴㅈㅎㅎㄴ\nTEL;type=CELL;type=VOICE;type=pref:010-0000-7801\nEND:VCARD\n'
+    + 'BEGIN:VCARD\nVERSION:3.0\nN:;안 겨울 79 NF;;;\nFN:안 겨울 79 NF\nTEL;type=CELL:010-0000-7802\nTEL:+82 10-0000-7802\nEND:VCARD\n';
+  const P = A.phPrepAll(A.phParseVcf(vcf)), R = A.phMatch(['노재희', '안겨울'], P);
+  sc.eq('(78) 사진 꼴 연락처(띄어 쓴 이름 · 형님 · 79 NF)도 파일만 있으면 맞음 · 번호 둘(+82)은 하나로', [Object.values(R.hit).map(x => x.n + ' ' + x.p).sort(), R.miss], [['노재희 010-0000-7801', '안겨울 010-0000-7802'], []]);
+  sc.eq('(78) 고르기 후보 · 찾기도 나옴', [A.phCands('노재희', P, 6).length, A.phCands('안겨울', P, 6).length, A.phSearch('겨울', P).length], [1, 1, 1]);
+  const ui = HTML.slice(HTML.indexOf('</script>', HTML.indexOf('<script id="rotation-core">')));
+  const pick = ui.slice(ui.indexOf('function phPickHtml('), ui.indexOf('function panePhones(')), pane = ui.slice(ui.indexOf('function panePhones('), ui.indexOf('function panePhones(') + 6000);
+  sc.eq('(78) 화면: 파일이 없으면 맨 위 알림(셀 번호만으로 맞춤 · 아이폰 연락처는 파일로) · 파일 넣기 단추가 꽉 찬 단추 · 줄 까닭은 \'셀 번호에 없음\' · 고르기 칸에 파일 넣기 단추',
+    [/!PH\.contacts && R \?/.test(pane) && /셀 inside 셀원 번호만으로 맞췄습니다/.test(pane), /class="btn\$\{PH\.contacts \? ' ghost' : ''\}" data-act="phfile"/.test(pane), /셀 번호에 없음/.test(pane), /if \(!PH\.contacts\) return `[^`]*data-act="phfile"/.test(pick)],
+    [true, true, true, true]);
+}
+
 sc.done();
 
