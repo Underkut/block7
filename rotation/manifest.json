@@ -1,6 +1,6 @@
 {
-  "name": "교역자 로테이션",
-  "short_name": "로테이션",
+  "name": "섬김 로테이션",
+  "short_name": "섬김 로테이션",
   "description": "부산 방문 순번 · 분당 예배 자리 · 숙소와 동행을 한 곳에서",
   "lang": "ko",
   "start_url": "/rotation/",

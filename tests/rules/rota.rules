@@ -8,6 +8,10 @@ service cloud.firestore {
       function verified() { return signedIn() && request.auth.token.email_verified == true; }
       function inTeam(d) { return verified() && request.auth.token.email in d.get('team', []); }
       function isMember() { return inTeam(get(/databases/$(database)/documents/rota/$(uid)).data); }
+      function joinDoc() { return /databases/$(database)/documents/rota/$(uid)/rjoin/$(request.auth.uid); }
+      function isServer() { return verified() && exists(joinDoc()) && get(joinDoc()).data.st == 'ok'; }
+      function joinOk(d) { return d.uid == request.auth.uid && d.email == request.auth.token.email && d.st == 'wait'
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 20 && d.at is number; }
       allow read: if isOwner() || inTeam(resource.data);
       allow write: if isOwner();
       match /img/{id} {
@@ -30,16 +34,30 @@ service cloud.firestore {
         allow write: if isOwner();
       }
       match /sv/{k} {
-        allow read, write: if isOwner();
+        allow read: if isOwner() || (k == 'cfg' && (isMember() || isServer()));
+        allow write: if isOwner();
       }
       match /svm/{ym} {
-        allow read: if isOwner() || isMember();
+        allow read: if isOwner() || isMember() || (isServer() && resource.data.st == 'open');
         allow write: if isOwner();
+      }
+      match /rjoin/{jid} {
+        allow read: if isOwner() || (signedIn() && request.auth.uid == jid);
+        allow create: if verified() && request.auth.uid == jid && joinOk(request.resource.data)
+          && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'at', 'v', 'st']);
+        allow update: if isOwner() || (verified() && request.auth.uid == jid && resource.data.st in ['wait', 'no']
+          && joinOk(request.resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'at', 'v', 'st']));
+        allow delete: if isOwner() || (signedIn() && request.auth.uid == jid && resource.data.st != 'ok');
       }
       match /kt/{k} {
         allow read: if isOwner() || (isMember() && (k == 'share' || k == request.auth.uid));
         allow write: if isOwner() || (isMember() && k == request.auth.uid && k != 'share' && k != 'hb');
       }
+    }
+    match /rotahome/{u} {
+      allow read, delete: if request.auth != null && request.auth.uid == u;
+      allow create, update: if request.auth != null && request.auth.uid == u
+        && request.resource.data.keys().hasOnly(['team', 'at']) && request.resource.data.team is string && request.resource.data.team.size() <= 128;
     }
     // ── 교역자 로테이션 — 여기까지 ──
   }

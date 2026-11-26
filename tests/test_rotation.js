@@ -577,7 +577,7 @@ sc.eq('⑧ 페이지는 옆으로 움직이지 않는다 (아이폰 왼쪽 잘�
     sc.eq('㉓ 아무것도 안 바뀌면 없음 · 다른 방문이면 없음', [A.staffEdits(v0, J(v0)), A.staffEdits(v0, Object.assign(J(v0), { id: 'v|2026-11-29' }))], [[], []]);
   }
   // 교역자 화면은 HB 책에 쓰지 않는다 (실제 흐름은 tests/rules/rota.e2e.mjs)
-  sc.eq('㉓ 계정에 쓰는 것은 주인(HB)만 · 교역자 화면은 이 기기 HB 칸에도 안 씀', [/function cloudSave\(\) \{\n  if \(DEMO \|\| !FB\.user \|\| !FB\.db \|\| FB\.role !== 'owner'\) return;/.test(HTML), /function saveBook\(\) \{\n  if \(isStaff\(\)\) return;/.test(HTML)], [true, true]);
+  sc.eq('㉓ 계정에 쓰는 것은 주인(HB)만 · 교역자 화면은 이 기기 HB 칸에도 안 씀', [/function cloudSave\(\) \{\n  if \(DEMO \|\| !FB\.user \|\| !FB\.db \|\| FB\.role !== 'owner'\) return;/.test(HTML), /function saveBook\(\) \{\n  if \(FB\.role !== 'owner' && !DEMO && FB\.user\) return;/.test(HTML)], [true, true]);   // S3: 교역자 · 성도 · 손님 모두
   sc.eq('㉓ 교역자 누름은 한 곳에서 거른다(클릭 · 글자 칸)', [/if \(isStaff\(\) && !staffOk\(t, d\)\) return toast/.test(HTML), /if \(isStaff\(\) && !t\.closest\('#pane'\)\) return;/.test(HTML)], [true, true]);
   sc.eq('㉓ 교역자가 고친 방문은 자기 칸에만(staffEdits → staffWrite)', /if \(isStaff\(\)\) \{ if \(!myVisit\(v\)\) return toast\(staffNoMsg\(\)\); for \(const x of staffEdits\(v, next\)\) staffWrite/.test(HTML), true);
   sc.eq('㉓ 모르는 갈래는 조각을 만들지 않는다', A.staffPatch('ga@example.com', 'note', 'v|2026-11-22', 'x', 1), null);
@@ -1510,7 +1510,7 @@ console.log('\n㉞ 동행 · 모임 · 요약 칸');
   const mp = HTML.slice(HTML.indexOf('function menuPage('), HTML.indexOf('function menuHead('));
   const part = (k) => { const a = mp.indexOf(`if (tab === '${k}')`); return a < 0 ? '' : mp.slice(a, mp.indexOf('\n  if (tab', a + 5) > 0 ? mp.indexOf('\n  if (tab', a + 5) : mp.indexOf('const acct', a)); };
   const view = part('view'), dev = part('dev'), acct = mp.slice(mp.indexOf('const acct'));
-  sc.eq('㊺ 세 탭 이름 · 교역자는 보기 · 계정만', [/const MTAB_NAME = \{ view: '보기', acct: '계정', dev: '개발' \}/.test(HTML), /function menuTabs\(\) \{ return isStaff\(\) \? \['view', 'acct'\] : \['view', 'acct', 'dev'\]; \}/.test(HTML)], [true, true]);
+  sc.eq('㊺ 세 탭 이름 · 교역자 · 성도는 보기 · 계정만', [/const MTAB_NAME = \{ view: '보기', acct: '계정', dev: '개발' \}/.test(HTML), /function menuTabs\(\) \{ return isStaff\(\) \|\| isServe\(\) \? \['view', 'acct'\] : \['view', 'acct', 'dev'\]; \}/.test(HTML)], [true, true]);   // S3: 성도도 보기 · 계정
   sc.eq('㊺ 보기 = 밝기 테마 · 첫 화면 정하기', [/data-theme=/.test(view), /data-act="home"/.test(view), /data-act="wpull"|data-act="login"/.test(view)], [true, true, false]);
   sc.eq('㊺ 계정 = 로그인 · 로그아웃 · 내 부재', [/data-act="glogin"/.test(acct), /data-act="login"/.test(acct), /data-act="logout"/.test(acct), /data-act="myavail"/.test(acct), /data-act="wpull"|data-theme/.test(acct)], [true, true, true, true, false]);
   sc.eq('㊺ 개발 = 예배팀 받기 · 시트 가져오기 · 버전', [/data-act="wpull"/.test(dev), /data-act="importpick"/.test(dev), /data-act="upd"/.test(dev), /data-theme|data-act="login"/.test(dev)], [true, true, true, false]);

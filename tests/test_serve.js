@@ -17,6 +17,8 @@
 //  ⑬ 열람 화면(S2) — 코드에서 지킬 것: 계정에 쓰는 곳은 설정(sv/cfg) 하나 · 명단(sv/people) 안 읽음 · 교역자는 팀 문서 읽기만 · 실시간 듣기 없음
 //  ⑭ 가져오기 바로잡기(S2c, HB 11/26): 그 달 탭이 있으면 그 달 날짜는 그 탭만(앞 달 탭의 11/1 '내부안내 · 내부주보' 안 씀) · 그 달 탭이 없으면 앞 · 뒤 달 탭에서 ·
 //     이미 들어간 칸 정리 = 그 달 탭에 없는 가져오기 칸만 '빼야 할 칸' · 앱에서 고친 칸 · 지운 칸은 그대로 · 누를 때만 지우기 표지 · 상한을 넘으면 멈춤 · 뺀 칸은 다시 안 들어옴
+//  ⑰ 로그인 신청 · 승인(S3, HB 11/26): 누가 무엇으로 서나(교역자 · 주인 · 손님) · 손님 화면 단계 · 초대 링크 · 이름 다듬기 · 신청 문서 다듬기 · 사람 후보(같은 이름 하나면 미리 고름) ·
+//     명단에 이메일 잇기(다른 분에게서는 뺌) · 떼기 · 새 분 더하기 · 승인 · 거절 칸 / 코드: 성도는 책 · 명단을 안 읽고 쓰지 않음 · 손님 · 성도는 책을 저장하지 않음 · 이름 '섬김 로테이션'
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -30,7 +32,8 @@ vm.runInContext(core[1] + '\n' + serve[1] + `
 this.A = { SV_SVC, SV_ROLE, svId, svLabel, svLeadLabel, svTabYm, svPickTabs, svRoleOf, svBlockSvc, svNames, svReadTab,
   svNormBoard, svMergeBoard, svSame, svSet, svLive, svNormPeople, svMergePeople, svNameMap, svImport, svMine, svNow, svService,
   svKeyOf, svHas, svFold, svNm, svGroup, svRowOrd, svRowLabel, svDays, svGrid, svSvcsIn, svWho, svFocus, svPrep, svUntil, svNormCfg,
-  svOwnTab, svImportTabs, svStale, svPrune, SV_IMP, SV_DEL_MAX, svPhNames };`, ctx);
+  svOwnTab, svImportTabs, svStale, svPrune, SV_IMP, SV_DEL_MAX, svPhNames,
+  svJoinName, svJoinNorm, svGateRole, svJoinStage, svHomeOf, svInvite, svJoinCands, svPoolText, svLinkEmail, svUnlinkEmail, svAddPerson, svJoinDecide };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 탭 이름
@@ -261,9 +264,9 @@ sc.eq('⑬ 계정에 쓰는 곳은 설정 저장 하나(sv/cfg · 정한 칸만)
   [(v2.match(/\.(set|update|delete|add)\(/g) || []).length, /svRef\('cfg'\)\.set\(c, \{ mergeFields: \['lead', 'times', 'at'\] \}\)/.test(v2), /svmRefT\([^)]*\)\.set|saveBook|cloudSave|collection\('staff'\)|WRITE_FIELD/.test(v2)], [1, true, false]);
 sc.eq('⑬ 설정 저장은 HB(미리보기)만', /async function svCfgSave\(\) \{\n  if \(!svCan\(\)\) return;/.test(v2), true);
 sc.eq("⑬ 명단(sv/people) · 고른 파일(sv/src)은 읽지 않음 · 실시간 듣기(onSnapshot) 없음", [/svRef\('people'\)|svRef\('src'\)/.test(v2), /onSnapshot/.test(v2)], [false, false]);
-sc.eq('⑬ 월 판은 팀 문서에서(교역자 = FB.team · HB = 자기 uid)', [/FB\.role === 'staff' \? \(FB\.team \|\| ''\) : FB\.role === 'owner' \? FB\.user\.uid/.test(v2), /collection\('rota'\)\.doc\(SVV\.team\)\.collection\('svm'\)/.test(v2)], [true, true]);
-sc.eq('⑬ 설정(sv/cfg)은 HB 만 읽음(교역자는 규칙이 막음)', /cfg = FB\.role === 'owner' && /.test(v2), true);
-sc.eq("⑬ 탭: 교역자 = '예배위원' 탭(교역자들 탭 없음) · HB = 교역자들 탭 안 알약", [/TABS = ALL_TABS\.filter\(t => t\.id !== \(isStaff\(\) \? 'people' : 'serve'\)\)/.test(HTML), /let TABS = ALL_TABS\.filter\(t => t\.id !== 'serve'\);/.test(HTML), /if \(PREF\.pv === 'serve'\) return viewServe\(true\);/.test(HTML)], [true, true, true]);
+sc.eq('⑬ 월 판은 팀 문서에서(교역자 · 성도 = FB.team · HB = 자기 uid)', [/FB\.role === 'staff' \|\| FB\.role === 'serve' \? \(FB\.team \|\| ''\) : FB\.role === 'owner' \? FB\.user\.uid/.test(v2), /collection\('rota'\)\.doc\(SVV\.team\)\.collection\('svm'\)/.test(v2)], [true, true]);
+sc.eq('⑬ 설정(sv/cfg)은 HB · 교역자 · 성도 모두 팀 문서에서 읽음(S3 — 규칙이 엶) · 못 읽으면 조용히 빈 설정', [/cfg = force \|\| !fresh\(SVV\.cfgAt\)/.test(v2), /collection\('rota'\)\.doc\(SVV\.team\)\.collection\('sv'\)\.doc\('cfg'\)\.get\(\)/.test(v2)], [true, true]);
+sc.eq("⑬ 탭: 교역자 = '예배위원' 탭(교역자들 탭 없음) · HB = 교역자들 탭 안 알약 · 성도 = 예배위원 한 탭(S3)", [/ALL_TABS\.filter\(t => t\.id !== \(isStaff\(\) \? 'people' : 'serve'\)\)/.test(HTML), /TABS = isServe\(\) \? ALL_TABS\.filter\(t => t\.id === 'serve'\)/.test(HTML)], [true, true]);
 sc.eq('⑬ 교역자 누름 허락(staffOk)에 보기 단추만 · 설정 단추는 없음', [/d\.svv \|\| d\.svm \|\| d\.svp \|\| d\.svk \|\| d\.svday \|\| d\.svboard\) return true;/.test(HTML), /STAFF_ACTS = new Set\(\[[^\]]*'svcfg/.test(HTML)], [true, false]);
 sc.eq('⑬ 열람 구역 화면 글에 HB 없음(성도 화면 = 담당 교역자)', /['"`][^'"`\n]*\bHB\b[^'"`\n]*['"`]/.test(v2.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')), false);
 
@@ -273,6 +276,61 @@ sc.eq('⑬ 열람 구역 화면 글에 HB 없음(성도 화면 = 담당 교역�
   sc.eq('⑯ 명단 이름(지운 분 빼고) · 빈 명단 · 이상한 id 는 버림', [A.svPhNames(people).sort(), A.svPhNames(null), A.svPhNames({ people: { 'x y': { name: '나쁜id' } } })], [['모아솔', '이가람', '한빛솔'], [], []]);
   const x = A.svImport({ ym: '2026-12', st: 'open', cells: {} }, null, { ym: '2026-12', cells: [{ date: '2026-12-06', svc: '2', role: 'gd', pl: '내부안내', names: ['새솔', '한결'] }] }, 'imp', 1);
   sc.eq('⑯ 가져오기가 만든 명단 그대로 쓸 수 있음', A.svPhNames(x.people).sort(), ['새솔', '한결']);
+}
+
+// ⑰ 1122-V S3 — 로그인 신청 · 승인. 이름 · 이메일은 지어낸 것
+{
+  sc.eq('⑰ 누가 무엇으로: 팀 명단에 있으면 교역자(비밀번호여도) · 비밀번호면 주인 · 구글 · 명단 밖은 손님',
+    [A.svGateRole({ team: 'hb', pass: false }), A.svGateRole({ team: 'hb', pass: true }), A.svGateRole({ team: '', pass: true }), A.svGateRole({ team: '', pass: false }), A.svGateRole(null)],
+    ['staff', 'staff', 'owner', 'guest', 'guest']);
+  const J1 = A.svJoinNorm({ uid: 'u1', email: 'Sol@Example.com', name: '  한빛  솔 ', at: 5, st: 'wait', kind: 'zz', pid: 'x y' });
+  sc.eq('⑰ 신청 문서 다듬기: 이메일 작은 글자 · 이름 빈칸 정리 · 모르는 갈래 · 틀린 pid 버림', J(J1), { uid: 'u1', email: 'sol@example.com', name: '한빛 솔', at: 5, st: 'wait', kind: '', pid: '', dat: 0 });
+  sc.eq('⑰ 이름 없는 · 글자 없는 · 틀린 uid 신청은 버림 · 모르는 상태는 wait',
+    [A.svJoinNorm({ uid: 'u1', name: '' }), A.svJoinNorm({ uid: 'u1', name: '123 !!' }), A.svJoinNorm({ uid: 'a/b', name: '가람' }), A.svJoinNorm({ uid: 'u2', name: '가람', st: 'root' }).st], [null, null, null, 'wait']);
+  sc.eq('⑰ 이름 20자까지 · 영문도 됨', [A.svJoinName('가'.repeat(25)).length, A.svJoinName('Sol Kim'), A.svJoinName('—')], [20, 'Sol Kim', '']);
+  const st = (j, h) => A.svJoinStage(j && A.svJoinNorm(j), h);
+  sc.eq('⑰ 손님 화면: 팀 모름 → 링크 · 신청 없음 → 이름 · 기다림 · 거절 · 성도 · 교역자 · 승인인데 사람이 없으면 기다림',
+    [st(null, ''), st(null, 'hb'), st({ uid: 'u', name: '가', st: 'wait' }, 'hb'), st({ uid: 'u', name: '가', st: 'no' }, 'hb'), st({ uid: 'u', name: '가', st: 'ok', kind: 'sv', pid: 'p1' }, 'hb'),
+      st({ uid: 'u', name: '가', st: 'ok', kind: 'staff', pid: 'p9' }, 'hb'), st({ uid: 'u', name: '가', st: 'ok', kind: 'sv' }, 'hb'), st({ uid: 'u', name: '가', st: 'ok', kind: 'sv', pid: 'p1' }, '')],
+    ['link', 'name', 'wait', 'no', 'sv', 'staff', 'wait', 'link']);
+  sc.eq('⑰ 초대 링크: 주소의 h= · 붙여 넣은 글 속 주소 · id 하나 · 다른 글은 빈칸',
+    [A.svHomeOf('?h=AbC123xyz'), A.svHomeOf('https://sweeter.my/rotation/?demo=0&h=Team_1-xyz&x=1'), A.svHomeOf('링크: https://sweeter.my/rotation/?h=abcdefghij 입니다'), A.svHomeOf('abcdefghijklmnopqrstuvwx12'), A.svHomeOf('?h=ab'), A.svHomeOf('?h=<script>'), A.svHomeOf('')],
+    ['AbC123xyz', 'Team_1-xyz', 'abcdefghij', 'abcdefghijklmnopqrstuvwx12', '', '', '']);
+  sc.eq('⑰ 초대 링크 만들기 → 다시 읽으면 같은 팀', A.svHomeOf(A.svInvite('Hb9Team0001')), 'Hb9Team0001');
+  const ppl = [{ id: 'p1', name: '한빛솔', sub: '2부 헌금' }, { id: 'p2', name: '이가람', alias: ['이 가람B'] }, { id: 'p3', name: '모아솔' }, { id: 'p4', name: '지운이', del: true }];
+  sc.eq('⑰ 사람 후보: 같은 이름(빈칸 무시) 하나면 미리 고름 · 그분이 맨 앞 · 나머지는 가나다 · 지운 분 빠짐',
+    (x => [x.pick, x.list.map(p => p.id)])(A.svJoinCands('한빛 솔', ppl)), ['p1', ['p1', 'p3', 'p2']]);
+  sc.eq('⑰ 다른 이름(alias)으로도 맞음', A.svJoinCands('이가람B', ppl).pick, 'p2');
+  sc.eq('⑰ 같은 이름이 둘이면 미리 고르지 않음(둘 다 맨 앞) · 없으면 빈칸',
+    [(x => [x.pick, x.hit])(A.svJoinCands('한빛솔', ppl.concat({ id: 'p5', name: '한빛솔' }))), A.svJoinCands('새사람', ppl).pick, A.svJoinCands('', ppl).hit], [['', ['p1', 'p5']], '', []]);
+  sc.eq('⑰ 섬김 갈래 한 줄', [A.svPoolText(['2|of', '1|gd', 'W|gd', 'F|rd']), A.svPoolText([])], ['2부 헌금 · 1부 안내 · 수요 안내', '']);
+  const P0 = { people: { p1: { name: '한빛솔', email: '', pools: ['2|of'], at: 1 }, p2: { name: '이가람', email: 'sol@example.com', at: 1 }, p3: { name: '지운이', del: true } } };
+  const L = A.svLinkEmail(P0, 'p1', 'Sol@Example.com', 'hb', 9);
+  sc.eq('⑰ 이메일 잇기: 그분에게 · 같은 이메일을 가진 다른 분에게서는 뺌(이름을 알림) · 고친 때 · 누가',
+    [L.people.people.p1.email, L.people.people.p1.at, L.people.people.p1.by, L.people.people.p2.email, L.moved], ['sol@example.com', 9, 'hb', '', ['이가람']]);
+  sc.eq('⑰ 없는 분 · 지운 분 · 빈 이메일은 잇지 않음', [A.svLinkEmail(P0, 'zz', 'a@example.com', 'hb', 9), A.svLinkEmail(P0, 'p3', 'a@example.com', 'hb', 9), A.svLinkEmail(P0, 'p1', '', 'hb', 9)], [null, null, null]);
+  const L2 = A.svLinkEmail(L.people, 'p1', 'sol@example.com', 'hb', 20);
+  sc.eq('⑰ 이미 이어져 있으면 고친 때가 그대로(다시 써도 같은 판)', [L2.people.people.p1.at, L2.moved], [9, []]);
+  sc.eq('⑰ 떼기: 그 이메일만 비움 · 없으면 null', [(x => x.people.p1.email)(A.svUnlinkEmail(L.people, 'SOL@example.com', 'hb', 30).people), A.svUnlinkEmail(P0, 'zz@example.com', 'hb', 30)], ['', null]);
+  const N = A.svAddPerson(P0, ' 새 솔 ', 'hb', 40);
+  sc.eq('⑰ 새 분 더하기: 새 id · 이름 · 빈 이메일 · 갈래 없음', [N.id in P0.people, N.people.people[N.id].name, N.people.people[N.id].email, N.people.people[N.id].pools], [false, '새 솔', '', []]);
+  sc.eq('⑰ 같은 이름이 이미 있으면 그분 · 이름이 아니면 null', [A.svAddPerson(P0, '한빛 솔', 'hb', 41).id, A.svAddPerson(P0, '!!', 'hb', 41)], ['p1', null]);
+  sc.eq('⑰ 승인 칸: 갈래 · 사람이 있어야 · 거절은 no',
+    [J(A.svJoinDecide('ok', 'sv', 'p1', 'hb', 7)), A.svJoinDecide('ok', 'sv', '', 'hb', 7), A.svJoinDecide('ok', 'boss', 'p1', 'hb', 7), J(A.svJoinDecide('no', '', '', 'hb', 8)), A.svJoinDecide('zz')],
+    [{ st: 'ok', kind: 'sv', pid: 'p1', dat: 7, by: 'hb' }, null, null, { st: 'no', dat: 8, by: 'hb' }, null]);
+}
+// ⑰ 코드에서 지킬 것 — 로그인 문 구역
+{
+  const g = HTML.slice(HTML.indexOf('/* ---------- 로그인 문 · 신청 · 승인 (1122-V S3'), HTML.indexOf('/* ---------- 메뉴 — 보기 · 계정 · 개발'));
+  sc.eq('⑰ 로그인 문 구역을 찾음', g.length > 2000, true);
+  sc.eq('⑰ 성도 · 손님 쪽은 교역자 책(rota/{팀} 문서 자체) · 명단에 쓰지 않음 — 신청 · 자기 표지만',
+    (gp => [/ref = joinRef\(G\.home, u\.uid\)/.test(gp) && /await ref\.set\(/.test(gp), /homeRef\([^)]*\)\.set\(/.test(gp), /WRITE_FIELD|cloudSave|saveBook|svRef\(|collection\('staff'\)|\.update\(|\.delete\(/.test(gp)])(g.slice(0, g.indexOf('/* HB 승인'))), [true, true, false]);
+  sc.eq('⑰ 명단(sv/people) · 책은 HB 승인 쪽에서만(svCan 확인 뒤)', /async function jnApprove\([^)]*\) \{\n  if \(!svCan\(\)\) return;/.test(g), true);
+  sc.eq('⑰ 성도 · 손님은 책을 저장하지 않음(saveBook · cloudSave 는 주인만)', [/function saveBook\(\) \{\n  if \(FB\.role !== 'owner' && !DEMO && FB\.user\) return;/.test(HTML), /if \(DEMO \|\| !FB\.user \|\| !FB\.db \|\| FB\.role !== 'owner'\) return;/.test(HTML)], [true, true]);
+  sc.eq("⑰ 성도의 팀 = FB.team · 월 판은 하나씩 읽어 막힌 달(초안)은 빈 달", [/FB\.role === 'staff' \|\| FB\.role === 'serve' \? \(FB\.team \|\| ''\)/.test(HTML), /need\.map\(svmGet\)/.test(HTML)], [true, true]);
+  sc.eq("⑰ 이름은 어디서나 '섬김 로테이션'(탭 제목 · 머리 · 홈 화면)", [/<title>섬김 로테이션<\/title>/.test(HTML), /alt="">섬김 로테이션<span id="ver-top">/.test(HTML), /content="섬김 로테이션">/.test(HTML), /교역자 로테이션<\/title>|alt="">교역자 로테이션/.test(HTML)], [true, true, true, false]);
+  const man = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'rotation', 'manifest.json'), 'utf8'));
+  sc.eq("⑰ 홈 화면 앱 이름(manifest)도 '섬김 로테이션'", [man.name, man.short_name], ['섬김 로테이션', '섬김 로테이션']);
 }
 
 sc.done();

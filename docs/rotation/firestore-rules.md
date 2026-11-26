@@ -3,7 +3,7 @@
 로테이션 자료는 HB 파이어베이스(block7-8f24e)의 `rota/{HB uid}` 문서 한 장에 있다.
 BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않고 **로테이션 덩어리 하나만** 바꾼다.
 
-## 지금 붙일 덩어리 (2026-11-23, 1123-B B3 — 카톡 글 프리셋 칸 `kt` 더함 · 1122-V S1b — 분당 예배위원 칸 `sv` · `svm` 더함 · 1121-G G2 구글 자료 칸 `gs` · R13 예배팀 일정 · R6 교역자 함께 쓰기)
+## 지금 붙일 덩어리 (2026-11-26, 1122-V S3 — 로그인 신청 칸 `rjoin` · 자기 표지 `rotahome` · 승인된 예배위원(성도) 읽기 · 설정 `sv/cfg` 를 교역자 · 성도에게 엶 · 1123-B B3 — 카톡 글 프리셋 칸 `kt` 더함 · 1122-V S1b — 분당 예배위원 칸 `sv` · `svm` 더함 · 1121-G G2 구글 자료 칸 `gs` · R13 예배팀 일정 · R6 교역자 함께 쓰기)
 
 1. https://console.firebase.google.com → **block7-8f24e** → 왼쪽 **빌드** → **Firestore Database** → 위쪽 **규칙** 탭
 2. `// ── 교역자 로테이션(rota) — 여기서부터 ──` 줄부터 `// ── 교역자 로테이션 — 여기까지 ──` 줄까지를 **통째로 지운다**
@@ -20,6 +20,10 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
       function verified() { return signedIn() && request.auth.token.email_verified == true; }
       function inTeam(d) { return verified() && request.auth.token.email in d.get('team', []); }
       function isMember() { return inTeam(get(/databases/$(database)/documents/rota/$(uid)).data); }
+      function joinDoc() { return /databases/$(database)/documents/rota/$(uid)/rjoin/$(request.auth.uid); }
+      function isServer() { return verified() && exists(joinDoc()) && get(joinDoc()).data.st == 'ok'; }
+      function joinOk(d) { return d.uid == request.auth.uid && d.email == request.auth.token.email && d.st == 'wait'
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 20 && d.at is number; }
       allow read: if isOwner() || inTeam(resource.data);
       allow write: if isOwner();
       match /img/{id} {
@@ -42,16 +46,30 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
         allow write: if isOwner();
       }
       match /sv/{k} {
-        allow read, write: if isOwner();
+        allow read: if isOwner() || (k == 'cfg' && (isMember() || isServer()));
+        allow write: if isOwner();
       }
       match /svm/{ym} {
-        allow read: if isOwner() || isMember();
+        allow read: if isOwner() || isMember() || (isServer() && resource.data.st == 'open');
         allow write: if isOwner();
+      }
+      match /rjoin/{jid} {
+        allow read: if isOwner() || (signedIn() && request.auth.uid == jid);
+        allow create: if verified() && request.auth.uid == jid && joinOk(request.resource.data)
+          && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'at', 'v', 'st']);
+        allow update: if isOwner() || (verified() && request.auth.uid == jid && resource.data.st in ['wait', 'no']
+          && joinOk(request.resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'at', 'v', 'st']));
+        allow delete: if isOwner() || (signedIn() && request.auth.uid == jid && resource.data.st != 'ok');
       }
       match /kt/{k} {
         allow read: if isOwner() || (isMember() && (k == 'share' || k == request.auth.uid));
         allow write: if isOwner() || (isMember() && k == request.auth.uid && k != 'share' && k != 'hb');
       }
+    }
+    match /rotahome/{u} {
+      allow read, delete: if request.auth != null && request.auth.uid == u;
+      allow create, update: if request.auth != null && request.auth.uid == u
+        && request.resource.data.keys().hasOnly(['team', 'at']) && request.resource.data.team is string && request.resource.data.team.size() <= 128;
     }
     // ── 교역자 로테이션 — 여기까지 ──
 ```
@@ -69,8 +87,12 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
   HB 가 고른 시트 파일 id(`gs/src`)는 **HB 만** 읽는다 — 교역자에게 시트 주소를 보이지 않는다.
 
 - **분당 예배위원**(1122-V S1b): 시트에서 가져온 달마다의 배치표(`svm/2026-11` …)는 HB 만 쓰고 팀 교역자는 **읽기만**.
-  성도 명단 · 고른 시트 파일 · 설정(`sv/people` · `sv/src` · `sv/cfg`)은 **HB 만** 읽고 쓴다 — 명단에는 이메일 · 메모가 들어가므로 교역자에게도 열지 않는다(배치표 칸에는 보이는 이름이 함께 있어 명단 없이도 표가 보인다).
-  성도(예배위원)가 들어오는 길은 다음 단계(S3)에서 이 덩어리에 더한다.
+  성도 명단 · 고른 시트 파일(`sv/people` · `sv/src`)은 **HB 만** 읽고 쓴다 — 명단에는 이메일 · 메모가 들어가므로 교역자에게도 열지 않는다(배치표 칸에는 보이는 이름이 함께 있어 명단 없이도 표가 보인다).
+  설정(`sv/cfg` — 담당 교역자 이름 · 예배 시각)은 HB 가 쓰고, 팀 교역자와 승인된 예배위원은 **읽기만**(S3).
+- **로그인 신청**(`rjoin/{신청한 분 uid}`, 1122-V S3): 구글로 들어온 분이 이름을 내는 문서. 그분은 **자기 문서만** 읽고, 쓸 수 있는 칸은 uid · 로그인 이메일 · 이름(20자까지) · 때 · 상태 '기다림' 뿐이다.
+  승인 · 거절 · 명단 사람과 잇기는 **HB 만** 한다. 승인된 문서는 그분이 고치지도 지우지도 못한다. 거절된 분은 이름을 고쳐 다시 낼 수 있다. 팀 교역자도 신청을 못 본다.
+- **승인된 예배위원(성도)**: 그 팀의 **공개된 달 배치표**(`svm` 중 공개 상태인 달)와 설정만 읽는다. 초안 달 · 교역자 책 · 명단 · 교역자 칸 · 구글 자료 · 카톡 글은 못 읽고, 아무 데도 못 쓴다. HB 가 승인을 풀면 바로 못 읽는다.
+- **자기 표지**(`rotahome/{자기 uid}`): 초대 링크로 신청한 팀을 그분 계정에 적어 둔 것 — 다른 기기 · 홈 화면 앱에서 링크 없이 열어도 같은 팀을 찾게. **그분만** 읽고 쓴다(남이 못 바꾼다).
 - **카톡 글 프리셋**(`kt/…`, 1123-B B3): 예배 순서 판 '카톡 글' 의 문장 틀. HB 것은 `kt/hb`(전부 — **HB 만**)와 `kt/share`(HB 가 '교역자와 함께 쓰기' 를 켠 것만 — HB 가 쓰고 팀 교역자는 **읽기만**) 두 장,
   교역자 것은 `kt/{자기 uid}` — **그분 자신만** 읽고 쓴다(다른 교역자도 못 봄). 문서를 나눈 까닭: 규칙은 문서 안의 어느 칸인지 못 가려서, 안 나눈 HB 프리셋을 교역자가 못 읽게 하려면 문서가 따로여야 한다.
   성도 이름은 여기 들지 않는다(틀만 — 이름은 그 주 시트 표에서 그때그때 채움).
@@ -83,7 +105,7 @@ BLOCK7 · Sweeter · 기도노트 · 셀 inside 의 규칙은 건드리지 않�
 
 ## 확인
 
-1. `sweeter.my/rotation/` → 오른쪽 위 **…** → BLOCK7 과 같은 이메일 · 비밀번호로 로그인 (HB 는 **구글 로그인을 누르지 말 것** — 아래 '주의')
+1. `sweeter.my/rotation/` → 첫 화면 맨 아래 **관리자 로그인** → BLOCK7 과 같은 이메일 · 비밀번호로 로그인 (HB 는 **구글 로그인을 누르지 말 것** — 아래 '주의')
 2. **사람** 탭에서 이름 하나를 고쳐 본다 → 다른 기기에서 같은 계정으로 보이면 HB 쪽은 그대로다
 
 ## 주의 — HB 는 지금처럼 이메일 · 비밀번호로
@@ -108,6 +130,9 @@ HB 계정은 BLOCK7 과 같은 이메일 · 비밀번호 계정이다. 같은 �
 - `users/{uid}`(BLOCK7 · Sweeter)는 건드리지 않는다. `cellbook/{uid}`(셀 inside)는 **AI 열쇠를 읽기만**(R9 — 예약 사진 · 메일 읽기). 셀 inside 규칙이 이미 본인 읽기를 허락하므로 규칙을 고칠 것은 없다.
 
 ## 예전 덩어리 (기록)
+
+- 1122-V S3 (rotation v. 26-1126-6): 함수 셋(`joinDoc` · `isServer` · `joinOk`) · `sv` 에 설정 읽기 · `svm` 에 성도 읽기 · `match /rjoin/{jid}` · 맨 끝 `match /rotahome/{u}` 더함.
+  붙이기 전에는 성도가 이름을 내면 '신청을 보내지 못했습니다' 가 뜨고, 교역자 화면은 담당 교역자 이름 없이 그대로 돈다(HB 앱은 그대로).
 
 - 1123-B B3 (rotation v. 26-1123-14): 안에 `match /kt/{k}` 네 줄(카톡 글 프리셋) 더함. 붙이기 전에는 프리셋을 고쳐도 그 기기에만 남고(판이 '계정에 둘 권한이 아직 없습니다' 라고 알림), 기본 다섯 · 복사는 그대로 된다.
 
