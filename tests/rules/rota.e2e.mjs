@@ -19,7 +19,7 @@ const book = { v: 'x', at: T, people: [{ id: 'pa', name: '가나다', roles: ['p
   slots: [{ id: '2026-11-22|sun1|offer', who: ['pb'], at: T, by: 'hb' }], visits: [{ id: 'v|2026-11-22', who: ['pa'], days: '토일', sunLead: 'staff', ll: true, at: T, by: 'hb', note: '처음 메모' }, { id: 'v|2026-11-29', who: ['pb'], days: '토일', at: T, by: 'hb' }], marks: [], opts: [] };
 await admin(db => db.doc('rota/' + HB).set({ b8: book,   /* 옛 칸(R11 모양: sunLead · ll)에 둔 자료 — 앱이 b14 · lead 로 옮긴다 */ v: 'seed', at: T }));
 const browser = await chromium.launch();
-async function device(label) {
+async function device(label, q = '') {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => { const f = r.request().url().split('/').pop(); r.fulfill({ path: path.join(NM, f), contentType: 'text/javascript' }); });
   // Monday 서버 함수(C4b 시험) — 지어낸 광고: 영상 하나 · 구두 하나
@@ -33,17 +33,23 @@ async function device(label) {
       v.initializeApp = (cfg, name) => { const app = orig(Object.assign({}, cfg, { projectId: 'demo-rota' }), name); app.auth().useEmulator('http://127.0.0.1:9099', { disableWarnings: true }); app.firestore().useEmulator('127.0.0.1', 8089); return app; }; } } }); });
   const pg = await ctx.newPage(); pg.errs = []; pg.on('pageerror', e => pg.errs.push(label + ': ' + e.message));
   pg.toasts = []; await pg.exposeFunction('__toast', (m) => pg.toasts.push(m));
-  await pg.goto(ROOT); await pg.waitForTimeout(400);
+  await pg.goto(ROOT + q); await pg.waitForTimeout(400);
   await pg.evaluate(() => { const o = toast; window.toast = (m) => { window.__toast(String(m)); return o(m); }; });
   return pg;
 }
 const google = (pg, sub, email) => pg.evaluate(async ([sub, email]) => { await fbInit(); await FB.auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(JSON.stringify({ sub, email, email_verified: true }))); }, [sub, email]);
+// HB 는 로그인 문(S3)의 '관리자 로그인' 으로 — 이메일 칸이 그 자리에서 펼쳐진다
+async function hbLogin(pg) {
+  await until(() => pg.evaluate(() => !!document.querySelector('#gate [data-act="gtadmin"]')));
+  await pg.click('#gate [data-act="gtadmin"]'); await sleep(450);
+  await pg.fill('#gt-em', 'hb@example.com'); await pg.fill('#gt-pw', 'pw123456'); await pg.click('#gate form[data-gform="admin"] button[type="submit"]');
+}
 const state = (pg) => pg.evaluate(() => ({ role: FB.role, synced: FB.synced, tabs: TABS.map(t => t.id), people: live(S.book.people).length, err: FB.err }));
 
 console.log('① HB — 빈 기기에서 이메일로 로그인');
 const hb = await device('HB');
-await hb.click('[data-act="menu"]'); await hb.fill('#fb-em', 'hb@example.com'); await hb.fill('#fb-pw', 'pw123456');
-await hb.click('[data-act="login"]');
+ok('① (S3) 빈 기기는 로그인 문 ⓐ — 섬김 로테이션 · 구글 · 관리자 로그인(접힘)', await hb.evaluate(() => [gateStage(), /섬김 로테이션/.test($('#gate').innerText), !!document.querySelector('#gate [data-act="gtgoogle"]'), !!document.querySelector('#gate .ga.open'), document.title]), ['a', true, true, false, '섬김 로테이션']);
+await hbLogin(hb);
 await until(() => hb.evaluate(() => FB.role === 'owner' && FB.synced));
 ok('① HB 는 주인(owner) · 사람 탭 있음 · 자료 그대로', await state(hb), { role: 'owner', synced: true, tabs: ['week', 'month', 'busan', 'people'], people: 2, err: '' });
 const d1 = await until(async () => { const d = await getDoc('rota/' + HB); return d && d.team ? d : null; });
@@ -128,14 +134,14 @@ console.log('③-2 내 화면 취향 (R8b) — 첫 화면 · 내 이름 모양�
 console.log('④ 팀 밖 사람 — 구글 로그인');
 const zz = await device('팀 밖');
 await google(zz, 'zz-sub-1', 'zz@example.com');
-await until(() => zz.evaluate(() => FB.role === 'owner' && FB.synced));
+await until(() => zz.evaluate(() => FB.role === 'guest' && gateStage() === 'link'));
 const ZZ = await zz.evaluate(() => FB.user.uid);
-ok('④ 팀 밖 사람은 HB 자료를 못 보고(빈 책) 자기 문서도 만들지 않는다', [await zz.evaluate(() => [FB.role, live(S.book.people).length]), await getDoc('rota/' + ZZ)], [['owner', 0], null]);
+ok('④ (S3) 팀 밖 사람(초대 링크 없음)은 손님 — 로그인 문 \'초대 링크가 필요합니다\' · HB 자료 못 봄(빈 책) · 자기 문서 안 만듦', [await zz.evaluate(() => [FB.role, gateStage(), live(S.book.people).length, /초대 링크가 필요합니다/.test($('#gate').innerText)]), await getDoc('rota/' + ZZ)], [['guest', 'link', 0, true], null]);
 ok('④ 팀 밖 사람은 HB 문서를 직접 못 읽는다', await zz.evaluate(async (id) => { try { await FB.db.collection('rota').doc(id).get(); return 'read'; } catch (e) { return e.code; } }, HB), 'permission-denied');
 
 console.log('⑤ HB — 두 번째 빈 기기');
 const hb2 = await device('HB2');
-await hb2.click('[data-act="menu"]'); await hb2.fill('#fb-em', 'hb@example.com'); await hb2.fill('#fb-pw', 'pw123456'); await hb2.click('[data-act="login"]');
+await hbLogin(hb2);
 await until(() => hb2.evaluate(() => FB.role === 'owner' && FB.synced));
 await sleep(1200);
 const d5 = await getDoc('rota/' + HB);
@@ -198,7 +204,7 @@ console.log('⑨ (R12 C4b) 부산 상영 — 계정에 저장 · 경고 · 교�
   // 빈 기기 + 예전 이 기기 선택(rota_adsbs_v1) → 로그인하면 계정으로 한 번 옮기고 지움 · 계정 것은 줄지 않음
   const hb3 = await device('HB3');
   await hb3.evaluate(() => localStorage.setItem('rota_adsbs_v1', JSON.stringify({ '2026-11-29': 'none', '2026-11-08': 'same', '2026-11-22': 'diff' })));
-  await hb3.click('[data-act="menu"]'); await hb3.fill('#fb-em', 'hb@example.com'); await hb3.fill('#fb-pw', 'pw123456'); await hb3.click('[data-act="login"]');
+  await hbLogin(hb3);
   await until(() => hb3.evaluate(() => FB.role === 'owner' && FB.synced));
   const d9c = await until(async () => { const d = await getDoc('rota/' + HB); return d.b18.shows.some(x => x.id === 's|2026-11-29') ? d : null; });
   ok('⑨ 빈 기기 로그인: 예전 이 기기 선택은 다가오는 주일 · 계정에 없는 것만(11/29) · 계정 것(11/22 같은 영상)은 그대로 · 지난 주일(11/8)은 버림 · 이 기기 기억은 지움',
@@ -852,10 +858,95 @@ console.log('㉘ 분당 예배위원 열람 (1122-V S2) — 지어낸 이름');
   ok("㉘ HB 성도 화면 틀: 카드 · 지난 섬김은 접힘(펴기 단추) · '담당 교역자 (이름)'", await hb.evaluate(() => [!!document.querySelector('.svcard'), document.querySelectorAll('.mrow[data-svday]').length, !!document.querySelector('[data-act="svpast"]'), document.querySelector('#panel').textContent.includes('담당 교역자 (가나다 목사)께')]), [true, 0, true, true]);   // 지난 섬김은 접혀 있음(S2b C)
   await ga.evaluate(() => { closePane(); refreshTabs(); PREF.tab = 'serve'; PREF.svv = 'board'; S.svym = ''; S.svc = '1'; renderShell(); });
   ok("㉘ 교역자: 넷째 탭 '예배위원' · 같은 배치표(HB 문서를 읽기만)", await until(() => ga.evaluate(() => TABS.map(t => t.id).join() === 'week,month,busan,serve' && !!document.querySelector('.svtbl') && document.querySelector('.svtbl').textContent.includes('하늘빛'))), true);
-  ok('㉘ 교역자 화면: 설정 단추 · 교역자 알약 없음 · 설정(sv/cfg)은 안 읽음 → 담당 교역자만', await ga.evaluate(() => { PREF.svv = 'me'; S.svme = 'pz1'; render(); return [!!document.querySelector('[data-act="svcfg"]'), !!document.querySelector('[data-pv]'), SVV.cfg, document.querySelector('#panel').textContent.includes('담당 교역자께')]; }), [false, false, null, true]);
+  await until(() => ga.evaluate(() => !!(SVV.cfg && SVV.cfg.lead)));
+  ok('㉘ 교역자 화면: 설정 단추 · 교역자 알약 없음 · (S3) 설정(sv/cfg)을 읽어 \'담당 교역자 (이름)\'', await ga.evaluate(() => { PREF.svv = 'me'; S.svme = 'pz1'; render(); return [!!document.querySelector('[data-act="svcfg"]'), !!document.querySelector('[data-pv]'), SVV.cfg.lead, document.querySelector('#panel').textContent.includes('담당 교역자 (가나다 목사)께')]; }), [false, false, '가나다 목사', true]);
   const w1 = await ga.evaluate(async () => { try { await FB.db.collection('rota').doc(FB.team).collection('sv').doc('cfg').get(); return 'read'; } catch (e) { return e.code; } });
-  ok('㉘ 교역자는 sv/cfg 를 못 읽는다(규칙 그대로)', w1, 'permission-denied');
+  ok('㉘ (S3) 교역자도 sv/cfg 를 읽는다(담당 교역자 이름 · 시각 — 성도 화면과 같이 엶)', w1, 'read');
   ok('㉘ 월 판은 그대로(아무도 안 씀)', (await getDoc('rota/' + HB + '/svm/' + ym)).at, 5);
+}
+console.log('㉙ 로그인 문 · 신청 · 승인 (1122-V S3) — 지어낸 이름 · 이메일');
+const S3P = [];
+{
+  const ym = await hb.evaluate(() => todayYmd().slice(0, 7)), nx = await hb.evaluate((y) => addMonths(y, 1), ym);
+  await admin(async db => {
+    await db.doc('rota/' + HB + '/sv/people').set({ people: { pz1: { name: '하늘빛', pools: ['1|of'], at: 1 }, pz2: { name: '새벽별', pools: ['1|gd'], at: 1 } } });
+    await db.doc('rota/' + HB + '/svm/' + nx).set({ ym: nx, st: 'draft', at: 5, cells: {} });
+  });
+  // 빈 기기 — 초대 링크로 연다
+  const sv = await device('성도', '?h=' + HB); S3P.push(sv);
+  ok('㉙ 빈 기기 · 초대 링크: 로그인 문 ⓐ · 주소의 h= 는 지우고 이 기기에 적음', await sv.evaluate(() => [gateStage(), !!document.querySelector('#gate [data-act="gtgoogle"]'), location.search, lsGet('rota_home_v1', '')]), ['a', true, '', HB]);
+  await sv.evaluate(() => { window.__same = 1; }); await sv.click('#gate [data-act="gtadmin"]'); await sleep(450);
+  ok('㉙ 관리자 로그인을 누르면 그 자리에서 이메일 칸이 펼쳐짐(새로 고침 없음)', await sv.evaluate(() => [!!document.querySelector('#gate .ga.open'), $('#gt-em').getBoundingClientRect().height > 30, window.__same]), [true, true, 1]);
+  await google(sv, 'sv-sub-1', 'sv@example.com');
+  await until(() => sv.evaluate(() => gateStage() === 'name'));
+  const SVU = await sv.evaluate(() => FB.user.uid);
+  ok('㉙ 구글 로그인(명단 밖) → 손님 · 이름 내기 ⓑ · 빈 책 · 자기 책 문서 안 만듦', [await sv.evaluate(() => [FB.role, gateStage(), live(S.book.people).length, /이름을 알려 주세요/.test($('#gate').innerText)]), await getDoc('rota/' + SVU)], [['guest', 'name', 0, true], null]);
+  await sv.fill('#gt-name', ' 하늘빛 '); await sv.click('#gate form[data-gform="name"] button[type="submit"]');
+  await until(() => sv.evaluate(() => gateStage() === 'wait'));
+  const j1 = await getDoc('rota/' + HB + '/rjoin/' + SVU), h1 = await getDoc('rotahome/' + SVU);
+  ok('㉙ 제출 → 신청 문서(정한 칸만) · 자기 표지 · 기다림 ⓒ(움직임)', [j1 && Object.keys(j1).sort(), j1 && [j1.name, j1.email, j1.st], h1 && h1.team, await sv.evaluate(() => [/관리자 승인을 기다립니다/.test($('#gate').innerText), !!document.querySelector('#gate .bmark')])],
+    [['at', 'email', 'name', 'st', 'uid', 'v'], ['하늘빛', 'sv@example.com', 'wait'], HB, [true, true]]);
+  const rd = (pg, paths) => pg.evaluate(async (ps) => { const out = []; for (const p of ps) { try { await FB.db.doc(p).get(); out.push('read'); } catch (e) { out.push(e.code); } } return out; }, paths);
+  ok('㉙ 기다리는 분은 책 · 월 판 · 설정을 못 읽는다', await rd(sv, ['rota/' + HB, 'rota/' + HB + '/svm/' + ym, 'rota/' + HB + '/sv/cfg']), ['permission-denied', 'permission-denied', 'permission-denied']);
+  // HB — 교역자들 탭 맨 위 띠 → 승인 판
+  await hb.evaluate(() => { closePane(); PREF.tab = 'people'; PREF.pv = ''; renderShell(); });
+  await until(() => hb.evaluate(() => (S.joins || []).length === 1 && !!document.querySelector('#panel .joinband')));
+  ok('㉙ HB 교역자들 탭 맨 위 띠 \'로그인 신청 1\'', await hb.evaluate(() => $('#panel').firstElementChild.textContent.trim().startsWith('로그인 신청 1')), true);
+  await hb.click('#panel .joinband'); await until(() => hb.evaluate(() => !!JN.people && !!document.querySelector('#pane .jrow')));
+  ok('㉙ 승인 판: 이름 · 구글 이메일 · 예배위원 · 명단의 같은 이름(하늘빛 pz1)을 미리 고름 · 승인 단추 켜짐',
+    await hb.evaluate(() => [/하늘빛/.test($('#pane .jnm').textContent), /sv@example\.com/.test($('#pane .jnm').textContent), $('#pane [data-jkind][aria-pressed="true"]').textContent, jnPid(S.joins[0]), $('#pane [data-jok]').disabled]), [true, true, '예배위원', 'pz1', false]);
+  await hb.click('#pane [data-jok]');
+  const j2 = await until(async () => { const d = await getDoc('rota/' + HB + '/rjoin/' + SVU); return d && d.st === 'ok' ? d : null; });
+  const pp = await getDoc('rota/' + HB + '/sv/people');
+  ok('㉙ 승인 → 신청 ok · 예배위원 · pz1 · 명단 그분에 이메일(다른 분 그대로) · 책 team 에 성도 없음',
+    [j2 && [j2.kind, j2.pid, j2.by], pp.people.pz1.email, pp.people.pz2.email || '', (await getDoc('rota/' + HB)).team.includes('sv@example.com')], [['sv', 'pz1', HB], 'sv@example.com', '', false]);
+  await until(() => sv.evaluate(() => FB.role === 'serve' && !gateStage() && !!document.querySelector('#panel .svcard') && $('#gate').hidden), 10000);
+  ok('㉙ 성도 화면: 새로 고침 없이 바로(문 걷힘) · 예배위원 한 탭(탭 줄 숨김) · 내 섬김 · 그분 이름 · 교역자 책 없음 · 초안 달은 빈 달 · 승인 토스트',
+    await sv.evaluate((nx) => [FB.role, window.__same, TABS.map(t => t.id), $('#tabs').hidden, PREF.svv, /하늘빛/.test($('#panel .mhello').textContent), live(S.book.people).length, SVV.boards[nx], SVV.err], nx).then(v => v.concat(sv.toasts.some(t => t.startsWith('승인되었습니다')))),
+    ['serve', 1, ['serve'], true, 'me', true, 0, null, '', true]);
+  ok('㉙ 성도도 설정(담당 교역자 이름)을 읽어 화면에', await sv.evaluate(() => [svCfg().lead, /담당 교역자 \(가나다 목사\)/.test($('#panel').innerText)]), ['가나다 목사', true]);
+  ok('㉙ 성도는 책 · 명단 · 교역자 칸을 못 읽는다', await rd(sv, ['rota/' + HB, 'rota/' + HB + '/sv/people', 'rota/' + HB + '/staff/x']), ['permission-denied', 'permission-denied', 'permission-denied']);
+  ok('㉙ 성도는 월 판 · 자기 신청에 못 쓴다', await sv.evaluate(async (h) => { const w = async (p, d, m) => { try { await FB.db.doc(p).set(d, m ? { merge: true } : {}); return 'wrote'; } catch (e) { return e.code; } };
+    return [await w('rota/' + h + '/svm/' + todayYmd().slice(0, 7), { ym: 'x' }), await w('rota/' + h + '/rjoin/' + FB.user.uid, { name: '바꿈', at: 1, st: 'wait' }, true)]; }, HB), ['permission-denied', 'permission-denied']);
+  ok('㉙ 성도 메뉴는 보기 · 계정 둘 · 개발 없음 · 첫 화면 정하기 없음', await sv.evaluate(() => { openMenu(); const t = [...document.querySelectorAll('#menu .mtab')].map(b => b.textContent); const home = !!document.querySelector('#menu [data-act="home"]'); closeMenu(); return [t, home]; }), [['보기', '계정'], false]);
+  await sv.click('#panel [data-svv="board"]'); await sleep(300);
+  ok('㉙ 성도 배치표 알약 · 사람별 · 설정 단추 없음', await sv.evaluate(() => [[...document.querySelectorAll('#panel [data-svv]')].map(b => b.textContent), !!document.querySelector('#panel [data-act="svcfg"]'), !!document.querySelector('#panel .svtbl')]), [['내 섬김', '배치표'], false, true]);
+  // 링크 없는 두 번째 빈 기기 — 자기 표지로 같은 팀
+  const sv2 = await device('성도2'); S3P.push(sv2);
+  await google(sv2, 'sv-sub-1', 'sv@example.com');
+  await until(() => sv2.evaluate(() => FB.role === 'serve' && !gateStage()), 10000);
+  ok('㉙ 링크 없는 두 번째 빈 기기도 자기 표지로 같은 팀 → 바로 성도 화면', await sv2.evaluate(() => [FB.role, FB.team === lsGet('rota_home_v1', ''), gateStage()]), ['serve', true, '']);
+  // 거절 → 이름 고쳐 다시 → 교역자 갈래로 승인
+  const xx = await device('신청2', '?h=' + HB); S3P.push(xx);
+  await google(xx, 'xx-sub-1', 'xx@example.com'); await until(() => xx.evaluate(() => gateStage() === 'name'));
+  const XXU = await xx.evaluate(() => FB.user.uid);
+  await xx.fill('#gt-name', '모르는분'); await xx.click('#gate form[data-gform="name"] button[type="submit"]');
+  await until(() => hb.evaluate((u) => (S.joins || []).some(j => j.uid === u) && !!document.querySelector(`#pane [data-jno="${u}"]`), XXU));
+  await hb.evaluate((u) => { const b = document.querySelector(`#pane [data-jno="${u}"]`); b.click(); b.click(); }, XXU);
+  await until(() => xx.evaluate(() => gateStage() === 'no' && /승인되지 않았습니다/.test($('#gate').innerText)));   // 화면 바뀜(150 + 300ms) 뒤
+  ok('㉙ 거절 → 그분 화면 \'승인되지 않았습니다\' · HB 띠에서 빠짐', [await xx.evaluate(() => /승인되지 않았습니다/.test($('#gate').innerText)), await hb.evaluate(() => (S.joins || []).length)], [true, 0]);
+  await xx.click('#gate [data-act="gtedit"]'); await until(() => xx.evaluate(() => gateStage() === 'name'));
+  await xx.fill('#gt-name', '라마바'); await xx.click('#gate form[data-gform="name"] button[type="submit"]');
+  await until(() => xx.evaluate(() => gateStage() === 'wait'));
+  ok('㉙ 이름 고쳐 다시 내기 → 기다림(신청 wait · 새 이름 · 이메일 그대로)', (d => [d.st, d.name, d.email])(await getDoc('rota/' + HB + '/rjoin/' + XXU)), ['wait', '라마바', 'xx@example.com']);
+  await until(() => hb.evaluate((u) => (S.joins || []).some(j => j.uid === u) && !!document.querySelector(`#pane [data-jkind="staff"][data-ju="${u}"]`), XXU));
+  await hb.click(`#pane [data-jkind="staff"][data-ju="${XXU}"]`);
+  ok('㉙ 교역자 갈래: 사람 탭의 같은 이름(라마바 pb)을 미리 고름', await hb.evaluate((u) => jnPid(S.joins.find(j => j.uid === u)), XXU), 'pb');
+  await hb.click(`#pane [data-jok="${XXU}"]`);
+  await until(() => xx.evaluate(() => FB.role === 'staff' && FB.synced), 25000);
+  ok('㉙ 교역자 승인 → 책 team 에 그 이메일 · 그분 앱은 교역자로(문 걷힘 · 나는 라마바)', [(await getDoc('rota/' + HB)).team.includes('xx@example.com'), await xx.evaluate(() => [FB.role, gateStage(), myPid()])], [true, ['staff', '', 'pb']]);
+  // 풀기 — 성도 · 교역자
+  await hb.evaluate(() => { JN.open = true; renderPane(); });
+  for (const u of [SVU, XXU]) {
+    await until(() => hb.evaluate((u) => !!document.querySelector(`#pane [data-jrev="${u}"]`), u));
+    await hb.evaluate((u) => { const b = document.querySelector(`#pane [data-jrev="${u}"]`); b.click(); b.click(); }, u);
+    await until(async () => (await getDoc('rota/' + HB + '/rjoin/' + u)).st === 'no');
+  }
+  await until(() => sv.evaluate(() => FB.role === 'guest' && gateStage() === 'no'), 10000);
+  ok('㉙ 성도 풀기 → 그분 화면이 바로 문(승인되지 않았습니다) · 명단 이메일 뗌', [await sv.evaluate(() => [FB.role, gateStage()]), (await getDoc('rota/' + HB + '/sv/people')).people.pz1.email], [['guest', 'no'], '']);
+  await until(async () => !(await getDoc('rota/' + HB)).team.includes('xx@example.com'));
+  ok('㉙ 교역자 풀기 → 사람 탭 계정 이메일 뗌 → team 에서 빠짐', (await getDoc('rota/' + HB)).team, ['ga@example.com']);
+  await hb.evaluate(() => closePane()); await sleep(400);
 }
 console.log('⑥ HB 가 이메일을 지우면');
 await hb.evaluate(() => personApply('pa', p => { delete p.email; }));
@@ -864,7 +955,7 @@ ok('⑥ team 이 비었다', (await getDoc('rota/' + HB)).team, []);
 const wr = await ga.evaluate(async () => { try { await FB.db.collection('rota').doc(FB.team).collection('staff').doc(FB.user.uid).set({ email: FB.user.email, at: 9 }, { merge: true }); return 'wrote'; } catch (e) { return e.code; } });
 ok('⑥ 빠진 교역자는 더는 자기 칸에도 못 쓴다', wr, 'permission-denied');
 ok('⑥ 빠진 교역자 화면에 알림', await until(() => ga.evaluate(() => FB.err.startsWith('팀 자료를 읽지 못했습니다'))), true);
-const errs = [hb, ga, zz, hb2].flatMap(p => p.errs);
+const errs = [hb, ga, zz, hb2].concat(S3P).flatMap(p => p.errs);
 ok('화면 오류 없음', errs, []);
 console.log(`결과: 통과 ${n - bad} / 실패 ${bad}`);
 await browser.close(); await env.cleanup(); process.exit(bad ? 1 : 0);

@@ -66,7 +66,8 @@ await t('팀 교역자는 월 판에 못 쓴다', ga.doc('rota/hb/svm/2026-11').
 await t('팀 교역자는 월 판을 못 지운다', ga.doc('rota/hb/svm/2026-11').delete(), false);
 await t('팀 교역자는 명단을 못 읽는다(이메일 · 메모)', ga.doc('rota/hb/sv/people').get(), false);
 await t('팀 교역자는 고른 파일을 못 읽는다', ga.doc('rota/hb/sv/src').get(), false);
-await t('팀 교역자는 설정도 못 읽는다(S1b — 성도 화면 S3 에서 다시 정함)', ga.doc('rota/hb/sv/cfg').get(), false);
+await t('팀 교역자는 설정(담당 교역자 이름 · 예배 시각)을 읽는다 (S3 — 성도 화면과 같이 엶)', ga.doc('rota/hb/sv/cfg').get(), true);
+await t('팀 교역자는 설정에 못 쓴다', ga.doc('rota/hb/sv/cfg').set({ lead: '가짜' }), false);
 await t('팀 밖 사람은 월 판을 못 읽는다', out.doc('rota/hb/svm/2026-11').get(), false);
 await t('로그인 안 하면 월 판을 못 읽는다', anon.doc('rota/hb/svm/2026-11').get(), false);
 await t('남의 HB 는 내 월 판에 못 쓴다', ctx('hb2', 'x@example.com', false).doc('rota/hb/svm/2026-11').set({ ym: '2026-11' }), false);
@@ -93,6 +94,62 @@ await hb.doc('rota/hb/kt/hb').set({ v: 1, items: { h2: { n: '안내', t: '{2부 
 await hb.doc('rota/hb/kt/hb').set({ v: 1, items: { h1: { n: '', t: '', ord: 1, share: false, del: true, at: 6 } } }, { merge: true });
 { const d = (await hb.doc('rota/hb/kt/hb').get()).data(); n++; const ok = d.items.h1.del === true && d.items.h1.t === '' && d.items.h2.n === '안내';
   if (ok) console.log('  ✓ 프리셋 한 줄 합쳐 쓰기 — 지운 줄은 글이 비고 다른 줄은 그대로'); else { bad++; console.log('  ✗ 프리셋 합쳐 쓰기', JSON.stringify(d)); } }
+// ── 1122-V S3 로그인 신청 · 승인 · 성도(승인된 예배위원) — 지어낸 이메일 ──
+const sa = ctx('usa', 'sa@example.com'), sb = ctx('usb', 'sb@example.com'), saUnver = ctx('usc', 'sc@example.com', false);
+const allFail = (...ps) => Promise.all(ps.map(p => assertFails(p)));
+const J = (uid, email, name, at = 1) => ({ uid, email, name, at, v: 'x', st: 'wait' });
+await env.withSecurityRulesDisabled(async c => { const db = c.firestore();
+  await db.doc('rota/hb/svm/2026-12').set({ ym: '2026-12', st: 'draft', at: 1, cells: {} }); });
+await t('S3 신청: 자기 uid · 로그인 이메일 · 이름으로 신청 문서를 만든다', sa.doc('rota/hb/rjoin/usa').set(J('usa', 'sa@example.com', '한빛솔')), true);
+await t('S3 신청: 자기 신청은 읽는다', sa.doc('rota/hb/rjoin/usa').get(), true);
+await t('S3 신청: 아직 안 낸 자기 자리도 읽힌다(없음 확인)', sb.doc('rota/hb/rjoin/usb').get(), true);
+await t('S3 신청: 남의 신청은 못 읽는다', sb.doc('rota/hb/rjoin/usa').get(), false);
+await t('S3 신청: 남의 uid 로는 못 낸다', sb.doc('rota/hb/rjoin/usa2').set(J('usa2', 'sb@example.com', '가짜')), false);
+await t('S3 신청: 남의 이메일로는 못 낸다', sb.doc('rota/hb/rjoin/usb').set(J('usb', 'sa@example.com', '가짜')), false);
+await t('S3 신청: 처음부터 승인(ok)으로는 못 낸다', sb.doc('rota/hb/rjoin/usb').set(Object.assign(J('usb', 'sb@example.com', '가짜'), { st: 'ok' })), false);
+await t('S3 신청: 갈래 · 사람(kind · pid)을 스스로 못 넣는다', sb.doc('rota/hb/rjoin/usb').set(Object.assign(J('usb', 'sb@example.com', '이가람'), { kind: 'sv', pid: 'p1' })), false);
+await t('S3 신청: 이름이 비거나 20자 넘으면 안 된다', allFail(sb.doc('rota/hb/rjoin/usb').set(J('usb', 'sb@example.com', '')), sb.doc('rota/hb/rjoin/usb').set(J('usb', 'sb@example.com', '가'.repeat(21)))), true);
+await t('S3 신청: 이메일 확인 안 된 계정은 못 낸다', saUnver.doc('rota/hb/rjoin/usc').set(J('usc', 'sc@example.com', '확인안됨')), false);
+await t('S3 신청: 로그인 안 하면 못 낸다', anon.doc('rota/hb/rjoin/x').set(J('x', 'x@example.com', '익명')), false);
+await t('S3 신청: 기다리는 동안 이름을 고친다', sa.doc('rota/hb/rjoin/usa').set(J('usa', 'sa@example.com', '한빛솔A', 2)), true);
+await t('S3 기다리는 성도는 공개된 월 판도 아직 못 읽는다', sa.doc('rota/hb/svm/2026-11').get(), false);
+await t('S3 기다리는 성도는 설정을 못 읽는다', sa.doc('rota/hb/sv/cfg').get(), false);
+await t('S3 팀 교역자는 신청을 못 읽는다(HB 만)', ga.doc('rota/hb/rjoin/usa').get(), false);
+await t('S3 HB 는 기다리는 신청을 모아 듣는다(where st == wait)', hb.collection('rota/hb/rjoin').where('st', '==', 'wait').get(), true);
+await t('S3 남은 신청 목록을 못 모아 읽는다', sa.collection('rota/hb/rjoin').get(), false);
+await t('S3 HB 가 승인한다(갈래 · 사람 · 때)', hb.doc('rota/hb/rjoin/usa').set({ st: 'ok', kind: 'sv', pid: 'p1', dat: 3, by: 'hb' }, { merge: true }), true);
+await t('S3 승인된 성도는 공개된(open) 월 판을 읽는다', sa.doc('rota/hb/svm/2026-11').get(), true);
+await t('S3 승인된 성도는 초안(draft) 달은 못 읽는다', sa.doc('rota/hb/svm/2026-12').get(), false);
+await t('S3 승인된 성도는 아직 없는 달도 못 읽는다(없으면 막힘 — 앱은 빈 달로 봄)', sa.doc('rota/hb/svm/2027-01').get(), false);
+await t('S3 승인된 성도는 설정(담당 교역자 · 시각)을 읽는다', sa.doc('rota/hb/sv/cfg').get(), true);
+await t('S3 승인된 성도는 명단(이메일)을 못 읽는다', sa.doc('rota/hb/sv/people').get(), false);
+await t('S3 승인된 성도는 고른 파일을 못 읽는다', sa.doc('rota/hb/sv/src').get(), false);
+await t('S3 승인된 성도는 교역자 책을 못 읽는다', sa.doc('rota/hb').get(), false);
+await t('S3 승인된 성도는 교역자 칸 · 구글 자료 · 함께 쓰는 프리셋을 못 읽는다', allFail(sa.doc('rota/hb/staff/ugb').get(), sa.doc('rota/hb/gs/bteam').get(), sa.doc('rota/hb/kt/share').get(), sa.doc('rota/hb/ext/worship').get()), true);
+await t('S3 승인된 성도는 월 판 · 설정에 못 쓴다', allFail(sa.doc('rota/hb/svm/2026-11').set({ ym: '2026-11', st: 'open', cells: {} }), sa.doc('rota/hb/sv/cfg').set({ lead: '가짜' })), true);
+await t('S3 승인된 성도는 자기 신청을 고치지 못한다(이름 · 상태)', sa.doc('rota/hb/rjoin/usa').set(J('usa', 'sa@example.com', '바꾼이름', 9)), false);
+await t('S3 승인된 성도는 자기 신청을 못 지운다', sa.doc('rota/hb/rjoin/usa').delete(), false);
+await t('S3 승인된 성도는 팀 검색으로 책을 못 찾는다', sa.collection('rota').where('team', 'array-contains', 'sa@example.com').get(), true);
+{ const q = await sa.collection('rota').where('team', 'array-contains', 'sa@example.com').get(); n++; if (q.empty) console.log('  ✓ S3 … 찾은 책 0'); else { bad++; console.log('  ✗ S3 성도 팀 검색에 책이 나옴'); } }
+await t('S3 남의 HB 팀에서는 승인이 아니다(그 팀 월 판 못 읽음)', sa.doc('rota/hb2/svm/2026-11').get(), false);
+// 거절 → 다시 내기
+await t('S3 신청 둘째: 다른 분이 낸다', sb.doc('rota/hb/rjoin/usb').set(J('usb', 'sb@example.com', '이가람')), true);
+await t('S3 HB 가 거절한다', hb.doc('rota/hb/rjoin/usb').set({ st: 'no', dat: 4, by: 'hb' }, { merge: true }), true);
+await t('S3 거절된 분은 월 판을 못 읽는다', sb.doc('rota/hb/svm/2026-11').get(), false);
+await t('S3 거절된 분은 이름을 고쳐 다시 낸다(st → wait, 정한 칸만)', sb.doc('rota/hb/rjoin/usb').set({ name: '이가람B', at: 5, v: 'x', st: 'wait' }, { merge: true }), true);
+await t('S3 다시 낼 때 승인으로 못 바꾼다', sb.doc('rota/hb/rjoin/usb').set({ st: 'ok' }, { merge: true }), false);
+await t('S3 다시 낼 때 사람(pid)을 못 바꾼다', sb.doc('rota/hb/rjoin/usb').set({ pid: 'p1', at: 6 }, { merge: true }), false);
+await t('S3 기다리는 분은 자기 신청을 거둔다(지움)', sb.doc('rota/hb/rjoin/usb').delete(), true);
+// 풀기
+await t('S3 HB 가 승인을 푼다(no)', hb.doc('rota/hb/rjoin/usa').set({ st: 'no', dat: 7, by: 'hb' }, { merge: true }), true);
+await t('S3 풀린 분은 월 판 · 설정을 다시 못 읽는다', allFail(sa.doc('rota/hb/svm/2026-11').get(), sa.doc('rota/hb/sv/cfg').get()), true);
+// 링크 없이 다른 기기에서 — 자기 표지(rotahome)
+await t('S3 자기 표지(rotahome/자기 uid)에 팀을 적는다', sa.doc('rotahome/usa').set({ team: 'hb', at: 1 }), true);
+await t('S3 자기 표지를 읽는다', sa.doc('rotahome/usa').get(), true);
+await t('S3 남의 표지는 못 읽는다', sb.doc('rotahome/usa').get(), false);
+await t('S3 남의 표지에 못 쓴다', sb.doc('rotahome/usa').set({ team: 'evil', at: 2 }), false);
+await t('S3 표지에 다른 칸은 못 넣는다', sa.doc('rotahome/usa').set({ team: 'hb', at: 1, role: 'owner' }), false);
+await t('S3 로그인 안 하면 표지를 못 읽는다', anon.doc('rotahome/usa').get(), false);
 await t('팀에서 빠지면(HB 가 이메일 지움) 더는 못 읽는다', hb.doc('rota/hb').set({ team: ['ra@example.com'] }, { merge: true }).then(() => ga.doc('rota/hb').get()), false);
 await t('… 구글 자료 표도 못 읽는다', ga.doc('rota/hb/gs/bteam').get(), false);
 await t('… 예배위원 월 판도 못 읽는다', ga.doc('rota/hb/svm/2026-11').get(), false);
